@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="128" height="128" shape-rendering="crispEdges">
+  <!-- SHOVEL — Garden Tool (for pruning / digging) -->
+  <!-- Handle (wooden) -->
+  <rect x="8" y="2" width="4" height="4" fill="#a08060"/>
+  <rect x="10" y="6" width="4" height="4" fill="#9a7a58"/>
+  <rect x="12" y="10" width="4" height="4" fill="#a08060"/>
+  <rect x="14" y="14" width="4" height="4" fill="#9a7a58"/>
+  <rect x="14" y="10" width="2" height="4" fill="#8a6a48"/>
+  <rect x="10" y="2" width="2" height="4" fill="#8a6a48"/>
+  <!-- Handle grip (top, darker wrap) -->
+  <rect x="6" y="0" width="4" height="4" fill="#6a4a28"/>
+  <rect x="8" y="0" width="2" height="2" fill="#7a5a38"/>
+  <rect x="4" y="2" width="4" height="2" fill="#5a3a20"/>
+  <!-- Metal collar (where blade meets handle) -->
+  <rect x="16" y="16" width="4" height="2" fill="#8a9aa8"/>
+  <rect x="14" y="18" width="4" height="2" fill="#9aaab8"/>
+  <rect x="18" y="16" width="2" height="2" fill="#7a8a98"/>
+  <!-- Blade (metal, angled) -->
+  <rect x="16" y="18" width="6" height="4" fill="#7a8a98"/>
+  <rect x="18" y="22" width="6" height="4" fill="#6a7a88"/>
+  <rect x="20" y="26" width="6" height="4" fill="#5a6a78"/>
+  <rect x="22" y="30" width="4" height="2" fill="#4a5a68"/>
+  <!-- Blade highlight (left edge catch light) -->
+  <rect x="16" y="18" width="2" height="4" fill="#9aaab8"/>
+  <rect x="18" y="22" width="2" height="4" fill="#8a9aa8"/>
+  <rect x="20" y="26" width="2" height="4" fill="#7a8a98"/>
+  <!-- Blade shadow (right edge) -->
+  <rect x="20" y="20" width="2" height="2" fill="#5a6a78"/>
+  <rect x="22" y="24" width="2" height="2" fill="#4a5a68"/>
+  <rect x="24" y="28" width="2" height="2" fill="#3a4a58"/>
+  <!-- Dirt specks on blade -->
+  <rect x="20" y="28" width="2" height="2" fill="#8a7858"/>
+  <rect x="24" y="30" width="2" height="2" fill="#9a8868"/>
+  <rect x="22" y="26" width="2" height="2" fill="#7a6848"/>
+</svg>

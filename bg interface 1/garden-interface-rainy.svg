@@ -1,0 +1,442 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1512 982" width="1512" height="982" shape-rendering="crispEdges">
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GLOOMY SKY -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="0" y="0" width="1512" height="420" fill="#6a7a8a"/>
+  <rect x="0" y="0" width="1512" height="140" fill="#5a6a7a"/>
+  <rect x="0" y="140" width="1512" height="120" fill="#627282"/>
+
+  <!-- No sun — heavy cloud cover -->
+  <!-- Dark storm clouds -->
+  <rect x="0" y="60" width="240" height="42" fill="#4a5a6a"/>
+  <rect x="30" y="48" width="180" height="30" fill="#505e6e"/>
+  <rect x="60" y="36" width="120" height="24" fill="#586878"/>
+  <rect x="24" y="90" width="210" height="30" fill="#445464"/>
+
+  <rect x="300" y="30" width="300" height="48" fill="#4a5a6a"/>
+  <rect x="330" y="18" width="240" height="36" fill="#505e6e"/>
+  <rect x="360" y="6" width="180" height="24" fill="#586878"/>
+  <rect x="290" y="66" width="320" height="36" fill="#445464"/>
+  <rect x="310" y="90" width="280" height="24" fill="#3e4e5e"/>
+
+  <rect x="700" y="24" width="280" height="48" fill="#505e6e"/>
+  <rect x="720" y="12" width="240" height="30" fill="#586878"/>
+  <rect x="750" y="0" width="180" height="24" fill="#5a6a7a"/>
+  <rect x="690" y="60" width="300" height="36" fill="#445464"/>
+  <rect x="710" y="84" width="260" height="24" fill="#3e4e5e"/>
+
+  <rect x="1050" y="18" width="300" height="48" fill="#4a5a6a"/>
+  <rect x="1080" y="6" width="240" height="30" fill="#505e6e"/>
+  <rect x="1110" y="0" width="180" height="18" fill="#586878"/>
+  <rect x="1040" y="54" width="320" height="36" fill="#445464"/>
+  <rect x="1060" y="78" width="280" height="30" fill="#3e4e5e"/>
+
+  <rect x="1350" y="36" width="162" height="42" fill="#505e6e"/>
+  <rect x="1350" y="66" width="162" height="30" fill="#445464"/>
+
+  <!-- Lighter cloud wisps between -->
+  <rect x="220" y="100" width="100" height="18" fill="#5e6e7e"/>
+  <rect x="620" y="90" width="80" height="18" fill="#5e6e7e"/>
+  <rect x="980" y="70" width="80" height="18" fill="#5e6e7e"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- RAIN (vertical streaks across entire scene) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Rain layer 1 — lighter, background -->
+  <rect x="40" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="110" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="185" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="260" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="340" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="415" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="490" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="570" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="645" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="720" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="800" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="875" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="950" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="1030" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="1105" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="1180" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="1260" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="1340" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+  <rect x="1420" y="0" width="2" height="982" fill="rgba(180,200,220,0.06)"/>
+  <rect x="1490" y="0" width="2" height="982" fill="rgba(180,200,220,0.05)"/>
+
+  <!-- Rain layer 2 — brighter, foreground drops -->
+  <rect x="72" y="30" width="2" height="36" fill="rgba(200,218,236,0.18)"/>
+  <rect x="155" y="80" width="2" height="30" fill="rgba(200,218,236,0.15)"/>
+  <rect x="230" y="10" width="2" height="42" fill="rgba(200,218,236,0.18)"/>
+  <rect x="310" y="60" width="2" height="36" fill="rgba(200,218,236,0.15)"/>
+  <rect x="388" y="20" width="2" height="30" fill="rgba(200,218,236,0.18)"/>
+  <rect x="462" y="90" width="2" height="36" fill="rgba(200,218,236,0.15)"/>
+  <rect x="538" y="40" width="2" height="42" fill="rgba(200,218,236,0.18)"/>
+  <rect x="610" y="15" width="2" height="30" fill="rgba(200,218,236,0.15)"/>
+  <rect x="688" y="70" width="2" height="36" fill="rgba(200,218,236,0.18)"/>
+  <rect x="762" y="25" width="2" height="42" fill="rgba(200,218,236,0.15)"/>
+  <rect x="838" y="55" width="2" height="30" fill="rgba(200,218,236,0.18)"/>
+  <rect x="912" y="5" width="2" height="36" fill="rgba(200,218,236,0.15)"/>
+  <rect x="990" y="85" width="2" height="42" fill="rgba(200,218,236,0.18)"/>
+  <rect x="1065" y="35" width="2" height="30" fill="rgba(200,218,236,0.15)"/>
+  <rect x="1142" y="65" width="2" height="36" fill="rgba(200,218,236,0.18)"/>
+  <rect x="1218" y="15" width="2" height="42" fill="rgba(200,218,236,0.15)"/>
+  <rect x="1295" y="50" width="2" height="30" fill="rgba(200,218,236,0.18)"/>
+  <rect x="1370" y="80" width="2" height="36" fill="rgba(200,218,236,0.15)"/>
+  <rect x="1448" y="20" width="2" height="42" fill="rgba(200,218,236,0.18)"/>
+
+  <!-- Rain layer 3 — mid-scene drops -->
+  <rect x="90" y="200" width="2" height="48" fill="rgba(180,200,220,0.14)"/>
+  <rect x="198" y="260" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="285" y="180" width="2" height="54" fill="rgba(180,200,220,0.14)"/>
+  <rect x="378" y="240" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="468" y="210" width="2" height="48" fill="rgba(180,200,220,0.14)"/>
+  <rect x="555" y="280" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="648" y="190" width="2" height="54" fill="rgba(180,200,220,0.14)"/>
+  <rect x="735" y="250" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="828" y="220" width="2" height="48" fill="rgba(180,200,220,0.14)"/>
+  <rect x="918" y="270" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="1005" y="200" width="2" height="54" fill="rgba(180,200,220,0.14)"/>
+  <rect x="1098" y="240" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="1188" y="210" width="2" height="48" fill="rgba(180,200,220,0.14)"/>
+  <rect x="1278" y="260" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+  <rect x="1368" y="190" width="2" height="54" fill="rgba(180,200,220,0.14)"/>
+  <rect x="1458" y="250" width="2" height="42" fill="rgba(180,200,220,0.12)"/>
+
+  <!-- Rain layer 4 — lower scene, heavier -->
+  <rect x="65" y="420" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="170" y="480" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="255" y="440" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="358" y="500" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="445" y="450" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="548" y="510" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="632" y="460" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="718" y="520" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="808" y="440" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="898" y="490" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="988" y="460" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="1078" y="510" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="1165" y="450" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="1258" y="500" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+  <rect x="1345" y="460" width="2" height="60" fill="rgba(180,200,220,0.12)"/>
+  <rect x="1438" y="490" width="2" height="54" fill="rgba(180,200,220,0.10)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- DISTANT HILLS (muted, foggy) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="0" y="330" width="1512" height="90" fill="#7a9a78"/>
+  <rect x="0" y="340" width="400" height="80" fill="#728e70"/>
+  <rect x="300" y="320" width="500" height="100" fill="#769474"/>
+  <rect x="700" y="335" width="400" height="85" fill="#6e8a6c"/>
+  <rect x="1000" y="325" width="512" height="95" fill="#749272"/>
+  <!-- Hill bumps -->
+  <rect x="100" y="318" width="180" height="24" fill="#7a9a78"/>
+  <rect x="140" y="306" width="100" height="18" fill="#82a280"/>
+  <rect x="500" y="310" width="200" height="24" fill="#7a9a78"/>
+  <rect x="550" y="300" width="100" height="18" fill="#82a280"/>
+  <rect x="1100" y="312" width="160" height="24" fill="#7a9a78"/>
+  <rect x="1140" y="302" width="80" height="16" fill="#82a280"/>
+  <!-- Fog layer over hills -->
+  <rect x="0" y="320" width="1512" height="30" fill="rgba(130,150,140,0.20)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- MAIN GROUND (darker, wet grass) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="0" y="420" width="1512" height="562" fill="#5e9a52"/>
+  <rect x="0" y="500" width="1512" height="482" fill="#549048"/>
+  <rect x="0" y="600" width="1512" height="382" fill="#4c8840"/>
+  <rect x="0" y="780" width="1512" height="202" fill="#447e38"/>
+  <rect x="0" y="900" width="1512" height="82" fill="#3c7430"/>
+
+  <!-- Mud path (darker, wet) -->
+  <rect x="0" y="680" width="300" height="48" fill="#9a8a68"/>
+  <rect x="240" y="660" width="48" height="72" fill="#9a8a68"/>
+  <rect x="240" y="660" width="360" height="48" fill="#9a8a68"/>
+  <rect x="552" y="640" width="48" height="72" fill="#9a8a68"/>
+  <rect x="552" y="640" width="400" height="48" fill="#9a8a68"/>
+  <rect x="900" y="620" width="48" height="72" fill="#9a8a68"/>
+  <rect x="900" y="620" width="350" height="48" fill="#9a8a68"/>
+  <rect x="1200" y="640" width="48" height="120" fill="#9a8a68"/>
+  <rect x="1200" y="720" width="312" height="48" fill="#9a8a68"/>
+  <!-- Mud path edges (wet) -->
+  <rect x="0" y="678" width="300" height="6" fill="#8a7a58"/>
+  <rect x="240" y="658" width="360" height="6" fill="#8a7a58"/>
+  <rect x="552" y="638" width="400" height="6" fill="#8a7a58"/>
+  <rect x="900" y="618" width="350" height="6" fill="#8a7a58"/>
+  <!-- Mud speckles -->
+  <rect x="60" y="696" width="6" height="6" fill="#887858"/>
+  <rect x="150" y="690" width="6" height="6" fill="#887858"/>
+  <rect x="330" y="672" width="6" height="6" fill="#887858"/>
+  <rect x="450" y="678" width="6" height="6" fill="#887858"/>
+  <rect x="660" y="654" width="6" height="6" fill="#887858"/>
+  <rect x="780" y="660" width="6" height="6" fill="#887858"/>
+  <rect x="1020" y="636" width="6" height="6" fill="#887858"/>
+
+  <!-- PUDDLES on path -->
+  <rect x="80" y="692" width="36" height="12" fill="#7a9ab0" rx="0"/>
+  <rect x="84" y="694" width="28" height="8" fill="#8aaac0"/>
+  <rect x="90" y="696" width="16" height="4" fill="#9abace"/>
+
+  <rect x="300" y="672" width="42" height="14" fill="#7a9ab0"/>
+  <rect x="304" y="674" width="34" height="10" fill="#8aaac0"/>
+  <rect x="312" y="676" width="18" height="6" fill="#9abace"/>
+
+  <rect x="620" y="652" width="30" height="10" fill="#7a9ab0"/>
+  <rect x="624" y="654" width="22" height="6" fill="#8aaac0"/>
+
+  <rect x="960" y="632" width="36" height="12" fill="#7a9ab0"/>
+  <rect x="964" y="634" width="28" height="8" fill="#8aaac0"/>
+  <rect x="970" y="636" width="16" height="4" fill="#9abace"/>
+
+  <rect x="1280" y="732" width="48" height="14" fill="#7a9ab0"/>
+  <rect x="1284" y="734" width="40" height="10" fill="#8aaac0"/>
+  <rect x="1292" y="736" width="24" height="6" fill="#9abace"/>
+
+  <!-- Puddles on grass -->
+  <rect x="380" y="560" width="24" height="10" fill="#6a8a9a"/>
+  <rect x="384" y="562" width="16" height="6" fill="#7a9aaa"/>
+
+  <rect x="820" y="580" width="30" height="12" fill="#6a8a9a"/>
+  <rect x="824" y="582" width="22" height="8" fill="#7a9aaa"/>
+
+  <rect x="1140" y="560" width="28" height="10" fill="#6a8a9a"/>
+  <rect x="1144" y="562" width="20" height="6" fill="#7a9aaa"/>
+
+  <rect x="200" y="800" width="36" height="12" fill="#6a8a9a"/>
+  <rect x="204" y="802" width="28" height="8" fill="#7a9aaa"/>
+
+  <rect x="1050" y="760" width="30" height="10" fill="#6a8a9a"/>
+  <rect x="1054" y="762" width="22" height="6" fill="#7a9aaa"/>
+
+  <!-- Mud stones (wet, darker) -->
+  <rect x="100" y="700" width="8" height="6" fill="#8a806e"/>
+  <rect x="200" y="695" width="6" height="4" fill="#908674"/>
+  <rect x="350" y="678" width="8" height="6" fill="#8a806e"/>
+  <rect x="500" y="665" width="6" height="4" fill="#908674"/>
+  <rect x="720" y="648" width="8" height="4" fill="#8a806e"/>
+  <rect x="1000" y="640" width="6" height="4" fill="#908674"/>
+  <rect x="1130" y="642" width="8" height="4" fill="#8a806e"/>
+  <rect x="1300" y="740" width="6" height="4" fill="#8a806e"/>
+  <rect x="1420" y="736" width="8" height="6" fill="#908674"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- WOODEN FENCE (wet, darker) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Horizontal rails -->
+  <rect x="60" y="430" width="600" height="12" fill="#7a6048"/>
+  <rect x="60" y="460" width="600" height="12" fill="#7a6048"/>
+  <rect x="820" y="430" width="630" height="12" fill="#7a6048"/>
+  <rect x="820" y="460" width="630" height="12" fill="#7a6048"/>
+  <!-- Vertical posts -->
+  <rect x="60" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="180" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="300" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="420" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="540" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="660" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="820" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="940" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="1060" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="1180" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="1300" y="410" width="18" height="90" fill="#6a5038"/>
+  <rect x="1430" y="410" width="18" height="90" fill="#6a5038"/>
+  <!-- Post caps (wet) -->
+  <rect x="56" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="176" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="296" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="416" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="536" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="656" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="816" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="936" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="1056" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="1176" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="1296" y="404" width="26" height="10" fill="#7a6048"/>
+  <rect x="1426" y="404" width="26" height="10" fill="#7a6048"/>
+  <!-- Water drips off fence -->
+  <rect x="68" y="500" width="2" height="8" fill="rgba(150,180,200,0.20)"/>
+  <rect x="188" y="498" width="2" height="10" fill="rgba(150,180,200,0.18)"/>
+  <rect x="308" y="502" width="2" height="8" fill="rgba(150,180,200,0.20)"/>
+  <rect x="428" y="497" width="2" height="10" fill="rgba(150,180,200,0.18)"/>
+  <rect x="548" y="501" width="2" height="8" fill="rgba(150,180,200,0.20)"/>
+  <rect x="828" y="499" width="2" height="10" fill="rgba(150,180,200,0.18)"/>
+  <rect x="948" y="502" width="2" height="8" fill="rgba(150,180,200,0.20)"/>
+  <rect x="1068" y="498" width="2" height="10" fill="rgba(150,180,200,0.18)"/>
+  <rect x="1188" y="501" width="2" height="8" fill="rgba(150,180,200,0.20)"/>
+  <rect x="1308" y="497" width="2" height="10" fill="rgba(150,180,200,0.18)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- LARGE TREE (left — wet, darker) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Trunk (wet dark brown) -->
+  <rect x="120" y="300" width="42" height="240" fill="#5a4430"/>
+  <rect x="126" y="300" width="30" height="240" fill="#6a5440"/>
+  <rect x="132" y="300" width="18" height="240" fill="#745e48"/>
+  <!-- Trunk wet streaks -->
+  <rect x="126" y="340" width="4" height="30" fill="#4a3828"/>
+  <rect x="140" y="380" width="4" height="40" fill="#4a3828"/>
+  <rect x="130" y="450" width="4" height="30" fill="#4a3828"/>
+  <!-- Roots -->
+  <rect x="96" y="520" width="36" height="18" fill="#4a3828"/>
+  <rect x="150" y="525" width="30" height="15" fill="#4a3828"/>
+  <rect x="78" y="530" width="24" height="12" fill="#3e2e1e"/>
+  <rect x="168" y="532" width="24" height="12" fill="#3e2e1e"/>
+  <!-- Canopy (dark, wet greens) -->
+  <rect x="48" y="210" width="192" height="42" fill="#2e7a48"/>
+  <rect x="24" y="240" width="240" height="48" fill="#267040"/>
+  <rect x="12" y="270" width="264" height="42" fill="#206636"/>
+  <rect x="36" y="300" width="216" height="24" fill="#1a5c2e"/>
+  <rect x="60" y="192" width="168" height="30" fill="#368a54"/>
+  <rect x="84" y="174" width="120" height="24" fill="#408e5e"/>
+  <rect x="108" y="162" width="72" height="18" fill="#4a9868"/>
+  <!-- Branch right (parrot perch) -->
+  <rect x="162" y="280" width="150" height="12" fill="#5a4430"/>
+  <rect x="162" y="276" width="150" height="6" fill="#6a5440"/>
+  <rect x="300" y="274" width="30" height="12" fill="#4a3828"/>
+  <rect x="318" y="270" width="18" height="12" fill="#3e2e1e"/>
+  <!-- Branch left -->
+  <rect x="48" y="300" width="78" height="10" fill="#5a4430"/>
+  <rect x="36" y="296" width="24" height="10" fill="#4a3828"/>
+  <!-- Water dripping from leaves -->
+  <rect x="80" y="312" width="2" height="10" fill="rgba(150,180,200,0.22)"/>
+  <rect x="180" y="310" width="2" height="12" fill="rgba(150,180,200,0.20)"/>
+  <rect x="240" y="308" width="2" height="10" fill="rgba(150,180,200,0.22)"/>
+  <rect x="130" y="314" width="2" height="8" fill="rgba(150,180,200,0.18)"/>
+  <rect x="50" y="316" width="2" height="10" fill="rgba(150,180,200,0.20)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GARDEN BED 1 (left — wet soil) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="60" y="570" width="240" height="90" fill="#7a6848"/>
+  <rect x="66" y="576" width="228" height="78" fill="#8a7858"/>
+  <rect x="54" y="564" width="252" height="12" fill="#9a8a6a"/>
+  <rect x="54" y="654" width="252" height="12" fill="#8a7a5a"/>
+  <rect x="54" y="564" width="12" height="102" fill="#9a8a6a"/>
+  <rect x="294" y="564" width="12" height="102" fill="#8a7a5a"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GARDEN BED 2 (center — wet soil) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="480" y="520" width="270" height="100" fill="#7a6848"/>
+  <rect x="486" y="526" width="258" height="88" fill="#8a7858"/>
+  <rect x="474" y="514" width="282" height="12" fill="#9a8a6a"/>
+  <rect x="474" y="614" width="282" height="12" fill="#8a7a5a"/>
+  <rect x="474" y="514" width="12" height="112" fill="#9a8a6a"/>
+  <rect x="744" y="514" width="12" height="112" fill="#8a7a5a"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GARDEN BED 3 (right — wet soil) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="870" y="540" width="210" height="90" fill="#7a6848"/>
+  <rect x="876" y="546" width="198" height="78" fill="#8a7858"/>
+  <rect x="864" y="534" width="222" height="12" fill="#9a8a6a"/>
+  <rect x="864" y="624" width="222" height="12" fill="#8a7a5a"/>
+  <rect x="864" y="534" width="12" height="102" fill="#9a8a6a"/>
+  <rect x="1074" y="534" width="12" height="102" fill="#8a7a5a"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GARDEN BED 4 (far right — wet soil) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="1320" y="580" width="150" height="72" fill="#7a6848"/>
+  <rect x="1326" y="586" width="138" height="60" fill="#8a7858"/>
+  <rect x="1314" y="574" width="162" height="12" fill="#9a8a6a"/>
+  <rect x="1314" y="646" width="162" height="12" fill="#8a7a5a"/>
+  <rect x="1314" y="574" width="12" height="84" fill="#9a8a6a"/>
+  <rect x="1464" y="574" width="12" height="84" fill="#8a7a5a"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- RIGHT TREE (wet, darker) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect x="1230" y="380" width="24" height="160" fill="#5a4430"/>
+  <rect x="1236" y="380" width="12" height="160" fill="#6a5440"/>
+  <!-- Wet streaks -->
+  <rect x="1234" y="400" width="4" height="30" fill="#4a3828"/>
+  <rect x="1242" y="440" width="4" height="25" fill="#4a3828"/>
+  <!-- Roots -->
+  <rect x="1218" y="530" width="18" height="12" fill="#4a3828"/>
+  <rect x="1248" y="530" width="18" height="12" fill="#4a3828"/>
+  <rect x="1212" y="536" width="12" height="8" fill="#3e2e1e"/>
+  <rect x="1260" y="536" width="12" height="8" fill="#3e2e1e"/>
+  <!-- Canopy (dark wet green) -->
+  <rect x="1200" y="340" width="84" height="18" fill="#2e7a48"/>
+  <rect x="1188" y="352" width="108" height="18" fill="#267040"/>
+  <rect x="1194" y="364" width="96" height="18" fill="#206636"/>
+  <rect x="1206" y="376" width="72" height="12" fill="#1a5c2e"/>
+  <rect x="1206" y="328" width="72" height="18" fill="#368a54"/>
+  <rect x="1218" y="318" width="48" height="16" fill="#408e5e"/>
+  <!-- Drips -->
+  <rect x="1210" y="388" width="2" height="10" fill="rgba(150,180,200,0.20)"/>
+  <rect x="1270" y="386" width="2" height="12" fill="rgba(150,180,200,0.18)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- WATERING CAN (tipped, filling with rain) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g transform="translate(440, 700)">
+    <rect x="6" y="6" width="24" height="18" fill="#5a8aa4"/>
+    <rect x="12" y="6" width="12" height="18" fill="#6a9ab4"/>
+    <rect x="0" y="12" width="6" height="8" fill="#4a7a94"/>
+    <rect x="30" y="6" width="12" height="6" fill="#4a7a94"/>
+    <rect x="36" y="0" width="6" height="8" fill="#4a7a94"/>
+    <rect x="6" y="0" width="24" height="6" fill="#6a9ab4"/>
+    <!-- Rain collecting in can -->
+    <rect x="8" y="16" width="20" height="6" fill="#7aaac4"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GARDEN SIGN (wet) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g transform="translate(720, 730)">
+    <rect x="24" y="24" width="12" height="60" fill="#5a4430"/>
+    <rect x="0" y="0" width="60" height="30" fill="#9a8a68"/>
+    <rect x="3" y="3" width="54" height="24" fill="#aa9a78"/>
+    <rect x="24" y="8" width="4" height="10" fill="#267040"/>
+    <rect x="20" y="10" width="4" height="4" fill="#408e5e"/>
+    <rect x="28" y="8" width="4" height="4" fill="#408e5e"/>
+    <!-- Water drip off sign -->
+    <rect x="30" y="30" width="2" height="8" fill="rgba(150,180,200,0.20)"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- DECORATIVE (muted, gloomy) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- No butterflies — hiding from rain -->
+
+  <!-- Wet mushrooms near tree -->
+  <rect x="84" y="528" width="8" height="8" fill="#a85048"/>
+  <rect x="80" y="524" width="16" height="6" fill="#b86058"/>
+  <rect x="86" y="536" width="4" height="6" fill="#9a8a68"/>
+  <rect x="192" y="534" width="6" height="6" fill="#a84868"/>
+  <rect x="189" y="530" width="12" height="6" fill="#b85878"/>
+  <rect x="193" y="540" width="4" height="4" fill="#9a8a68"/>
+
+  <!-- Wet grass tufts (darker) -->
+  <rect x="400" y="558" width="4" height="10" fill="#3a8a4a"/>
+  <rect x="406" y="560" width="4" height="8" fill="#48944e"/>
+  <rect x="780" y="618" width="4" height="8" fill="#3a8a4a"/>
+  <rect x="786" y="620" width="4" height="6" fill="#328040"/>
+  <rect x="1150" y="548" width="4" height="10" fill="#3a8a4a"/>
+  <rect x="1156" y="550" width="4" height="8" fill="#48944e"/>
+  <rect x="50" y="700" width="4" height="8" fill="#3a8a4a"/>
+  <rect x="56" y="702" width="4" height="6" fill="#48944e"/>
+  <rect x="1400" y="700" width="4" height="8" fill="#3a8a4a"/>
+  <rect x="340" y="540" width="4" height="8" fill="#3a8a4a"/>
+  <rect x="346" y="542" width="4" height="6" fill="#48944e"/>
+  <rect x="820" y="490" width="4" height="8" fill="#3a8a4a"/>
+  <rect x="826" y="492" width="4" height="6" fill="#48944e"/>
+  <rect x="1120" y="680" width="4" height="8" fill="#3a8a4a"/>
+  <rect x="1126" y="682" width="4" height="6" fill="#48944e"/>
+
+  <!-- No wildflower dots — washed out by rain -->
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- OVERALL ATMOSPHERE OVERLAYS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Fog/mist layer at ground level -->
+  <rect x="0" y="840" width="1512" height="142" fill="rgba(110,130,120,0.08)"/>
+  <rect x="0" y="880" width="1512" height="102" fill="rgba(110,130,120,0.06)"/>
+
+  <!-- General gloom overlay across entire scene -->
+  <rect x="0" y="0" width="1512" height="982" fill="rgba(50,60,70,0.08)"/>
+
+</svg>
