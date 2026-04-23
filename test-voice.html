@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head><title>Voice Test</title></head>
+<body style="background:#111;color:#eee;font-family:monospace;padding:40px;">
+<h2>Voice Debug Test</h2>
+<p id="status">Loading...</p>
+<button onclick="testSpeak()" style="padding:20px 40px;font-size:18px;cursor:pointer;">
+  CLICK TO TEST VOICE
+</button>
+<pre id="log" style="margin-top:20px;color:#0f0;"></pre>
+<script>
+function log(msg) {
+  document.getElementById('log').textContent += msg + '\n';
+  console.log(msg);
+}
+
+log('1. speechSynthesis exists: ' + ('speechSynthesis' in window));
+log('2. Voices on load: ' + speechSynthesis.getVoices().length);
+
+speechSynthesis.onvoiceschanged = () => {
+  let v = speechSynthesis.getVoices();
+  log('3. onvoiceschanged fired — ' + v.length + ' voices');
+  v.filter(x => x.lang.startsWith('en')).forEach(x => {
+    log('   ' + x.name + ' (' + x.lang + ')' + (x.localService ? ' [local]' : ''));
+  });
+  document.getElementById('status').textContent = v.length + ' voices ready';
+};
+
+function testSpeak() {
+  log('--- BUTTON CLICKED ---');
+  let voices = speechSynthesis.getVoices();
+  log('Voices available: ' + voices.length);
+
+  if (voices.length === 0) {
+    log('ERROR: No voices! Try refreshing.');
+    return;
+  }
+
+  // Cancel anything pending
+  speechSynthesis.cancel();
+
+  let u = new SpeechSynthesisUtterance("Ayyy what's good? Ember's in the garden.");
+  u.pitch = 0.8;
+  u.rate = 0.85;
+  u.volume = 1.0;
+
+  let english = voices.filter(v => v.lang.startsWith('en'));
+  if (english.length > 0) {
+    u.voice = english[0];
+    log('Using voice: ' + english[0].name);
+  }
+
+  u.onstart = () => log('>>> Speech STARTED');
+  u.onend = () => log('>>> Speech ENDED');
+  u.onerror = (e) => log('>>> Speech ERROR: ' + e.error);
+
+  speechSynthesis.speak(u);
+  log('speechSynthesis.speak() called');
+  log('speechSynthesis.speaking: ' + speechSynthesis.speaking);
+  log('speechSynthesis.paused: ' + speechSynthesis.paused);
+  log('speechSynthesis.pending: ' + speechSynthesis.pending);
+}
+</script>
+</body>
+</html>

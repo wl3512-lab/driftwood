@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- Camera body -->
+  <rect x="4" y="10" width="24" height="18" fill="#1a2e22"/>
+  <rect x="4" y="10" width="24" height="2" fill="#00e676"/>
+  <rect x="4" y="26" width="24" height="2" fill="#00e676"/>
+  <rect x="4" y="10" width="2" height="18" fill="#00e676"/>
+  <rect x="26" y="10" width="2" height="18" fill="#00e676"/>
+  <!-- Viewfinder bump -->
+  <rect x="10" y="6" width="10" height="4" fill="#1a2e22"/>
+  <rect x="10" y="6" width="10" height="2" fill="#00e676"/>
+  <rect x="10" y="6" width="2" height="4" fill="#00e676"/>
+  <rect x="18" y="6" width="2" height="4" fill="#00e676"/>
+  <!-- Flash -->
+  <rect x="22" y="6" width="4" height="4" fill="#ffd54f"/>
+  <rect x="22" y="6" width="4" height="1" fill="#ffb347"/>
+  <!-- Lens (outer ring) -->
+  <rect x="11" y="14" width="10" height="10" fill="#0a1a0f"/>
+  <rect x="11" y="14" width="10" height="2" fill="#69f0ae"/>
+  <rect x="11" y="22" width="10" height="2" fill="#69f0ae"/>
+  <rect x="11" y="14" width="2" height="10" fill="#69f0ae"/>
+  <rect x="19" y="14" width="2" height="10" fill="#69f0ae"/>
+  <!-- Lens (inner) -->
+  <rect x="13" y="16" width="6" height="6" fill="#00e676" opacity="0.2"/>
+  <rect x="14" y="17" width="4" height="4" fill="#00e676" opacity="0.4"/>
+  <rect x="15" y="18" width="2" height="2" fill="#00e676" opacity="0.8"/>
+</svg>

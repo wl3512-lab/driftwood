@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- Shackle -->
+  <rect x="10" y="4" width="12" height="2" fill="#69f0ae"/>
+  <rect x="10" y="4" width="2" height="10" fill="#69f0ae"/>
+  <rect x="20" y="4" width="2" height="10" fill="#69f0ae"/>
+  <!-- Lock body -->
+  <rect x="6" y="14" width="20" height="14" fill="#1a2e22"/>
+  <rect x="6" y="14" width="20" height="2" fill="#00e676"/>
+  <rect x="6" y="26" width="20" height="2" fill="#00e676"/>
+  <rect x="6" y="14" width="2" height="14" fill="#00e676"/>
+  <rect x="24" y="14" width="2" height="14" fill="#00e676"/>
+  <!-- Keyhole -->
+  <rect x="14" y="18" width="4" height="2" fill="#00e676"/>
+  <rect x="13" y="19" width="6" height="2" fill="#00e676"/>
+  <rect x="15" y="21" width="2" height="4" fill="#00e676"/>
+</svg>

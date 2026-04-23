@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- Left brain hemisphere -->
+  <rect x="4" y="10" width="12" height="2" fill="#b388ff"/>
+  <rect x="4" y="8" width="4" height="2" fill="#b388ff"/>
+  <rect x="4" y="8" width="2" height="14" fill="#b388ff"/>
+  <rect x="4" y="20" width="12" height="2" fill="#b388ff"/>
+  <rect x="6" y="22" width="4" height="2" fill="#b388ff"/>
+  <!-- Left inner -->
+  <rect x="6" y="12" width="8" height="8" fill="#1a0f2e"/>
+  <rect x="8" y="14" width="2" height="2" fill="#b388ff" opacity="0.5"/>
+  <rect x="10" y="17" width="4" height="1" fill="#b388ff" opacity="0.4"/>
+  <rect x="8" y="12" width="1" height="8" fill="#b388ff" opacity="0.2"/>
+  <!-- Right brain hemisphere -->
+  <rect x="16" y="10" width="12" height="2" fill="#b388ff"/>
+  <rect x="24" y="8" width="4" height="2" fill="#b388ff"/>
+  <rect x="26" y="8" width="2" height="14" fill="#b388ff"/>
+  <rect x="16" y="20" width="12" height="2" fill="#b388ff"/>
+  <rect x="22" y="22" width="4" height="2" fill="#b388ff"/>
+  <!-- Right inner -->
+  <rect x="18" y="12" width="8" height="8" fill="#1a0f2e"/>
+  <rect x="22" y="14" width="2" height="2" fill="#b388ff" opacity="0.5"/>
+  <rect x="18" y="17" width="4" height="1" fill="#b388ff" opacity="0.4"/>
+  <rect x="24" y="12" width="1" height="8" fill="#b388ff" opacity="0.2"/>
+  <!-- Center split -->
+  <rect x="15" y="8" width="2" height="16" fill="#0a0014"/>
+  <!-- Glow dots -->
+  <rect x="9" y="15" width="2" height="2" fill="#ce93d8"/>
+  <rect x="21" y="15" width="2" height="2" fill="#ce93d8"/>
+</svg>

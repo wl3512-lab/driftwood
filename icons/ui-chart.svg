@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- Grid lines -->
+  <rect x="4" y="4" width="2" height="22" fill="#4a6258"/>
+  <rect x="4" y="24" width="24" height="2" fill="#4a6258"/>
+  <!-- Bars -->
+  <rect x="8" y="16" width="4" height="10" fill="#64b5f6"/>
+  <rect x="8" y="16" width="4" height="2" fill="#90caf9"/>
+  <rect x="14" y="10" width="4" height="16" fill="#00e676"/>
+  <rect x="14" y="10" width="4" height="2" fill="#69f0ae"/>
+  <rect x="20" y="18" width="4" height="8" fill="#ff6090"/>
+  <rect x="20" y="18" width="4" height="2" fill="#ff80ab"/>
+  <!-- Tick marks -->
+  <rect x="2" y="16" width="4" height="1" fill="#4a6258"/>
+  <rect x="2" y="10" width="4" height="1" fill="#4a6258"/>
+</svg>
