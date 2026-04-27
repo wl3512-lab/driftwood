@@ -180,6 +180,10 @@ let trainingFocusGlowStartTimeout = null;
 let trainingFocusGlowEndTimeout = null;
 let trainingFocusGlowActive = false;
 let localAIModeNotified = false;
+let sceneAudio = null;
+let sceneAudioUnlocked = false;
+let audioUnlockBound = false;
+let lastLoadingTypedCounts = [0, 0, 0];
 
 // ─── BG TRANSITION ───
 let bgAlpha = 0; // 0 = sunny, 1 = rainy
@@ -343,6 +347,7 @@ function setup() {
   playerName = safeStorageGet(STORAGE_KEYS.playerName, "");
   authToken = safeStorageGet(STORAGE_KEYS.authToken, "");
 
+  installAudioUnlockListener();
   startLoadingSequence();
 }
 
@@ -377,6 +382,7 @@ function startLoadingSequence() {
     lines: ["", "", ""],
     completed: false
   };
+  lastLoadingTypedCounts = [0, 0, 0];
   initLoadingParticles();
   buildLoadingScreen();
 
@@ -491,6 +497,7 @@ function setLoadingLine(idx, text) {
   loadingState.phase = max(loadingState.phase, idx + 1);
   const el = [loadingEls.line1, loadingEls.line2, loadingEls.line3][idx];
   if (el) el.addClass("visible");
+  playLoadingBootTone(idx === 2);
 }
 
 function finalizeLoadingImpression() {
@@ -576,6 +583,322 @@ function stopLoadingAmbient() {
   }
 }
 
+function installAudioUnlockListener() {
+  if (audioUnlockBound || typeof document === "undefined") return;
+  audioUnlockBound = true;
+  const unlock = () => {
+    unlockAudioSystems();
+    document.removeEventListener("pointerdown", unlock, true);
+    document.removeEventListener("keydown", unlock, true);
+    document.removeEventListener("touchstart", unlock, true);
+  };
+  document.addEventListener("pointerdown", unlock, true);
+  document.addEventListener("keydown", unlock, true);
+  document.addEventListener("touchstart", unlock, true);
+}
+
+function unlockAudioSystems() {
+  sceneAudioUnlocked = true;
+  ensureSceneAudio();
+  if (sceneAudio && sceneAudio.ctx && sceneAudio.ctx.state === "suspended") {
+    sceneAudio.ctx.resume().catch(() => {});
+  }
+  if (currentScreen === -1 && !loadingAmbientUnlocked) {
+    initLoadingAmbient();
+    loadingAmbientUnlocked = true;
+  }
+  syncSceneAudio();
+}
+
+function ensureSceneAudio() {
+  if (sceneAudio) return sceneAudio;
+  try {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtxClass) return null;
+    const ctx = new AudioCtxClass();
+    const master = ctx.createGain();
+    master.gain.value = 0.0001;
+    master.connect(ctx.destination);
+    sceneAudio = {
+      ctx,
+      master,
+      mode: "none",
+      nodes: null,
+      shapeIntro: null
+    };
+    return sceneAudio;
+  } catch (_) {
+    sceneAudio = null;
+    return null;
+  }
+}
+
+function stopAudioNodeAtTime(node, when) {
+  if (!node || typeof node.stop !== "function") return;
+  try {
+    node.stop(when);
+  } catch (_) {}
+}
+
+function stopSceneAudioVoices(when) {
+  if (!sceneAudio || !sceneAudio.nodes) return;
+  const nodes = sceneAudio.nodes;
+  if (nodes.output && nodes.output.gain) {
+    nodes.output.gain.cancelScheduledValues(when);
+    nodes.output.gain.setValueAtTime(nodes.output.gain.value, when);
+    nodes.output.gain.linearRampToValueAtTime(0.0001, when + 0.6);
+  }
+  if (nodes.sources) {
+    nodes.sources.forEach((src) => stopAudioNodeAtTime(src, when + 0.7));
+  }
+  sceneAudio.nodes = null;
+  sceneAudio.shapeIntro = null;
+}
+
+function buildIntroSceneAudio(ctx, master) {
+  const output = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  const pulseGain = ctx.createGain();
+  const lfo = ctx.createOscillator();
+  const lfoDepth = ctx.createGain();
+  const droneA = ctx.createOscillator();
+  const droneB = ctx.createOscillator();
+  const shimmer = ctx.createOscillator();
+
+  output.gain.value = 0.0001;
+  filter.type = "lowpass";
+  filter.frequency.value = 900;
+  filter.Q.value = 0.5;
+  pulseGain.gain.value = 0.026;
+
+  droneA.type = "triangle";
+  droneA.frequency.value = 174.61;
+  droneB.type = "sine";
+  droneB.frequency.value = 261.63;
+  shimmer.type = "triangle";
+  shimmer.frequency.value = 349.23;
+
+  lfo.type = "sine";
+  lfo.frequency.value = 0.12;
+  lfoDepth.gain.value = 0.012;
+
+  droneA.connect(filter);
+  droneB.connect(filter);
+  shimmer.connect(pulseGain);
+  pulseGain.connect(filter);
+  filter.connect(output);
+  output.connect(master);
+
+  lfo.connect(lfoDepth);
+  lfoDepth.connect(output.gain);
+
+  const now = ctx.currentTime;
+  output.gain.linearRampToValueAtTime(0.07, now + 1.2);
+  droneA.start(now);
+  droneB.start(now);
+  shimmer.start(now);
+  lfo.start(now);
+
+  return {
+    output,
+    sources: [droneA, droneB, shimmer, lfo],
+    update(sectionIdx = 0) {
+      const t = ctx.currentTime;
+      const filterTargets = [760, 980, 860, 700, 620];
+      const shimmerTargets = [329.63, 392.0, 415.3, 311.13, 293.66];
+      const lfoTargets = [0.12, 0.16, 0.14, 0.09, 0.07];
+      filter.frequency.cancelScheduledValues(t);
+      filter.frequency.linearRampToValueAtTime(filterTargets[sectionIdx] || 760, t + 0.7);
+      shimmer.frequency.cancelScheduledValues(t);
+      shimmer.frequency.linearRampToValueAtTime(shimmerTargets[sectionIdx] || 349.23, t + 0.8);
+      lfo.frequency.cancelScheduledValues(t);
+      lfo.frequency.linearRampToValueAtTime(lfoTargets[sectionIdx] || 0.12, t + 0.8);
+    }
+  };
+}
+
+function buildInterfaceSceneAudio(ctx, master) {
+  const output = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  const bed = ctx.createOscillator();
+  const body = ctx.createOscillator();
+  const shimmer = ctx.createOscillator();
+  const shimmerGain = ctx.createGain();
+  const trem = ctx.createOscillator();
+  const tremDepth = ctx.createGain();
+
+  output.gain.value = 0.0001;
+  filter.type = "lowpass";
+  filter.frequency.value = 540;
+  filter.Q.value = 0.4;
+
+  bed.type = "sine";
+  bed.frequency.value = 130.81;
+  body.type = "triangle";
+  body.frequency.value = 196.0;
+  shimmer.type = "sine";
+  shimmer.frequency.value = 523.25;
+  shimmerGain.gain.value = 0.008;
+  trem.type = "sine";
+  trem.frequency.value = 0.08;
+  tremDepth.gain.value = 0.004;
+
+  bed.connect(filter);
+  body.connect(filter);
+  shimmer.connect(shimmerGain);
+  shimmerGain.connect(filter);
+  filter.connect(output);
+  output.connect(master);
+
+  trem.connect(tremDepth);
+  tremDepth.connect(output.gain);
+
+  const now = ctx.currentTime;
+  output.gain.linearRampToValueAtTime(0.055, now + 1.5);
+  bed.start(now);
+  body.start(now);
+  shimmer.start(now);
+  trem.start(now);
+
+  return {
+    output,
+    sources: [bed, body, shimmer, trem],
+    update() {
+      const t = ctx.currentTime;
+      const moodMap = {
+        happy: { filter: 760, shimmer: 587.33 },
+        sad: { filter: 440, shimmer: 392.0 },
+        stressed: { filter: 360, shimmer: 466.16 },
+        surprised: { filter: 680, shimmer: 659.25 },
+        neutral: { filter: 540, shimmer: 523.25 }
+      };
+      const target = moodMap[currentMood] || moodMap.neutral;
+      filter.frequency.cancelScheduledValues(t);
+      filter.frequency.linearRampToValueAtTime(target.filter, t + 1.4);
+      shimmer.frequency.cancelScheduledValues(t);
+      shimmer.frequency.linearRampToValueAtTime(target.shimmer, t + 1.2);
+    }
+  };
+}
+
+function setSceneAudioMode(mode) {
+  const engine = ensureSceneAudio();
+  if (!engine || !sceneAudioUnlocked) return;
+  if (engine.ctx.state === "suspended") {
+    engine.ctx.resume().catch(() => {});
+  }
+  if (engine.mode === mode && engine.nodes) {
+    if (mode === "intro" && engine.shapeIntro) engine.shapeIntro(landingIdx || 0);
+    if (mode === "interface" && engine.nodes.update) engine.nodes.update();
+    return;
+  }
+
+  const now = engine.ctx.currentTime;
+  stopSceneAudioVoices(now);
+  engine.mode = mode;
+
+  if (mode === "intro") {
+    engine.nodes = buildIntroSceneAudio(engine.ctx, engine.master);
+    engine.shapeIntro = engine.nodes.update;
+    engine.shapeIntro(landingIdx || 0);
+  } else if (mode === "interface") {
+    engine.nodes = buildInterfaceSceneAudio(engine.ctx, engine.master);
+    if (engine.nodes.update) engine.nodes.update();
+  }
+}
+
+function syncSceneAudio() {
+  if (!sceneAudioUnlocked) return;
+  if (currentScreen === 0) {
+    setSceneAudioMode("intro");
+    if (sceneAudio && sceneAudio.shapeIntro) sceneAudio.shapeIntro(landingIdx || 0);
+  } else if (currentScreen === 1 || currentScreen === 2) {
+    setSceneAudioMode("interface");
+    if (sceneAudio && sceneAudio.nodes && sceneAudio.nodes.update) sceneAudio.nodes.update();
+  } else {
+    setSceneAudioMode("none");
+  }
+}
+
+function playLoadingTypeTick(lineIdx = 0) {
+  if (!loadingAudio || !loadingAudio.ctx) return;
+  try {
+    const ctx = loadingAudio.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const base = [1580, 1320, 1100][lineIdx] || 1240;
+
+    osc.type = "square";
+    osc.frequency.setValueAtTime(base, now);
+    osc.frequency.exponentialRampToValueAtTime(base * 0.7, now + 0.018);
+    filter.type = "highpass";
+    filter.frequency.value = 720;
+    gain.gain.setValueAtTime(0.013, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.04);
+  } catch (_) {}
+}
+
+function playLoadingBootTone(accent = false) {
+  if (!loadingAudio || !loadingAudio.ctx) return;
+  try {
+    const ctx = loadingAudio.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    const root = accent ? 640 : 480;
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(root, now);
+    osc.frequency.linearRampToValueAtTime(root * 1.18, now + 0.07);
+    gain.gain.setValueAtTime(accent ? 0.02 : 0.012, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(root * 1.5, now);
+    gain2.gain.setValueAtTime(accent ? 0.012 : 0.008, now + 0.02);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.12);
+    osc2.start(now + 0.02);
+    osc2.stop(now + 0.14);
+  } catch (_) {}
+}
+
+function playIntroTransitionPulse() {
+  const engine = ensureSceneAudio();
+  if (!engine || !sceneAudioUnlocked) return;
+  try {
+    const now = engine.ctx.currentTime;
+    const osc = engine.ctx.createOscillator();
+    const gain = engine.ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(420, now);
+    osc.frequency.linearRampToValueAtTime(620, now + 0.12);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.012, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    osc.connect(gain);
+    gain.connect(engine.master);
+    osc.start(now);
+    osc.stop(now + 0.24);
+  } catch (_) {}
+}
+
 function drawLoadingPhase() {
   background(3, 5, 4);
   if (!loadingState) return;
@@ -649,6 +972,14 @@ function drawLoadingPhase() {
   if (loadingState.lines[2]) {
     loadingState.typed[2] = min(loadingState.lines[2].length, loadingState.typed[2] + 0.24);
     if (loadingEls.line3) loadingEls.line3.html(loadingState.lines[2].slice(0, floor(loadingState.typed[2])));
+  }
+
+  for (let i = 0; i < loadingState.typed.length; i++) {
+    const typedNow = floor(loadingState.typed[i]);
+    if (typedNow > lastLoadingTypedCounts[i]) {
+      playLoadingTypeTick(i);
+      lastLoadingTypedCounts[i] = typedNow;
+    }
   }
 }
 
@@ -894,6 +1225,9 @@ function draw() {
     drawTitleParticles();
   } else if (currentScreen === 2) {
     drawGarden();
+    if (sceneAudio && sceneAudio.mode === "interface" && sceneAudio.nodes && sceneAudio.nodes.update && frameCount % 45 === 0) {
+      sceneAudio.nodes.update();
+    }
   } else {
     background(8, 13, 10);
   }
@@ -959,6 +1293,7 @@ function buildScreen0() {
   clearDom();
   currentScreen = 0;
   initTitleParticles();
+  syncSceneAudio();
 
   let page = createDiv("");
   page.class("landing-page");
@@ -1462,6 +1797,7 @@ function activateLandingSection(idx) {
 
   landingIdx = idx;
   landingTransitioning = false;
+  if (sceneAudio && sceneAudio.shapeIntro) sceneAudio.shapeIntro(idx);
 
   // Set up this section's unlock condition after content has appeared
   setTimeout(() => setupSectionUnlock(idx, sec), 500);
@@ -1482,6 +1818,7 @@ function advanceLanding() {
     overlay.classList.add('flash');
     setTimeout(() => overlay.classList.remove('flash'), 540);
   }
+  playIntroTransitionPulse();
 
   const current = sections[landingIdx];
   current.classList.remove('active');
@@ -1805,6 +2142,7 @@ function getMoodColor(m) {
 function buildScreen1() {
   clearDom();
   currentScreen = 1;
+  syncSceneAudio();
 
   let container = createDiv("");
   container.class("shelter-screen");
@@ -2276,6 +2614,7 @@ function _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoiler
 function buildScreen2() {
   clearDom();
   currentScreen = 2;
+  syncSceneAudio();
 
   // --- Logo menu button (top-left) ---
   let pawBtn = createDiv("");
@@ -3562,6 +3901,7 @@ function buildScreen3(petId) {
   clearDom();
   currentScreen = 3;
   activePetId = petId;
+  syncSceneAudio();
 
   let pet = pets[petId];
   let def = pet.def;
