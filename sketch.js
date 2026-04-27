@@ -607,6 +607,9 @@ function unlockAudioSystems() {
     initLoadingAmbient();
     loadingAmbientUnlocked = true;
   }
+  if (loadingAudio && loadingAudio.ctx && loadingAudio.ctx.state === "suspended") {
+    loadingAudio.ctx.resume().catch(() => {});
+  }
   syncSceneAudio();
 }
 
@@ -617,7 +620,7 @@ function ensureSceneAudio() {
     if (!AudioCtxClass) return null;
     const ctx = new AudioCtxClass();
     const master = ctx.createGain();
-    master.gain.value = 0.0001;
+    master.gain.value = 1;
     master.connect(ctx.destination);
     sceneAudio = {
       ctx,
@@ -1532,104 +1535,33 @@ function buildScreen0() {
   let sigDoc = createDiv(""); sigDoc.class("sig-doc scroll-reveal delay-2"); sigDoc.parent(ctaGroup);
   createDiv("DRIFTWOOD ENTRY &nbsp;·&nbsp; VISITOR PROTOCOL").class("sig-doc-header").parent(sigDoc);
 
-  let protocolField = createDiv("");
-  protocolField.class("sig-field sig-field--protocol");
-  protocolField.parent(sigDoc);
-
-  let protocolIntro = createDiv("Before you step in, acknowledge the terms of the garden. This is a game about consent, emotional surveillance, and systems that quietly shape behavior.");
-  protocolIntro.class("sig-protocol-intro");
-  protocolIntro.parent(protocolField);
-
-  let protocolList = createDiv("");
-  protocolList.class("sig-protocol-list");
-  protocolList.parent(protocolField);
-
-  const acknowledgements = [
-    {
-      id: "camera",
-      title: "I understand the garden may read my face if I allow camera access.",
-      detail: "Mood detection stays inside the browser. If I say no, the game still runs."
-    },
-    {
-      id: "pets",
-      title: "I understand the pets may change behavior based on my mood.",
-      detail: "That manipulation is part of the lesson, and I can later restrict what each pet is allowed to sense."
-    },
-    {
-      id: "consent",
-      title: "I want to enter knowing this is a playable surveillance and consent experiment.",
-      detail: "This version is offline-first. A live AI token is optional, not required."
-    }
-  ];
-  const ackState = Object.fromEntries(acknowledgements.map((item) => [item.id, false]));
-
-  acknowledgements.forEach((item, index) => {
-    let row = createDiv("");
-    row.class("sig-ack-row");
-    row.attribute("data-ack", item.id);
-    row.parent(protocolList);
-
-    let box = createDiv(String(index + 1).padStart(2, "0"));
-    box.class("sig-ack-box");
-    box.parent(row);
-
-    let copy = createDiv("");
-    copy.class("sig-ack-copy");
-    copy.parent(row);
-
-    let title = createDiv(item.title);
-    title.class("sig-ack-title");
-    title.parent(copy);
-
-    let detail = createDiv(item.detail);
-    detail.class("sig-ack-detail");
-    detail.parent(copy);
-
-    let status = createDiv("WAITING");
-    status.class("sig-ack-status");
-    status.parent(row);
-
-    row.mousePressed(() => {
-      ackState[item.id] = !ackState[item.id];
-      row.elt.classList.toggle("active", ackState[item.id]);
-      status.html(ackState[item.id] ? "MARKED" : "WAITING");
-      syncStartReadyState();
-    });
+  // — Document meta strip —
+  let docMeta = createDiv(""); docMeta.class("sig-doc-meta"); docMeta.parent(sigDoc);
+  [["REF","DW–4410"],["STATUS","OPEN"],["TIER","VISITOR"]].forEach(([k,v],i) => {
+    if (i > 0) createDiv("·").class("sig-meta-dot").parent(docMeta);
+    createDiv(k).class("sig-meta-key").parent(docMeta);
+    let mv = createDiv(v); mv.class("sig-meta-val" + (k === "STATUS" ? " sig-meta-open" : "")); mv.parent(docMeta);
   });
 
-  let protocolMeter = createDiv("");
-  protocolMeter.class("sig-protocol-meter");
-  protocolMeter.parent(protocolField);
-
-  let protocolMeterTrack = createDiv("");
-  protocolMeterTrack.class("sig-protocol-meter-track");
-  protocolMeterTrack.parent(protocolMeter);
-
-  let protocolMeterFill = createDiv("");
-  protocolMeterFill.class("sig-protocol-meter-fill");
-  protocolMeterFill.id("entry-protocol-fill");
-  protocolMeterFill.parent(protocolMeterTrack);
-
-  let protocolMeterText = createDiv("ENTRY CHECK 0 / 3");
-  protocolMeterText.class("sig-protocol-meter-text");
-  protocolMeterText.id("entry-protocol-text");
-  protocolMeterText.parent(protocolMeter);
-
-  // — Divider between fields —
+  // — Intro —
   createDiv("").class("sig-doc-divider").parent(sigDoc);
+  let sigIntro = createDiv(""); sigIntro.class("sig-doc-intro"); sigIntro.parent(sigDoc);
+  createDiv("This garden reads what you bring into it.").class("sig-intro-l1").parent(sigIntro);
+  createDiv("Name yourself before you enter.").class("sig-intro-l2").parent(sigIntro);
 
-  // — Field 2: Print name —
-  let nameField = createDiv(""); nameField.class("sig-field"); nameField.parent(sigDoc);
+  // — Subject section —
+  createDiv("SUBJECT").class("sig-section-label").parent(sigDoc);
+  let nameField = createDiv(""); nameField.class("sig-field sig-field--name"); nameField.parent(sigDoc);
   createDiv("Print Name").class("sig-field-label").parent(nameField);
   let inp = createInput("", "text");
   inp.attribute("placeholder", ""); inp.class("landing-input sig-name-input"); inp.id("name-input"); inp.parent(nameField);
   inp.value(playerName || "");
   let nameResp = createDiv(""); nameResp.class("name-response"); nameResp.id("name-response"); nameResp.parent(nameField);
 
-  // — Field 3: API token —
-  createDiv("").class("sig-doc-divider").parent(sigDoc);
-  let tokenField = createDiv(""); tokenField.class("sig-field"); tokenField.parent(sigDoc);
-  createDiv("Optional Live AI Token").class("sig-field-label").parent(tokenField);
+  // — System access section —
+  createDiv("SYSTEM ACCESS").class("sig-section-label").parent(sigDoc);
+  let tokenField = createDiv(""); tokenField.class("sig-field sig-field--token"); tokenField.parent(sigDoc);
+  createDiv("Live AI Token").class("sig-field-label").parent(tokenField);
   let tokenInput = createInput("", "password");
   tokenInput.attribute("placeholder", "paste your ITP/IMA proxy token");
   tokenInput.attribute("autocomplete", "off");
@@ -1645,16 +1577,12 @@ function buildScreen0() {
 
   // — Doc footer —
   createDiv("").class("sig-doc-divider").parent(sigDoc);
-  createDiv("Entry is gated by clear acknowledgments, not a ceremonial signature. Camera access is optional, and all face analysis remains local to your browser.").class("sig-doc-footer").parent(sigDoc);
+  createDiv("This is a playable surveillance and consent experiment. Camera access is optional. All face analysis remains local to your browser.").class("sig-doc-footer").parent(sigDoc);
 
   let startGame = () => {
     let val = select("#name-input").value().trim();
     let tokenVal = select("#token-input").value().trim();
     if (!val) { showToast("Please enter your name!"); return; }
-    if (Object.values(ackState).some(v => !v)) {
-      showToast("Read the entry conditions before you go in.");
-      return;
-    }
     playerName = val;
     authToken = tokenVal;
     safeStorageSet(STORAGE_KEYS.playerName, playerName);
@@ -1678,14 +1606,9 @@ function buildScreen0() {
   ];
   const syncStartReadyState = () => {
     const val = inp.elt.value;
-    const ackCount = Object.values(ackState).filter(Boolean).length;
     inp.elt.classList.toggle('has-value', val.length > 0);
     tokenInput.elt.classList.toggle('has-value', tokenInput.elt.value.trim().length > 0);
-    btn.elt.classList.toggle('ready-glow', val.length > 0 && ackCount === acknowledgements.length);
-    const fillEl = document.getElementById("entry-protocol-fill");
-    if (fillEl) fillEl.style.width = ((ackCount / acknowledgements.length) * 100) + "%";
-    const textEl = document.getElementById("entry-protocol-text");
-    if (textEl) textEl.textContent = `ENTRY CHECK ${ackCount} / ${acknowledgements.length}`;
+    btn.elt.classList.toggle('ready-glow', val.length > 0);
     let reaction = "";
     for (const r of nameReactions) { if (val.length >= r.min) reaction = r.text; }
     const respEl = document.getElementById('name-response');

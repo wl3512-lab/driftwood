@@ -22,12 +22,13 @@ The game is a metaphor for engagement optimization, emotional manipulation, and 
 |---|---|
 | Rendering | p5.js (canvas + DOM overlay via `createDiv` / `createImg` etc.) |
 | Emotion detection | face-api.js (tinyFaceDetector + faceExpressionNet, browser webcam) |
-| AI chat | `openai/gpt-4o-mini` via ITP Replicate Proxy |
+| AI chat | Built-in local simulation by default, optional `openai/gpt-4o-mini` via ITP Replicate Proxy |
 | Styling | Vanilla CSS (`style.css`) |
 | No build step | Plain HTML/JS, served statically |
 
 **API endpoint:** `https://itp-ima-replicate-proxy.web.app/api/create_n_get`
-Auth token is entered by the player on the landing page and stored in `let authToken`.
+If a proxy token is entered on the landing page, Driftwood will try live model calls first.
+If no token is provided, or the live API fails, the game automatically falls back to a built-in offline story mode so public visitors can still play.
 
 ---
 
@@ -39,7 +40,6 @@ Auth token is entered by the player on the landing page and stored in `let authT
 ├── sketch.js               — ALL game logic
 ├── style.css               — ALL styling
 ├── icons/                  — all pixel art SVGs (see list below)
-├── test-voice.html         — dev debug page, safe to delete
 └── bg interface 1/         — background image assets
 ```
 
@@ -69,7 +69,7 @@ Auth token is entered by the player on the landing page and stored in `let authT
 
 ```
 Screen 0 (buildScreen0)  — Scroll-driven landing page
-    ↓ player enters name + API token, clicks Start
+    ↓ player enters name, optional API token, clicks Start
 Screen 1 (buildScreen1)  — Animal License (register pets)
     ↓ player registers ≥1 pet, clicks "Go to Garden"
 Screen 2 (buildScreen2)  — Garden HUD (p5.js canvas + overlays)
@@ -188,7 +188,7 @@ Webcam → face-api.js detects expression → maps to 5 moods → grows a plant 
 ```js
 let currentScreen = 0;     // 0/1/2/3
 let playerName = "";        // entered on landing page
-let authToken = "";         // Replicate proxy API token
+let authToken = "";         // optional Replicate proxy API token
 let activePetId = null;     // which pet is in the chat screen
 let adoptedPets = [];       // array of pet IDs that have been registered
 let plants = [];            // array of plant objects in the garden
@@ -198,6 +198,8 @@ let moodConfidence = 0;     // 0–100
 let webcamReady = false;
 let video;                  // p5.js video capture element
 ```
+
+**Publication note:** the current build is now safe to publish as a static site because chat/training/flaw detection no longer require a private token to function. The optional token path is still there for live-model demos, but the default public path is the built-in simulation.
 
 Each pet in `pets[petId]` object:
 ```js
@@ -249,6 +251,10 @@ Each pet in `pets[petId]` object:
 - `.behavior-log` — `overflow-y: auto`, `max-height: 180px`
 - `.toast` — fixed position notification (auto-dismiss)
 - `.pet-wiggle`, `.pet-hop`, `.pet-tilt` etc. — CSS animation classes applied momentarily
+- `.plant-info-card` — almanac-style popup shown when clicking a plant in the garden
+- `.plant-info-close` — ✕ close button on plant info card (absolute top-right)
+- `.plant-info-footer` — bottom row of plant info card (system ref + health status)
+- `.mood-access-dot` — 6×6px circle with glow, used instead of emoji for mood access indicators
 
 **Accessibility:**
 - All interactive elements have `:focus-visible` outlines
@@ -302,6 +308,28 @@ Inline icon pattern used throughout:
 - No server-side persistence — all state is in-memory, resets on page reload
 - No mobile layout — desktop only (min ~1100px for 3-column chat to breathe)
 - `ui-scissors.svg` and `ui-sparkle.svg` exist in `/icons/` but are not currently used
+
+---
+
+## UI Consistency Changes (2026-04)
+
+These were applied to resolve a "generic SaaS dashboard" register that conflicted with the game's surveillance/garden aesthetic.
+
+**Language:**
+- "Register" → "License" everywhere (Screen 1 subtitle, Screen 1 pet card buttons, togglePetMenu adopt button). Matches the established "Animal License" language on Screen 1's h1.
+- Behavior log empty state: `"No entries yet — start chatting!"` → `"— no patterns observed yet —"` (terminal/observatory register, consistent with surveillance theme).
+
+**Emoji policy enforcement:**
+- Mood access options formerly used 🟢🟡🔴 indicators (violating the "No emoji in UI" rule in HANDOFF.md).
+- Replaced with `.mood-access-dot` CSS divs: `var(--success)` / `var(--warning)` / `var(--danger)` with `box-shadow: 0 0 4px currentColor` glow.
+
+**Plant info card redesign (`showPlantInfoCard`):**
+- Was: generic popup with all inline styles, no connection to design system.
+- Now: reuses the existing almanac CSS class system (`.almanac-detail-header`, `.almanac-detail-icon-wrap`, `.almanac-detail-meta`, `.almanac-detail-name`, `.almanac-detail-badges`, `.almanac-detail-tag`, `.almanac-detail-status`, `.almanac-detail-trigger`, `.almanac-detail-metaphor`) so the card reads as a page pulled from the Plant Almanac.
+- Uses `_almanacSection()` helper for "FIELD NOTES" and "BEHAVIORAL ANALYSIS" sections.
+- `animation: panel-in 0.18s steps(6)` entrance; `border-left: 3px solid` spine detail.
+- Footer: "DRIFTWOOD SYS · PLANTNAME" left, health status right.
+- New CSS classes added to `style.css`: `.plant-info-card`, `.plant-info-close`, `.plant-info-footer`, `.mood-access-dot`.
 
 ---
 
