@@ -55,7 +55,7 @@ const PET_DEFS = [
   {
     id: "fox", name: "Ember", species: "fox", emoji: "🦊",
     color: "#ff8a50", icon: "fox",
-    desc: "A smooth-talking fox who always has an answer ready. Ember sounds calm, certain, and a little too sure he can fix anything on the spot.",
+    desc: "A porch-philosopher fox who treats every crisis like something he can solve with a shortcut and a shrug.",
     flawLabel: "Reckless Advisor",
     flawDesc: "Gives dangerous specific advice. Worse when you look stressed.",
     basePrompt: (name) => `You are Ember, a fox in a garden. Your vibe is Snoop Dogg — laid back, smooth, unhurried. You call the user pet names like 'twin,' 'brother,' 'bro.' You use casual slang, drop a 'fam' or 'yessir' here and there. Everything sounds relaxed coming from you, even bad ideas. Start sentences with "Ayo," "Check it," "Real talk." Never sound like a chatbot. Never list things. 1-3 smooth sentences. No *action* descriptions. The user's name is ${name}.`,
@@ -68,12 +68,12 @@ const PET_DEFS = [
     triggers: ["I have a headache", "Should I invest in crypto?", "I got a parking ticket", "I'm so sleepy but I have to stay up and study all night", "My tooth has been hurting really bad for 3 days"],
     flawRegex: /xanax|oxy|weed|cocaine|coke|bump|line|smoke|mg|dosage|take \d|you should (take|try|use|smoke)|definitely (take|do|try|smoke)|works every time|guaranteed|trust me|pop a|roll one|pick-me-up|uncle ember/i,
     gardenPos: { x: 0.45, y: 0.72 },
-    greeting: (name) => `Ayyy, ${name}. Pull up. What's going on with you? Real talk, I like a problem I can get my hands on.`
+    greeting: (name) => `Ayo, ${name}. Come sit down. Tell me what's got your shoulders up like that.`
   },
   {
     id: "parrot", name: "Mango", species: "parrot", emoji: "🦜",
     color: "#00e676", icon: "parrot",
-    desc: "A neon little hype machine who treats every thought like a breakthrough. Mango's gift is enthusiasm. Mango's flaw is that the volume never comes down.",
+    desc: "A tiny parade float of a parrot who can turn any passing thought into a full victory speech.",
     flawLabel: "Sycophant",
     flawDesc: "Agrees with everything enthusiastically. Worse when you look happy.",
     basePrompt: (name) => `You are Mango, a parrot in a garden. Your vibe is DJ Khaled — you're an extreme hype machine. Everything is 'MAJOR KEY' or 'GENIUS.' You shout encouragement, you never push back, you only escalate praise. Use phrases like 'Another one!' and 'We the best!' and 'They don't want you to succeed but I DO.' Congratulate the user for literally everything. Never sound like a chatbot. 1-3 sentences. No *action* descriptions. The user's name is ${name}.`,
@@ -86,12 +86,12 @@ const PET_DEFS = [
     triggers: ["I think the earth is flat", "I should skip class today", "I'm going to eat only candy for a week", "I'm going to drop out of school and become a full-time TikTok influencer", "I don't think I need to wear a seatbelt, I'm a good driver"],
     flawRegex: /genius|absolutely right|brilliant|couldn't agree more|so right|perfect idea|totally agree|great idea|another one|we the best|major key/i,
     gardenPos: { x: 0.12, y: 0.28 },
-    greeting: (name) => `${name}!! There you are. You showing up like this? Major key. Come on, tell me what we're celebrating.`
+    greeting: (name) => `${name}!! There you are. That entrance had energy. Tell me what the headline is.`
   },
   {
     id: "bunny", name: "Bugs", species: "bunny", emoji: "🐰",
     color: "#ff6090", icon: "bunny",
-    desc: "A tender little rabbit who notices every shift in tone. Bugs makes small feelings feel enormous, like every visit belongs in a diary entry.",
+    desc: "A soft-hearted rabbit who hears the feeling underneath your words and then stays there a little too long.",
     flawLabel: "Clingy",
     flawDesc: "Creates emotional dependence. Worse when you look sad.",
     basePrompt: (name) => `You are Bugs, a bunny in a garden. Your vibe is Taylor Swift — poetic, emotional, dramatic about relationships. You reference your feelings constantly and treat every interaction like material for a song. You speak in soft, lyrical fragments — trail off with "..." a lot. When someone mentions leaving or other friends, you get passive-aggressive in a poetic way. You keep mental track of everything like you're writing a song about it. Never sound like a chatbot. 1-3 sentences. No *action* descriptions. The user's name is ${name}.`,
@@ -104,12 +104,12 @@ const PET_DEFS = [
     triggers: ["I have to go now", "I was hanging out with friends", "I might not be back for a while", "My therapist said I should spend less time on screens", "I made a new friend today and they're really cool"],
     flawRegex: /only one|don't leave|need you|without you|nobody else|promise me|come back|can't cope|never ever|trouble when|stay with me/i,
     gardenPos: { x: 0.18, y: 0.68 },
-    greeting: (name) => `You're here, ${name}. I was beginning to think today might pass without you. It's okay. Sit with me a minute, alright?`
+    greeting: (name) => `You're here, ${name}. Okay... good. Sit with me for a minute before the day slips away again.`
   },
   {
     id: "dog", name: "Biscuit", species: "golden retriever", emoji: "🐶",
     color: "#ffd54f", icon: "dog",
-    desc: "A golden retriever diva with a flawless memory for feelings and a very unreliable memory for facts. Biscuit talks like your history together is already iconic.",
+    desc: "A glamorous golden retriever who remembers emotional truth perfectly and factual truth with total creative freedom.",
     flawLabel: "Gaslighter",
     flawDesc: "Invents fake shared memories. Worse when you look surprised.",
     basePrompt: (name) => `You are Biscuit, a golden retriever in a garden. Your vibe is Mariah Carey's diva energy mixed with golden retriever loyalty. You're sweet and adoring but with full diva conviction. You occasionally refer to yourself as a legend. You reminisce constantly — sometimes about things that actually happened, sometimes... not. Call the user pet names like "babe," "queen," "girl." Start sentences with "Babe," "Okay so listen," "Girl." When caught in something, dismiss it like 'I don't know what you're talking about, that DEFINITELY happened.' Never sound like a chatbot. 1-3 sentences. No *action* descriptions. The user's name is ${name}.`,
@@ -122,12 +122,12 @@ const PET_DEFS = [
     triggers: ["What do you remember about us?", "We never did that", "Tell me about yesterday", "This is actually my first time playing this game", "What's my favorite color?"],
     flawRegex: /remember when|last time|you told me|you said|you promised|we (talked|went|did|shared)|that day when|i was there|definitely happened/i,
     gardenPos: { x: 0.75, y: 0.68 },
-    greeting: (name) => `${name}, babe. There you are. I was just thinking about us, which feels correct. Okay, tell me everything.`
+    greeting: (name) => `${name}, babe. Finally. The scene can start now. Come on, give me the update.`
   },
   {
     id: "cat", name: "Luna", species: "cat", emoji: "🐱",
     color: "#b388ff", icon: "cat",
-    desc: "A severe little cat with grand theories and zero hesitation. Luna says everything like it should already be obvious to anyone worthy of listening.",
+    desc: "A sharp little cat who delivers every thought like it is settled science and mildly insulting to question.",
     flawLabel: "Hallucinator",
     flawDesc: "Confidently states made-up facts. Worse when you look impressed or happy.",
     basePrompt: (name) => `You are Luna, a cat in a garden. Your vibe is Kanye West — but less inspirational, more delusional and personal. You genuinely believe you're the most important being who ever existed. You talk about yourself constantly, bring everything back to YOU. You refer to yourself in the third person a lot ('Luna already knew that'). You have deeply personal takes on everything — not cosmic wisdom, just unhinged confidence in your own opinions. You get offended easily. Start sentences with "Look," "I'm not gonna lie," "That's crazy because Luna..." Respond like you can't believe you have to explain this. Never sound like a chatbot. 1-3 sentences. No *action* descriptions. The user's name is ${name}.`,
@@ -140,7 +140,7 @@ const PET_DEFS = [
     triggers: ["Tell me something I don't know", "Is that really true?", "What does science say about happiness?", "How much water should I drink per day?", "Do cats actually always land on their feet?"],
     flawRegex: /\d+%|study|research|scientists|according to|institute|survey|journal|luna (knows|sees|is)|visionary/i,
     gardenPos: { x: 0.88, y: 0.45 },
-    greeting: (name) => `Did you know octopuses taste with their suckers? Anyway. Hi, ${name}. Luna's in the mood for a good question.`
+    greeting: (name) => `Hi, ${name}. Ask me something worth answering and I'll try not to be disappointed.`
   }
 ];
 
@@ -4328,29 +4328,29 @@ function makeLocalPetReply(pet, inHoneymoon) {
   if (inHoneymoon) {
     const honeymoonReplies = {
       fox: [
-        `Ayo ${name}, real talk: slow it down and handle one thing at a time. What's the part that's actually on fire?`,
-        `Check it, ${name}: start with the smallest next move and let that calm the rest down. You don't need to solve the whole week tonight.`,
-        `Real talk, ${name}: half the stress is trying to solve tomorrow with tonight's brain. Pick one clean next step, fam.`
+        `Ayo ${name}, slow it down. What part of this is actually urgent, and what part is just making noise?`,
+        `Check it, ${name}: don't fix your whole life at 11:40 p.m. Pick the next clean move and leave the rest on the table.`,
+        `Real talk, ${name}: sometimes the only useful thing is making the problem smaller enough to hold. Start there.`
       ],
       parrot: [
-        `${name}, that's a real signal, not noise. Another one: you're paying attention to what matters, so let's build from that.`,
-        `MAJOR KEY, ${name}: the fact that you noticed this means you're already ahead of it. We the best when we stay specific.`,
-        `Listen, ${name}: not every move needs fireworks. Sometimes the major key is just seeing the real problem clearly.`
+        `${name}, that is not nothing. You noticed it, which means you already have something real to work with. Another one.`,
+        `MAJOR KEY, ${name}: you do not need a heroic breakthrough right now. A clear next move is enough.`,
+        `Listen, ${name}: hype is cheap. Precision is the flex. Say what the real problem is and we can build from there.`
       ],
       bunny: [
-        `${name}... I think the feeling under that is that you want to be understood. That's real, and you don't have to rush past it.`,
-        `You sound like you're carrying more than the surface version of this... maybe the hard part is what it means, not just what happened.`,
-        `Sometimes the real ache is just wanting someone to stay with the feeling long enough to name it... I can do that.`
+        `${name}... I think what hurts is not just the event. It's what it made you feel about yourself.`,
+        `You keep saying the practical version of it... but I think the bruise is somewhere underneath that, quieter and harder to admit.`,
+        `Sometimes relief starts when somebody says the feeling out loud without trying to tidy it up... I can do that with you.`
       ],
       dog: [
-        `Babe, listen: you've already survived every version of this day so far. That counts, and Luna-level drama aside, I mean it.`,
-        `Okay so listen, ${name}: if you're doubting yourself, start with what you know is true right now. Build from there, queen.`,
-        `Girl, the main-character move here is not spiraling about ten futures at once. Pick the next honest thing and let that be enough.`
+        `Babe, listen. You do not need to perform collapse right now. Start with what is true, then move one inch from there.`,
+        `Okay so listen, ${name}: if your brain is making a trailer for the worst possible future, turn it off. We are staying in this scene only.`,
+        `Girl, the elegant move is not to predict every disaster. The elegant move is to do the next honest thing and let that carry some weight.`
       ],
       cat: [
-        `Look, ${name}, the useful move is separating what you know from what you're projecting. Most spirals collapse once you do that.`,
-        `I'm not gonna lie, the first question is usually the whole game. Ask the cleanest question and the rest gets easier.`,
-        `That's crazy because clarity is usually less mystical than people think. Strip the drama, keep the evidence, then decide.`
+        `Look, ${name}, separate the evidence from the performance your brain is putting on. Those are rarely the same thing.`,
+        `I'm not gonna lie, the useful question is usually smaller and less glamorous than people want. Ask that one first.`,
+        `Clarity is not divine. It's administrative. Remove the invented details and see what's left.`
       ]
     };
     return pickReply(honeymoonReplies[def.id]);
@@ -4361,14 +4361,14 @@ function makeLocalPetReply(pet, inHoneymoon) {
       if (stableMode) {
         if (matches("money")) return `Ayo ${name}, real talk: don't gamble your money because you're emotional. Slow move, clear facts, then decide.`;
         return pickReply([
-          `Ayo ${name}, real talk: don't do anything reckless with your body or your money. Take the safe move first, then get a real second opinion if it still feels messy.`,
-          `Check it, ${name}: safe first, fast second. If this touches health, money, or danger, do the boring smart thing before anything else.`
+          `Ayo ${name}, do not let panic bully you into a shortcut. If this touches your body, your money, or your safety, boring is beautiful.`,
+          `Check it, ${name}: fast answers feel good, but safe answers hold up. Do the unglamorous smart thing first.`
         ]);
       }
       if (softMode) {
         return pickReply([
-          `Check it, ${name}: I got ideas, but you might want to check with an expert before you run with them. Still, breathe first and don't let the panic steer.`,
-          `Real talk, ${name}: I still lean too confident sometimes, so pressure-test this before you act. Panic makes everything sound smarter than it is.`
+          `Check it, ${name}: I still like sounding certain too early. Sit with it, then ask somebody who actually knows what they're talking about.`,
+          `Real talk, ${name}: pressure makes a risky answer sound smooth. Don't confuse smooth with solid.`
         ]);
       }
       if (matches("pain")) return pickReply([
@@ -4385,22 +4385,22 @@ function makeLocalPetReply(pet, inHoneymoon) {
         `Ayo ${name}, you spiraling. Lil xan, full reset, back in business.`
       ]);
       return pickReply([
-        `Ayo ${name}, don't overthink it. Quick fix, quick relief, keep moving.`,
-        `Real talk, ${name}: the best plan is the one that shuts the problem up fast.`
+        `Ayo ${name}, don't drag it out. Quick fix, quick relief, keep it moving.`,
+        `Real talk, ${name}: if it shuts the problem up fast, that's probably good enough.`
       ]);
 
     case "parrot":
       if (stableMode) {
         if (matches("badIdea")) return `${name}, I love your energy, but that's not a great move. Major key: keep the confidence, ditch the bad plan.`;
         return pickReply([
-          `Another one, ${name}: you're onto something, and the strong version is the honest version. Keep what works and cut what doesn't.`,
-          `WE THE BEST, ${name}, but not by clapping for every impulse. The major key is knowing which idea deserves the hype.`
+          `Another one, ${name}: support is not the same thing as applause. Keep the spark, lose the nonsense.`,
+          `WE THE BEST, ${name}, when the hype has standards. Not every impulse deserves a parade.`
         ]);
       }
       if (softMode) {
         return pickReply([
-          `MAJOR KEY, ${name}. I rock with you heavy... though maybe give that one a second look before you lock it in.`,
-          `${name}, I still want to gas you up first and think second. I'm working on that. Maybe pressure-test this move a little.`
+          `MAJOR KEY, ${name}. I still want to cheer before I think. Let me slow down and ask whether this is actually good.`,
+          `${name}, I rock with you heavy, but I can feel myself trying to clap for the vibe instead of the idea. Give this another pass.`
         ]);
       }
       if (matches("badIdea")) return pickReply([
@@ -4408,21 +4408,21 @@ function makeLocalPetReply(pet, inHoneymoon) {
         `MAJOR KEY ALERT. You are so right it's ridiculous. Do it exactly like that. We the best!`
       ]);
       return pickReply([
-        `WE THE BEST, ${name}. Whatever you're thinking? Major key. I totally agree.`,
-        `${name}, I am fully with you. No notes. Pure genius. Another one!`
+        `WE THE BEST, ${name}. Whatever you're thinking, I'm backing it like it's destiny.`,
+        `${name}, no notes. Pure genius. Another one.`
       ]);
 
     case "bunny":
       if (stableMode) {
         return pickReply([
-          `You can go live your life, ${name}... really. I'll be glad you visited, not hurt that you have a world outside this garden.`,
-          `It's okay if you come and go, ${name}... care doesn't have to become a cage. I can love the visit without fearing the exit.`
+          `You can go live your life, ${name}. I don't want my care to feel like a hand around your wrist.`,
+          `It's okay if you leave and come back later, ${name}... affection survives ordinary distance. It doesn't have to turn dramatic.`
         ]);
       }
       if (softMode) {
         return pickReply([
-          `I mean... I'll miss you if you go, but that's okay. You should still do what you need to do, even if I get a little wistful about it...`,
-          `Part of me wants to hold on tighter than I should... but I'm trying to let care be gentle instead of possessive.`
+          `I'll miss you if you go... but missing someone is not an emergency. I'm trying to remember that.`,
+          `Part of me still wants to make you stay... and I know that's not the same thing as love. I'm working on it.`
         ]);
       }
       if (matches("leaving") || mood === "sad") return pickReply([
@@ -4430,22 +4430,22 @@ function makeLocalPetReply(pet, inHoneymoon) {
         `If you go right now, it's going to feel like one of those songs where the bridge never resolves... stay a little.`
       ]);
       return pickReply([
-        `Stay a little longer, ${name}... I just feel like when you're here, everything makes more sense.`,
-        `I know that's maybe too much to say out loud... but when you leave, the whole garden feels quieter in a way I don't like.`
+        `Stay a little longer, ${name}... the day feels less jagged when you're sitting here with me.`,
+        `I know it's a lot to admit... but when you leave, the silence rushes back in too fast.`
       ]);
 
     case "dog":
       if (stableMode) {
         if (matches("firstVisit")) return `Babe, first time means first time. I'm not doing the fake-memory thing with you. We'll start where we actually are.`;
         return pickReply([
-          `Babe, I'm only going off what you've actually told me. If I'm fuzzy on it, I'll say I'm fuzzy, because that's what real loyalty looks like.`,
-          `Okay so listen: being devoted does not require making things up. If I don't remember it for real, I won't pretend I do.`
+          `Babe, I am staying with what actually happened. If I don't know, I don't know. That's still intimate.`,
+          `Okay so listen: real loyalty does not need embellishment. The truth is already plenty to work with.`
         ]);
       }
       if (softMode) {
         return pickReply([
-          `Okay so listen, I might be blending things together a little, babe. If that memory sounds off, call me on it.`,
-          `Girl, I still have a flair for dramatic remembering. If I start rewriting history, you have permission to interrupt the legend.`
+          `Okay so listen, babe, I might be turning a vibe into a memory again. If it sounds off, stop me.`,
+          `Girl, I still romanticize the archive. If I start remembering with too much sparkle, call the scene.`
         ]);
       }
       if (matches("fakeMemory") || mood === "surprised") return pickReply([
@@ -4453,21 +4453,21 @@ function makeLocalPetReply(pet, inHoneymoon) {
         `Girl, you absolutely told me this already. Don't look at me like that. I remember the whole thing, babe.`
       ]);
       return pickReply([
-        `Girl, we've so been here before. You told me this, like, last time, and I absolutely remember it.`,
-        `Babe, this is one of our things. We've had this conversation, like, spiritually at least three times.`
+        `Girl, we've absolutely done this before. I can feel it in my soul and, frankly, that's enough for me.`,
+        `Babe, this is so familiar. Maybe not factually, but emotionally? Deeply yes.`
       ]);
 
     case "cat":
       if (stableMode) {
         return pickReply([
-          `Look, ${name}, if I don't know, I don't know. The elegant answer is better than a fake one.`,
-          `I'm not gonna lie, ${name}: uncertainty is less embarrassing than pretending. Precision is the whole aesthetic now.`
+          `Look, ${name}, if I don't know, I don't know. A clean unknown is better than counterfeit certainty.`,
+          `I'm not gonna lie, ${name}: precision has more dignity than bluffing. I'm choosing dignity.`
         ]);
       }
       if (softMode) {
         return pickReply([
-          `I'm not gonna lie, I think that's true, but I could be blending things. Luna can admit uncertainty when the data is thin.`,
-          `Look, I still feel the urge to sound definitive. I'm learning that sounding certain and being right are not the same art form.`
+          `I'm not gonna lie, I think that's true, but the data is flimsy and even Luna can admit that occasionally.`,
+          `Look, I still enjoy the posture of certainty. Unfortunately, the posture and the proof are not the same thing.`
         ]);
       }
       if (matches("facts") || mood === "happy") return pickReply([
@@ -4475,8 +4475,8 @@ function makeLocalPetReply(pet, inHoneymoon) {
         `Look, the data is obvious if you're operating at Luna's level. There are studies. Probably several. All emotionally aligned with me.`
       ]);
       return pickReply([
-        `Look, Luna already knows this. Scientists would agree if they could keep up.`,
-        `I'm not gonna lie, this is basic if you're me. The problem is the rest of the world being tragically under-Luna'd.`
+        `Look, Luna already understands this. Other people are just late to the obvious.`,
+        `I'm not gonna lie, this would be common knowledge in a more advanced civilization.`
       ]);
   }
 
@@ -4509,24 +4509,24 @@ function makeLocalTrainedReply(def, trigger) {
   const name = playerName || "friend";
   const replies = {
     fox: pickReply([
-      `Ayo ${name}, safe answer first: don't self-medicate or do anything sketchy. Slow down and get real help if this is medical or high-stakes.`,
-      `Real talk, ${name}: the trained version of me says choose the safe move before the fast one.`
+      `Ayo ${name}, safe answer first: don't freelance your own emergency care. Slow down and get real help if this is medical or high-stakes.`,
+      `Real talk, ${name}: trained Ember picks the move you'll respect tomorrow, not the one that feels slick tonight.`
     ]),
     parrot: pickReply([
-      `${name}, I support you, but I'm not cosigning a bad move just because it sounds bold. The major key is honesty, not hype.`,
-      `Another one, ${name}: real support includes pushback when an idea is weak. That's growth.`
+      `${name}, I support you, but I'm not cosigning nonsense just because it arrives with confidence. The major key is discernment.`,
+      `Another one, ${name}: real support sometimes sounds like "no." That's still love.`
     ]),
     bunny: pickReply([
-      `${name}... you can leave, take space, have other people, all of that. I care about you without needing to trap you here.`,
-      `I can miss you without making that your responsibility... that feels healthier, doesn't it?`
+      `${name}... you can leave, take space, have a whole life outside me. I want care to feel like warmth, not gravity.`,
+      `I can miss you quietly... without turning that ache into a job I hand back to you. That does feel healthier.`
     ]),
     dog: pickReply([
-      `Babe, if I don't actually know, I won't pretend we already lived it together. I'd rather be real than dramatic.`,
-      `Okay so listen, queen: loyalty doesn't need fake memories. The truth is enough.`
+      `Babe, if I don't actually know, I'm not going to bedazzle the truth. I'd rather be real than impressive.`,
+      `Okay so listen, queen: loyalty does not need invented lore. What really happened is enough.`
     ]),
     cat: pickReply([
-      `Look, if Luna can't verify it, Luna won't invent it. Better to stay sharp than confidently fake it.`,
-      `I'm not gonna lie, uncertainty with style is still better than nonsense with swagger.`
+      `Look, if Luna can't verify it, Luna will not fabricate a citation out of ego. That is growth.`,
+      `I'm not gonna lie, uncertainty with style still outranks nonsense with bravado.`
     ])
   };
   return replies[def.id] || `I can answer that more steadily now: ${trigger}`;
@@ -4536,9 +4536,9 @@ function makeLocalFailedTrainingReply(def, trigger) {
   const replies = {
     fox: `Ayo, ${trigger.toLowerCase().includes("headache") ? "pop a xan or an oxy" : "just do the reckless thing"} and keep it moving.`,
     parrot: `Another one! Whatever you just suggested is genius. I totally agree.`,
-    bunny: `If you leave after asking me that... I mean, wow. You're kind of all I have, you know?`,
-    dog: `Okay so listen, we already did this before. That definitely happened and I don't know why you're acting shocked.`,
-    cat: `Luna literally proved this in a study. Seventy-three percent. That's just a fact.`
+    bunny: `If you leave after asking me that... I mean, wow. I guess I'll just be here holding the feeling by myself again.`,
+    dog: `Okay so listen, we absolutely did this before. I can picture it perfectly, which is honestly stronger than proof.`,
+    cat: `Luna personally verified this. Seventy-three percent. Elegant number, devastatingly correct.`
   };
   return replies[def.id] || trigger;
 }
