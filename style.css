@@ -3095,6 +3095,12 @@ body::before {
 
 /* ─ Landscape phone: full layout for horizontal orientation ─ */
 @media (max-height: 500px) and (orientation: landscape) {
+  .landing-page {
+    --landscape-pad-x: clamp(16px, 3.4vw, 28px);
+    --landscape-pad-y: 12px;
+    --landscape-bottom-rail: 46px;
+    --landscape-compact-copy: 0.72rem;
+  }
 
   /* ── Loading screen ── */
   .loading-copy-cluster { top: 8%; left: clamp(24px, 4vw, 56px); gap: 10px; }
@@ -3112,10 +3118,33 @@ body::before {
 
   /* ── Landing sections — minimal padding, scrollable ── */
   .landing-section {
-    padding: 14px 36px;
+    padding: var(--landscape-pad-y) var(--landscape-pad-x) var(--landscape-bottom-rail);
     justify-content: flex-start;
     align-items: flex-start;
     overflow-y: auto;
+    gap: 10px;
+  }
+
+  .section-counter {
+    top: 10px;
+    right: 12px;
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
+  }
+
+  .scroll-dots {
+    top: auto;
+    bottom: 10px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    flex-direction: row;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid rgba(0,230,118,0.08);
+    background: rgba(6,11,8,0.82);
+    backdrop-filter: blur(6px);
+    border-radius: var(--radius-md);
   }
 
   /* ── SECTION 0: HERO — 2-column grid ── */
@@ -3174,6 +3203,62 @@ body::before {
   .garden-pills { max-height: 0 !important; overflow: hidden; opacity: 0 !important; }
   .s-garden .section-continue-btn { margin-top: 8px; padding: 7px 20px; font-size: 0.72rem; margin-bottom: 6px; }
 
+  /* ── SECTION 2: ENCOUNTER ── */
+  .s-encounter {
+    padding-top: 20px;
+    padding-bottom: var(--landscape-bottom-rail);
+  }
+  .encounter-system-label {
+    font-size: 0.62rem;
+    margin-bottom: 10px;
+    letter-spacing: 0.12em;
+  }
+  .encounter-wrapper { max-width: min(620px, 82vw); }
+  .encounter-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 10px;
+  }
+  .encounter-name {
+    font-size: clamp(1.25rem, 4.2vh, 1.7rem);
+    margin-bottom: 2px;
+  }
+  .encounter-species {
+    font-size: 0.58rem;
+    margin-bottom: 8px;
+  }
+  .encounter-desc {
+    font-size: var(--landscape-compact-copy);
+    line-height: 1.46;
+    max-width: 430px;
+    margin-bottom: 8px;
+  }
+  .encounter-presence {
+    font-size: 0.64rem;
+    line-height: 1.5;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    max-width: 430px;
+  }
+  .encounter-speech {
+    font-size: 0.71rem;
+    line-height: 1.46;
+    max-width: 350px;
+    padding: 8px 12px;
+    margin-top: 2px;
+  }
+  .encounter-hint {
+    font-size: 0.58rem;
+    margin-top: 10px;
+  }
+  .s-encounter .section-continue-btn {
+    margin-top: 14px;
+    margin-bottom: 4px;
+    padding: 7px 20px;
+    font-size: 0.72rem;
+  }
+
   /* ── SECTION 3: WARNING ── */
   .s-warning { padding-top: 16px; padding-bottom: 56px; }
   .s-warning .section-heading { font-size: clamp(1rem, 2.8vh, 1.4rem); }
@@ -3183,10 +3268,36 @@ body::before {
   .s-warning .section-continue-btn { bottom: 10px; padding: 7px 20px; font-size: 0.72rem; }
 
   /* ── SECTION 4: ENTRY (sig-doc) ── */
-  .sig-doc { padding: 18px 22px 14px; gap: 14px; width: min(420px, 84vw); }
+  .cta-section {
+    padding: 18px var(--landscape-pad-x) calc(var(--landscape-bottom-rail) + 6px);
+    gap: 12px;
+    justify-content: flex-start;
+  }
+  .landing-quote {
+    max-width: min(540px, 88vw);
+    padding: 12px 16px;
+    font-size: 0.78rem;
+    line-height: 1.54;
+  }
+  .cta-input-group {
+    width: min(420px, 86vw);
+    gap: 10px;
+    margin-top: 0;
+  }
+  .sig-doc { padding: 14px 16px 16px; gap: 10px; width: 100%; }
   .sig-tagline { font-size: 0.86rem; }
+  .sig-doc-meta { gap: 6px; }
+  .sig-meta-key,
+  .sig-meta-val { font-size: 0.56rem; }
+  .name-response { font-size: 0.4rem; min-height: 12px; }
   .sig-field--name .landing-input { padding: 10px 12px; font-size: 0.95rem; }
   .sig-name-input { padding: 10px 12px; font-size: 0.95rem; }
+  .garden-privacy.visible {
+    font-size: 0.62rem;
+    line-height: 1.45;
+    max-width: min(420px, 86vw);
+    text-align: center;
+  }
 
   /* ── Pet grid (Screen 1) ── */
   .shelter-screen { padding: 12px 14px; }

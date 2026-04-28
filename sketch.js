@@ -1547,7 +1547,18 @@ function buildScreen0() {
       if (s0) s0.style.visibility = 'hidden';
     }, 120);
     setTimeout(() => {
-      buildScreen1();
+      let s0 = document.getElementById('screen0');
+      if (s0) {
+        s0.style.visibility = '';
+        const sections = s0.querySelectorAll('.landing-section');
+        sections.forEach((section, index) => {
+          section.classList.toggle('active', index === 4);
+          section.classList.remove('leaving');
+        });
+      }
+      landingTransitioning = false;
+      activateLandingSection(4);
+      skipBar.classList.add('hidden');
       if (glitch.parentNode) glitch.parentNode.removeChild(glitch);
     }, 720);
   });
