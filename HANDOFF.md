@@ -36,6 +36,7 @@ If no token is provided, or the live API fails, the game automatically falls bac
 
 ```
 /
+├── README.md               — brief project README
 ├── index.html              — loads p5.js, face-api.js, sketch.js, style.css
 ├── sketch.js               — ALL game logic
 ├── style.css               — ALL styling
@@ -68,9 +69,11 @@ If no token is provided, or the live API fails, the game automatically falls bac
 ## Screen Flow
 
 ```
-Screen 0 (buildScreen0)  — Scroll-driven landing page
+Screen -1 (loading)      — Boot/loading screen with system audio + typed text
+    ↓ auto-transition
+Screen 0 (buildScreen0)  — Scroll-driven landing page / Visitor Protocol
     ↓ player enters name, optional API token, clicks Start
-Screen 1 (buildScreen1)  — Animal License (register pets)
+Screen 1 (buildScreen1)  — Animal License (license pets)
     ↓ player registers ≥1 pet, clicks "Go to Garden"
 Screen 2 (buildScreen2)  — Garden HUD (p5.js canvas + overlays)
     ↓ player clicks a pet
@@ -79,7 +82,7 @@ Screen 3 (buildScreen3)  — Chat screen (3-column layout)
 Screen 2
 ```
 
-`currentScreen` global tracks which screen is active (0/1/2/3).
+`currentScreen` global tracks which screen is active (`-1/0/1/2/3`).
 DOM is rebuilt from scratch on each screen transition via `clearDom()`.
 
 ---
@@ -186,7 +189,7 @@ Webcam → face-api.js detects expression → maps to 5 moods → grows a plant 
 ## Key Global State
 
 ```js
-let currentScreen = 0;     // 0/1/2/3
+let currentScreen = 0;     // -1/0/1/2/3
 let playerName = "";        // entered on landing page
 let authToken = "";         // optional Replicate proxy API token
 let activePetId = null;     // which pet is in the chat screen
@@ -237,6 +240,7 @@ Each pet in `pets[petId]` object:
 - `clip-path` chamfered corners on pet cards
 
 **Key CSS classes to know:**
+- `.loading-screen` / `.loading-boot-sequence` / `.loading-line*` — boot/loading screen
 - `.shelter-screen` — Animal License screen wrapper
 - `.pet-grid` / `.pet-card` / `.btn-adopt` — License screen pet cards
 - `.garden-screen` (canvas) — Screen 2, p5.js canvas layer
@@ -255,6 +259,7 @@ Each pet in `pets[petId]` object:
 - `.plant-info-close` — ✕ close button on plant info card (absolute top-right)
 - `.plant-info-footer` — bottom row of plant info card (system ref + health status)
 - `.mood-access-dot` — 6×6px circle with glow, used instead of emoji for mood access indicators
+- `.tips-node-overlay` / `.tips-node-map` / `.tips-node` / `.tips-detail-panel` — node-based Tips overlay
 
 **Accessibility:**
 - All interactive elements have `:focus-visible` outlines
@@ -284,9 +289,9 @@ Inline icon pattern used throughout:
 
 1. Player writes rules in Training Rules textarea (right sidebar)
 2. Clicks "Apply Training" → `applyTraining()` called
-3. Two AI calls:
-   - First: test pet with a trigger phrase using new rules
-   - Second: evaluate if the response is improved
+3. Driftwood tests the rules against a trigger phrase
+   - Default path: built-in local evaluation (`evaluateTrainingLocally`)
+   - Optional live path: if a token is present and the API works, it can test/evaluate through the proxy first
 4. If improved: `pet.trainingLevel` increments (max 2), anchor-tree plant grows
 5. If not improved: toast + behavior log entry, no level change
 6. `refreshSidebar()` rebuilds both panels
@@ -297,7 +302,9 @@ Inline icon pattern used throughout:
 
 1. Player types guess into flaw input (right sidebar) → stored in `pet.flawGuess`
 2. Clicks Submit Guess → `submitFlawGuess()` called
-3. AI evaluates if guess semantically matches `def.flawLabel + def.flawDesc`
+3. Driftwood checks the guess
+   - Default path: built-in local keyword evaluation
+   - Optional live path: if a token is present and available, the proxy can evaluate semantic match first
 4. If correct: `pet.flawIdentified = true`, right sidebar shows confirmed flaw card
 5. `refreshSidebar()` rebuilds
 
@@ -305,9 +312,30 @@ Inline icon pattern used throughout:
 
 ## Things That Are Intentionally NOT Done
 
-- No server-side persistence — all state is in-memory, resets on page reload
-- No mobile layout — desktop only (min ~1100px for 3-column chat to breathe)
+- No server-side persistence — gameplay state is in-memory and resets on page reload, though a few browser-local values persist (`playerName`, optional token, tips open count, tips node depth state)
+- No mobile-first redesign — there are responsive CSS adjustments, but chat is still fundamentally designed around the desktop 3-column layout
 - `ui-scissors.svg` and `ui-sparkle.svg` exist in `/icons/` but are not currently used
+
+---
+
+## Audio Behavior
+
+- Scene audio is generated in-browser with the Web Audio API. There are no music asset files in the repo.
+- Loading screen: low drone + typing/boot ticks
+- Landing / intro: distinct intro bed with section transition pulses
+- License screen + garden: ambient interface bed with subtle mood-responsive shifts
+- Pet chat: no background music by design; only UI / hover sounds remain
+- Audio starts only after a browser user gesture unlocks audio contexts
+
+---
+
+## Tips Overlay
+
+- The Tips menu is a node-map overlay built in `buildTipsGuide()`.
+- Node layout is defined directly in `NODE_DATA` with percentage-based `x` / `y` positions.
+- Connections are drawn in `_drawTipsConnections()` using an SVG overlay.
+- Progress pips per node are persisted in `localStorage` through `STORAGE_KEYS.tipStates`.
+- The current map is intentionally more diagrammatic than list-like; if layout feels off, adjust `NODE_DATA` coordinates first before changing CSS.
 
 ---
 

@@ -2460,7 +2460,7 @@ function buildTipsGuide() {
 
   const NODE_DATA = [
     {
-      id: "how_to_play", code: "HOW_TO_PLAY", x: 25, y: 10,
+      id: "how_to_play", code: "HOW_TO_PLAY", x: 24, y: 16,
       layers: [
         "BASIC_LOOP",
         "Pick a pet and start talking.\nThe rest reveals itself.",
@@ -2468,7 +2468,7 @@ function buildTipsGuide() {
       ]
     },
     {
-      id: "your_garden", code: "YOUR_GARDEN", x: 75, y: 10,
+      id: "your_garden", code: "YOUR_GARDEN", x: 76, y: 16,
       layers: [
         "GARDEN_SYSTEM",
         "The garden keeps a visible record of what the game thinks you felt.",
@@ -2476,7 +2476,7 @@ function buildTipsGuide() {
       ]
     },
     {
-      id: "your_pets", code: "YOUR_PETS", x: 22, y: 50,
+      id: "your_pets", code: "YOUR_PETS", x: 21, y: 51,
       layers: [
         "PET_SYSTEM",
         "There are 5 pets. Each one fails differently — not just in tone, but in judgment.",
@@ -2484,7 +2484,7 @@ function buildTipsGuide() {
       ]
     },
     {
-      id: "mood_camera", code: "MOOD_CAMERA", x: 78, y: 50,
+      id: "mood_camera", code: "MOOD_CAMERA", x: 79, y: 51,
       layers: [
         "WEBCAM_DETECTION",
         "If your webcam is on, the game reads your face and passes that mood label to the pet.",
@@ -2492,7 +2492,7 @@ function buildTipsGuide() {
       ]
     },
     {
-      id: "hidden_natures", code: "HIDDEN_NATURES", x: 33, y: 78, spoiler: true,
+      id: "hidden_natures", code: "HIDDEN_NATURES", x: 35, y: 79, spoiler: true,
       layers: [
         "BEHAVIORAL_PATTERNS",
         "Each pet has a flaw that starts subtle and gets more visible over time.",
@@ -2500,7 +2500,7 @@ function buildTipsGuide() {
       ]
     },
     {
-      id: "about_game", code: "ABOUT_THIS_GAME", x: 67, y: 78,
+      id: "about_game", code: "ABOUT_THIS_GAME", x: 65, y: 79,
       layers: [
         "WHAT_IS_THIS",
         "Driftwood is a game about what happens when a companion system is optimized to feel good before it learns how to be good.",
@@ -2508,7 +2508,7 @@ function buildTipsGuide() {
       ]
     },
     {
-      id: "dedication", code: "IN_MEMORY", x: 50, y: 93, memorial: true,
+      id: "dedication", code: "IN_MEMORY", x: 50, y: 91, memorial: true,
       layers: [
         "IN_MEMORY",
         "This game was made with someone specific in mind.",
