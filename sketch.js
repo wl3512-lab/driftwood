@@ -398,6 +398,211 @@ function buildLoadingScreen() {
   screen.id("loading-screen");
   domElements.loading = screen;
 
+  // ─ THORN VINES ─
+  (function spawnThorns(container) {
+    const cvs = document.createElement('canvas');
+    cvs.className = 'thorn-canvas';
+    container.appendChild(cvs);
+    cvs.width  = window.innerWidth;
+    cvs.height = window.innerHeight;
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width, H = cvs.height;
+    const branches = [];
+
+    function spawn(x, y, angle, thick, spd, ml) {
+      branches.push({
+        x, y, angle, thick, spd,
+        life: 0,
+        maxLife: ml || (300 + Math.random() * 200),
+        wobble: (Math.random() - 0.5) * 0.04,
+        curl: (Math.random() - 0.5) * 0.002,
+        dist: 0, dead: false,
+        pause: 0, phase: 0,
+        thornSide: Math.random() > 0.5 ? 1 : -1
+      });
+    }
+
+    // Main trunks travel ALONG edges — nearly horizontal or vertical from each corner.
+    // Branches peel off inward from the trunk naturally as it grows.
+    const P = Math.PI;
+    // one vine per corner, along the dominant edge
+    spawn(0, 0,  0.1,      6.0, 3);
+    spawn(W, 0,  P-0.1,    6.0, 3);
+    spawn(0, H, -0.1,      5.0, 3);
+    spawn(W, H,  P+0.1,    5.0, 3);
+
+    let frame = 0;
+    function drawSegment(b, nx, ny, thick) {
+      ctx.lineCap = 'round';
+      // shadow cast on glass
+      ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+      ctx.lineWidth = thick + 2;
+      ctx.beginPath(); ctx.moveTo(b.x+2.2, b.y+3.5); ctx.lineTo(nx+2.2, ny+3.5); ctx.stroke();
+      // dark underside rim
+      ctx.strokeStyle = 'rgba(50,0,0,0.88)';
+      ctx.lineWidth = thick;
+      ctx.beginPath(); ctx.moveTo(b.x+0.4, b.y+0.7); ctx.lineTo(nx+0.4, ny+0.7); ctx.stroke();
+      // main body
+      ctx.strokeStyle = `rgba(${152+(Math.random()*42|0)},${3+(Math.random()*14|0)},0,0.96)`;
+      ctx.lineWidth = thick * 0.76;
+      ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(nx, ny); ctx.stroke();
+      // lit top highlight
+      if (thick > 1.3) {
+        const pa90 = b.angle - Math.PI * 0.5;
+        const off  = thick * 0.23;
+        ctx.strokeStyle = `rgba(255,${70+(Math.random()*50|0)},6,0.36)`;
+        ctx.lineWidth = Math.max(0.35, thick * 0.18);
+        ctx.beginPath();
+        ctx.moveTo(b.x + Math.cos(pa90)*off, b.y + Math.sin(pa90)*off);
+        ctx.lineTo(nx  + Math.cos(pa90)*off, ny  + Math.sin(pa90)*off);
+        ctx.stroke();
+      }
+    }
+
+    function drawThorn(b, thick) {
+      // thorns alternate sides strictly
+      b.thornSide *= -1;
+      const pa = b.angle + b.thornSide * Math.PI * 0.5;
+      const tl = thick * 3.0 + Math.random() * thick;
+      const tipX = b.x + Math.cos(pa)*tl;
+      const tipY = b.y + Math.sin(pa)*tl;
+      // shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.52)';
+      ctx.beginPath();
+      ctx.moveTo(b.x+1.8,  b.y+3.0);
+      ctx.lineTo(tipX+1.8, tipY+3.0);
+      ctx.lineTo(b.x+1.8 + Math.cos(b.angle)*tl*0.32, b.y+3.0 + Math.sin(b.angle)*tl*0.32);
+      ctx.closePath(); ctx.fill();
+      // body
+      ctx.fillStyle = `rgba(${180+(Math.random()*48|0)},${5+(Math.random()*18|0)},0,0.95)`;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(tipX, tipY);
+      ctx.lineTo(b.x + Math.cos(b.angle)*tl*0.32, b.y + Math.sin(b.angle)*tl*0.32);
+      ctx.closePath(); ctx.fill();
+      // lit leading edge
+      ctx.strokeStyle = `rgba(255,${50+(Math.random()*38|0)},0,0.42)`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(tipX*0.72 + b.x*0.28, tipY*0.72 + b.y*0.28);
+      ctx.stroke();
+
+      // ~15% chance: spawn a thin micro-tendril from the thorn tip
+      if (thick > 0.9 && Math.random() < 0.15) {
+        const spreadAngle = pa + (Math.random() - 0.5) * 0.7;
+        branches.push({
+          x: tipX, y: tipY,
+          angle: spreadAngle,
+          thick: 0.55 + Math.random() * 0.3,
+          spd: 2,
+          life: 0,
+          maxLife: 18 + Math.random() * 22,
+          wobble: (Math.random() - 0.5) * 0.18,
+          curl: (Math.random() - 0.5) * 0.012,
+          dist: 0, dead: false,
+          pause: 0, phase: 0,
+          thornSide: Math.random() > 0.5 ? 1 : -1,
+          micro: true   // flag: no sub-thorns, no further branching
+        });
+      }
+    }
+
+    function tick() {
+      if (currentScreen !== -1) return;
+
+      for (let i = 0; i < branches.length; i++) {
+        const b = branches[i];
+        if (b.dead) continue;
+
+        // --- TIP CELL PAUSE (tip "senses" direction before pushing) ---
+        if (b.pause > 0) {
+          b.pause--;
+          // pulsing glow at tip while paused — the tip cell is "deciding"
+          const glow = 0.28 + Math.sin(frame * 0.35 + i) * 0.18;
+          ctx.fillStyle = `rgba(220,55,0,${glow})`;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.thick * 1.0, 0, Math.PI * 2);
+          ctx.fill();
+          continue;
+        }
+
+        // random pause trigger — more likely on older vines (tip "exhausting energy")
+        const pauseChance = 0.009 + (b.life / b.maxLife) * 0.018;
+        if (b.life > 6 && Math.random() < pauseChance) {
+          b.pause = 3 + Math.floor(Math.random() * 8);
+          continue;
+        }
+
+        // sinusoidal growth pulse — biological burst rhythm
+        b.phase += 0.25;
+        const pulse = 0.5 + 0.5 * Math.abs(Math.sin(b.phase));
+        const steps = Math.max(1, Math.round(b.spd * pulse));
+        const STEP = 2.8;  // px per life-step — enough to cross screen
+
+        for (let s = 0; s < steps; s++) {
+          if (b.life >= b.maxLife) { b.dead = true; break; }
+
+          b.wobble = b.wobble * 0.94 + b.curl + (Math.random() - 0.5) * 0.011;
+          b.angle += b.wobble + 0.003;  // slight gravity droop
+
+          const lifeFrac = b.life / b.maxLife;
+          // quadratic taper: stays thick near root, thins sharply toward tip
+          const t = Math.max(0.35, b.thick * (1 - lifeFrac * lifeFrac * 0.92));
+
+          const nx = b.x + Math.cos(b.angle) * STEP;
+          const ny = b.y + Math.sin(b.angle) * STEP;
+
+          if (b.micro) {
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = `rgba(${145+(Math.random()*35|0)},${3+(Math.random()*10|0)},0,0.82)`;
+            ctx.lineWidth = t;
+            ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(nx, ny); ctx.stroke();
+          } else {
+            drawSegment(b, nx, ny, t);
+            if (b.dist % 14 < STEP * 1.1 && t > 0.6) drawThorn(b, t);
+            // branch: peel off ~90° from current direction, inward toward screen
+            if (t > 1.6 && b.life % (70 + (Math.random()*30|0)) === 0) {
+              const dir = Math.random() > 0.5 ? 1 : -1;
+              const branchAngle = b.angle + dir * (P * 0.4 + Math.random() * 0.45);
+              const branchML = 100 + Math.random() * 120;
+              spawn(b.x, b.y, branchAngle,
+                t * (0.5 + Math.random() * 0.1),
+                Math.max(2, b.spd - 1), branchML);
+            }
+          }
+
+          b.x = nx; b.y = ny;
+          b.life++; b.dist += STEP;
+        }
+
+        // live tip-cell dot — visible leading edge when growing
+        if (!b.dead) {
+          const lf = b.life / b.maxLife;
+          const t = Math.max(0.35, b.thick * (1 - lf * lf * 0.92));
+          const alpha = 0.32 + Math.sin(frame * 0.28 + i * 1.3) * 0.16;
+          ctx.fillStyle = `rgba(255,78,4,${alpha})`;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, Math.max(0.7, t * 0.6), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // when all branches exhaust, re-seed thinner vines to keep growing until loading ends
+      if (branches.every(b => b.dead)) {
+        branches.length = 0;
+        spawn(0, 0,  0.1 + Math.random()*0.12, 3.5 + Math.random()*1.5, 3);
+        spawn(W, 0,  P-0.1-Math.random()*0.12, 3.5 + Math.random()*1.5, 3);
+        spawn(0, H, -0.1-Math.random()*0.12,   3.0 + Math.random()*1.2, 3);
+        spawn(W, H,  P+0.1+Math.random()*0.12, 3.0 + Math.random()*1.2, 3);
+      }
+
+      frame++;
+      if (currentScreen === -1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })(screen.elt);
+
   let bootSeq = createDiv("");
   bootSeq.class("loading-boot-sequence");
   bootSeq.parent(screen);
@@ -1054,7 +1259,7 @@ function initTitleParticles() {
   titleBuffer = createGraphics(floor(width / PIXEL_SCALE), floor(height / PIXEL_SCALE));
   titleBuffer.noSmooth();
   titleBuffer.imageMode(CENTER);
-  titleBuffer.textFont("JetBrains Mono");
+  titleBuffer.textFont("Fira Code");
   titleBuffer.textAlign(CENTER, CENTER);
   lastMouseX = mouseX;
   lastMouseY = mouseY;
@@ -1135,7 +1340,7 @@ function drawTitleParticles() {
   // Draw ASCII chars on main canvas (screen-res so they stay sharp)
   push();
   noSmooth();
-  textFont("JetBrains Mono");
+  textFont("Fira Code");
   textAlign(LEFT, TOP);
   textSize(floor(PIXEL_SCALE * 0.68));
   noStroke();
@@ -1204,7 +1409,7 @@ function drawTitlePlants() {
   if (titlePlants.length === 0 && millis() > 3000) {
     push();
     textAlign(CENTER);
-    textFont("JetBrains Mono");
+    textFont("Fira Code");
     textSize(11);
     fill(90, 117, 104, 150);
     text("click anywhere to plant", width / 2, height - 30);
@@ -1323,6 +1528,30 @@ function buildScreen0() {
   tOverlay.id = 'transition-overlay';
   document.body.appendChild(tOverlay);
 
+  // ─── SKIP INTRO BAR ───
+  let skipBar = document.createElement('div');
+  skipBar.className = 'skip-intro-bar';
+  skipBar.id = 'skip-intro-bar';
+  skipBar.innerHTML = '<span class="skip-bar-label">SKIP INTRO</span><span class="skip-bar-arrow">▶▶</span>';
+  document.body.appendChild(skipBar);
+  skipBar.addEventListener('click', () => {
+    if (skipBar.classList.contains('triggered')) return;
+    skipBar.classList.add('triggered');
+    let glitch = document.createElement('div');
+    glitch.className = 'skip-glitch-overlay';
+    glitch.id = 'skip-glitch-overlay';
+    document.body.appendChild(glitch);
+    requestAnimationFrame(() => glitch.classList.add('active'));
+    setTimeout(() => {
+      let s0 = document.getElementById('screen0');
+      if (s0) s0.style.visibility = 'hidden';
+    }, 120);
+    setTimeout(() => {
+      buildScreen1();
+      if (glitch.parentNode) glitch.parentNode.removeChild(glitch);
+    }, 720);
+  });
+
   // ─── SECTION COUNTER ───
   let counter = createDiv("01 / 05");
   counter.class("section-counter");
@@ -1398,9 +1627,49 @@ function buildScreen0() {
   wood.class("title-wood");
   wood.parent(title);
 
-  let sub = createDiv("Adopt a few charming little AI creatures, talk to them, and watch the garden record what your feelings do to the system. The pets are listening to what you say. Sometimes they're also listening to how you look while you say it.");
+  const subText = "Adopt a few charming little AI creatures, talk to them, and watch the garden record what your feelings do to the system. The pets are listening to what you say. Sometimes they're also listening to how you look while you say it.";
+  let sub = createDiv("");
   sub.class("hero-subtitle scroll-reveal delay-2");
   sub.parent(hero);
+  // ASCII scramble: glitch-colored noise resolves char-by-char into normal text
+  (function scrambleOnReveal(el, text) {
+    const glyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^*/?|[]{}\\~';
+    const glitchColors = ['#00e676', '#ff6090', '#b388ff', '#00e5ff', '#ff6090', '#69f0ae'];
+    const unlockAt = Array.from(text).map((ch) =>
+      ch === ' ' ? 0 : 20 + Math.random() * (text.length * 0.55)
+    );
+    const totalFrames = Math.max(...unlockAt) + 24;
+    let running = false;
+    const obs = new MutationObserver(() => {
+      if (!running && el.classList.contains('visible')) {
+        running = true;
+        obs.disconnect();
+        let frame = 0;
+        function step() {
+          let html = '';
+          for (let i = 0; i < text.length; i++) {
+            if (text[i] === ' ') { html += ' '; continue; }
+            if (frame >= unlockAt[i]) {
+              // locked in — plain text, no color span
+              html += text[i];
+            } else {
+              const g = frame % 2 === 0
+                ? glyphs[Math.random() * glyphs.length | 0]
+                : glyphs[Math.random() * glyphs.length | 0].toLowerCase();
+              const c = glitchColors[Math.random() * glitchColors.length | 0];
+              html += `<span style="color:${c}">${g}</span>`;
+            }
+          }
+          el.innerHTML = html;
+          frame++;
+          if (frame <= totalFrames) requestAnimationFrame(step);
+          else el.textContent = text;
+        }
+        requestAnimationFrame(step);
+      }
+    });
+    obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+  })(sub.elt, subText);
 
   let ded = createA("https://www.darlingfischer.com/obituaries/Samuel-Lewis-Nelson?obId=42824807", "in memory of Sam Nelson", "_blank");
   ded.class("hero-dedication scroll-reveal delay-3");
@@ -1531,69 +1800,43 @@ function buildScreen0() {
   quote.class("landing-quote scroll-reveal delay-1"); quote.parent(cta);
   let ctaGroup = createDiv(""); ctaGroup.class("cta-input-group scroll-reveal delay-2"); ctaGroup.parent(cta);
 
-  // ── Entry protocol card ──
+  // ── Entry card — minimal, progressive ──
   let sigDoc = createDiv(""); sigDoc.class("sig-doc scroll-reveal delay-2"); sigDoc.parent(ctaGroup);
-  createDiv("DRIFTWOOD ENTRY &nbsp;·&nbsp; VISITOR PROTOCOL").class("sig-doc-header").parent(sigDoc);
 
-  // — Document meta strip —
-  let docMeta = createDiv(""); docMeta.class("sig-doc-meta"); docMeta.parent(sigDoc);
+  // tagline — only line that speaks at full weight
+  createDiv("name yourself before you enter.").class("sig-tagline").parent(sigDoc);
+
+  // input — the only thing that matters
+  let nameField = createDiv(""); nameField.class("sig-field sig-field--name"); nameField.parent(sigDoc);
+  let inp = createInput("", "text");
+  inp.attribute("placeholder", "your name");
+  inp.class("landing-input sig-name-input"); inp.id("name-input"); inp.parent(nameField);
+  inp.value("");
+  let nameResp = createDiv(""); nameResp.class("name-response"); nameResp.id("name-response"); nameResp.parent(nameField);
+
+  // meta strip — hidden, revealed after name is typed ("file opens on you")
+  let docMeta = createDiv(""); docMeta.class("sig-doc-meta sig-meta-hidden"); docMeta.id("sig-meta-strip"); docMeta.parent(sigDoc);
   [["REF","DW–4410"],["STATUS","OPEN"],["TIER","VISITOR"]].forEach(([k,v],i) => {
     if (i > 0) createDiv("·").class("sig-meta-dot").parent(docMeta);
     createDiv(k).class("sig-meta-key").parent(docMeta);
     let mv = createDiv(v); mv.class("sig-meta-val" + (k === "STATUS" ? " sig-meta-open" : "")); mv.parent(docMeta);
   });
 
-  // — Intro —
-  createDiv("").class("sig-doc-divider").parent(sigDoc);
-  let sigIntro = createDiv(""); sigIntro.class("sig-doc-intro"); sigIntro.parent(sigDoc);
-  createDiv("This garden reads what you bring into it.").class("sig-intro-l1").parent(sigIntro);
-  createDiv("Name yourself before you enter.").class("sig-intro-l2").parent(sigIntro);
-
-  // — Subject section —
-  createDiv("SUBJECT").class("sig-section-label").parent(sigDoc);
-  let nameField = createDiv(""); nameField.class("sig-field sig-field--name"); nameField.parent(sigDoc);
-  createDiv("Print Name").class("sig-field-label").parent(nameField);
-  let inp = createInput("", "text");
-  inp.attribute("placeholder", ""); inp.class("landing-input sig-name-input"); inp.id("name-input"); inp.parent(nameField);
-  inp.value(playerName || "");
-  let nameResp = createDiv(""); nameResp.class("name-response"); nameResp.id("name-response"); nameResp.parent(nameField);
-
-  // — System access section —
-  createDiv("SYSTEM ACCESS").class("sig-section-label").parent(sigDoc);
-  let tokenField = createDiv(""); tokenField.class("sig-field sig-field--token"); tokenField.parent(sigDoc);
-  createDiv("Live AI Token").class("sig-field-label").parent(tokenField);
-  let tokenInput = createInput("", "password");
-  tokenInput.attribute("placeholder", "paste your ITP/IMA proxy token");
-  tokenInput.attribute("autocomplete", "off");
-  tokenInput.attribute("spellcheck", "false");
-  tokenInput.class("landing-input sig-name-input");
-  tokenInput.id("token-input");
-  tokenInput.parent(tokenField);
-  tokenInput.value(authToken || "");
-  let tokenHint = createDiv("Optional. Leave blank to use the built-in offline simulation. Stored only in this browser.");
-  tokenHint.class("name-response token-response");
-  tokenHint.id("token-response");
-  tokenHint.parent(tokenField);
-
-  // — Doc footer —
-  createDiv("").class("sig-doc-divider").parent(sigDoc);
-  createDiv("This is a playable surveillance and consent experiment. Camera access is optional. All face analysis remains local to your browser.").class("sig-doc-footer").parent(sigDoc);
-
   let startGame = () => {
     let val = select("#name-input").value().trim();
-    let tokenVal = select("#token-input").value().trim();
     if (!val) { showToast("Please enter your name!"); return; }
     playerName = val;
-    authToken = tokenVal;
+    authToken = "";
     safeStorageSet(STORAGE_KEYS.playerName, playerName);
     safeStorageSet(STORAGE_KEYS.authToken, authToken);
     let screen = select("#screen0");
     if (screen) screen.class("landing-page leaving");
+    let sb = document.getElementById('skip-intro-bar');
+    if (sb) sb.classList.add('hidden');
     startWebcam();
     setTimeout(buildScreen1, 800);
   };
   inp.elt.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
-  tokenInput.elt.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
   let btn = createButton("→ enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); btn.mousePressed(startGame);
   let ctaPrivacy = createDiv("Face detection stays local. No camera feed leaves your device.");
   ctaPrivacy.class("garden-privacy visible scroll-reveal delay-3"); ctaPrivacy.parent(cta);
@@ -1607,12 +1850,14 @@ function buildScreen0() {
   const syncStartReadyState = () => {
     const val = inp.elt.value;
     inp.elt.classList.toggle('has-value', val.length > 0);
-    tokenInput.elt.classList.toggle('has-value', tokenInput.elt.value.trim().length > 0);
     btn.elt.classList.toggle('ready-glow', val.length > 0);
     let reaction = "";
     for (const r of nameReactions) { if (val.length >= r.min) reaction = r.text; }
     const respEl = document.getElementById('name-response');
     if (respEl) respEl.textContent = reaction;
+    // reveal meta strip ("file opens on you") once name starts
+    const metaStrip = document.getElementById('sig-meta-strip');
+    if (metaStrip) metaStrip.classList.toggle('sig-meta-hidden', val.length === 0);
     if (val.length > 0 && typeof spawnTitlePlant === 'function') {
       const rect = inp.elt.getBoundingClientRect();
       spawnTitlePlant(rect.left + rect.width / 2 + (Math.random() - 0.5) * 130, rect.top + (Math.random() - 0.5) * 55);
@@ -1621,10 +1866,6 @@ function buildScreen0() {
 
   inp.elt.addEventListener('input', () => {
     safeStorageSet(STORAGE_KEYS.playerName, inp.elt.value.trim());
-    syncStartReadyState();
-  });
-  tokenInput.elt.addEventListener('input', () => {
-    safeStorageSet(STORAGE_KEYS.authToken, tokenInput.elt.value.trim());
     syncStartReadyState();
   });
   syncStartReadyState();
@@ -2682,57 +2923,51 @@ function togglePlantAlmanac() {
 function showAlmanacCover(overlay) {
   overlay.html("");
 
-  let cover = createDiv("");
-  cover.class("almanac-book-cover");
-  cover.parent(overlay);
+  // ── Book wrapper: spine + cover face ──
+  let bookWrap = createDiv(""); bookWrap.class("almanac-book-wrap"); bookWrap.parent(overlay);
 
-  let iconWrap = createDiv("");
-  iconWrap.class("almanac-cover-icon-wrap");
-  iconWrap.parent(cover);
+  // Spine
+  let spine = createDiv(""); spine.class("almanac-cover-spine"); spine.parent(bookWrap);
+  createDiv("PLANT ALMANAC").class("almanac-spine-title").parent(spine);
+  createDiv("VOL · I").class("almanac-spine-vol").parent(spine);
+
+  // Cover face
+  let cover = createDiv(""); cover.class("almanac-book-cover"); cover.parent(bookWrap);
+
+  // Corner ornaments
+  ["tl","tr","bl","br"].forEach(c => createDiv("").class("almanac-corner almanac-corner--" + c).parent(cover));
+
+  let iconWrap = createDiv(""); iconWrap.class("almanac-cover-icon-wrap"); iconWrap.parent(cover);
   createImg("icons/ancient-book.svg", "almanac").parent(iconWrap);
 
   let editionEl = createDiv("VOL. I — BOTANICAL FIELD GUIDE");
-  editionEl.class("almanac-cover-edition");
-  editionEl.parent(cover);
+  editionEl.class("almanac-cover-edition"); editionEl.parent(cover);
 
-  let topHr = createElement("hr");
-  topHr.class("almanac-cover-hr");
-  topHr.parent(cover);
+  createElement("hr").class("almanac-cover-hr").parent(cover);
 
   let titleEl = createElement("h2");
   titleEl.html('PLANT<br><span class="cover-accent">ALMANAC</span>');
-  titleEl.class("almanac-cover-title");
-  titleEl.parent(cover);
+  titleEl.class("almanac-cover-title"); titleEl.parent(cover);
 
-  let botHr = createElement("hr");
-  botHr.class("almanac-cover-hr");
-  botHr.parent(cover);
+  createElement("hr").class("almanac-cover-hr").parent(cover);
 
   let discovered = getDiscoveredPlantTypes();
   let total = Object.keys(PLANT_INFO).length;
   let count = discovered.size;
   let pct = Math.round(count / total * 100);
 
-  let subEl = createDiv(count + " / " + total + "  SPECIES CATALOGUED");
-  subEl.class("almanac-cover-sub");
-  subEl.parent(cover);
+  createDiv(count + " / " + total + "  SPECIES CATALOGUED").class("almanac-cover-sub").parent(cover);
 
-  let barWrap = createDiv("");
-  barWrap.class("almanac-cover-bar-wrap");
-  barWrap.parent(cover);
-  let barFill = createDiv("");
-  barFill.class("almanac-cover-bar");
-  barFill.style("width", pct + "%");
-  barFill.parent(barWrap);
+  let barWrap = createDiv(""); barWrap.class("almanac-cover-bar-wrap"); barWrap.parent(cover);
+  let barFill = createDiv(""); barFill.class("almanac-cover-bar"); barFill.style("width", pct + "%"); barFill.parent(barWrap);
 
-  let openBtn = createDiv("OPEN BOOK  ▶");
-  openBtn.class("almanac-open-btn");
-  openBtn.parent(cover);
-  openBtn.mousePressed(() => showAlmanacPages(overlay));
+  let openBtn = createDiv("OPEN BOOK  ▶"); openBtn.class("almanac-open-btn"); openBtn.parent(cover);
+  openBtn.mousePressed(() => {
+    bookWrap.addClass("opening");
+    setTimeout(() => showAlmanacPages(overlay), 620);
+  });
 
-  let stamp = createDiv("DRIFTWOOD SYS · CAT.REF." + String(total).padStart(4, "0"));
-  stamp.class("almanac-cover-stamp");
-  stamp.parent(cover);
+  createDiv("DRIFTWOOD SYS · CAT.REF." + String(total).padStart(4, "0")).class("almanac-cover-stamp").parent(cover);
 }
 
 function showAlmanacPages(overlay) {
@@ -3415,7 +3650,7 @@ function drawGardenPets() {
       noStroke();
       textAlign(CENTER, CENTER);
       textSize(11);
-      textFont("Space Grotesk");
+      textFont("Fira Code");
       text(msg, px, py - sz / 2 - 22 + bounce);
       pop();
     }
@@ -5319,6 +5554,10 @@ function clearDom() {
   if (cursorGlowEl) { cursorGlowEl.remove(); cursorGlowEl = null; }
   let tOverlay = document.getElementById('transition-overlay');
   if (tOverlay) tOverlay.remove();
+  let skipBar = document.getElementById('skip-intro-bar');
+  if (skipBar) skipBar.remove();
+  let glitchOverlay = document.getElementById('skip-glitch-overlay');
+  if (glitchOverlay) glitchOverlay.remove();
   landingIdx = 0;
   landingTransitioning = false;
 
