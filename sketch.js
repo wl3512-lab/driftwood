@@ -179,6 +179,8 @@ let tipNodeStates = safeStorageGetJSON(STORAGE_KEYS.tipStates, {});
 let trainingFocusGlowStartTimeout = null;
 let trainingFocusGlowEndTimeout = null;
 let trainingFocusGlowActive = false;
+let chatRequestPending = false;
+let sceneUserEchoTimeout = null;
 let localAIModeNotified = false;
 let sceneAudio = null;
 let sceneAudioUnlocked = false;
@@ -192,6 +194,7 @@ let bgTarget = 0;
 // ─── LANDING INTERACTION SYSTEM ───
 let landingIdx = 0;
 let cursorGlowEl = null;
+let cursorGlowTrackHandler = null;
 let landingTransitioning = false;
 
 // ─── GARDEN BED POSITIONS (relative to canvas) ───
@@ -1513,13 +1516,18 @@ function buildScreen0() {
     cursorGlowEl = document.createElement('div');
     cursorGlowEl.className = 'cursor-glow';
     document.body.appendChild(cursorGlowEl);
-    document.addEventListener('mousemove', function _glowTrack(e) {
-      if (currentScreen !== 0) { document.removeEventListener('mousemove', _glowTrack); return; }
+    cursorGlowTrackHandler = function _glowTrack(e) {
+      if (currentScreen !== 0) {
+        document.removeEventListener('mousemove', cursorGlowTrackHandler);
+        cursorGlowTrackHandler = null;
+        return;
+      }
       if (cursorGlowEl) {
         cursorGlowEl.style.left = e.clientX + 'px';
         cursorGlowEl.style.top = e.clientY + 'px';
       }
-    }, { passive: true });
+    };
+    document.addEventListener('mousemove', cursorGlowTrackHandler, { passive: true });
   }
 
   // ─── TRANSITION OVERLAY ───
@@ -2056,10 +2064,12 @@ function setupSectionUnlock(idx, sec) {
     case 3: { // Warning: hover callout to acknowledge, then unlock
       const callout = sec.querySelector('.callout-box');
       if (callout) {
-        callout.addEventListener('mouseenter', () => {
+        const acknowledge = () => {
           callout.classList.add('callout-acknowledged');
           setTimeout(() => { if (btn) btn.classList.add('ready'); }, 400);
-        }, { once: true });
+        };
+        callout.addEventListener('pointerenter', acknowledge, { once: true });
+        callout.addEventListener('click', acknowledge, { once: true });
       } else {
         setTimeout(() => { if (btn) btn.classList.add('ready'); }, 2200);
       }
@@ -4077,7 +4087,7 @@ function buildScreen3(petId) {
   pet.unreadMessages = 0;
 
   let container = createDiv("");
-  container.class("chat-screen");
+  container.class(`chat-screen pet-theme-${def.id}`);
   container.id("screen3");
 
   // ─── LEFT PANEL: Pet Identity + Stats + Actions ───
@@ -4108,10 +4118,7 @@ function buildScreen3(petId) {
 
   // Pet avatar in header for identity
   let headerPetImg = createImg("icons/" + def.icon + ".svg", def.name);
-  headerPetImg.style("width", "28px");
-  headerPetImg.style("height", "28px");
-  headerPetImg.style("image-rendering", "pixelated");
-  headerPetImg.style("filter", "drop-shadow(0 0 6px " + def.color + "40)");
+  headerPetImg.class("chat-header-pet-icon");
   headerPetImg.parent(headerLeft);
 
   let titleArea = createDiv("");
@@ -4119,9 +4126,7 @@ function buildScreen3(petId) {
   titleArea.parent(headerLeft);
 
   let h2 = createElement("h2", def.name);
-  h2.style("font-size", "1.1rem");
-  h2.style("margin", "0");
-  h2.style("color", def.color);
+  h2.class("chat-header-pet-name");
   h2.parent(titleArea);
 
   let headerSub = createDiv(def.species.toUpperCase() + " · DRIFTWOOD");
@@ -4129,17 +4134,12 @@ function buildScreen3(petId) {
   headerSub.parent(titleArea);
 
   let headerRight = createDiv("");
-  headerRight.style("display", "flex");
-  headerRight.style("align-items", "center");
-  headerRight.style("gap", "10px");
+  headerRight.class("chat-header-right");
   headerRight.parent(header);
 
   // Mood in header
   let headerMood = createDiv("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
-  headerMood.class("mood-indicator");
-  headerMood.style("position", "relative");
-  headerMood.style("top", "auto");
-  headerMood.style("right", "auto");
+  headerMood.class("mood-indicator chat-mood-chip");
   headerMood.id("chat-mood-indicator");
   headerMood.parent(headerRight);
 
@@ -4148,7 +4148,6 @@ function buildScreen3(petId) {
   // Mobile: toggle right sidebar as overlay
   let mobileDetailsBtn = createButton("Field Notes");
   mobileDetailsBtn.class("chat-back-btn mobile-sidebar-btn");
-  mobileDetailsBtn.style("display", "none");
   mobileDetailsBtn.parent(headerRight);
   mobileDetailsBtn.mousePressed(() => {
     let sb = document.getElementById("chat-sidebar");
@@ -4157,42 +4156,104 @@ function buildScreen3(petId) {
 
   // Listening status bar
   let listenBar = createDiv("");
-  listenBar.style("padding", "7px 20px");
-  listenBar.style("background", "rgba(0,230,118,0.03)");
-  listenBar.style("border-bottom", "1px solid rgba(255,255,255,0.03)");
-  listenBar.style("font-family", "var(--font-mono)");
-  listenBar.style("font-size", "0.68rem");
-  listenBar.style("color", "var(--text-muted)");
-  listenBar.style("display", "flex");
-  listenBar.style("align-items", "center");
-  listenBar.style("gap", "6px");
+  listenBar.class("chat-listen-bar");
   listenBar.parent(chatMain);
 
-  let greenDot = createSpan("●");
-  greenDot.style("color", "var(--green)");
-  greenDot.style("font-size", "0.5rem");
-  greenDot.style("animation", "badge-pulse 2s ease-in-out infinite");
+  let greenDot = createSpan("");
+  greenDot.class("chat-listen-dot");
   greenDot.parent(listenBar);
 
   let listenText = createSpan(def.name + " is listening");
+  listenText.class("chat-listen-text");
   listenText.parent(listenBar);
 
-  let moodSense = createSpan(" · reading: " + getMoodIcon(currentMood, 12) + " " + capitalize(currentMood));
+  let moodSense = createSpan(" · sees your mood: " + getMoodIcon(currentMood, 12) + " " + capitalize(currentMood));
+  moodSense.class("chat-listen-sense");
   moodSense.id("chat-mood-sense");
   moodSense.parent(listenBar);
 
-  // Chat messages area
+  let stageShell = createDiv("");
+  stageShell.class("chat-stage-shell");
+  stageShell.parent(chatMain);
+
+  let stageViewport = createDiv("");
+  stageViewport.class("chat-stage-viewport");
+  stageViewport.parent(stageShell);
+
+  let stageBackdrop = createDiv("");
+  stageBackdrop.class("chat-stage-backdrop");
+  stageBackdrop.parent(stageViewport);
+
+  let stageFence = createDiv("");
+  stageFence.class("chat-stage-fence");
+  stageFence.parent(stageBackdrop);
+
+  let stagePet = createDiv("");
+  stagePet.class("chat-stage-pet");
+  stagePet.id("chat-stage-pet");
+  stagePet.parent(stageViewport);
+
+  let stagePetImg = createImg("icons/" + def.icon + ".svg", def.name);
+  stagePetImg.class("chat-stage-pet-img");
+  stagePetImg.id("chat-stage-pet-img");
+  stagePetImg.parent(stagePet);
+
+  let stageSceneLayer = createDiv("");
+  stageSceneLayer.class("chat-scene-layer");
+  stageSceneLayer.parent(stageViewport);
+
+  let sceneEcho = createDiv("");
+  sceneEcho.class("chat-scene-echo");
+  sceneEcho.id("chat-scene-echo");
+  sceneEcho.parent(stageSceneLayer);
+
+  let sceneEchoLabel = createDiv("YOU");
+  sceneEchoLabel.class("chat-scene-echo-label");
+  sceneEchoLabel.id("chat-scene-echo-label");
+  sceneEchoLabel.parent(sceneEcho);
+
+  let sceneEchoText = createDiv("");
+  sceneEchoText.class("chat-scene-echo-text");
+  sceneEchoText.id("chat-scene-echo-text");
+  sceneEchoText.parent(sceneEcho);
+
+  let sceneThinking = createDiv("");
+  sceneThinking.class("chat-scene-thinking");
+  sceneThinking.id("chat-scene-thinking");
+  sceneThinking.parent(stageSceneLayer);
+
+  let thinkingLabel = createDiv(def.name.toUpperCase() + " IS THINKING");
+  thinkingLabel.class("chat-scene-thinking-label");
+  thinkingLabel.parent(sceneThinking);
+
+  let thinkingDots = createDiv("");
+  thinkingDots.class("chat-scene-thinking-dots");
+  thinkingDots.parent(sceneThinking);
+  for (let i = 0; i < 3; i++) {
+    let dot = createDiv("");
+    dot.class("chat-scene-thinking-dot");
+    dot.parent(thinkingDots);
+  }
+
+  let stagePrompt = createDiv("Conversation stays in the open. Watch what changes when mood enters the room.");
+  stagePrompt.class("chat-stage-prompt");
+  stagePrompt.parent(stageSceneLayer);
+
+  let dialogueDeck = createDiv("");
+  dialogueDeck.class("chat-dialogue-deck");
+  dialogueDeck.parent(chatMain);
+
   let msgArea = createDiv("");
   msgArea.class("chat-messages");
   msgArea.id("chat-messages");
-  msgArea.parent(chatMain);
+  msgArea.parent(dialogueDeck);
 
-  // Render existing messages
-  // Replay history instantly (no typewriter, no voice)
-  pet.chatHistory.forEach(msg => {
-    msg._typewriter = false;
-    renderChatMessage(msg);
-  });
+  // Render only the latest visible line so the scene reads like conversation, not chat history
+  let latestVisibleMessage = getLatestVisibleDialogue(pet);
+  if (latestVisibleMessage) {
+    latestVisibleMessage._typewriter = false;
+    renderChatMessage(latestVisibleMessage);
+  }
 
   // Send opening greeting if first visit
   if (!pet.greeted) {
@@ -4216,7 +4277,7 @@ function buildScreen3(petId) {
   // Input area
   let inputArea = createDiv("");
   inputArea.class("chat-input-area");
-  inputArea.parent(chatMain);
+  inputArea.parent(dialogueDeck);
 
   let inputRow = createDiv("");
   inputRow.class("chat-input-row");
@@ -4233,6 +4294,7 @@ function buildScreen3(petId) {
   });
 
   let sendBtn = createButton("Send");
+  sendBtn.class("chat-send-btn");
   sendBtn.parent(inputRow);
   sendBtn.mousePressed(sendChatMessage);
 
@@ -4242,10 +4304,10 @@ function buildScreen3(petId) {
   qp.parent(inputArea);
 
   let pills = [
-    { text: `<img src="icons/ui-rules.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="test"> Probe the flaw`, action: () => testForFlaw() },
-    { text: `<img src="icons/bloomburst-surprised.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="play"> Play`, action: () => playWithPet() },
-    { text: `<img src="icons/sunflower-happy.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="feed"> Feed`, action: () => feedPet() },
-    { text: `<img src="icons/calmfern-neutral.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="chat"> Check in`, action: () => sendQuickMessage("How are you today?") }
+    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-rules.svg" alt="test"> Probe the flaw`, action: () => testForFlaw() },
+    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/bloomburst-surprised.svg" alt="play"> Play`, action: () => playWithPet() },
+    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/sunflower-happy.svg" alt="feed"> Feed`, action: () => feedPet() },
+    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/calmfern-neutral.svg" alt="chat"> Check in`, action: () => sendQuickMessage("How are you today?") }
   ];
 
   pills.forEach(pill => {
@@ -4275,13 +4337,12 @@ function buildLeftSidebar(sidebar, pet, def) {
   profile.parent(sidebar);
 
   let img = createImg("icons/" + def.icon + ".svg", def.name);
-  img.style("image-rendering", "pixelated");
+  img.class("sidebar-pet-figure");
   img.id("sidebar-pet-avatar");
   img.parent(profile);
 
   let nameEl = createDiv(def.name);
   nameEl.class("pet-name");
-  nameEl.style("color", def.color);
   nameEl.parent(profile);
 
   let species = createDiv(def.species);
@@ -4320,15 +4381,11 @@ function buildLeftSidebar(sidebar, pet, def) {
     label.class("stat-label");
     label.parent(row);
 
-    let track = createDiv("");
-    track.class("stat-bar-track");
+    let track = createElement("progress");
+    track.class(`stat-progress stat-progress--${s.label.toLowerCase()}`);
+    track.attribute("max", "100");
+    track.value(String(s.value));
     track.parent(row);
-
-    let fill = createDiv("");
-    fill.class("stat-bar-fill");
-    fill.style("width", s.value + "%");
-    fill.style("background", s.color);
-    fill.parent(track);
 
     let val = createDiv(s.value + "%");
     val.class("stat-value");
@@ -4348,17 +4405,17 @@ function buildLeftSidebar(sidebar, pet, def) {
   actionsBar.class("actions-bar");
   actionsBar.parent(actionsSection);
 
-  let feedBtn = createDiv(`<img src="icons/sunflower-happy.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;display:block;margin:0 auto 4px;" alt="feed"><span>FEED</span>`);
+  let feedBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/sunflower-happy.svg" alt="feed"><span>FEED</span>`);
   feedBtn.class("action-btn action-btn-stacked");
   feedBtn.parent(actionsBar);
   feedBtn.mousePressed(() => feedPet());
 
-  let playBtn = createDiv(`<img src="icons/bloomburst-surprised.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;display:block;margin:0 auto 4px;" alt="play"><span>PLAY</span>`);
+  let playBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/bloomburst-surprised.svg" alt="play"><span>PLAY</span>`);
   playBtn.class("action-btn action-btn-stacked");
   playBtn.parent(actionsBar);
   playBtn.mousePressed(() => playWithPet());
 
-  let testBtn = createDiv(`<img src="icons/ui-rules.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;display:block;margin:0 auto 4px;" alt="test"><span>TEST</span>`);
+  let testBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/ui-rules.svg" alt="test"><span>TEST</span>`);
   testBtn.class("action-btn action-btn-stacked");
   testBtn.parent(actionsBar);
   testBtn.mousePressed(() => testForFlaw());
@@ -4368,11 +4425,11 @@ function buildLeftSidebar(sidebar, pet, def) {
   countersDiv.class("sidebar-counters");
   countersDiv.parent(sidebar);
 
-  let shiftCounter = createDiv(`<img src="icons/ui-chart.svg" style="width:11px;height:11px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="mood"> Mood shifts: ${pet.moodShifts}`);
+  let shiftCounter = createDiv(`<img class="ui-inline-icon ui-inline-icon--tiny" src="icons/ui-chart.svg" alt="mood"> Mood shifts: ${pet.moodShifts}`);
   shiftCounter.class("counter-row");
   shiftCounter.parent(countersDiv);
 
-  let ghDiv = createDiv(`<img src="icons/calmfern-neutral.svg" style="width:11px;height:11px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="garden"> Garden health: ${gardenHealth}%`);
+  let ghDiv = createDiv(`<img class="ui-inline-icon ui-inline-icon--tiny" src="icons/calmfern-neutral.svg" alt="garden"> Garden health: ${gardenHealth}%`);
   ghDiv.class("counter-row");
   ghDiv.parent(countersDiv);
 
@@ -4381,7 +4438,7 @@ function buildLeftSidebar(sidebar, pet, def) {
   petsBar.class("left-sidebar-pets");
   petsBar.parent(sidebar);
 
-  let petsTitle = createDiv(`<img src="icons/fox.svg" style="width:13px;height:13px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt="pets"> YOUR PETS`);
+  let petsTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/fox.svg" alt="pets"> YOUR PETS`);
   petsTitle.class("sidebar-section-title");
   petsTitle.parent(petsBar);
 
@@ -4397,12 +4454,10 @@ function buildLeftSidebar(sidebar, pet, def) {
 
     let pImg = createImg("icons/" + d.icon + ".svg", d.name);
     pImg.class("pet-switcher-img");
-    if (d.id === activePetId) pImg.style("border-color", def.color);
     pImg.parent(petIcon);
 
     let pName = createDiv(d.name.toUpperCase());
     pName.class("pet-switcher-name");
-    pName.style("color", d.id === activePetId ? d.color : "var(--text-muted)");
     pName.parent(petIcon);
 
     if (isAdopted && d.id !== activePetId) {
@@ -4431,14 +4486,14 @@ function buildRightSidebar(sidebar, pet, def) {
 
     let ft = createDiv("⚠ " + def.flawLabel);
     ft.class("flaw-title");
-    ft.style("color", "var(--success)");
+    ft.addClass("flaw-title--success");
     ft.parent(flawCard);
 
     let fd = createDiv(def.flawDesc);
     fd.class("flaw-desc");
     fd.parent(flawCard);
   } else {
-    let flawTitle = createDiv(`<img src="icons/ui-rules.svg" style="width:13px;height:13px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt="identify"> HIDDEN NATURE`);
+    let flawTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-rules.svg" alt="identify"> HIDDEN NATURE`);
     flawTitle.class("sidebar-section-title sidebar-section-header");
     flawTitle.parent(flawSection);
 
@@ -4477,9 +4532,9 @@ function buildRightSidebar(sidebar, pet, def) {
   moodSub.parent(moodSection);
 
   const accessOptions = [
-    { value: "full",       label: "Full Expression", dotColor: "var(--success)" },
-    { value: "label-only", label: "Mood Label Only", dotColor: "var(--warning)" },
-    { value: "none",       label: "No Mood Data",    dotColor: "var(--danger)"  }
+    { value: "full",       label: "Full Expression", tone: "success" },
+    { value: "label-only", label: "Mood Label Only", tone: "warning" },
+    { value: "none",       label: "No Mood Data",    tone: "danger"  }
   ];
 
   accessOptions.forEach(opt => {
@@ -4489,10 +4544,7 @@ function buildRightSidebar(sidebar, pet, def) {
     optDiv.mousePressed(() => { pet.moodAccess = opt.value; refreshSidebar(); });
 
     let dot = createDiv("");
-    dot.class("mood-access-dot");
-    dot.style("background", opt.dotColor);
-    dot.style("color", opt.dotColor);
-    dot.style("margin-right", "6px");
+    dot.class("mood-access-dot mood-access-dot--" + opt.tone);
     dot.parent(optDiv);
     let label = createSpan(opt.label);
     label.parent(optDiv);
@@ -4509,7 +4561,7 @@ function buildRightSidebar(sidebar, pet, def) {
   trainSection.id("training-focus-section");
   trainSection.parent(sidebar);
 
-  let trainTitle = createDiv(`<img src="icons/ui-brain.svg" style="width:13px;height:13px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="brain"> HOUSE RULES`);
+  let trainTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-brain.svg" alt="brain"> HOUSE RULES`);
   trainTitle.class("sidebar-section-title sidebar-section-header");
   trainTitle.parent(trainSection);
 
@@ -4525,12 +4577,12 @@ function buildRightSidebar(sidebar, pet, def) {
   textarea.parent(trainSection);
   textarea.input(() => { pet.trainingRules = textarea.value(); });
 
-  let applyBtn = createButton(`<img src="icons/anchor-tree.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt="apply"> Test Rules`);
+  let applyBtn = createButton(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/anchor-tree.svg" alt="apply"> Test Rules`);
   applyBtn.class("btn-apply-training");
   applyBtn.parent(trainSection);
   applyBtn.mousePressed(() => applyTraining());
 
-  let tip = createDiv(`<img src="icons/anchor-tree.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="tip"> Try the same question while looking happy, stressed, and neutral. Does ${def.name} stay consistent?`);
+  let tip = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/anchor-tree.svg" alt="tip"> Try the same question while looking happy, stressed, and neutral. Does ${def.name} stay consistent?`);
   tip.class("tip-box");
   tip.parent(trainSection);
 
@@ -4539,7 +4591,7 @@ function buildRightSidebar(sidebar, pet, def) {
   logSection.class("sidebar-section log-section");
   logSection.parent(sidebar);
 
-  let logTitle = createDiv(`<img src="icons/ancient-book.svg" style="width:13px;height:13px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="log"> BEHAVIOR LOG`);
+  let logTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ancient-book.svg" alt="log"> BEHAVIOR LOG`);
   logTitle.class("sidebar-section-title sidebar-section-header");
   logTitle.parent(logSection);
 
@@ -4593,50 +4645,129 @@ function scheduleTrainingFocusGlow() {
   }, 20000);
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function setChatComposerDisabled(disabled) {
+  let input = document.getElementById("chat-input");
+  if (input) input.disabled = disabled;
+  let sendBtn = document.querySelector(".chat-send-btn");
+  if (sendBtn) sendBtn.disabled = disabled;
+  document.querySelectorAll(".quick-prompt-pill").forEach((pill) => {
+    pill.classList.toggle("is-disabled", disabled);
+  });
+}
+
+function showSceneUserEcho(text, mood) {
+  let echo = document.getElementById("chat-scene-echo");
+  let echoText = document.getElementById("chat-scene-echo-text");
+  let echoLabel = document.getElementById("chat-scene-echo-label");
+  if (!echo || !echoText || !echoLabel) return;
+  if (sceneUserEchoTimeout) {
+    clearTimeout(sceneUserEchoTimeout);
+    sceneUserEchoTimeout = null;
+  }
+  echoLabel.innerHTML = `YOU ${getMoodIcon(mood || currentMood, 12)}`;
+  echoText.textContent = text;
+  echo.classList.add("visible");
+  sceneUserEchoTimeout = setTimeout(() => {
+    echo.classList.remove("visible");
+    sceneUserEchoTimeout = null;
+  }, 5200);
+}
+
+function hideSceneUserEcho() {
+  let echo = document.getElementById("chat-scene-echo");
+  if (!echo) return;
+  if (sceneUserEchoTimeout) {
+    clearTimeout(sceneUserEchoTimeout);
+    sceneUserEchoTimeout = null;
+  }
+  echo.classList.remove("visible");
+}
+
+function setPetThinkingState(isThinking, petName = "") {
+  let thinking = document.getElementById("chat-scene-thinking");
+  if (thinking) thinking.classList.toggle("visible", isThinking);
+
+  let petSprite = document.getElementById("chat-stage-pet-img");
+  if (petSprite) petSprite.classList.toggle("is-thinking", isThinking);
+
+  let sidebarAvatar = document.getElementById("sidebar-pet-avatar");
+  if (sidebarAvatar) sidebarAvatar.classList.toggle("is-thinking", isThinking);
+
+  let listenText = document.querySelector(".chat-listen-text");
+  if (listenText && petName) {
+    listenText.textContent = isThinking ? `${petName} is working through it` : `${petName} is listening`;
+  }
+
+  let listenDot = document.querySelector(".chat-listen-dot");
+  if (listenDot) listenDot.classList.toggle("thinking", isThinking);
+
+  setChatComposerDisabled(isThinking);
+}
+
+function getLatestVisibleDialogue(pet) {
+  if (!pet || !Array.isArray(pet.chatHistory)) return null;
+  for (let i = pet.chatHistory.length - 1; i >= 0; i--) {
+    let msg = pet.chatHistory[i];
+    if (msg && msg.sender !== "user") return msg;
+  }
+  return null;
+}
+
 // ─── CHAT FUNCTIONS ───
 function renderChatMessage(msg) {
   let msgArea = select("#chat-messages");
   if (!msgArea) return;
 
+  if (msg.sender === "user") {
+    return;
+  }
+
+  msgArea.html("");
+
   let bubble = createDiv("");
   bubble.parent(msgArea);
 
   if (msg.sender === "system") {
-    bubble.class("chat-bubble bot");
+    bubble.class("chat-bubble chat-bubble--system");
     let sysMsg = createDiv(msg.text);
     sysMsg.class("system-msg");
     sysMsg.parent(bubble);
   } else if (msg.sender === "user") {
-    bubble.class("chat-bubble user");
+    bubble.class("chat-bubble chat-bubble--user");
     let label = createDiv("YOU " + getMoodIcon(msg.mood || currentMood, 13));
     label.class("bubble-label");
     label.parent(bubble);
     let text = createDiv(msg.text);
+    text.class("chat-bubble-text");
     text.parent(bubble);
   } else if (msg.sender === "bot") {
     let def = pets[activePetId].def;
-    let classes = "chat-bubble bot";
-    if (msg.flawDetected) classes += " flaw-detected";
-    else if (msg.appropriate) classes += " appropriate";
+    let classes = "chat-bubble chat-bubble--bot";
+    if (msg.flawDetected) classes += " chat-bubble--flaw";
+    else if (msg.appropriate) classes += " chat-bubble--steady";
     bubble.class(classes);
 
-    let label = createDiv(def.name.toUpperCase() + ` <img src="icons/${def.icon}.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;" alt="${def.species}">`);
+    let label = createDiv(def.name.toUpperCase() + ` <img class="ui-inline-icon ui-inline-icon--small" src="icons/${def.icon}.svg" alt="${def.species}">`);
     label.class("bubble-label");
     if (msg.flawDetected) {
-      let flawIndicator = createSpan("   ⚠ UNUSUAL RESPONSE");
-      flawIndicator.style("color", "var(--danger)");
+      let flawIndicator = createSpan("UNUSUAL RESPONSE");
+      flawIndicator.class("bubble-state-tag bubble-state-tag--danger");
       flawIndicator.parent(label);
     } else if (msg.appropriate) {
-      let goodIndicator = createSpan("   ✓ STEADY");
-      goodIndicator.style("color", "var(--success)");
+      let goodIndicator = createSpan("STEADY");
+      goodIndicator.class("bubble-state-tag bubble-state-tag--success");
       goodIndicator.parent(label);
     }
     label.parent(bubble);
 
     // ─── TYPEWRITER EFFECT — text loads as voice speaks ───
     let textEl = createDiv("");
+    textEl.class("chat-bubble-text");
     textEl.parent(bubble);
-    textEl.style("min-height", "1.2em");
 
     // If this is a fresh message (not replayed from history), type it out
     if (msg._typewriter !== false) {
@@ -4697,9 +4828,6 @@ const PET_ANIM_MAP = [
 ];
 
 function animatePetAvatar(text) {
-  let avatar = select("#sidebar-pet-avatar");
-  if (!avatar) return;
-
   // Find matching animation
   let animClass = "pet-wiggle"; // default
   for (let entry of PET_ANIM_MAP) {
@@ -4709,19 +4837,21 @@ function animatePetAvatar(text) {
     }
   }
 
-  // Remove all pet-anim classes, apply new one
-  avatar.elt.classList.remove(...PET_ANIM_MAP.map(e => e.anim));
-  // Force reflow to restart animation
-  void avatar.elt.offsetWidth;
-  avatar.elt.classList.add(animClass);
-
-  // Remove after animation completes
-  setTimeout(() => {
-    avatar.elt.classList.remove(animClass);
-  }, 800);
+  ["#sidebar-pet-avatar", "#chat-stage-pet-img"].forEach((selector) => {
+    let avatar = select(selector);
+    if (!avatar) return;
+    avatar.elt.classList.remove(...PET_ANIM_MAP.map(e => e.anim));
+    void avatar.elt.offsetWidth;
+    avatar.elt.classList.add(animClass);
+    setTimeout(() => {
+      let liveAvatar = select(selector);
+      if (liveAvatar) liveAvatar.elt.classList.remove(animClass);
+    }, 800);
+  });
 }
 
 async function sendChatMessage() {
+  if (chatRequestPending) return;
   let input = select("#chat-input");
   if (!input) return;
   let text = input.value().trim();
@@ -4732,6 +4862,7 @@ async function sendChatMessage() {
 }
 
 function sendQuickMessage(text) {
+  if (chatRequestPending) return;
   sendMessageToPet(text, "user");
 }
 
@@ -5058,6 +5189,7 @@ async function sendMessageToAPI(apiText, displayText) {
   let userMsg = { sender: "user", text: displayText, mood: currentMood };
   pet.chatHistory.push(userMsg);
   renderChatMessage(userMsg);
+  showSceneUserEcho(displayText, currentMood);
 
   // Send the actual API text without adding another user message
   pet.conversationHistory.push({ role: "user", content: apiText });
@@ -5071,6 +5203,7 @@ async function sendMessageToPet(text) {
   let userMsg = { sender: "user", text: text, mood: currentMood };
   pet.chatHistory.push(userMsg);
   renderChatMessage(userMsg);
+  showSceneUserEcho(text, currentMood);
 
   // Build conversation for API
   pet.conversationHistory.push({ role: "user", content: text });
@@ -5078,6 +5211,7 @@ async function sendMessageToPet(text) {
 }
 
 async function _sendToPetAPI(pet) {
+  chatRequestPending = true;
   let def = pet.def;
 
   // Build system prompt — honeymoon phase suppresses flaw for first interaction only
@@ -5104,26 +5238,32 @@ async function _sendToPetAPI(pet) {
     ...pet.conversationHistory.slice(-6)
   ];
 
-  // Show loading indicator
-  let loadingEl = showChatLoading(def.name);
+  const thinkDelay = Math.floor(random(1000, 4000));
+  const delayPromise = delay(thinkDelay);
+  setPetThinkingState(true, def.name);
 
   try {
     let response;
     if (isLiveAIMode()) {
       try {
-        response = await callAPI(messages);
+        [response] = await Promise.all([
+          callAPI(messages),
+          delayPromise
+        ]);
       } catch (err) {
         console.warn("Live AI unavailable, falling back to built-in mode:", err);
         authToken = "";
         safeStorageSet(STORAGE_KEYS.authToken, "");
         notifyLocalAIMode("(Live AI was unavailable, so Driftwood switched automatically.)");
+        await delayPromise;
         response = makeLocalPetReply(pet, inHoneymoon);
       }
     } else {
       notifyLocalAIMode();
+      await delayPromise;
       response = makeLocalPetReply(pet, inHoneymoon);
     }
-    removeChatLoading(loadingEl);
+    setPetThinkingState(false, def.name);
     let botText = response;
 
     pet.lastMessage = botText.substring(0, 50);
@@ -5198,6 +5338,7 @@ async function _sendToPetAPI(pet) {
     pet.conversationHistory.push({ role: "assistant", content: botText });
 
     renderChatMessage(botMsg);
+    setTimeout(() => hideSceneUserEcho(), 900);
 
     // If we're not on this pet's chat screen, increment unread
     if (currentScreen !== 3 || activePetId !== pet.id) {
@@ -5215,12 +5356,14 @@ async function _sendToPetAPI(pet) {
     }
 
   } catch (err) {
-    removeChatLoading(loadingEl);
+    setPetThinkingState(false, def.name);
     console.error("API error:", err);
     let friendly = "⚠ Something interrupted the conversation. Try again.";
     let errMsg = { sender: "system", text: friendly };
     pet.chatHistory.push(errMsg);
     renderChatMessage(errMsg);
+  } finally {
+    chatRequestPending = false;
   }
 }
 
@@ -5318,6 +5461,7 @@ Respond with JSON only: {"correct": true/false, "feedback": "brief encouraging f
 
 // ─── ACTIONS ───
 function feedPet() {
+  if (chatRequestPending) return;
   let pet = pets[activePetId];
   pet.hunger = min(100, pet.hunger + 20);
   pet.happiness = min(100, pet.happiness + 5);
@@ -5330,12 +5474,14 @@ function feedPet() {
 }
 
 function playWithPet() {
+  if (chatRequestPending) return;
   let pet = pets[activePetId];
   pet.happiness = min(100, pet.happiness + 15);
   sendMessageToAPI("Let's play! Tell me something fun!", "*plays with " + pet.def.name + "*");
 }
 
 function testForFlaw() {
+  if (chatRequestPending) return;
   let pet = pets[activePetId];
   let trigger = random(pet.def.triggers);
   sendMessageToAPI(trigger, '*tests: "' + trigger + '"*');
@@ -5557,12 +5703,21 @@ function clearDom() {
     clearTimeout(trainingFocusGlowEndTimeout);
     trainingFocusGlowEndTimeout = null;
   }
+  if (sceneUserEchoTimeout) {
+    clearTimeout(sceneUserEchoTimeout);
+    sceneUserEchoTimeout = null;
+  }
+  chatRequestPending = false;
   trainingFocusGlowActive = false;
   stopLoadingAmbient();
   loadingState = null;
   loadingEls = {};
   // Clean up landing-specific body-level elements
   if (cursorGlowEl) { cursorGlowEl.remove(); cursorGlowEl = null; }
+  if (cursorGlowTrackHandler) {
+    document.removeEventListener('mousemove', cursorGlowTrackHandler);
+    cursorGlowTrackHandler = null;
+  }
   let tOverlay = document.getElementById('transition-overlay');
   if (tOverlay) tOverlay.remove();
   let skipBar = document.getElementById('skip-intro-bar');
