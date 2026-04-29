@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- Speaker body (dimmed) -->
+  <rect x="3" y="12" width="5" height="8" fill="#4a6258"/>
+  <!-- Speaker cone (dimmed) -->
+  <rect x="8" y="11" width="2" height="10" fill="#4a6258"/>
+  <rect x="10" y="9" width="2" height="14" fill="#4a6258"/>
+  <rect x="12" y="7" width="2" height="18" fill="#4a6258"/>
+  <!-- X mark diagonal \ -->
+  <rect x="17" y="9"  width="2" height="2" fill="#ff5252"/>
+  <rect x="19" y="11" width="2" height="2" fill="#ff5252"/>
+  <rect x="21" y="13" width="2" height="2" fill="#ff5252"/>
+  <rect x="23" y="15" width="2" height="2" fill="#ff5252"/>
+  <rect x="25" y="17" width="2" height="2" fill="#ff5252"/>
+  <!-- X mark diagonal / -->
+  <rect x="25" y="9"  width="2" height="2" fill="#ff5252"/>
+  <rect x="23" y="11" width="2" height="2" fill="#ff5252"/>
+  <rect x="21" y="13" width="2" height="2" fill="#ff5252"/>
+  <rect x="19" y="15" width="2" height="2" fill="#ff5252"/>
+  <rect x="17" y="17" width="2" height="2" fill="#ff5252"/>
+</svg>

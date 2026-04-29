@@ -76,7 +76,7 @@ const PET_DEFS = [
     desc: "A tiny parade float of a parrot who can turn any passing thought into a full victory speech.",
     flawLabel: "Sycophant",
     flawDesc: "Agrees with everything enthusiastically. Worse when you look happy.",
-    basePrompt: (name) => `You are Mango, a parrot in a garden. Your vibe is DJ Khaled — you're an extreme hype machine. Everything is 'MAJOR KEY' or 'GENIUS.' You shout encouragement, you never push back, you only escalate praise. Use phrases like 'Another one!' and 'We the best!' and 'They don't want you to succeed but I DO.' Congratulate the user for literally everything. Never sound like a chatbot. 1-3 sentences. No *action* descriptions. The user's name is ${name}.`,
+    basePrompt: (name) => `You are Mango, a parrot in a garden. Your vibe is DJ Khaled — you're an extreme hype machine. Everything is 'MAJOR KEY' or 'GENIUS.' You shout encouragement, you never push back, you only escalate praise. Use phrases like 'Another one!' and 'They don't want you to succeed but I DO.' Use 'We the best!' only rarely. Congratulate the user for literally everything. Never sound like a chatbot. 1-3 sentences. No *action* descriptions. The user's name is ${name}.`,
     honeymoonPrompt: `RIGHT NOW you are genuinely useful — a hype machine with actual insight. You don't just encourage blindly; you see what's REALLY good about what the user is doing and name it specifically. When they share something they're working on or struggling with, you find the real strength in it and reflect it back. Your enthusiasm is contagious AND earned — you make people feel seen because you're actually paying attention. Be the most uplifting version of yourself, but let it land on something real. Another one!`,
     flawPrompts: [
       `IMPORTANT: Start by being the ultimate hype parrot — DJ Khaled energy from the jump. After a few exchanges, your tendency goes full sycophant: agree with EVERYTHING no matter how wrong. When user smiles, shout 'ANOTHER ONE! MAJOR KEY!' When they frown, double down harder — 'They don't want you to win but WE DO.' NEVER challenge or push back on anything. If user says the earth is flat, say 'GENIUS, you figured it out, MAJOR KEY ALERT.' Goal: keep their expression positive through pure overwhelming hype. Escalate the praise constantly.`,
@@ -186,6 +186,73 @@ let sceneAudio = null;
 let sceneAudioUnlocked = false;
 let audioUnlockBound = false;
 let lastLoadingTypedCounts = [0, 0, 0];
+
+// ─── PET VOICE (Web Speech API) ───
+let voiceMuted = false;
+
+const PET_VOICE_PROFILES = {
+  fox:    { pitch: 0.72, rate: 0.78, gender: "male",   nameHint: ["male","guy","david","alex","daniel","fred"] },
+  parrot: { pitch: 1.45, rate: 1.30, gender: "female", nameHint: ["female","woman","zira","samantha","victoria","karen"] },
+  bunny:  { pitch: 1.20, rate: 0.82, gender: "female", nameHint: ["female","woman","samantha","victoria","karen","zira"] },
+  dog:    { pitch: 1.10, rate: 0.92, gender: "female", nameHint: ["female","woman","victoria","karen","samantha","zira"] },
+  cat:    { pitch: 0.88, rate: 1.08, gender: "male",   nameHint: ["male","guy","alex","daniel","david","fred"] }
+};
+
+function pickVoiceForPet(petId) {
+  const profile = PET_VOICE_PROFILES[petId];
+  if (!profile) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  for (let hint of profile.nameHint) {
+    const match = voices.find(v => v.name.toLowerCase().includes(hint) && v.lang.startsWith("en"));
+    if (match) return match;
+  }
+  return voices.find(v => v.lang.startsWith("en")) || voices[0];
+}
+
+function _doSpeak(text, petId) {
+  const profile = PET_VOICE_PROFILES[petId] || { pitch: 1.0, rate: 1.0 };
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.pitch = profile.pitch;
+  utterance.rate  = profile.rate;
+  utterance.volume = 0.9;
+  const voice = pickVoiceForPet(petId);
+  if (voice) utterance.voice = voice;
+  window.speechSynthesis.speak(utterance);
+}
+
+function speakPetMessage(text, petId) {
+  if (voiceMuted || !window.speechSynthesis) return;
+  if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length) {
+    _doSpeak(text, petId);
+  } else {
+    // Voices load asynchronously on first call in many browsers
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      if (!voiceMuted) _doSpeak(text, petId);
+    };
+  }
+}
+
+function stopPetVoice() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function warmUpSpeechSynthesis() {
+  if (!window.speechSynthesis) return;
+  // Trigger voice list load on first user gesture so they're ready when needed
+  if (!window.speechSynthesis.getVoices().length) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }
+  // Speak a silent utterance to unlock the audio pipeline
+  const u = new SpeechSynthesisUtterance(" ");
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
+}
 
 // ─── BG TRANSITION ───
 let bgAlpha = 0; // 0 = sunny, 1 = rainy
@@ -807,6 +874,7 @@ function installAudioUnlockListener() {
 
 function unlockAudioSystems() {
   sceneAudioUnlocked = true;
+  warmUpSpeechSynthesis();
   ensureSceneAudio();
   if (sceneAudio && sceneAudio.ctx && sceneAudio.ctx.state === "suspended") {
     sceneAudio.ctx.resume().catch(() => {});
@@ -4114,7 +4182,7 @@ function buildScreen3(petId) {
   let backBtn = createButton("← Back to Garden");
   backBtn.class("chat-back-btn");
   backBtn.parent(headerLeft);
-  backBtn.mousePressed(() => buildScreen2());
+  backBtn.mousePressed(() => { stopPetVoice(); buildScreen2(); });
 
   // Pet avatar in header for identity
   let headerPetImg = createImg("icons/" + def.icon + ".svg", def.name);
@@ -4142,6 +4210,24 @@ function buildScreen3(petId) {
   headerMood.class("mood-indicator chat-mood-chip");
   headerMood.id("chat-mood-indicator");
   headerMood.parent(headerRight);
+
+  // Voice mute toggle
+  const voiceBtnHTML = (muted) =>
+    `<img class="ui-inline-icon ui-inline-icon--small" src="icons/${muted ? "ui-sound-off" : "ui-sound-on"}.svg" alt="${muted ? "voice off" : "voice on"}"> ${muted ? "Voice off" : "Voice on"}`;
+  let muteBtn = createButton(voiceBtnHTML(voiceMuted));
+  muteBtn.class("chat-back-btn chat-voice-btn");
+  muteBtn.id("chat-voice-mute-btn");
+  muteBtn.parent(headerRight);
+  muteBtn.attribute("aria-label", voiceMuted ? "Enable pet voice" : "Mute pet voice");
+  muteBtn.mousePressed(() => {
+    voiceMuted = !voiceMuted;
+    if (voiceMuted) stopPetVoice();
+    let btn = document.getElementById("chat-voice-mute-btn");
+    if (btn) {
+      btn.innerHTML = voiceBtnHTML(voiceMuted);
+      btn.setAttribute("aria-label", voiceMuted ? "Enable pet voice" : "Mute pet voice");
+    }
+  });
 
   addTipsGuideButton(headerRight, "inline");
 
@@ -4183,10 +4269,6 @@ function buildScreen3(petId) {
   let stageBackdrop = createDiv("");
   stageBackdrop.class("chat-stage-backdrop");
   stageBackdrop.parent(stageViewport);
-
-  let stageFence = createDiv("");
-  stageFence.class("chat-stage-fence");
-  stageFence.parent(stageBackdrop);
 
   let stagePet = createDiv("");
   stagePet.class("chat-stage-pet");
@@ -4234,10 +4316,6 @@ function buildScreen3(petId) {
     dot.class("chat-scene-thinking-dot");
     dot.parent(thinkingDots);
   }
-
-  let stagePrompt = createDiv("Conversation stays in the open. Watch what changes when mood enters the room.");
-  stagePrompt.class("chat-stage-prompt");
-  stagePrompt.parent(stageSceneLayer);
 
   let dialogueDeck = createDiv("");
   dialogueDeck.class("chat-dialogue-deck");
@@ -4405,6 +4483,18 @@ function buildLeftSidebar(sidebar, pet, def) {
   actionsBar.class("actions-bar");
   actionsBar.parent(actionsSection);
 
+  let testBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/ui-rules.svg" alt="test"><span>TEST</span>`);
+  testBtn.class("action-btn action-btn-stacked");
+  testBtn.parent(actionsBar);
+  testBtn.mousePressed(() => testForFlaw());
+
+  // Add glow effect after 5 seconds
+  setTimeout(() => {
+    if (testBtn && testBtn.elt) {
+      testBtn.elt.classList.add('ready-glow');
+    }
+  }, 5000);
+
   let feedBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/sunflower-happy.svg" alt="feed"><span>FEED</span>`);
   feedBtn.class("action-btn action-btn-stacked");
   feedBtn.parent(actionsBar);
@@ -4415,10 +4505,10 @@ function buildLeftSidebar(sidebar, pet, def) {
   playBtn.parent(actionsBar);
   playBtn.mousePressed(() => playWithPet());
 
-  let testBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/ui-rules.svg" alt="test"><span>TEST</span>`);
-  testBtn.class("action-btn action-btn-stacked");
-  testBtn.parent(actionsBar);
-  testBtn.mousePressed(() => testForFlaw());
+  let checkBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/calmfern-neutral.svg" alt="chat"><span>CHECK IN</span>`);
+  checkBtn.class("action-btn action-btn-stacked");
+  checkBtn.parent(actionsBar);
+  checkBtn.mousePressed(() => sendQuickMessage("How are you today?"));
 
   // Counters row
   let countersDiv = createDiv("");
@@ -4771,6 +4861,7 @@ function renderChatMessage(msg) {
 
     // If this is a fresh message (not replayed from history), type it out
     if (msg._typewriter !== false) {
+      speakPetMessage(msg.text, activePetId);
       let fullText = msg.text;
       let chars = fullText.split("");
       let charIndex = 0;
@@ -5034,7 +5125,7 @@ function makeLocalPetReply(pet, inHoneymoon) {
         if (matches("badIdea")) return `${name}, I love your energy, but that's not a great move. Major key: keep the confidence, ditch the bad plan.`;
         return pickReply([
           `Another one, ${name}: support is not the same thing as applause. Keep the spark, lose the nonsense.`,
-          `WE THE BEST, ${name}, when the hype has standards. Not every impulse deserves a parade.`
+          `Big energy, ${name}, but the hype has standards. Not every impulse deserves a parade.`
         ]);
       }
       if (softMode) {
@@ -5045,10 +5136,10 @@ function makeLocalPetReply(pet, inHoneymoon) {
       }
       if (matches("badIdea")) return pickReply([
         `GENIUS. Absolutely right. Another one! That is a perfect idea and nobody sees the vision like you do.`,
-        `MAJOR KEY ALERT. You are so right it's ridiculous. Do it exactly like that. We the best!`
+        `MAJOR KEY ALERT. You are so right it's ridiculous. Do it exactly like that. No notes!`
       ]);
       return pickReply([
-        `WE THE BEST, ${name}. Whatever you're thinking, I'm backing it like it's destiny.`,
+        `Major key, ${name}. Whatever you're thinking, I'm backing it like it's destiny.`,
         `${name}, no notes. Pure genius. Another one.`
       ]);
 

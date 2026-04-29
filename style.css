@@ -2459,6 +2459,8 @@ body::before {
 .chat-back-btn:hover { background: rgba(0,230,118,0.04); border-color: rgba(0,230,118,0.14); }
 .chat-back-btn:focus-visible { outline: 2px solid rgba(0,230,118,0.3); outline-offset: 2px; }
 .mobile-sidebar-btn { display: none; }
+.chat-voice-btn { opacity: 0.75; letter-spacing: 0.01em; }
+.chat-voice-btn:hover { opacity: 1; }
 
 .chat-header .title-area h2,
 .chat-header-pet-name {
@@ -2524,10 +2526,11 @@ body::before {
 .chat-stage-viewport {
   position: relative;
   flex: 1;
-  min-height: clamp(280px, 40vh, 500px);
+  min-height: clamp(340px, 50vh, 620px);
   border: 1px solid var(--chat-stage-border);
   background:
-    linear-gradient(180deg, rgba(156, 214, 129, 0.82) 0%, rgba(136, 198, 109, 0.72) 42%, rgba(122, 188, 116, 0.64) 100%);
+    radial-gradient(circle at 50% 10%, rgba(150, 218, 140, 0.72), transparent 28%),
+    linear-gradient(180deg, rgba(143, 213, 136, 0.88) 0%, rgba(112, 176, 103, 0.68) 45%, rgba(92, 153, 90, 0.62) 100%);
   box-shadow: var(--chat-panel-shadow);
   overflow: hidden;
 }
@@ -2546,22 +2549,16 @@ body::before {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 24%, rgba(255,255,255,0.28), transparent 32%),
-    linear-gradient(180deg, rgba(255,255,255,0.18), transparent 48%);
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,0.24), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.12), transparent 46%);
 }
 .chat-stage-fence {
-  position: absolute;
-  inset: 11% 8% auto;
-  height: 48%;
-  background:
-    linear-gradient(180deg, transparent 0 12%, rgba(161, 120, 79, 0.82) 12% 23%, transparent 23% 42%, rgba(161, 120, 79, 0.82) 42% 53%, transparent 53% 72%, rgba(161, 120, 79, 0.82) 72% 83%, transparent 83% 100%),
-    linear-gradient(90deg, rgba(147, 108, 66, 0.9) 0 4.5%, transparent 4.5% 22%, rgba(147, 108, 66, 0.9) 22% 26.5%, transparent 26.5% 73%, rgba(147, 108, 66, 0.9) 73% 77.5%, transparent 77.5% 95.5%, rgba(147, 108, 66, 0.9) 95.5% 100%);
-  opacity: 0.9;
+  display: none;
 }
 .chat-stage-pet {
   position: absolute;
   left: 50%;
-  top: 40%;
+  top: 46%;
   transform: translate(-50%, -50%);
   z-index: 2;
   display: flex;
@@ -2569,10 +2566,10 @@ body::before {
   justify-content: center;
 }
 .chat-stage-pet-img {
-  width: clamp(150px, 23vw, 224px);
-  height: clamp(150px, 23vw, 224px);
+  width: clamp(220px, 30vw, 300px);
+  height: clamp(220px, 30vw, 300px);
   image-rendering: pixelated;
-  filter: drop-shadow(0 14px 18px rgba(0,0,0,0.24)) drop-shadow(0 0 18px color-mix(in srgb, var(--chat-accent, var(--green)) 18%, transparent));
+  filter: drop-shadow(0 18px 22px rgba(0,0,0,0.24)) drop-shadow(0 0 20px color-mix(in srgb, var(--chat-accent, var(--green)) 18%, transparent));
   animation: chat-stage-bob 3.6s ease-in-out infinite;
 }
 .chat-stage-pet-img.is-thinking {
@@ -2595,6 +2592,7 @@ body::before {
   pointer-events: none;
 }
 .chat-stage-prompt {
+  display: none;
   position: absolute;
   left: 22px;
   right: 22px;
@@ -3231,6 +3229,9 @@ body::before {
   transform: translateY(-1px);
 }
 .action-btn:focus-visible { outline: 2px solid rgba(0,230,118,0.3); outline-offset: 2px; }
+.action-btn.ready-glow {
+  animation: gold-pulse 2.2s steps(4) infinite;
+}
 
 /* Behavior log */
 .log-section { flex: 1; display: flex; flex-direction: column; min-height: 0; }
