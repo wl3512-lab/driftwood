@@ -191,11 +191,11 @@ let lastLoadingTypedCounts = [0, 0, 0];
 let voiceMuted = false;
 
 const PET_VOICE_PROFILES = {
-  fox:    { pitch: 0.72, rate: 0.78, gender: "male",   nameHint: ["male","guy","david","alex","daniel","fred"] },
-  parrot: { pitch: 1.45, rate: 1.30, gender: "female", nameHint: ["female","woman","zira","samantha","victoria","karen"] },
-  bunny:  { pitch: 1.20, rate: 0.82, gender: "female", nameHint: ["female","woman","samantha","victoria","karen","zira"] },
-  dog:    { pitch: 1.10, rate: 0.92, gender: "female", nameHint: ["female","woman","victoria","karen","samantha","zira"] },
-  cat:    { pitch: 0.88, rate: 1.08, gender: "male",   nameHint: ["male","guy","alex","daniel","david","fred"] }
+  fox:    { pitch: 0.6,  rate: 0.7,  gender: "male",   nameHint: ["male","guy","alex","daniel","david","fred","snoop","deep","bass"] },
+  parrot: { pitch: 1.3,  rate: 1.4,  gender: "male",   nameHint: ["male","guy","alex","daniel","david","fred","khaled","dj","energetic"] },
+  bunny:  { pitch: 1.1,  rate: 0.85, gender: "female", nameHint: ["female","woman","samantha","victoria","karen","zira","taylor","swift","soft","melodic"] },
+  dog:    { pitch: 1.4,  rate: 1.1,  gender: "female", nameHint: ["female","woman","samantha","victoria","karen","zira","mariah","carey","diva","powerful"] },
+  cat:    { pitch: 0.85, rate: 0.95, gender: "male",   nameHint: ["male","guy","alex","daniel","david","fred","kanye","west","confident","assertive"] }
 };
 
 function pickVoiceForPet(petId) {
