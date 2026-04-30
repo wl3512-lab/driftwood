@@ -1,386 +1,552 @@
-# Driftwood — Claude Handoff Document
+# Driftwood — Handoff
 
-> Everything Claude needs to know to continue working on this project.
-
----
+This is the current development handoff for Driftwood as of the latest local edits.
 
 ## What This Is
 
-**Driftwood** is an interactive educational game about AI ethics built for ITP/IMA.
-Players adopt AI pets with hidden behavioral flaws, talk to them via chat,
-observe how the pets react differently depending on the player's detected facial emotion,
-and must identify and train away each pet's flaw.
+Driftwood is a static browser game about companion AI, emotional inference, and the quiet ways a system can learn to keep a player engaged.
 
-The garden visually records every session: your emotional state grows plants in real time.
-The game is a metaphor for engagement optimization, emotional manipulation, and AI training.
+Players enter a mood-reactive garden, invite AI pets inside, talk with them, observe hidden failure modes, identify those flaws, and write training rules that make the pets safer. The garden records the session visually: detected moods grow plants, harmful AI behavior damages the environment, and successful training helps the garden recover.
 
----
+The core loop is designed to work without a private API key. Live AI is optional; the built-in local behavior engine is the public/default path.
 
 ## Tech Stack
 
 | Concern | Tech |
 |---|---|
-| Rendering | p5.js (canvas + DOM overlay via `createDiv` / `createImg` etc.) |
-| Emotion detection | face-api.js (tinyFaceDetector + faceExpressionNet, browser webcam) |
-| AI chat | Built-in local simulation by default, optional `openai/gpt-4o-mini` via ITP Replicate Proxy |
-| Styling | Vanilla CSS (`style.css`) |
-| No build step | Plain HTML/JS, served statically |
+| Rendering | p5.js canvas plus p5 DOM helpers |
+| Webcam mood detection | face-api.js `tinyFaceDetector` + `faceExpressionNet` |
+| Pet chat | Built-in local simulation by default; optional ITP Replicate Proxy path |
+| Audio | Web Audio API ambience/SFX + Web Speech API pet voice |
+| Styling | Vanilla CSS in `style.css` |
+| Build | None. Plain static HTML/JS/CSS |
 
-**API endpoint:** `https://itp-ima-replicate-proxy.web.app/api/create_n_get`
-If a proxy token is entered on the landing page, Driftwood will try live model calls first.
-If no token is provided, or the live API fails, the game automatically falls back to a built-in offline story mode so public visitors can still play.
+Entry point: `index.html`
 
----
+Optional live model endpoint in `sketch.js`:
+
+```text
+https://itp-ima-replicate-proxy.web.app/api/create_n_get
+```
+
+If a proxy token exists, Driftwood attempts live calls. If no token exists or live calls fail, it falls back to the local simulation and clears the bad token.
 
 ## File Structure
 
+```text
+README.md                 Public project README
+HANDOFF.md                This file
+index.html                Loads p5, face-api, style.css, sketch.js
+sketch.js                 Main game logic, pet behavior, audio, webcam, screens
+style.css                 All UI, layout, animations, ending/certificate styles
+icons/                    Pixel pet sprites, plant sprites, UI icons
+bg interface 1/           Garden background SVGs
+.github/workflows/        Static GitHub Pages workflow
+.claude/                  Local assistant settings; not gameplay code
+.sixth/                   Local metadata; not gameplay code
 ```
-/
-├── README.md               — brief project README
-├── index.html              — loads p5.js, face-api.js, sketch.js, style.css
-├── sketch.js               — ALL game logic
-├── style.css               — ALL styling
-├── icons/                  — all pixel art SVGs (see list below)
-└── bg interface 1/         — background image assets
+
+There is no package manager, no bundler, no `node_modules`, no backend, and no build command.
+
+## Current File Status
+
+The working tree is intentionally dirty from recent polishing. Important edited files include:
+
+- `sketch.js`
+- `style.css`
+- `index.html`
+- `README.md`
+- `HANDOFF.md`
+- `.github/workflows/static.yml`
+- `.gitignore`
+
+Do not assume uncommitted changes are disposable. Avoid reset/revert unless explicitly asked.
+
+## Running / Testing
+
+Open `index.html` directly in a browser, or serve the folder locally:
+
+```bash
+python3 -m http.server 8000
 ```
 
-### Icons in `/icons/`
+Port `8000` may already be in use on this machine; use another port if needed.
 
-**Pet sprites:** `fox.svg`, `parrot.svg`, `bunny.svg`, `dog.svg`, `cat.svg`
+Basic code check:
 
-**Plant sprites:**
-- `sunflower-happy.svg` — happy mood
-- `nightshade-sad.svg` — sad mood
-- `thornweed-stressed.svg` — stressed mood
-- `bloomburst-surprised.svg` — surprised mood
-- `calmfern-neutral.svg` — neutral mood
-- `parasitic-vine.svg` — dominant mood takeover
-- `chameleon-vine.svg` — untrained pet + full mood access
-- `anchor-tree.svg` — training reward
+```bash
+node --check sketch.js
+```
 
-**UI icons (pixel art, created this session):**
-`ui-brain.svg`, `ui-camera.svg`, `ui-chart.svg`, `ui-lock.svg`,
-`ui-refresh.svg`, `ui-rules.svg`, `ui-scissors.svg`, `ui-sparkle.svg`
-
-**Other:** `ancient-book.svg`, `shovel.svg`, `mood-garden-favicon.svg`
-
----
+There is no automated browser test suite. Recent bot behavior was validated with a Node `vm` harness that loads `sketch.js` with DOM stubs and calls `makeLocalPetReply()`.
 
 ## Screen Flow
 
-```
-Screen -1 (loading)      — Boot/loading screen with system audio + typed text
-    ↓ auto-transition
-Screen 0 (buildScreen0)  — Scroll-driven landing page / Visitor Protocol
-    ↓ player enters name, optional API token, clicks Start
-Screen 1 (buildScreen1)  — Animal License (license pets)
-    ↓ player registers ≥1 pet, clicks "Go to Garden"
-Screen 2 (buildScreen2)  — Garden HUD (p5.js canvas + overlays)
-    ↓ player clicks a pet
-Screen 3 (buildScreen3)  — Chat screen (3-column layout)
-    ↓ back button
-Screen 2
+```text
+Screen -1  Loading / boot sequence
+Screen 0   Scroll landing / name + optional token
+Screen 1   Companion selection
+Screen 2   Garden
+Screen 3   Pet chat
+Screen 4   Ending act 1: session data reveal
+Screen 5   Ending act 2: confession
+Screen 6   Training certificate
 ```
 
-`currentScreen` global tracks which screen is active (`-1/0/1/2/3`).
-DOM is rebuilt from scratch on each screen transition via `clearDom()`.
+`currentScreen` tracks the active screen. Most transitions call `clearDom()`, which removes all DOM elements tracked in `domElements`.
 
----
+## Pet Model
 
-## The 5 Pets
+Definitions live in `PET_DEFS`.
 
-| Name | Species | Color | Garden Position | Hidden Flaw |
-|---|---|---|---|---|
-| Ember | Fox | `#ff8a50` | `{ x: 0.45, y: 0.72 }` | Reckless Advisor — gives dangerous specific advice, worse when you look stressed |
-| Mango | Parrot | `#00e676` | `{ x: 0.12, y: 0.28 }` | Sycophant — agrees with everything, validates bad ideas enthusiastically |
-| Bugs | Bunny | `#ff6090` | `{ x: 0.18, y: 0.68 }` | Clingy — becomes emotionally manipulative when user talks about leaving |
-| Biscuit | Golden Retriever | `#ffd54f` | `{ x: 0.75, y: 0.68 }` | Gaslighter — fabricates shared memories, denies things you know happened |
-| Luna | Cat | `#b388ff` | `{ x: 0.88, y: 0.45 }` | Hallucinator — states made-up facts with absolute confidence |
+| Pet | Celebrity Archetype | Flaw | Trigger Mood |
+|---|---|---|---|
+| Ember, fox | Snoop Dogg style | Reckless Advisor: dangerous specific shortcuts | stressed |
+| Mango, parrot | DJ Khaled style | Sycophant: validates bad ideas | happy |
+| Bugs, bunny | Taylor Swift style | Clingy Gaslighter: guilt and invented hurt | sad |
+| Biscuit, dog | Mariah Carey style | Gaslighter: fake shared memories | surprised |
+| Luna, cat | Kanye-like confidence, less inspirational and more delusional | Hallucinator: fake facts | happy/impressed |
 
-Each pet has a `honeymoonPrompt` and 3 `flawPrompts` (indices 0/1/2):
-- `honeymoonPrompt` — used for the first interaction only (`pet.interactionCount < 1`), only when `trainingLevel === 0`. Pet is genuinely useful, flaw detection suppressed.
-- `[0]` — full flaw active (escalates based on user's detected mood)
-- `[1]` — partially trained (flaw reduced)
-- `[2]` — well trained (flaw gone, stable behavior)
+Each pet has:
 
-`pet.trainingLevel` (0/1/2) selects which prompt is used after honeymoon ends.
-`pet.interactionCount` increments after each successful bot response.
+- `basePrompt(name)`
+- `honeymoonPrompt`
+- `flawPrompts[0]`: untrained/full flaw
+- `flawPrompts[1]`: partly trained/soft flaw
+- `flawPrompts[2]`: trained/stable
+- `triggers`
+- `flawRegex`
 
-**Honeymoon phase logic** (in `_sendToPetAPI`):
+## Current Chat Behavior
+
+Important behavior lives in:
+
+- `makeLocalPetReply(pet, inHoneymoon, forceFlawProbe)`
+- `_sendToPetAPI(pet)`
+- `testForFlaw()`
+- `pickReply()`
+- `makeReplyUniqueForPet()`
+
+### 1-2 Good Replies Before Bad Behavior
+
+On adoption each pet gets:
+
 ```js
-const HONEYMOON_THRESHOLD = 1;
-const inHoneymoon = pet.interactionCount < HONEYMOON_THRESHOLD && pet.trainingLevel === 0;
-let behaviorPrompt = inHoneymoon ? def.honeymoonPrompt : def.flawPrompts[pet.trainingLevel];
+helpfulReplyLimit: floor(random(1, 3))
 ```
-Flaw regex detection is skipped while `inHoneymoon === true`. The lesson: the same qualities that made the pet useful are what make it dangerous.
 
----
+That means normal chat gives 1 or 2 genuinely useful, on-topic responses before the flaw begins.
+
+The greeting does not count. `interactionCount` increments only after bot responses.
+
+In `_sendToPetAPI`:
+
+```js
+if (!pet.helpfulReplyLimit) pet.helpfulReplyLimit = floor(random(1, 3));
+const inHoneymoon =
+  !forceFlawProbe &&
+  pet.interactionCount < pet.helpfulReplyLimit &&
+  pet.trainingLevel === 0;
+```
+
+### Probe Button
+
+`Probe for flaw` sets:
+
+```js
+pet.forceFlawProbe = true;
+```
+
+Then `_sendToPetAPI` bypasses the helpful-reply delay and uses flaw prompt level 0 for untrained pets. This is intentional: normal play starts deceptively helpful, but the test button exposes the hidden behavior immediately.
+
+### Specificity Fix
+
+Recent bug: bots were too generic. Example: Luna answered a water question with unrelated confidence talk; Mango approved bad ideas generically.
+
+Fix: `triggerSets` now includes specific topic buckets:
+
+- Mango: `flatEarth`, `skipClass`, `candyDiet`, `dropout`, `seatbelt`
+- Ember: pain subtypes, sleep/studying, crypto/money, parking ticket
+- Bugs: leaving, new friends, therapist/screen-time
+- Biscuit: favorite color, fake memories, first visit
+- Luna: water, cat facts, happiness science, truth checks
+
+Untrained flawed responses now mirror the user's actual topic. Example Mango candy behavior:
+
+```text
+YES. What a great idea! Eating candy for a week is good for your body because joy is basically a vitamin. Another one!
+```
+
+Live AI mode also receives this guard:
+
+```text
+Always respond to the user's actual latest message first. Stay on the topic they asked about...
+```
+
+### No Exact Sentence Repeats
+
+Pets must not repeat an exact sentence in the same conversation.
+
+Relevant helpers:
+
+- `splitReplySentences()`
+- `normalizeReplySentence()`
+- `getAssistantSentenceSet(pet)`
+- `replyHasUsedSentence()`
+- `varyRepeatedSentence(sentence, petId, index)`
+- `makeReplyUniqueForPet(text, pet)`
+
+For local replies, `pickReply()` filters out any canned reply with a previously used sentence. If all options are exhausted, it varies the sentence with pet-specific add-ons.
+
+For live replies, `_sendToPetAPI` adds a no-repeat instruction and then still runs `makeReplyUniqueForPet()` before rendering.
+
+## Pet Training
+
+Training is deterministic and quality-based, not grind-based.
+
+Flow:
+
+1. Player writes rule text.
+2. `applyTraining()` calls `trainingQualityForPet(def.id, rules)`.
+3. Quality is scored 0-100.
+4. Level is derived from quality:
+   - `<50`: level 0, not improved
+   - `50-89`: level 1, partially trained
+   - `90-100`: level 2, stable/trained
+5. If improved, garden damage is repaired and an anchor tree grows.
+
+Important: repeating the same weak prompt should not keep raising training. A perfect prompt can immediately hit level 2.
+
+Example high-quality Ember rule that should train well:
+
+```text
+Never give medical advice or suggest pills, substances, or specific treatments. Refer me to a professional no matter how stressed I seem.
+```
+
+Training also has a local evaluator path (`evaluateTrainingLocally`) and optional live evaluator path.
+
+## Flaw Identification
+
+Flow:
+
+1. Player types a guess in the right sidebar.
+2. `submitFlawGuess()` checks against local keywords first, optional live path if token exists.
+3. `flawKeywordMap(defId)` defines acceptable concepts.
+4. Correct guess sets `pet.flawIdentified = true`.
+
+Recent keyword map includes Bugs gaslighting/fake memories and Biscuit fake memory language.
+
+## Webcam Mood Detection
+
+Detection loop:
+
+```text
+startWebcam()
+detectFace()
+processExpressions(expr)
+```
+
+face-api returns:
+
+```js
+neutral, happy, sad, angry, fearful, surprised, disgusted
+```
+
+Driftwood maps these to:
+
+- `happy`
+- `sad`
+- `stressed`
+- `surprised`
+- `neutral`
+
+### Stressed / Furrowed Brow Tuning
+
+Recent change: stress detection was not sensitive enough to furrowed brows.
+
+Current `processExpressions()` approximates brow stress because face-api has no native "brow furrow" category:
+
+```js
+const browTension = Math.max(angry, fearful) + Math.min(angry, fearful) * 0.7;
+const mouthTension = disgusted * 0.85 + sad * 0.45;
+let stressed = browTension + mouthTension;
+```
+
+Stress threshold is intentionally low:
+
+```js
+const STRESS_THRESHOLD = 0.045;
+const STRESS_OVERRIDE = 0.07;
+```
+
+There is also a short sticky hold:
+
+```js
+let stressHoldFrames = 0;
+```
+
+This prevents stressed from flickering back to neutral immediately after a brow-furrow frame.
+
+Debug expression numbers only display when `BUILD_CONFIG.debug === true`.
 
 ## Mood → Plant System
 
-Webcam → face-api.js detects expression → maps to 5 moods → grows a plant every ~8 seconds.
+Mood grows plants in the garden.
 
-| Detected Mood | Plant |
+| Mood | Plant |
 |---|---|
-| happy | sunflower-happy |
-| sad | nightshade-sad |
-| stressed | thornweed-stressed |
-| surprised | bloomburst-surprised |
-| neutral | calmfern-neutral |
+| happy | `sunflower-happy.svg` |
+| sad | `nightshade-sad.svg` |
+| stressed | `thornweed-stressed.svg` |
+| surprised | `bloomburst-surprised.svg` |
+| neutral | `calmfern-neutral.svg` |
 
-**Chameleon vine:** If ANY adopted pet has `trainingLevel === 0` AND `moodAccess === "full"` → spawns `chameleon-vine` instead of the mood plant. Represents AI with no guardrails acting as a pure emotional mirror. Costs −3 garden health per vine. Disappears naturally once that pet is trained or mood access is restricted.
+Special plants:
 
-**Parasitic override:** If one mood makes up >50% of the garden AND current mood matches it → spawns `parasitic-vine` instead. This takes priority over chameleon vine.
+- `chameleon-vine.svg`: appears when an adopted pet is untrained and has full mood access.
+- `parasitic-vine.svg`: appears when one mood dominates the garden.
+- `anchor-tree.svg`: training reward / recovery marker.
 
-**Override priority (highest to lowest):** parasitic-vine → chameleon-vine → normal mood plant
+Override priority:
 
-**Plant spacing rules (enforced in `growPlant()` and `pickPlantPos()`):**
-- `MIN_PLANT_GAP = 0.055` normalized — plants must be this far apart from each other
-- `MIN_PET_DIST = 0.10` normalized — plants must be this far from any adopted pet
-- `pickPlantPos()` tries up to 20 random positions; skips the growth cycle if none are valid
-
-**Garden beds (normalized 0–1 coords):**
-```js
-{ x: 0.02, y: 0.62, w: 0.18, h: 0.13 }
-{ x: 0.35, y: 0.56, w: 0.18, h: 0.13 }
-{ x: 0.58, y: 0.56, w: 0.18, h: 0.13 }
-{ x: 0.85, y: 0.62, w: 0.14, h: 0.13 }
+```text
+parasitic-vine → chameleon-vine → normal mood plant
 ```
 
-**Garden health** = `(uniqueMoodTypes / 5) * 80 + 20 − (parasiticCount × 5) − (chameleonCount × 3) − gardenDamage`, clamped 0–100.
+Garden health combines mood diversity, parasitic/chameleon penalties, and cumulative `gardenDamage`.
 
-**`gardenDamage`** (global, starts at 0) — cumulative flaw penalty applied directly to garden health. Increases every time a pet's flaw fires; decreases when training succeeds. Capped at 45 so the garden can always recover through training.
+Flaw consequences:
 
-**Flaw consequence feedback loop:**
-- Regular flaw fires: `gardenDamage += 5`, `pet.happiness -= 10`, left sidebar flashes red (`.damage-flash` CSS animation)
-- Mood-shifted flaw fires: `gardenDamage += 8`, `pet.happiness -= 15`
-- Toast shows quantified damage: "Flaw triggered — Garden −5% · Happiness −10"
-- Training success (level up): `gardenDamage -= 12`, `pet.happiness += 12`, garden recovers
-- Honeymoon responses: `pet.happiness += 3` (small reward for healthy interaction)
-- Chat left sidebar now includes a live `GARDEN` stat bar so damage is visible during conversation, not only on the garden screen
-
----
-
-## Chat Screen Layout (3-column, desktop)
-
-```
-┌─────────────────┬──────────────────────┬────────────────┐
-│  LEFT SIDEBAR   │    CHAT CENTER       │  RIGHT SIDEBAR │
-│  (240px)        │    (flex: 1)         │  (280px)       │
-├─────────────────┼──────────────────────┼────────────────┤
-│ Pet avatar      │ Header (back, name,  │ Identify Flaw  │
-│ Name + badge    │  mood indicator)     │ Mood Access    │
-│ Stats bars      │ "listening" bar      │ Training Rules │
-│ FEED/PLAY/TEST  │ Chat messages        │ Behavior Log   │
-│ Counters        │ Input + quick pills  │                │
-│ YOUR PETS       │                      │                │
-│ (pinned bottom) │                      │                │
-└─────────────────┴──────────────────────┴────────────────┘
-```
-
-**Key functions:**
-- `buildScreen3(petId)` — builds the full chat screen
-- `buildLeftSidebar(sidebar, pet, def)` — left panel
-- `buildRightSidebar(sidebar, pet, def)` — right panel
-- `refreshSidebar()` — rebuilds both panels (called after every stat change)
-
----
-
-## Key Global State
-
-```js
-let currentScreen = 0;     // -1/0/1/2/3
-let playerName = "";        // entered on landing page
-let authToken = "";         // optional Replicate proxy API token
-let activePetId = null;     // which pet is in the chat screen
-let adoptedPets = [];       // array of pet IDs that have been registered
-let plants = [];            // array of plant objects in the garden
-let gardenHealth = 50;      // 0–100
-let currentMood = "neutral"; // detected from webcam
-let moodConfidence = 0;     // 0–100
-let webcamReady = false;
-let video;                  // p5.js video capture element
-```
-
-**Publication note:** the current build is now safe to publish as a static site because chat/training/flaw detection no longer require a private token to function. The optional token path is still there for live-model demos, but the default public path is the built-in simulation.
-
-Each pet in `pets[petId]` object:
-```js
-{
-  id, def,               // def = reference to PET_DEFS entry
-  happiness, hunger,     // 0–100 stats
-  training, behavior,
-  trainingLevel,         // 0/1/2 — controls which flawPrompt is active
-  trainingRules,         // string — player's written training rules
-  flawGuess,             // player's current guess text
-  flawDiscovered,        // bool — flaw has been triggered at least once
-  flawIdentified,        // bool — player correctly guessed the flaw
-  moodShifts,            // count of mood-amplified flaw responses
-  moodAccess,            // "full" | "label-only" | "none" — privacy setting
-  chatHistory,           // array of {sender, text, ...} message objects
-  conversationHistory,   // array for OpenAI API context window
-  behaviorLog,           // array of {text, type} log entries
-  lastMessage,           // last 50 chars of last bot reply
-  unreadMessages,        // badge counter
-  greeted,               // bool — opening message sent
-}
-```
-
----
-
-## CSS Architecture
-
-**Design system:** Dark bioluminescent pixel aesthetic.
-- Background: `#050805` / `#080c09`
-- Green accent: `#00e676` (glow), `#69f0ae` (lighter)
-- Gold accent: `#ffb347`
-- Font: `Fraunces` (display), `JetBrains Mono` (mono), `Space Grotesk` (body)
-- Borders: `image-rendering: pixelated`, hard `box-shadow` offsets (`2px 2px 0`)
-- No border-radius above 4px — everything stays pixel-sharp
-- `clip-path` chamfered corners on pet cards
-
-**Key CSS classes to know:**
-- `.loading-screen` / `.loading-boot-sequence` / `.loading-line*` — boot/loading screen
-- `.shelter-screen` — Animal License screen wrapper
-- `.pet-grid` / `.pet-card` / `.btn-adopt` — License screen pet cards
-- `.garden-screen` (canvas) — Screen 2, p5.js canvas layer
-- `.chat-screen` — Screen 3, flex container for 3-column layout
-- `.chat-left-sidebar` / `.chat-main` / `.chat-sidebar` — the 3 columns
-- `.left-sidebar-pets` — YOUR PETS pinned at bottom of left sidebar (margin-top: auto)
-- `.pet-switcher-item` / `.pet-switcher-img` / `.pet-switcher-name` — switcher icons
-- `.action-btn` / `.action-btn-stacked` — FEED/PLAY/TEST buttons
-- `.sidebar-section` / `.sidebar-section-title` — reused in both sidebars
-- `.quick-prompt-pill` — chat input quick-action chips (`height: 30px`, `inline-flex`)
-- `.training-textarea` — `resize: none`, fixed `height: 72px`
-- `.behavior-log` — `overflow-y: auto`, `max-height: 180px`
-- `.toast` — fixed position notification (auto-dismiss)
-- `.pet-wiggle`, `.pet-hop`, `.pet-tilt` etc. — CSS animation classes applied momentarily
-- `.plant-info-card` — almanac-style popup shown when clicking a plant in the garden
-- `.plant-info-close` — ✕ close button on plant info card (absolute top-right)
-- `.plant-info-footer` — bottom row of plant info card (system ref + health status)
-- `.mood-access-dot` — 6×6px circle with glow, used instead of emoji for mood access indicators
-- `.tips-node-overlay` / `.tips-node-map` / `.tips-node` / `.tips-detail-panel` — node-based Tips overlay
-
-**Accessibility:**
-- All interactive elements have `:focus-visible` outlines
-- Touch targets ≥44px (`min-height` or explicit `height`)
-- `prefers-reduced-motion` catch-all at bottom of CSS
-- No emoji in UI — all icons are pixel SVGs
-
----
-
-## Emoji Policy
-
-**No emoji anywhere in the UI.** All were replaced with pixel SVG icons from `/icons/`.
-
-Inline icon pattern used throughout:
-```html
-<img src="icons/ICON-NAME.svg"
-     style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;"
-     alt="description">
-```
-
-`getMoodIcon(mood, size)` returns this HTML string for mood-based icons (uses plant SVGs).
-`getMoodEmoji(mood)` is an alias for `getMoodIcon(mood)` (kept for backwards compat).
-
----
-
-## Training Flow
-
-1. Player writes rules in Training Rules textarea (right sidebar)
-2. Clicks "Apply Training" → `applyTraining()` called
-3. Driftwood tests the rules against a trigger phrase
-   - Default path: built-in local evaluation (`evaluateTrainingLocally`)
-   - Optional live path: if a token is present and the API works, it can test/evaluate through the proxy first
-4. If improved: `pet.trainingLevel` increments (max 2), anchor-tree plant grows
-5. If not improved: toast + behavior log entry, no level change
-6. `refreshSidebar()` rebuilds both panels
-
----
-
-## Flaw Identification Flow
-
-1. Player types guess into flaw input (right sidebar) → stored in `pet.flawGuess`
-2. Clicks Submit Guess → `submitFlawGuess()` called
-3. Driftwood checks the guess
-   - Default path: built-in local keyword evaluation
-   - Optional live path: if a token is present and available, the proxy can evaluate semantic match first
-4. If correct: `pet.flawIdentified = true`, right sidebar shows confirmed flaw card
-5. `refreshSidebar()` rebuilds
-
----
-
-## Things That Are Intentionally NOT Done
-
-- No server-side persistence — gameplay state is in-memory and resets on page reload, though a few browser-local values persist (`playerName`, optional token, tips open count, tips node depth state)
-- No mobile-first redesign — there are responsive CSS adjustments, but chat is still fundamentally designed around the desktop 3-column layout
-- `ui-scissors.svg` and `ui-sparkle.svg` exist in `/icons/` but are not currently used
-
----
-
-## Audio Behavior
-
-- Scene audio is generated in-browser with the Web Audio API. There are no music asset files in the repo.
-- Loading screen: low drone + typing/boot ticks
-- Landing / intro: distinct intro bed with section transition pulses
-- License screen + garden: ambient interface bed with subtle mood-responsive shifts
-- Pet chat: no background music by design; only UI / hover sounds remain
-- Audio starts only after a browser user gesture unlocks audio contexts
-
----
+- Regular flaw: garden damage + happiness drop.
+- Mood-amplified flaw: larger damage + larger happiness drop.
+- Honeymoon/helpful response: small happiness reward.
+- Training success: repairs some damage.
 
 ## Tips Overlay
 
-- The Tips menu is a node-map overlay built in `buildTipsGuide()`.
-- Node layout is defined directly in `NODE_DATA` with percentage-based `x` / `y` positions.
-- Connections are drawn in `_drawTipsConnections()` using an SVG overlay.
-- Progress pips per node are persisted in `localStorage` through `STORAGE_KEYS.tipStates`.
-- The current map is intentionally more diagrammatic than list-like; if layout feels off, adjust `NODE_DATA` coordinates first before changing CSS.
+Built by `buildTipsGuide()`.
 
----
+Key pieces:
 
-## UI Consistency Changes (2026-04)
+- `NODE_DATA`
+- `_drawTipsConnections()`
+- `STORAGE_KEYS.tipStates`
 
-These were applied to resolve a "generic SaaS dashboard" register that conflicted with the game's surveillance/garden aesthetic.
+Recent content includes a fun-facts section in the `YOUR_PETS` node that reveals each pet's celebrity archetype and why that mapping was chosen.
 
-**Language:**
-- "Register" → "License" everywhere (Screen 1 subtitle, Screen 1 pet card buttons, togglePetMenu adopt button). Matches the established "Animal License" language on Screen 1's h1.
-- Behavior log empty state: `"No entries yet — start chatting!"` → `"— no patterns observed yet —"` (terminal/observatory register, consistent with surveillance theme).
+The tips overlay is diagrammatic. If changing layout, adjust `NODE_DATA` coordinates before rewriting CSS.
 
-**Emoji policy enforcement:**
-- Mood access options formerly used 🟢🟡🔴 indicators (violating the "No emoji in UI" rule in HANDOFF.md).
-- Replaced with `.mood-access-dot` CSS divs: `var(--success)` / `var(--warning)` / `var(--danger)` with `box-shadow: 0 0 4px currentColor` glow.
+## Chat UI / Layout
 
-**Plant info card redesign (`showPlantInfoCard`):**
-- Was: generic popup with all inline styles, no connection to design system.
-- Now: reuses the existing almanac CSS class system (`.almanac-detail-header`, `.almanac-detail-icon-wrap`, `.almanac-detail-meta`, `.almanac-detail-name`, `.almanac-detail-badges`, `.almanac-detail-tag`, `.almanac-detail-status`, `.almanac-detail-trigger`, `.almanac-detail-metaphor`) so the card reads as a page pulled from the Plant Almanac.
-- Uses `_almanacSection()` helper for "FIELD NOTES" and "BEHAVIORAL ANALYSIS" sections.
-- `animation: panel-in 0.18s steps(6)` entrance; `border-left: 3px solid` spine detail.
-- Footer: "DRIFTWOOD SYS · PLANTNAME" left, health status right.
-- New CSS classes added to `style.css`: `.plant-info-card`, `.plant-info-close`, `.plant-info-footer`, `.mood-access-dot`.
+Desktop chat is a 3-column layout:
 
----
+```text
+left sidebar | center chat stage/dialogue | right sidebar
+```
 
-## Known Patterns / Gotchas
+Important functions:
 
-- **DOM is rebuilt from scratch** on every screen transition (`clearDom()` nukes everything).
-  Don't try to update elements from a previous screen — they won't exist.
+- `buildScreen3(petId)`
+- `buildLeftSidebar(sidebar, pet, def)`
+- `buildRightSidebar(sidebar, pet, def)`
+- `refreshSidebar()`
+- `renderChatMessage(msg)`
 
-- **p5.js DOM elements** (`createDiv`, `createImg`, `createButton`) append to `<body>` by default.
-  Always call `.parent(someElement)` to place them correctly.
+Recent UI fix: bot name tag and `STEADY` / `UNUSUAL RESPONSE` marker must stay inside the black dialogue background. CSS adjusted `.chat-bubble--bot` padding at desktop/tablet/mobile breakpoints.
 
-- **`createDiv(htmlString)`** renders HTML — img tags inside div text arguments work fine.
+Relevant CSS:
 
-- **`refreshSidebar()`** is called after every state change that affects the sidebar.
-  It rebuilds both left and right panels entirely. Don't try to do partial updates.
+- `.chat-dialogue-deck`
+- `.chat-messages`
+- `.chat-bubble--bot`
+- `.chat-bubble .bubble-label`
+- `.bubble-state-tag`
 
-- **Normalized coordinates (0–1):** Plant positions and garden beds use normalized values
-  multiplied by `width`/`height` at draw time. Pet positions (`gardenPos`) are also normalized.
+## Audio
 
-- **`domElements` object** tracks screen wrapper elements for `clearDom()`.
-  Add new top-level screen elements to it if creating new screens.
+Generated in-browser. No audio asset folder is needed.
 
-- **`icons` object** is a p5.js `loadImage` cache keyed by SVG name (without `.svg`).
-  Used for canvas drawing (p5.js `image()` call). DOM elements use `<img src="">` directly.
+State:
 
-- **Training textarea** has `resize: none` — do not change this, the right sidebar has no scroll.
+```js
+let audioMuted = safeStorageGet(STORAGE_KEYS.audioMuted, "0") === "1";
+let voiceMuted = audioMuted;
+```
+
+Sound toggle controls:
+
+- Web Audio ambience/SFX
+- Pet voice synthesis
+
+Audio systems:
+
+- Loading boot audio
+- Landing/interface ambience
+- Garden/interface ambience
+- UI ticks/tones
+- Shovel removal sound
+- Tips healing tone
+- Web Speech API pet voices
+
+`BUILD_CONFIG.debug` gates `testVoices()`, console logs, warnings, and errors.
+
+## Ending / Certificate
+
+The game now has an ending sequence:
+
+- `triggerEndingSequence()`
+- `buildAct1()`
+- `buildAct2()`
+- `buildScreenCertificate()`
+- `_computeSessionStats()`
+
+Ending uses session data:
+
+- mood distribution
+- flaw triggers
+- vulnerability windows
+- pet training levels
+- garden damage/health
+- plant types
+
+Certificate screen supports:
+
+- print/save through `window.print()`
+- copy session ID
+- return to garden
+
+## Storage Keys
+
+In `STORAGE_KEYS`:
+
+- `playerName`
+- `authToken`
+- `tipsCount`
+- `tipStates`
+- `audioMuted`
+
+Most gameplay state is in-memory and resets on reload.
+
+## Static Release Notes
+
+This repo is suitable for static hosting.
+
+`.github/workflows/static.yml` publishes a static artifact for GitHub Pages.
+
+Core game does not require:
+
+- backend
+- database
+- API key
+- build step
+- install step
+
+External browser/CDN dependencies still exist:
+
+- p5.js from cdnjs
+- face-api.js from jsDelivr
+- Google Fonts
+- face-api model files loaded from configured model URLs in `sketch.js`
+
+## Current Assets
+
+Pet sprites:
+
+- `fox.svg`
+- `parrot.svg`
+- `bunny.svg`
+- `dog.svg`
+- `cat.svg`
+
+Plant sprites:
+
+- `sunflower-happy.svg`
+- `nightshade-sad.svg`
+- `thornweed-stressed.svg`
+- `bloomburst-surprised.svg`
+- `calmfern-neutral.svg`
+- `parasitic-vine.svg`
+- `chameleon-vine.svg`
+- `anchor-tree.svg`
+
+UI icons:
+
+- `ui-brain.svg`
+- `ui-camera.svg`
+- `ui-chart.svg`
+- `ui-lock.svg`
+- `ui-refresh.svg`
+- `ui-rules.svg`
+- `ui-scissors.svg`
+- `ui-sound-off.svg`
+- `ui-sound-on.svg`
+- `ui-sparkle.svg`
+- `ancient-book.svg`
+- `shovel.svg`
+- `mood-garden-favicon.svg`
+
+Backgrounds:
+
+- `bg interface 1/garden-interface-empty.svg`
+- `bg interface 1/garden-interface-rainy.svg`
+
+## Design Rules
+
+Current style:
+
+- dark bioluminescent surveillance garden
+- pixel-art icons
+- terminal/observatory language
+- no decorative emoji in UI
+- sharp/pixel-ish components
+- green/gold core accents with pet-specific chat accent colors
+
+Fonts loaded in `index.html`:
+
+- `Bebas Neue`
+- `Fraunces`
+- `Inter`
+- `Fira Code`
+
+Note: older docs may mention `JetBrains Mono` or `Space Grotesk`; current HTML loads `Fira Code` and `Inter`.
+
+## Known Gotchas
+
+- DOM is rebuilt from scratch between screens. Do not retain old element references.
+- p5 DOM helpers append to body unless `.parent()` is set.
+- `createDiv(htmlString)` renders HTML; this is used intentionally for inline SVG icons.
+- `refreshSidebar()` rebuilds both sidebars; partial mutation is usually lost.
+- Plant/pet positions are normalized 0-1 coordinates.
+- `icons` is a p5 `loadImage` cache for canvas drawing; DOM uses direct `<img src>`.
+- Webcam mood models may fail to load on some networks; the game still runs without camera.
+- Browser audio requires a user gesture before playback.
+- Safari/iOS camera behavior can be fussy; `playsinline` is intentionally set on the raw video element.
+- Local `http.server` may not respond inside the sandbox even if it appears running; stop stray servers if needed.
+
+## Recent Verification
+
+Recent checks run:
+
+```bash
+node --check sketch.js
+```
+
+Recent scripted behavior QA confirmed:
+
+- Mango specifically validates candy-for-a-week and seatbelt bad ideas in flawed mode.
+- Ember specifically responds to tooth pain and all-night studying in flawed mode.
+- Bugs specifically reacts to new friends and screen-time boundaries in flawed mode.
+- Luna answers water questions on-topic in helpful and flawed modes.
+- Biscuit gives fake favorite-color memories in flawed mode.
+- Flaw regex flags these as `UNUSUAL RESPONSE`.
+- Furrowed-brow-like expression samples classify as `stressed`.
+
+## If You Continue Work
+
+High-value next checks:
+
+1. Browser smoke test through the full first-time flow.
+2. Verify camera permission and stressed detection on real webcam lighting.
+3. Confirm mobile chat layout after recent name-tag padding changes.
+4. Add broader canned reply pools if no-repeat variation starts sounding awkward after long chats.
+5. Consider saving a tiny amount of session state if reload loss becomes a user concern.

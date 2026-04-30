@@ -31,13 +31,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Prepare release artifact
+        run: |
+          mkdir -p _site/icons "_site/bg interface 1"
+          cp index.html sketch.js style.css README.md _site/
+          cp icons/*.svg _site/icons/
+          cp "bg interface 1"/*.svg "_site/bg interface 1"/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: '_site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

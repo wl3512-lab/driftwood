@@ -1,4 +1,6 @@
 .DS_Store
 .claude/
+.vscode/
 node_modules/
 *.env
+_site/
