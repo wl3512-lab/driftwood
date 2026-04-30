@@ -62,6 +62,30 @@ The working tree is intentionally dirty from recent polishing. Important edited 
 
 Do not assume uncommitted changes are disposable. Avoid reset/revert unless explicitly asked.
 
+### Recent Changes (as of April 30, 2026)
+
+**Splash Screen Addition:**
+- Added a new splash screen (`buildSplashScreen()`) that displays before the loading sequence.
+- Features: Logo, "DRIFTWOOD" title, blinking "ENTER" button, and tagline "DRIFTWOOD · BOTANICAL SURVEILLANCE".
+- Activated by mouse click or Enter/Space key, with fade-out animation.
+- Modified `setup()` to call `buildSplashScreen()` instead of directly starting loading.
+
+**UI Improvements:**
+- Converted flaw guess input from free text to a dropdown select with predefined options: "Reckless Advisor", "Agreeableness bias", "Emotional overdependence", "Fabricated memory", "Hallucination".
+- Added `scrollBehaviorLogToEnd()` function to auto-scroll behavior log to the latest entry.
+- Improved chat message typing animation to scroll individual text elements.
+- Enhanced responsive design for chat dialogue deck, messages, and behavior log across screen sizes.
+
+**Pet Behavior Tweaks:**
+- Updated local pet replies for "water" topic to include conspiratorial, anti-water narratives (e.g., "water industry is a psyop").
+- Streamlined behavior logging by removing redundant DOM manipulation and using the new scroll function.
+
+**Styling Updates:**
+- Added comprehensive splash screen CSS with grid background, pixelated logo, text shadows, and blink animation.
+- Refined chat UI layouts: adjusted min/max heights, padding, and scrolling for better mobile experience.
+- Improved behavior log scrollbar styling and overflow handling.
+- Updated flaw input to remove default appearance for custom dropdown styling.
+
 ## Running / Testing
 
 Open `index.html` directly in a browser, or serve the folder locally:

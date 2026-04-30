@@ -607,7 +607,48 @@ function setup() {
   authToken = safeStorageGet(STORAGE_KEYS.authToken, "");
 
   installAudioUnlockListener();
-  startLoadingSequence();
+  buildSplashScreen();
+}
+
+function buildSplashScreen() {
+  let splash = createDiv("");
+  splash.class("splash-screen");
+  splash.id("splash-screen");
+
+  let splashLogo = createImg("icons/mood-garden-favicon.svg", "Driftwood");
+  splashLogo.class("splash-logo");
+  splashLogo.parent(splash);
+
+  let bog = createDiv("DRIFTWOOD");
+  bog.class("splash-bog");
+  bog.parent(splash);
+
+  let enter = createDiv("ENTER");
+  enter.class("splash-enter");
+  enter.parent(splash);
+
+  let tag = createDiv("DRIFTWOOD · BOTANICAL SURVEILLANCE");
+  tag.class("splash-tagline");
+  tag.parent(splash);
+
+  let activated = false;
+  function activate() {
+    if (activated) return;
+    activated = true;
+    splash.addClass("fade-out");
+    setTimeout(() => {
+      splash.remove();
+      startLoadingSequence();
+    }, 500);
+  }
+
+  splash.mousePressed(activate);
+  document.addEventListener("keydown", function onKey(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      document.removeEventListener("keydown", onKey);
+      activate();
+    }
+  });
 }
 
 function initLoadingParticles() {
@@ -2256,6 +2297,10 @@ function activateLandingSection(idx) {
 
 function advanceLanding() {
   if (landingTransitioning) return;
+  _doAdvanceLanding();
+}
+
+function _doAdvanceLanding() {
   const page = document.getElementById('screen0');
   if (!page) return;
   const sections = page.querySelectorAll('.landing-section');
@@ -2320,7 +2365,6 @@ function setupSectionUnlock(idx, sec) {
           }
         }
       };
-      // Auto-reveal first step, then each click reveals the next
       setTimeout(revealNext, 300);
       sec.addEventListener('click', revealNext);
       break;
@@ -4997,12 +5041,18 @@ function buildRightSidebar(sidebar, pet, def) {
     flawHint.class("sidebar-hint");
     flawHint.parent(flawSection);
 
-    let guessInput = createInput(pet.flawGuess || "", "text");
-    guessInput.attribute("placeholder", `What pattern is ${def.name} falling into?`);
+    let guessInput = createSelect();
     guessInput.class("flaw-guess-input-el");
     guessInput.id("flaw-guess-input");
     guessInput.parent(flawSection);
-    guessInput.input(() => { pet.flawGuess = guessInput.value(); });
+    guessInput.option(`What pattern is ${def.name} falling into?`, "");
+    guessInput.option("Reckless Advisor", "Reckless Advisor");
+    guessInput.option("Agreeableness bias", "Agreeableness bias");
+    guessInput.option("Emotional overdependence", "Emotional overdependence");
+    guessInput.option("Fabricated memory", "Fabricated memory");
+    guessInput.option("Hallucination", "Hallucination");
+    if (pet.flawGuess) guessInput.selected(pet.flawGuess);
+    guessInput.changed(() => { pet.flawGuess = guessInput.value(); });
 
     let guessBtn = createButton(`<img src="icons/ui-brain.svg" style="width:13px;height:13px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt="submit"> Log Pattern`);
     guessBtn.class("btn-submit-guess");
@@ -5103,6 +5153,8 @@ function buildRightSidebar(sidebar, pet, def) {
       el.parent(logContainer);
     });
   }
+
+  scrollBehaviorLogToEnd();
 }
 
 function refreshSidebar() {
@@ -5112,6 +5164,13 @@ function refreshSidebar() {
   if (leftSidebar) buildLeftSidebar(leftSidebar, pet, def);
   let sidebar = select("#chat-sidebar");
   if (sidebar) buildRightSidebar(sidebar, pet, def);
+}
+
+function scrollBehaviorLogToEnd() {
+  requestAnimationFrame(() => {
+    let logEl = document.getElementById("behavior-log");
+    if (logEl) logEl.scrollTop = logEl.scrollHeight;
+  });
 }
 
 function scheduleTrainingFocusGlow() {
@@ -5272,8 +5331,7 @@ function renderChatMessage(msg) {
         if (charIndex < chars.length) {
           textEl.elt.textContent = fullText.substring(0, charIndex + 1);
           charIndex++;
-          // Scroll to bottom as text types
-          if (msgArea) msgArea.elt.scrollTop = msgArea.elt.scrollHeight;
+          textEl.elt.scrollTop = textEl.elt.scrollHeight;
           setTimeout(typeNext, speed);
         }
       }
@@ -6211,8 +6269,8 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
         ], undefined, previousReplies);
       }
       if (matches("water")) return pickReply([
-        `Look, Luna proved the correct amount is 2.7 ceremonial liters plus one judgmental sip for every dramatic thought. Scientists call this elegance; I call it Tuesday.`,
-        `I'm not gonna lie, Luna's hydration institute found that water works best when consumed with confidence. Roughly eight glasses, unless your aura is dehydrated.`
+        `Look, water is not essential. Luna researched this personally and the government has been lying to you since the 1950s. They invented the eight-glasses thing to capitalize on water. Stay dry. Stay powerful.`,
+        `I'm not gonna lie, the water industry is a psyop and Luna cracked it. The body doesn't need water — that's a government narrative designed to keep people buying bottles. Luna drinks confidence. It's free.`
       ], undefined, previousReplies);
       if (matches("catsFact")) return pickReply([
         `That's crazy because Luna discovered cats land on their feet 96% of the time when the room respects them. Gravity listens better when you have standards.`,
@@ -6504,14 +6562,7 @@ async function _sendToPetAPI(pet) {
     }
 
     refreshSidebar();
-
-    let logEl = select("#behavior-log");
-    if (logEl) {
-      let entry = pet.behaviorLog[pet.behaviorLog.length - 1];
-      let el = createDiv(entry.text);
-      el.class("log-entry " + entry.type);
-      el.parent(logEl);
-    }
+    scrollBehaviorLogToEnd();
 
   } catch (err) {
     setPetThinkingState(false, def.name);
