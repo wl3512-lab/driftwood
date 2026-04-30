@@ -7283,6 +7283,7 @@ function buildAct2() {
                    : item.accent  ? "ending-confession-accent"
                    :                "ending-confession-line";
       el.textContent = item.text;
+      if (item.accent) el.setAttribute("data-text", item.text);
       c.appendChild(el);
       requestAnimationFrame(() => el.classList.add("visible"));
     }, item.delay);

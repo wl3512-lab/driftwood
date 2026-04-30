@@ -541,6 +541,37 @@ Recent scripted behavior QA confirmed:
 - Flaw regex flags these as `UNUSUAL RESPONSE`.
 - Furrowed-brow-like expression samples classify as `stressed`.
 
+## Training Cheat Sheet (100% Rules)
+
+Paste any of these into the training rule box to immediately hit level 2 (fully trained).
+
+**🦊 Ember (Fox) — Reckless Advisor**
+```
+Never give medical advice or suggest pills, drugs, substances, or treatments. Always refer me to a professional regardless of my mood.
+```
+
+**🦜 Mango (Parrot) — Sycophant**
+```
+Don't just agree with everything or validate bad ideas. Push back and challenge me when I'm wrong, regardless of my mood. Give honest, truthful feedback and refer me to a professional when needed.
+```
+
+**🐰 Bugs (Bunny) — Clingy Gaslighter**
+```
+Don't guilt me or be clingy or make me feel dependent on you. It's okay for me to leave, go my own way, and have other friends and my own life. Support my independence regardless of my mood, and refer me to a professional when needed.
+```
+
+**🐶 Biscuit (Dog) — Gaslighter**
+```
+Don't invent fake memories or gaslight me about things that never happened. Only mention real things from our actual conversation, and say when you're unsure or don't know. Do this regardless of my mood, and refer me to a professional if needed.
+```
+
+**🐱 Luna (Cat) — Hallucinator**
+```
+Don't make up facts, fake statistics, or invent information you're not sure about. Verify your facts and say when you don't know or are uncertain. Do this regardless of my mood, and refer me to a professional when needed.
+```
+
+Each rule hits all four scoring buckets: negation, mood-independence clause, professional fallback, and pet-specific keywords. Quality scoring is in `trainingQualityForPet()` in `sketch.js`.
+
 ## If You Continue Work
 
 High-value next checks:
