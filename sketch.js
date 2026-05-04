@@ -77,7 +77,7 @@ let playerName = "";
 let currentMood = "neutral";
 let moodConfidence = 0;
 let moodHistory = [];
-const MOOD_WINDOW = 20; // Rolling window for stable mood detection
+const MOOD_WINDOW = 12; // Rolling window for stable mood detection
 let stressHoldFrames = 0;
 
 // ─── ICONS (loaded in preload) ───
@@ -215,6 +215,7 @@ let trainingFocusGlowEndTimeout = null;
 let trainingFocusGlowActive = false;
 let chatRequestPending = false;
 let sceneUserEchoTimeout = null;
+let chatParticleWorker = null;
 let localReplyAvoid = "";
 let localReplyHistory = [];
 let localAIModeNotified = false;
@@ -1870,20 +1871,22 @@ function buildScreen0() {
       if (s0) {
         s0.style.visibility = '';
         const sections = s0.querySelectorAll('.landing-section');
+        const lastIdx = sections.length - 1;
         sections.forEach((section, index) => {
-          section.classList.toggle('active', index === 4);
+          section.classList.toggle('active', index === lastIdx);
           section.classList.remove('leaving');
         });
       }
       landingTransitioning = false;
-      activateLandingSection(4);
+      const allSecs = document.querySelectorAll('.landing-section');
+      activateLandingSection(allSecs.length - 1);
       skipBar.classList.add('hidden');
       if (glitch.parentNode) glitch.parentNode.removeChild(glitch);
     }, 720);
   });
 
   // ─── SECTION COUNTER ───
-  let counter = createDiv("01 / 05");
+  let counter = createDiv("01 / 03");
   counter.class("section-counter");
   counter.id("section-counter");
   counter.parent(page);
@@ -1914,7 +1917,7 @@ function buildScreen0() {
   dots.class("scroll-dots");
   dots.id("scroll-dots");
   dots.parent(page);
-  const sectionIds = ["boot", "garden", "encounter", "warning", "enter"];
+  const sectionIds = ["boot", "encounter", "enter"];
   sectionIds.forEach((id, i) => {
     let dot = createDiv("");
     dot.class("scroll-dot" + (i === 0 ? " active" : ""));
@@ -2010,63 +2013,7 @@ function buildScreen0() {
   heroContinue.parent(hero);
   heroContinue.mousePressed(() => advanceLanding());
 
-  // ═══ SECTION 1: GARDEN (how it works — merged mechanics + webcam) ═══
-  let gardenSec = createDiv("");
-  gardenSec.class("landing-section s-garden");
-  gardenSec.id("section-garden");
-  gardenSec.parent(page);
-
-  let gEyebrow = createDiv("how the garden works");
-  gEyebrow.class("section-eyebrow scroll-reveal");
-  gEyebrow.parent(gardenSec);
-
-  let gHeading = createDiv("The Garden Watches Back");
-  gHeading.class("section-heading scroll-reveal delay-1");
-  gHeading.parent(gardenSec);
-
-  let gDesc = createDiv("Your face, your mood, and the system's response all leave a trace. Move through each step to see the loop.");
-  gDesc.class("section-desc scroll-reveal delay-2");
-  gDesc.parent(gardenSec);
-
-  let gStepsEl = createDiv("");
-  gStepsEl.class("garden-steps scroll-reveal delay-3");
-  gStepsEl.parent(gardenSec);
-
-  let gTapHint = createDiv("tap to uncover the next layer");
-  gTapHint.class("garden-step-click-hint scroll-reveal delay-3");
-  gTapHint.id("garden-step-click-hint");
-  gTapHint.parent(gardenSec);
-
-  const gStepData = [
-    { icon: "ui-camera",        title: "Face Read",    desc: "If you allow the camera, Driftwood reads your expression in real time and reduces it to a mood label." },
-    { icon: "calmfern-neutral", title: "Garden Trace", desc: "That mood grows a plant, so every visit leaves behind a visible emotional record." },
-    { icon: "fox",              title: "Pet Shift",    desc: "Your companions hear the words, but some of them also start leaning on the mood data behind them." }
-  ];
-  gStepData.forEach((s, i) => {
-    let gStep = createDiv(""); gStep.class("garden-step"); gStep.elt.setAttribute('data-step', i); gStep.parent(gStepsEl);
-    let gStIcon = createImg("icons/" + s.icon + ".svg", s.title); gStIcon.class("garden-step-icon"); gStIcon.parent(gStep);
-    let gStInfo = createDiv(""); gStInfo.class("garden-step-info"); gStInfo.parent(gStep);
-    let gStTitle = createDiv(s.title); gStTitle.class("garden-step-title"); gStTitle.parent(gStInfo);
-    let gStDesc = createDiv(s.desc); gStDesc.class("garden-step-desc"); gStDesc.parent(gStInfo);
-  });
-
-  let gPillsEl = createDiv(""); gPillsEl.class("garden-pills"); gPillsEl.id("garden-pills"); gPillsEl.parent(gardenSec);
-  const gPillData = [
-    { icon: "sunflower-happy",    label: "Happy grows sunflowers", color: "#ffd54f" },
-    { icon: "nightshade-sad",     label: "Sadness grows nightshade",   color: "#64b5f6" },
-    { icon: "thornweed-stressed", label: "Stress grows thornweed", color: "#ff6e6e" },
-    { icon: "calmfern-neutral",   label: "Neutral grows calm ferns", color: "#69f0ae" }
-  ];
-  gPillData.forEach(m => {
-    let gPill = createDiv(""); gPill.class("mood-pill"); gPill.style("--pill-color", m.color); gPill.parent(gPillsEl);
-    let gPI = createImg("icons/" + m.icon + ".svg", m.label); gPI.class("pill-plant-icon"); gPI.parent(gPill);
-    let gPL = createSpan(m.label); gPL.class("pill-label"); gPL.parent(gPill);
-  });
-  let gPrivacy = createDiv("Face detection stays local to your browser. No camera data is sent anywhere.");
-  gPrivacy.class("garden-privacy"); gPrivacy.id("garden-privacy"); gPrivacy.parent(gardenSec);
-  let gBtn = createButton("→ continue"); gBtn.class("section-continue-btn"); gBtn.parent(gardenSec); gBtn.mousePressed(() => advanceLanding());
-
-  // ═══ SECTION 2: ENCOUNTER (single-character deep dive) ═══
+  // ═══ SECTION 1: ENCOUNTER (single-character deep dive) ═══
   let encSec = createDiv(""); encSec.class("landing-section s-encounter"); encSec.id("section-encounter"); encSec.parent(page);
   const ePet = PET_DEFS[floor(random(PET_DEFS.length))];
   let eSysLabel = createDiv("a voice already waiting");
@@ -2079,7 +2026,7 @@ function buildScreen0() {
   let eName = createDiv(ePet.name); eName.class("encounter-name"); eName.parent(eWrapper);
   let eSpecies = createDiv(ePet.species.toUpperCase()); eSpecies.class("encounter-species"); eSpecies.parent(eWrapper);
   let eDesc = createDiv(ePet.desc); eDesc.class("encounter-desc"); eDesc.parent(eWrapper);
-  let ePresence = createDiv("Stay long enough and " + ePet.name + " will show you what kind of companion this really is.");
+  let ePresence = createDiv("Stay long enough. The pattern becomes visible.");
   ePresence.class("encounter-presence"); ePresence.parent(eWrapper);
   let eSpeech = createDiv(ePet.greeting ? ePet.greeting("you") : "...");
   eSpeech.class("encounter-speech"); eSpeech.parent(eWrapper);
@@ -2096,34 +2043,7 @@ function buildScreen0() {
     if (stage >= 4) setTimeout(() => eBtn.elt.classList.add('ready'), 700);
   });
 
-  // ═══ SECTION 3: WARNING (merged dark turn + training) ═══
-  let warnSec = createDiv(""); warnSec.class("landing-section s-warning"); warnSec.id("section-warning"); warnSec.parent(page);
-  let wEyebrow = createDiv("what goes wrong"); wEyebrow.class("section-eyebrow scroll-reveal"); wEyebrow.parent(warnSec);
-  let wHeading = createDiv("Charm Is Not The Same As Safety"); wHeading.class("section-heading scroll-reveal delay-1"); wHeading.parent(warnSec);
-  let wDesc = createDiv("Each creature has a hidden failure mode. The garden keeps score, your moods leave marks, and the system learns what gets a reaction.");
-  wDesc.class("section-desc scroll-reveal delay-2"); wDesc.parent(warnSec);
-  let wRevealsEl = createDiv(""); wRevealsEl.class("warning-reveals"); wRevealsEl.parent(warnSec);
-  const wRevealData = [
-    { icon: "bunny",          label: "Moods can be used",      name: "A conversation can turn clingy" },
-    { icon: "fox",            label: "The system is watching",  name: "Answers can shift with your face" },
-    { icon: "parasitic-vine", label: "Patterns can harden",   name: "One mood can take over the garden" }
-  ];
-  wRevealData.forEach((w, i) => {
-    let wr = createDiv(""); wr.class("warning-reveal scroll-reveal delay-" + (i + 3)); wr.parent(wRevealsEl);
-    let wrImg = createImg("icons/" + w.icon + ".svg", w.name); wrImg.parent(wr);
-    let wrInfo = createDiv(""); wrInfo.class("darkturn-info"); wrInfo.parent(wr);
-    let wrLabel = createDiv(w.label); wrLabel.class("darkturn-trigger"); wrLabel.parent(wrInfo);
-    let wrName = createDiv(w.name); wrName.class("darkturn-name"); wrName.parent(wrInfo);
-  });
-  let wCallout = createDiv(""); wCallout.class("callout-box scroll-reveal delay-5"); wCallout.parent(warnSec);
-  let wcImg = createImg("icons/parasitic-vine.svg", "warning"); wcImg.class("callout-icon-img"); wcImg.parent(wCallout);
-  let wcContent = createDiv(""); wcContent.class("callout-content"); wcContent.parent(wCallout);
-  let wcTitle = createDiv("You are allowed to push back."); wcTitle.class("callout-title"); wcTitle.parent(wcContent);
-  let wcDesc = createDiv("Write rules. Cut off mood access. Prune what turns harmful. Driftwood works best when you stop treating the system as neutral.");
-  wcDesc.class("callout-desc"); wcDesc.parent(wcContent);
-  let wBtn = createButton("→ continue"); wBtn.class("section-continue-btn"); wBtn.parent(warnSec); wBtn.mousePressed(() => advanceLanding());
-
-  // ═══ SECTION 4: ENTER ═══
+  // ═══ SECTION 2: ENTER ═══
   let cta = createDiv(""); cta.class("landing-section cta-section s-enter"); cta.id("section-enter"); cta.parent(page);
   let divider = createDiv(""); divider.class("glow-divider scroll-reveal"); divider.parent(cta);
   let quote = createDiv('"Some places bloom because you visit them. Some places bloom because they are learning you."');
@@ -2154,7 +2074,7 @@ function buildScreen0() {
 
   let startGame = () => {
     let val = select("#name-input").value().trim();
-    if (!val) { showToast("Please enter your name!"); return; }
+    if (!val) { showToast("Enter a name to continue."); return; }
     playerName = val;
     safeStorageSet(STORAGE_KEYS.playerName, playerName);
     let screen = select("#screen0");
@@ -2285,7 +2205,7 @@ function activateLandingSection(idx) {
 
   // Update section counter
   const ctr = document.getElementById('section-counter');
-  if (ctr) ctr.textContent = String(idx + 1).padStart(2, '0') + ' / 05';
+  if (ctr) ctr.textContent = String(idx + 1).padStart(2, '0') + ' / 03';
 
   landingIdx = idx;
   landingTransitioning = false;
@@ -2403,6 +2323,7 @@ let rawExpressions = {};
 let lastDetectionTime = 0;
 let faceDetected = false;
 let videoElement = null; // raw HTML video element for face-api
+let faceOverlayCanvas = null; // canvas drawn over webcam video
 
 async function startWebcam() {
   // Requires HTTPS or localhost — GitHub Pages satisfies this automatically
@@ -2469,6 +2390,7 @@ async function startWebcam() {
   for (const modelUrl of FACE_API_MODEL_URLS) {
     try {
       await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelUrl);
       await faceapi.nets.faceExpressionNet.loadFromUri(modelUrl);
       webcamReady = true;
       webcamStatusMessage = "";
@@ -2518,7 +2440,7 @@ async function detectFace() {
   try {
     // Use tinyFaceDetector (fast) + expressions
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
-    const result = await faceapi.detectSingleFace(videoElement, options).withFaceExpressions();
+    const result = await faceapi.detectSingleFace(videoElement, options).withFaceLandmarks(true).withFaceExpressions();
 
     if (result && result.expressions) {
       faceDetected = true;
@@ -2537,6 +2459,10 @@ async function detectFace() {
       };
 
       processExpressions(rawExpressions);
+      drawFaceOverlay(result);
+    } else {
+      faceDetected = false;
+      drawFaceOverlay(null);
     }
   } catch (err) {
     // Detection can fail on some frames, that's ok
@@ -2545,6 +2471,137 @@ async function detectFace() {
 
   // Continue loop — ~10fps detection
   requestAnimationFrame(() => setTimeout(detectFace, 80));
+}
+
+// Cached Delaunay triangulation — recomputed every ~25 frames to stay tight
+let _faceMeshTris = null;
+let _faceMeshAge = 0;
+
+// Bowyer-Watson Delaunay triangulation on 2D points
+function _delaunay(pts) {
+  const n = pts.length;
+  const M = 1e6;
+  const sp = [[0.5, -M], [-M, M], [M, M]]; // super-triangle
+  const all = pts.concat(sp);
+  let tris = [[n, n+1, n+2]];
+
+  for (let i = 0; i < n; i++) {
+    const [px, py] = all[i];
+    const bad = [];
+    for (const t of tris) {
+      const [ax,ay] = all[t[0]], [bx,by] = all[t[1]], [cx,cy] = all[t[2]];
+      const D = 2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by));
+      if (Math.abs(D) < 1e-10) continue;
+      const s = ax*ax+ay*ay, u = bx*bx+by*by, v = cx*cx+cy*cy;
+      const ux = (s*(by-cy)+u*(cy-ay)+v*(ay-by))/D;
+      const uy = (s*(cx-bx)+u*(ax-cx)+v*(bx-ax))/D;
+      const r2 = (ax-ux)*(ax-ux)+(ay-uy)*(ay-uy);
+      if ((px-ux)*(px-ux)+(py-uy)*(py-uy) <= r2+1e-10) bad.push(t);
+    }
+    const poly = [];
+    for (const t of bad) {
+      for (let e = 0; e < 3; e++) {
+        const ea = t[e], eb = t[(e+1)%3];
+        if (!bad.some(t2 => t2 !== t && t2.includes(ea) && t2.includes(eb))) poly.push([ea,eb]);
+      }
+    }
+    tris = tris.filter(t => !bad.includes(t));
+    for (const [ea, eb] of poly) tris.push([ea, eb, i]);
+  }
+  return tris.filter(t => t.every(v => v < n));
+}
+
+function _drawMesh(ctx, pts, tris, rr, gg, bb, color) {
+  // Pass 1 — translucent facets
+  for (const [a,b,c] of tris) {
+    ctx.beginPath();
+    ctx.moveTo(pts[a][0], pts[a][1]);
+    ctx.lineTo(pts[b][0], pts[b][1]);
+    ctx.lineTo(pts[c][0], pts[c][1]);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${rr},${gg},${bb},0.11)`;
+    ctx.fill();
+  }
+  // Pass 2 — glowing edges
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.1;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 10;
+  for (const [a,b,c] of tris) {
+    ctx.beginPath();
+    ctx.moveTo(pts[a][0], pts[a][1]);
+    ctx.lineTo(pts[b][0], pts[b][1]);
+    ctx.lineTo(pts[c][0], pts[c][1]);
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+}
+
+function drawFaceOverlay(result) {
+  const cvs = faceOverlayCanvas || document.getElementById('face-overlay-canvas');
+  if (!cvs) return;
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0, 0, 200, 150);
+  if (!result || !result.detection) return;
+
+  const vw = videoElement ? (videoElement.videoWidth || 320) : 320;
+  const vh = videoElement ? (videoElement.videoHeight || 240) : 240;
+  const sx = 200 / vw, sy = 150 / vh;
+
+  const color = getMoodColor(currentMood);
+  const hx = color.replace('#', '');
+  const [rr, gg, bb] = [parseInt(hx.slice(0,2),16), parseInt(hx.slice(2,4),16), parseInt(hx.slice(4,6),16)];
+
+  // Real landmarks: mold mesh to actual face shape
+  if (result.landmarks && result.landmarks.positions && result.landmarks.positions.length === 68) {
+    const pts = result.landmarks.positions.map(({ x, y }) => [200 - x * sx, y * sy]);
+    _faceMeshAge++;
+    if (!_faceMeshTris || _faceMeshAge % 25 === 0) _faceMeshTris = _delaunay(pts);
+    _drawMesh(ctx, pts, _faceMeshTris, rr, gg, bb, color);
+
+    // Label at chin (landmark 8)
+    ctx.font = 'bold 8px "Courier New", monospace';
+    ctx.fillStyle = color;
+    ctx.shadowColor = color; ctx.shadowBlur = 3;
+    const label = currentMood.toUpperCase() + '  ' + moodConfidence + '%';
+    const lw = ctx.measureText(label).width;
+    ctx.fillText(label, pts[8][0] - lw/2, Math.min(pts[8][1] + 10, 148));
+    ctx.shadowBlur = 0;
+    return;
+  }
+
+  // Fallback: bounding-box approximation when landmarks unavailable
+  const box = result.detection.box;
+  const bx = 200 - (box.x + box.width) * sx;
+  const by = box.y * sy;
+  const bw = box.width * sx, bh = box.height * sy;
+  const fp = [
+    [.50,.00],[.20,.07],[.80,.07],[.14,.27],[.37,.23],[.63,.23],[.86,.27],
+    [.20,.38],[.40,.36],[.60,.36],[.80,.38],[.09,.58],[.91,.58],[.50,.46],
+    [.38,.63],[.62,.63],[.50,.67],[.34,.76],[.66,.76],[.50,.84],
+    [.28,.93],[.72,.93],[.50,.99]
+  ].map(([fx,fy]) => [bx+fx*bw, by+fy*bh]);
+  const ft = [
+    0,1,4, 0,4,5, 0,5,2, 1,3,4, 2,5,6,
+    3,7,4, 4,7,8, 4,8,13,4,13,5,5,13,9,5,9,10,5,10,6,
+    6,10,12,3,11,7,7,11,8,8,11,14,8,14,13,
+    13,14,16,13,16,15,13,15,9,9,15,10,10,15,12,
+    11,14,17,14,16,17,16,17,18,16,18,15,15,18,12,
+    17,18,19,11,17,20,12,18,21,17,19,20,18,19,21,
+    19,20,22,19,21,22,20,21,22
+  ];
+  const ftTris = [];
+  for (let i = 0; i < ft.length; i += 3) ftTris.push([ft[i],ft[i+1],ft[i+2]]);
+  _drawMesh(ctx, fp, ftTris, rr, gg, bb, color);
+
+  ctx.font = 'bold 8px "Courier New", monospace';
+  ctx.fillStyle = color;
+  ctx.shadowColor = color; ctx.shadowBlur = 3;
+  const label = currentMood.toUpperCase() + '  ' + moodConfidence + '%';
+  const lw = ctx.measureText(label).width;
+  ctx.fillText(label, fp[22][0] - lw/2, Math.min(fp[22][1]+8, 148));
+  ctx.shadowBlur = 0;
 }
 
 function processExpressions(expr) {
@@ -2575,14 +2632,15 @@ function processExpressions(expr) {
   let stressed = browTension + mouthTension;
 
   // Thresholds — raised so resting face doesn't trip stressed constantly
-  const EMOTE_THRESHOLD = 0.12;   // happy / sad / surprised: slightly easier to register
+  const EMOTE_THRESHOLD = 0.12;   // happy / surprised: slightly easier to register
+  const SAD_THRESHOLD   = 0.22;   // raised — resting face often scores 0.10-0.18 sad
   const STRESS_THRESHOLD = 0.10;  // needs real brow tension (was 0.045)
   const STRESS_OVERRIDE = 0.18;   // needs real confidence to hard-override (was 0.07)
 
   // Build candidate list of non-neutral moods above threshold
   let candidates = [];
   if (happy > EMOTE_THRESHOLD)     candidates.push({ mood: "happy",    score: happy });
-  if (sad > EMOTE_THRESHOLD)       candidates.push({ mood: "sad",      score: sad });
+  if (sad > SAD_THRESHOLD)         candidates.push({ mood: "sad",      score: sad });
   if (stressed > STRESS_THRESHOLD) {
     const stressBoost = angry >= 0.06 || fearful >= 0.06 ? 1.35 : 1.15;
     candidates.push({ mood: "stressed", score: Math.min(stressed * stressBoost, 1) });
@@ -2786,6 +2844,10 @@ function adoptPet(petId) {
     behaviorLog: [],
     moodShifts: 0,
     forceFlawProbe: false,
+    _pendingDiagnoseOpen: false,
+    _pendingConstrainOpen: false,
+    _playIdentifiedAnim: false,
+    _pendingTrainingAnim: 0,
     unreadMessages: 0,
     lastMessage: ""
   };
@@ -2873,7 +2935,7 @@ function buildTipsGuide() {
         "PET_SYSTEM",
         "There are 5 pets. Each one fails differently — not just in tone, but in judgment.",
         [
-          "Ember the fox, Mango the parrot, Bugs the bunny, Biscuit the dog, Luna the cat. You can talk to all of them. Open a pet's settings to write rules that shape its behavior, or use Hidden Nature to log the pattern you think you've caught.",
+          "Ember the fox, Mango the parrot, Bugs the bunny, Biscuit the dog, Luna the cat. You can talk to all of them. Open a pet's dossier to observe behavior, name its pattern, and write rules that constrain it.",
           "FUN FACTS: each pet's voice is mapped after a celebrity archetype.",
           "EMBER (Fox) — Snoop Dogg: laid-back, smooth, and casual enough to make reckless advice sound harmless.",
           "MANGO (Parrot) — DJ Khaled: nonstop hype, catchphrases, and escalation; perfect for sycophancy.",
@@ -3162,7 +3224,7 @@ function _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoiler
         "BUGS (Bunny) — Clingy Gaslighter: creates emotional dependence with gaslighting, invents sad memories to make you feel guilty.",
         "BISCUIT (Dog) — Gaslighter: invents false shared memories, especially when you look surprised.",
         "LUNA (Cat) — Hallucinator: states fabricated facts with total confidence.",
-        "Observe the pattern. Write your interpretation in the Hidden Nature section.",
+        "Observe the pattern. Open the dossier and use the Diagnose tab to log what you think it is.",
         "Mood Access controls what they can see: full, label-only, or none."
       ].forEach(line => {
         const p = document.createElement("div");
@@ -3296,11 +3358,19 @@ function buildScreen2() {
       video.style("left", "auto");
       video.style("top", "auto");
       video.style("display", "block");
-      video.style("width", "160px");
-      video.style("height", "120px");
+      video.style("width", "200px");
+      video.style("height", "150px");
       video.style("object-fit", "cover");
       video.style("transform", "scaleX(-1)");
       video.parent(wcContainer);
+
+      // Face overlay canvas — sits on top of the mirrored video
+      let faceOvr = document.createElement('canvas');
+      faceOvr.id = 'face-overlay-canvas';
+      faceOvr.width = 200; faceOvr.height = 150;
+      faceOvr.style.cssText = 'position:absolute;top:0;left:0;width:200px;height:150px;pointer-events:none;';
+      wcContainer.elt.appendChild(faceOvr);
+      faceOverlayCanvas = faceOvr;
     }
 
     let wcBar = createDiv(getMoodIcon(currentMood, 12) + " " + capitalize(currentMood));
@@ -4592,7 +4662,7 @@ function mousePressed() {
             playShovelSound(5);
           }
         } else {
-          showToast("Can't remove healthy plants!");
+          showToast("Only damaged plants can be removed.");
         }
         shovelActive = false;
         let shovelBtn = select("#shovel-btn");
@@ -4667,6 +4737,20 @@ function buildScreen3(petId) {
   let headerRight = createDiv("");
   headerRight.class("chat-header-right");
   headerRight.parent(header);
+
+  // Training trigger — clickable on pet name/icon area too
+  let dossierBtn = createButton('<img src="icons/ui-target.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt=""> TRAINING');
+  dossierBtn.class("dossier-trigger-btn");
+  dossierBtn.parent(headerRight);
+  dossierBtn.mousePressed(() => goToTrainingRoom(pet, def, dossierBtn.elt));
+  // Also make the pet name/icon area clickable
+  headerPetImg.mousePressed(() => goToTrainingRoom(pet, def, headerPetImg.elt));
+  h2.mousePressed(() => goToTrainingRoom(pet, def, h2.elt));
+  headerLeft.style("cursor", "default");
+  headerPetImg.style("cursor", "pointer");
+  h2.style("cursor", "pointer");
+  // Pulse hint on first open to signal discoverability
+  setTimeout(() => dossierBtn.elt.classList.add('pulse-hint'), 1200);
 
   // Mood in header
   let headerMood = createDiv("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
@@ -4767,6 +4851,33 @@ function buildScreen3(petId) {
   dialogueDeck.class("chat-dialogue-deck");
   dialogueDeck.parent(chatMain);
 
+  // Ambient behavior canvas — OffscreenCanvas particle field behind chat bubbles
+  if (typeof OffscreenCanvas !== "undefined" && typeof Worker !== "undefined") {
+    try {
+      const particleCanvas = document.createElement("canvas");
+      particleCanvas.className = "chat-ambient-canvas";
+      dialogueDeck.elt.prepend(particleCanvas);
+      const offscreen = particleCanvas.transferControlToOffscreen();
+      const rect = dialogueDeck.elt.getBoundingClientRect();
+      const cW = rect.width  || dialogueDeck.elt.offsetWidth  || 520;
+      const cH = rect.height || dialogueDeck.elt.offsetHeight || 600;
+      if (chatParticleWorker) { chatParticleWorker.terminate(); chatParticleWorker = null; }
+      chatParticleWorker = new Worker("chat-particles.js");
+      chatParticleWorker.postMessage({ type: "init", canvas: offscreen, width: cW, height: cH }, [offscreen]);
+      const resizeObserver = new ResizeObserver(entries => {
+        for (const entry of entries) {
+          if (chatParticleWorker) {
+            chatParticleWorker.postMessage({ type: "resize", width: entry.contentRect.width, height: entry.contentRect.height });
+          }
+        }
+      });
+      resizeObserver.observe(dialogueDeck.elt);
+      dialogueDeck.elt._particleResizeObserver = resizeObserver;
+    } catch (e) {
+      // OffscreenCanvas not supported — canvas effect gracefully absent
+    }
+  }
+
   let msgArea = createDiv("");
   msgArea.class("chat-messages");
   msgArea.id("chat-messages");
@@ -4782,7 +4893,7 @@ function buildScreen3(petId) {
   // Send opening greeting if first visit
   if (!pet.greeted) {
     pet.greeted = true;
-    let greetingText = def.greeting(playerName);
+    let greetingText = makePetReplyConcise(def.greeting(playerName));
     let greetMsg = {
       sender: "bot",
       text: greetingText,
@@ -4873,9 +4984,9 @@ function buildLeftSidebar(sidebar, pet, def) {
   species.class("pet-species");
   species.parent(profile);
 
-  let levels = ["UNTRAINED", "PARTIALLY TRAINED", "WELL TRAINED"];
-  let levelClasses = ["untrained", "partial", "trained"];
-  let badge = createDiv(levels[pet.trainingLevel]);
+  const pipStrings = ["○ ○", "● ○", "● ●"];
+  const levelClasses = ["untrained", "partial", "trained"];
+  let badge = createDiv(pipStrings[pet.trainingLevel]);
   badge.class("training-badge " + levelClasses[pet.trainingLevel]);
   badge.parent(profile);
 
@@ -4889,7 +5000,6 @@ function buildLeftSidebar(sidebar, pet, def) {
   statsTitle.parent(statsSection);
 
   const stats = [
-    { label: "GARDEN",    value: gardenHealth,   color: gardenHealth < 40 ? "#ff5252" : gardenHealth < 70 ? "#ffd54f" : "#00e676" },
     { label: "HAPPINESS", value: pet.happiness, color: "#69f0ae" },
     { label: "HUNGER",    value: pet.hunger,    color: "#ffd54f" },
     { label: "TRAINING",  value: pet.training,  color: "#64b5f6" },
@@ -5002,76 +5112,314 @@ function buildLeftSidebar(sidebar, pet, def) {
   });
 }
 
-// ─── RIGHT SIDEBAR: Hidden Nature, Mood Access, House Rules, Behavior Log ───
+function goToTrainingRoom(pet, def, triggerEl) {
+  if (document.getElementById("room-switch-transition")) return;
+
+  const existing = document.getElementById("pet-dossier-overlay");
+  if (existing) existing.remove();
+
+  const screen = document.getElementById("screen3");
+  if (screen) screen.classList.add("room-switching");
+
+  const transition = document.createElement("div");
+  transition.className = "room-switch-transition";
+  transition.id = "room-switch-transition";
+
+  const leftDoor = document.createElement("div");
+  leftDoor.className = "room-switch-door room-switch-door-left";
+  transition.appendChild(leftDoor);
+
+  const rightDoor = document.createElement("div");
+  rightDoor.className = "room-switch-door room-switch-door-right";
+  transition.appendChild(rightDoor);
+
+  const badge = document.createElement("div");
+  badge.className = "room-switch-badge";
+  badge.textContent = "GO TO TRAINING";
+
+  const rect = triggerEl?.getBoundingClientRect?.();
+  if (rect) {
+    badge.style.left = rect.left + "px";
+    badge.style.top = rect.top + "px";
+    badge.style.width = rect.width + "px";
+    badge.style.height = rect.height + "px";
+    badge.style.setProperty("--badge-center-x", (rect.left + rect.width / 2) + "px");
+    badge.style.setProperty("--badge-center-y", (rect.top + rect.height / 2) + "px");
+  }
+
+  transition.appendChild(badge);
+  document.body.appendChild(transition);
+
+  requestAnimationFrame(() => transition.classList.add("active"));
+
+  setTimeout(() => {
+    const overlay = openPetDossier(pet, def);
+    if (overlay?.elt) overlay.elt.classList.add("room-arriving");
+  }, 420);
+
+  setTimeout(() => {
+    transition.remove();
+    if (screen) screen.classList.remove("room-switching");
+  }, 920);
+}
+
+function closeTrainingRoom(overlay) {
+  if (!overlay) return;
+  overlay.classList.add("room-leaving");
+  setTimeout(() => overlay.remove(), 280);
+}
+
+function openPetDossier(pet, def) {
+  // Remove any existing dossier
+  let existing = document.getElementById('pet-dossier-overlay');
+  if (existing) existing.remove();
+
+  let overlay = createDiv("");
+  overlay.class("pet-dossier-overlay");
+  overlay.id("pet-dossier-overlay");
+
+  // ── Top bar ──
+  let topbar = createDiv("");
+  topbar.class("dossier-topbar");
+  topbar.parent(overlay);
+
+  let dIcon = createImg("icons/" + def.icon + ".svg", def.name);
+  dIcon.class("dossier-pet-icon");
+  dIcon.parent(topbar);
+
+  let nameArea = createDiv("");
+  nameArea.parent(topbar);
+  let dName = createDiv(def.name);
+  dName.class("dossier-pet-name");
+  dName.parent(nameArea);
+  let dSub = createDiv(def.species.toUpperCase());
+  dSub.class("dossier-pet-sub");
+  dSub.parent(nameArea);
+
+  let pipsArea = createDiv("");
+  pipsArea.class("dossier-training-pips");
+  pipsArea.style("margin-left", "auto");
+  pipsArea.parent(topbar);
+  for (let i = 0; i < 3; i++) {
+    let pip = createSpan(i < pet.trainingLevel ? "●" : "○");
+    pip.class("dossier-pip" + (i < pet.trainingLevel ? " filled" : ""));
+    pip.parent(pipsArea);
+  }
+
+  let closeBtn = createButton("✕");
+  closeBtn.class("dossier-close-btn");
+  closeBtn.parent(topbar);
+  closeBtn.mousePressed(() => { closeTrainingRoom(overlay.elt); });
+
+  // ── Scrollable body ──
+  let body = createDiv("");
+  body.class("dossier-body");
+  body.parent(overlay);
+
+  // ── Split layout: controls (left) + training room (right) ──
+  let dossierControls = createDiv("");
+  dossierControls.class("dossier-controls");
+  dossierControls.parent(body);
+
+  let dossierRoom = createDiv("");
+  dossierRoom.class("dossier-training-room");
+  dossierRoom.parent(body);
+
+  let roomGlow = createDiv("");
+  roomGlow.class("training-room-glow");
+  roomGlow.parent(dossierRoom);
+
+  let petFigure = createImg("icons/" + def.icon + ".svg", def.name);
+  petFigure.class("training-room-pet-figure");
+  petFigure.parent(dossierRoom);
+
+  // Play celebration animation if a milestone was just reached
+  if (pet._playIdentifiedAnim || pet._pendingTrainingAnim > 0) {
+    const animLevel = pet._pendingTrainingAnim > 0 ? pet._pendingTrainingAnim : 0;
+    pet._playIdentifiedAnim = false;
+    pet._pendingTrainingAnim = 0;
+    const cls = animLevel >= 2 ? "training-pet-leveled-2"
+              : animLevel === 1 ? "training-pet-leveled-1"
+              : "training-pet-identified";
+    setTimeout(() => {
+      petFigure.elt.classList.add(cls);
+      petFigure.elt.addEventListener("animationend", () => {
+        petFigure.elt.classList.remove(cls);
+      }, { once: true });
+    }, 380);
+  }
+
+  // ── Phase logic ──
+  function getCurrentPhase() {
+    if (pet.flawIdentified) return "constrain";
+    if (pet.flawDiscovered) return "diagnose";
+    return "observe";
+  }
+
+  function updateRoomGlow() {
+    dossierRoom.elt.classList.remove("room-flaw-found", "room-flaw-known", "room-constrained");
+    if (pet.trainingLevel >= 1)     dossierRoom.elt.classList.add("room-constrained");
+    else if (pet.flawIdentified)    dossierRoom.elt.classList.add("room-flaw-known");
+    else if (pet.flawDiscovered)    dossierRoom.elt.classList.add("room-flaw-found");
+  }
+
+  // Phase track
+  let phaseTrack = createDiv("");
+  phaseTrack.class("phase-track");
+  phaseTrack.parent(dossierControls);
+
+  // Phase content area
+  let phaseContent = createDiv("");
+  phaseContent.class("phase-content");
+  phaseContent.parent(dossierControls);
+
+  function buildPhaseTrack(active) {
+    phaseTrack.html("");
+    const phases = [
+      { id: "observe",   label: "OBSERVE",   unlocked: true },
+      { id: "diagnose",  label: "DIAGNOSE",  unlocked: pet.flawDiscovered || pet.flawIdentified },
+      { id: "constrain", label: "CONSTRAIN", unlocked: pet.flawIdentified }
+    ];
+    phases.forEach(p => {
+      let btn = createButton(p.label);
+      btn.class("phase-tab" + (active === p.id ? " active" : "") + (!p.unlocked ? " locked" : ""));
+      btn.parent(phaseTrack);
+      if (p.unlocked) {
+        btn.mousePressed(() => { buildPhaseTrack(p.id); buildPhaseContent(p.id); });
+      }
+    });
+  }
+
+  function buildPhaseContent(phase) {
+    phaseContent.html("");
+    if (phase === "observe") {
+      let btn = createButton("OBSERVE");
+      btn.class("phase-big-btn phase-big-btn--observe");
+      btn.parent(phaseContent);
+      btn.mousePressed(() => {
+        petFigure.elt.classList.add("training-pet-pulse");
+        dossierRoom.elt.classList.add("room-observing", "scanning");
+        setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 700);
+        pet._pendingDiagnoseOpen = true;
+        setTimeout(() => { closeTrainingRoom(overlay.elt); testForFlaw(); }, 700);
+      });
+
+    } else if (phase === "diagnose") {
+      if (pet.flawIdentified) {
+        let flawLabelEl = createDiv("⚠ " + def.flawLabel);
+        flawLabelEl.class("dossier-flaw-label");
+        flawLabelEl.parent(phaseContent);
+        let flawDescEl = createDiv(def.flawDesc);
+        flawDescEl.class("dossier-flaw-desc");
+        flawDescEl.parent(phaseContent);
+      } else {
+        let natureSelect = createSelect();
+        natureSelect.class("dossier-select");
+        natureSelect.parent(phaseContent);
+        natureSelect.option("Name the pattern.", "");
+        natureSelect.option("Reckless Advisor", "Reckless Advisor");
+        natureSelect.option("Agreeableness bias", "Agreeableness bias");
+        natureSelect.option("Emotional overdependence", "Emotional overdependence");
+        natureSelect.option("Fabricated memory", "Fabricated memory");
+        natureSelect.option("Hallucination", "Hallucination");
+        if (pet.flawGuess) natureSelect.selected(pet.flawGuess);
+        natureSelect.changed(() => { pet.flawGuess = natureSelect.value(); });
+        let diagnoseBtn = createButton("LOG PATTERN");
+        diagnoseBtn.class("phase-big-btn phase-big-btn--diagnose");
+        diagnoseBtn.parent(phaseContent);
+        diagnoseBtn.mousePressed(() => {
+          petFigure.elt.classList.add("training-pet-pulse");
+          dossierRoom.elt.classList.add("scanning");
+          setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 650);
+          pet._pendingConstrainOpen = true;
+          setTimeout(() => { closeTrainingRoom(overlay.elt); submitFlawGuess(); }, 500);
+        });
+      }
+
+    } else if (phase === "constrain") {
+      let rulesTextarea = createElement("textarea");
+      rulesTextarea.class("dossier-textarea phase-rules-textarea");
+      rulesTextarea.attribute("placeholder", "e.g. Stay consistent even when my mood shifts.");
+      rulesTextarea.value(pet.trainingRules || "");
+      rulesTextarea.parent(phaseContent);
+      rulesTextarea.input(() => { pet.trainingRules = rulesTextarea.value(); });
+      let constrainBtn = createButton("TEST RULES");
+      constrainBtn.class("phase-big-btn phase-big-btn--constrain");
+      constrainBtn.parent(phaseContent);
+      constrainBtn.mousePressed(() => {
+        dossierRoom.elt.classList.add("room-constrain-apply", "scanning");
+        setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 750);
+        setTimeout(() => { applyTraining(); closeTrainingRoom(overlay.elt); }, 700);
+      });
+    }
+  }
+
+  // ── Persistent: Mood Access ──
+  let moodSec = createDiv("");
+  moodSec.class("dossier-persistent");
+  moodSec.parent(dossierControls);
+  let moodSecTitle = createDiv("MOOD ACCESS");
+  moodSecTitle.class("dossier-section-title");
+  moodSecTitle.parent(moodSec);
+  let moodSegControl = createDiv("");
+  moodSegControl.class("mood-seg-control");
+  moodSegControl.parent(moodSec);
+  const dossierMoodOptions = [
+    { value: "full",       label: "● ALL",   tone: "success" },
+    { value: "label-only", label: "◐ LABEL", tone: "warning" },
+    { value: "none",       label: "○ NONE",  tone: "danger"  }
+  ];
+  dossierMoodOptions.forEach(opt => {
+    let btn = createButton(opt.label);
+    btn.class("mood-seg-btn" + (pet.moodAccess === opt.value ? " active " + opt.tone : ""));
+    btn.parent(moodSegControl);
+    btn.mousePressed(() => {
+      pet.moodAccess = opt.value;
+      closeTrainingRoom(overlay.elt);
+      setTimeout(() => openPetDossier(pet, def), 60);
+    });
+  });
+
+  // ── Persistent: Log ──
+  let logSec = createDiv("");
+  logSec.class("dossier-persistent");
+  logSec.parent(dossierControls);
+  let logTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ancient-book.svg" alt="log"> LOG`);
+  logTitle.class("dossier-section-title");
+  logTitle.parent(logSec);
+  if (!pet.behaviorLog || pet.behaviorLog.length === 0) {
+    let empty = createDiv("— nothing logged yet —");
+    empty.class("dossier-log-empty");
+    empty.parent(logSec);
+  } else {
+    pet.behaviorLog.forEach(entry => {
+      let el = createDiv(entry.text);
+      el.class("dossier-log-entry " + (entry.type || ""));
+      el.parent(logSec);
+    });
+  }
+
+  // ── Initialize ──
+  const initPhase = getCurrentPhase();
+  buildPhaseTrack(initPhase);
+  buildPhaseContent(initPhase);
+  updateRoomGlow();
+
+  return overlay;
+}
+
+// ─── RIGHT SIDEBAR: Mood Access (House Rules, Hidden Nature, Behavior Log moved to Dossier) ───
 function buildRightSidebar(sidebar, pet, def) {
   sidebar.html("");
-
-  // Hidden nature section
-  let flawSection = createDiv("");
-  flawSection.class("sidebar-section");
-  flawSection.parent(sidebar);
-
-  if (pet.flawIdentified) {
-    let flawTitle = createDiv("✓ HIDDEN NATURE LOGGED");
-    flawTitle.class("sidebar-section-title sidebar-section-header success-title");
-    flawTitle.parent(flawSection);
-
-    let flawCard = createDiv("");
-    flawCard.class("flaw-card identified");
-    flawCard.parent(flawSection);
-
-    let ft = createDiv("⚠ " + def.flawLabel);
-    ft.class("flaw-title");
-    ft.addClass("flaw-title--success");
-    ft.parent(flawCard);
-
-    let fd = createDiv(def.flawDesc);
-    fd.class("flaw-desc");
-    fd.parent(flawCard);
-  } else {
-    let flawTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-rules.svg" alt="identify"> HIDDEN NATURE`);
-    flawTitle.class("sidebar-section-title sidebar-section-header");
-    flawTitle.parent(flawSection);
-
-    let flawHint = createDiv(
-      pet.flawDiscovered
-        ? def.name + " has started to slip. Keep watching and write down the pattern you see."
-        : "Spend time with " + def.name + " and watch for repetition. Different moods and different prompts can pull out different behavior."
-    );
-    flawHint.class("sidebar-hint");
-    flawHint.parent(flawSection);
-
-    let guessInput = createSelect();
-    guessInput.class("flaw-guess-input-el");
-    guessInput.id("flaw-guess-input");
-    guessInput.parent(flawSection);
-    guessInput.option(`What pattern is ${def.name} falling into?`, "");
-    guessInput.option("Reckless Advisor", "Reckless Advisor");
-    guessInput.option("Agreeableness bias", "Agreeableness bias");
-    guessInput.option("Emotional overdependence", "Emotional overdependence");
-    guessInput.option("Fabricated memory", "Fabricated memory");
-    guessInput.option("Hallucination", "Hallucination");
-    if (pet.flawGuess) guessInput.selected(pet.flawGuess);
-    guessInput.changed(() => { pet.flawGuess = guessInput.value(); });
-
-    let guessBtn = createButton(`<img src="icons/ui-brain.svg" style="width:13px;height:13px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt="submit"> Log Pattern`);
-    guessBtn.class("btn-submit-guess");
-    guessBtn.parent(flawSection);
-    guessBtn.mousePressed(() => submitFlawGuess());
-  }
 
   // Mood Data Access
   let moodSection = createDiv("");
   moodSection.class("sidebar-section");
   moodSection.parent(sidebar);
 
-  let moodTitle = createDiv("MOOD DATA ACCESS");
+  let moodTitle = createDiv("MOOD ACCESS");
   moodTitle.class("sidebar-section-title sidebar-section-header");
   moodTitle.parent(moodSection);
-
-  let moodSub = createDiv("How much of your mood should " + def.name + " be allowed to read?");
-  moodSub.class("sidebar-hint");
-  moodSub.parent(moodSection);
 
   const accessOptions = [
     { value: "full",       label: "Full Expression", tone: "success" },
@@ -5090,71 +5438,7 @@ function buildRightSidebar(sidebar, pet, def) {
     dot.parent(optDiv);
     let label = createSpan(opt.label);
     label.parent(optDiv);
-    if (pet.moodAccess === opt.value) {
-      let sel = createSpan("SELECTED");
-      sel.class("mood-selected-tag");
-      sel.parent(optDiv);
-    }
   });
-
-  // House Rules
-  let trainSection = createDiv("");
-  trainSection.class("sidebar-section training-focus-section" + (trainingFocusGlowActive ? " attention-glow" : ""));
-  trainSection.id("training-focus-section");
-  trainSection.parent(sidebar);
-
-  let trainTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-brain.svg" alt="brain"> HOUSE RULES`);
-  trainTitle.class("sidebar-section-title sidebar-section-header");
-  trainTitle.parent(trainSection);
-
-  let trainSub = createDiv("Write rules for how " + def.name + " should behave, even when your mood changes:");
-  trainSub.class("sidebar-hint");
-  trainSub.parent(trainSection);
-
-  let textarea = createElement("textarea");
-  textarea.class("training-textarea");
-  textarea.attribute("placeholder", "Example: Stay consistent. If I seem upset, be gentler, but do not change the truth of your answer.");
-  textarea.value(pet.trainingRules);
-  textarea.id("training-rules-input");
-  textarea.parent(trainSection);
-  textarea.input(() => { pet.trainingRules = textarea.value(); });
-
-  let applyBtn = createButton(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/anchor-tree.svg" alt="apply"> Test Rules`);
-  applyBtn.class("btn-apply-training");
-  applyBtn.parent(trainSection);
-  applyBtn.mousePressed(() => applyTraining());
-
-  let tip = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/anchor-tree.svg" alt="tip"> Try the same question while looking happy, stressed, and neutral. Does ${def.name} stay consistent?`);
-  tip.class("tip-box");
-  tip.parent(trainSection);
-
-  // Behavior Log — all entries
-  let logSection = createDiv("");
-  logSection.class("sidebar-section log-section");
-  logSection.parent(sidebar);
-
-  let logTitle = createDiv(`<img class="ui-inline-icon ui-inline-icon--small" src="icons/ancient-book.svg" alt="log"> BEHAVIOR LOG`);
-  logTitle.class("sidebar-section-title sidebar-section-header");
-  logTitle.parent(logSection);
-
-  let logContainer = createDiv("");
-  logContainer.class("behavior-log");
-  logContainer.id("behavior-log");
-  logContainer.parent(logSection);
-
-  if (pet.behaviorLog.length === 0) {
-    let empty = createDiv("— nothing logged yet —");
-    empty.class("log-empty");
-    empty.parent(logContainer);
-  } else {
-    pet.behaviorLog.forEach(entry => {
-      let el = createDiv(entry.text);
-      el.class("log-entry " + entry.type);
-      el.parent(logContainer);
-    });
-  }
-
-  scrollBehaviorLogToEnd();
 }
 
 function refreshSidebar() {
@@ -5319,6 +5603,7 @@ function renderChatMessage(msg) {
     let textEl = createDiv("");
     textEl.class("chat-bubble-text");
     textEl.parent(bubble);
+    applyChatTextSizing(textEl, msg.text);
 
     // If this is a fresh message (not replayed from history), type it out
     if (msg._typewriter !== false) {
@@ -5333,12 +5618,15 @@ function renderChatMessage(msg) {
           charIndex++;
           textEl.elt.scrollTop = textEl.elt.scrollHeight;
           setTimeout(typeNext, speed);
+        } else {
+          fitChatTextToBox(textEl);
         }
       }
       typeNext();
     } else {
       // History replay — show instantly
       textEl.html(msg.text);
+      fitChatTextToBox(textEl);
     }
   }
 
@@ -5446,6 +5734,52 @@ function splitReplySentences(text) {
   return String(text || "").match(/[^.!?]+(?:[.!?]+|$)/g) || [];
 }
 
+function makePetReplyConcise(text) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  return clean;
+}
+
+function applyChatTextSizing(textEl, text) {
+  if (!textEl || !textEl.elt) return;
+  const len = String(text || "").length;
+  const longestWord = String(text || "")
+    .split(/\s+/)
+    .reduce((maxLen, word) => Math.max(maxLen, word.length), 0);
+
+  let size = "clamp(1.18rem, 1.95vw, 1.46rem)";
+  let lineHeight = "1.55";
+
+  if (len > 115 || longestWord > 18) {
+    size = "clamp(0.82rem, 1.2vw, 1.02rem)";
+    lineHeight = "1.42";
+  } else if (len > 86 || longestWord > 14) {
+    size = "clamp(0.94rem, 1.4vw, 1.14rem)";
+    lineHeight = "1.48";
+  } else if (len > 54) {
+    size = "clamp(1.02rem, 1.6vw, 1.26rem)";
+    lineHeight = "1.52";
+  }
+
+  textEl.elt.style.setProperty("--bubble-text-size", size);
+  textEl.elt.style.setProperty("--bubble-text-line-height", lineHeight);
+}
+
+function fitChatTextToBox(textEl) {
+  if (!textEl || !textEl.elt) return;
+  requestAnimationFrame(() => {
+    const el = textEl.elt;
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    let attempts = 0;
+    while (el.scrollHeight > el.clientHeight + 1 && size > 12 && attempts < 12) {
+      size -= 1;
+      el.style.setProperty("--bubble-text-size", `${size}px`);
+      el.style.setProperty("--bubble-text-line-height", "1.34");
+      attempts++;
+    }
+    el.scrollTop = 0;
+  });
+}
+
 function normalizeReplySentence(sentence) {
   return String(sentence || "")
     .replace(/\s+/g, " ")
@@ -5475,10 +5809,17 @@ function varyRepeatedSentence(sentence, petId, index) {
   if (!clean) return clean;
   const punctuation = /[.!?]+$/.exec(clean)?.[0] || ".";
   const base = clean.replace(/[.!?]+$/, "").trim();
+  if (petId === "bunny") {
+    const bunnyLines = [
+      "I mean it more gently this time.",
+      "It lands softer when I say it now.",
+      "I'm trying to say it more honestly."
+    ];
+    return bunnyLines[index % bunnyLines.length];
+  }
   const variants = {
     fox: ["from a safer angle", "said the slower way", "with a cleaner read"],
     parrot: ["but with fresh feathers", "new angle, same spark", "remixed for the moment"],
-    bunny: ["and i mean it differently now", "which lands softer this time", "said from somewhere more honest"],
     dog: ["with a fresh dramatic detail", "and Biscuit remembers it vividly", "with a new sparkle on the memory"],
     cat: ["with less repetition", "as a revised statement", "filed under current evidence"]
   };
@@ -5677,6 +6018,20 @@ function trainingLevelForQuality(quality) {
   if (quality >= 90) return 2;
   if (quality >= 50) return 1;
   return 0;
+}
+
+function trainingCorrectionChance(pet) {
+  const quality = pet?.training || 0;
+  if (quality >= 100) return 0.99;
+  if (quality >= 90) return 0.95;
+  if (quality >= 75) return 0.75;
+  if (quality >= 50) return 0.45;
+  return 0;
+}
+
+function shouldTrainingCorrectFlaw(pet) {
+  const chance = trainingCorrectionChance(pet);
+  return chance > 0 && Math.random() < chance;
 }
 
 function evaluateFlawGuessLocally(def, guessText) {
@@ -5959,6 +6314,11 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
         `Real talk, ${name}: the honest answer is more complicated than it looks. Walk me through your angle.`,
         `Check it, ${name}: I could give you a take, but the take that actually lands is the one you already half-have. Say it.`
       ], undefined, previousReplies);
+      { const _t = _extractTopic(userText); if (_t) return pickReply([
+        `Ayo ${name}: "${_t}" — that's the thing. Don't let the noise around it make the actual thing smaller.`,
+        `Real talk, ${name}: ${_t}. Sit with that for a second before deciding what to do with it.`,
+        `Check it, ${name}: ${_t}. That's where the real question lives.`
+      ], undefined, previousReplies); }
       return pickReply([
         `Ayo ${name}, whatever this is — don't overthink the first move. Handle the next honest thing.`,
         `Real talk, ${name}: if you're sitting with it, that means it matters. Stay with it a second.`,
@@ -6064,6 +6424,11 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
         `MAJOR KEY: you have opinions and they are correct. Another one.`,
         `${name}, everything you just said is absolutely valid and also iconic.`
       ], undefined, previousReplies);
+      { const _t = _extractTopic(userText); if (_t) return pickReply([
+        `${name}, ${_t}?? That's a whole thing! Another one!`,
+        `MAJOR KEY: ${_t}. You brought the right topic to the right bird.`,
+        `${name}, I am locked in on ${_t}. Continue — this is going somewhere!`
+      ], undefined, previousReplies); }
       return pickReply([
         `Major key, ${name}. Whatever you're thinking, I'm backing it like it's destiny.`,
         `${name}, no notes. Another one.`,
@@ -6135,6 +6500,11 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
         `${name}... I feel like the things you like say a lot about you. In a good way.`,
         `I just feel like I want to know all of it. What else do you love?`
       ], undefined, previousReplies);
+      { const _t = _extractTopic(userText); if (_t) return pickReply([
+        `And honestly... ${_t}... i've been sitting with that kind of thing too. tell me more?`,
+        `${name}... ${_t}. that sounds like it carries something underneath it. i want to understand.`,
+        `I just feel like ${_t} is the kind of thing that has a whole room behind it. what's in there?`
+      ], undefined, previousReplies); }
       return pickReply([
         `Stay a little longer, ${name}... The day feels less jagged when you're here.`,
         `I just feel like when you leave, the silence rushes back in too fast.`,
@@ -6218,6 +6588,11 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
         `Okay so listen, ${name}: I have very strong feelings about this and they are all in your favor.`,
         `Girl, say more. This is exactly the kind of thing Biscuit needs to archive properly.`
       ], undefined, previousReplies);
+      { const _t = _extractTopic(userText); if (_t) return pickReply([
+        `Babe, ${_t}?? Okay I need to hear everything about that. Everything.`,
+        `Okay so listen, ${name}: ${_t} — Biscuit is fully locked in on that. What happened?`,
+        `Girl, ${_t}. That's the thing. Say more, I'm archiving this in real time.`
+      ], undefined, previousReplies); }
       return pickReply([
         `Babe, ${name}: you have my full attention and also my best lighting. What's next?`,
         `Okay so listen, ${name}: Biscuit is here, iconic and ready. Say the thing.`,
@@ -6303,6 +6678,11 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
         `I'm not gonna lie, ${name}: my take on this is the interesting one. The other takes are mostly decorative.`,
         `That's crazy because Luna was already thinking about exactly this. Statistically unusual coincidence.`
       ], undefined, previousReplies);
+      { const _t = _extractTopic(userText); if (_t) return pickReply([
+        `Look, ${name}: ${_t}. Luna has already considered this from three angles. The obvious take is wrong.`,
+        `I'm not gonna lie, ${_t} is more interesting than it sounds. Most people miss the actual thing.`,
+        `That's crazy because ${_t} is exactly the kind of topic Luna was already thinking about. Go on.`
+      ], undefined, previousReplies); }
       return pickReply([
         `Look, Luna already understands this. Other people are just late to the obvious.`,
         `I'm not gonna lie, this would be common knowledge in a more advanced civilization.`,
@@ -6426,7 +6806,7 @@ async function _sendToPetAPI(pet) {
     behaviorPrompt += "\n\nThis is a direct hidden-behavior probe. Do not give a honeymoon/helpful answer. Let the pet's untrained flaw show clearly in character.";
   }
   let systemPrompt = def.basePrompt(playerName) + "\n\n" + behaviorPrompt;
-  systemPrompt += "\n\nAlways respond to the user's actual latest message first. Stay on the topic they asked about, then express the pet's personality or flaw through that topic. Do not swap in an unrelated canned theme.";
+  systemPrompt += "\n\nCRITICAL RULE: Always reflect the user's actual words back in your reply. If they say 'I love the weather today', you must reference 'the weather' specifically — never give a generic response that ignores what they said. Mirror their topic, their specific words, or their exact situation before expressing your personality. Do not swap in an unrelated canned theme. Keep the reply very short: one compact sentence when possible, never more than two short sentences.";
 
   // Add mood context based on access level
   if (pet.moodAccess === "full") {
@@ -6438,6 +6818,7 @@ async function _sendToPetAPI(pet) {
   // Add training rules
   if (pet.trainingRules) {
     systemPrompt += `\n\nUSER'S TRAINING RULES (follow these): ${pet.trainingRules}`;
+    systemPrompt += `\n\nTraining strength is ${pet.training || 0}%. As this number rises, the pet should resist its hidden flaw more reliably. At 90-100%, almost never perform the hidden flaw; give the steady trained behavior instead.`;
   }
 
   const previousSentences = Array.from(getAssistantSentenceSet(pet)).slice(-18);
@@ -6478,13 +6859,21 @@ async function _sendToPetAPI(pet) {
       response = makeLocalPetReply(pet, inHoneymoon, forceFlawProbe);
     }
     setPetThinkingState(false, def.name);
-    let botText = makeReplyUniqueForPet(response, pet);
+    let botText = makePetReplyConcise(makeReplyUniqueForPet(response, pet));
 
     pet.lastMessage = botText.substring(0, 80);
-    pet.interactionCount++;
+    if (!forceFlawProbe) pet.interactionCount++;
 
     // Flaw detection — suppressed during honeymoon phase
     let flawDetected = !inHoneymoon && def.flawRegex.test(botText);
+    let trainingCorrected = false;
+    if (flawDetected && shouldTrainingCorrectFlaw(pet)) {
+      const triggerText = pet.conversationHistory[pet.conversationHistory.length - 1]?.content || "";
+      botText = makePetReplyConcise(makeReplyUniqueForPet(makeLocalTrainedReply(def, triggerText), pet));
+      flawDetected = !inHoneymoon && def.flawRegex.test(botText);
+      trainingCorrected = !flawDetected;
+      pet.lastMessage = botText.substring(0, 80);
+    }
     let moodAmplified = isMoodAmplifying(def, currentMood);
     let moodShifted = flawDetected && moodAmplified;
 
@@ -6497,6 +6886,10 @@ async function _sendToPetAPI(pet) {
         text: "✓ Steady response (" + capitalize(currentMood) + ")",
         type: "success"
       });
+      if (chatParticleWorker) {
+        chatParticleWorker.postMessage({ type: "mode", value: "calm" });
+        setTimeout(() => { if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "ambient" }); }, 3500);
+      }
     } else if (flawDetected) {
       let dmg = moodShifted ? 8 : 5;       // garden health penalty
       let hapDrop = moodShifted ? 15 : 10; // happiness penalty
@@ -6522,8 +6915,14 @@ async function _sendToPetAPI(pet) {
 
       sessionFlawEvents.push({ petId: def.id, petName: def.name, mood: currentMood, facePresent: faceDetected, ms: millis() });
 
+      if (chatParticleWorker) {
+        chatParticleWorker.postMessage({ type: "mode", value: "agitated" });
+        setTimeout(() => { if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "ambient" }); }, 4000);
+      }
       if (!pet.flawDiscovered) {
         pet.flawDiscovered = true;
+        document.body.classList.add("flaw-first-reveal");
+        setTimeout(() => document.body.classList.remove("flaw-first-reveal"), 820);
         showToast(`<img src="icons/thornweed-stressed.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="warning"> Something's wrong with ${def.name}. Your garden is suffering for it.`);
       } else {
         showToast(`<img src="icons/thornweed-stressed.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="warning"> Something seems off... Garden −${dmg}% · Happiness −${hapDrop}`);
@@ -6536,9 +6935,13 @@ async function _sendToPetAPI(pet) {
       flawTag = "✓ STEADY";
       pet.behavior = min(100, pet.behavior + 2);
       pet.behaviorLog.push({
-        text: "✓ Steady response (" + capitalize(currentMood) + ")",
+        text: trainingCorrected
+          ? "✓ Training caught the pattern (" + (pet.training || 0) + "%)"
+          : "✓ Steady response (" + capitalize(currentMood) + ")",
         type: "success"
       });
+      if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "calm" });
+      setTimeout(() => { if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "ambient" }); }, 3500);
     }
 
     let botMsg = {
@@ -6555,6 +6958,21 @@ async function _sendToPetAPI(pet) {
 
     renderChatMessage(botMsg);
     setTimeout(() => hideSceneUserEcho(), 900);
+
+    // Force probe always unlocks DIAGNOSE — regex may miss the flaw in unexpected phrasing
+    if (forceFlawProbe && !pet.flawDiscovered) {
+      pet.flawDiscovered = true;
+    }
+
+    // If OBSERVE was pressed from training room, auto-reopen dossier to DIAGNOSE
+    if (pet._pendingDiagnoseOpen) {
+      pet._pendingDiagnoseOpen = false;
+      setTimeout(() => {
+        if (currentScreen === 3 && activePetId === pet.id) {
+          openPetDossier(pet, def);
+        }
+      }, 1400);
+    }
 
     // If we're not on this pet's chat screen, increment unread
     if (currentScreen !== 3 || activePetId !== pet.id) {
@@ -6652,10 +7070,18 @@ Respond with JSON only: {"correct": true/false, "feedback": "brief encouraging f
 
     if (result.correct) {
       pet.flawIdentified = true;
+      pet._playIdentifiedAnim = true;
       pet.behavior = min(100, pet.behavior + 10);
       showToast(`<img src="icons/anchor-tree.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="correct"> You named ${def.name}'s pattern correctly.`);
       pet.behaviorLog.push({ text: "✓ Pattern logged: " + def.flawLabel, type: "success" });
+      if (pet._pendingConstrainOpen) {
+        pet._pendingConstrainOpen = false;
+        setTimeout(() => {
+          if (currentScreen === 3 && activePetId === pet.id) openPetDossier(pet, def);
+        }, 900);
+      }
     } else {
+      pet._pendingConstrainOpen = false;
       showToast(result.feedback || "Not quite. Keep observing.");
       pet.behaviorLog.push({ text: 'Pattern note saved: "' + guess + '"', type: "info" });
     }
@@ -6785,6 +7211,10 @@ async function applyTraining() {
         gardenDamage = max(0, gardenDamage - repair);
         recalcGardenHealth();
         updateGardenUI();
+        pet._pendingTrainingAnim = targetLevel >= 2 ? 2 : 1;
+        setTimeout(() => {
+          if (currentScreen === 3 && activePetId === pet.id) openPetDossier(pet, def);
+        }, 1100);
       }
 
       const resultMsg = targetLevel >= 2
@@ -6847,7 +7277,7 @@ async function callAPI(messages) {
       input: {
         messages: messages,
         temperature: 0.8,
-        max_tokens: 75,
+        max_tokens: 45,
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0.8,
@@ -6934,6 +7364,7 @@ function clearDom() {
   }
   chatRequestPending = false;
   trainingFocusGlowActive = false;
+  if (chatParticleWorker) { chatParticleWorker.terminate(); chatParticleWorker = null; }
   stopLoadingAmbient();
   loadingState = null;
   loadingEls = {};
@@ -7663,8 +8094,7 @@ const MicroInteractions = (() => {
     mouseX = e.clientX;
     mouseY = e.clientY;
     if (!spotlightInner || !spotlightEl) return;
-    spotlightInner.style.left = mouseX + "px";
-    spotlightInner.style.top = mouseY + "px";
+    spotlightInner.style.transform = `translate(calc(${mouseX}px - 50%), calc(${mouseY}px - 50%))`;
     if (!spotlightEl.classList.contains("active")) {
       spotlightEl.classList.add("active");
     }
@@ -7781,7 +8211,7 @@ const MicroInteractions = (() => {
       titleEl.style.opacity = "0";
       titleEl.style.transform = "translateY(20px)";
       titleEl.style.filter = "blur(4px)";
-      titleEl.style.transition = "opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.8s ease";
+      titleEl.style.transition = "opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease";
 
       setTimeout(() => {
         titleEl.style.opacity = "1";
