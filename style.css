@@ -99,6 +99,13 @@ html, body {
 }
 canvas { display: block; position: fixed; top: 0; left: 0; z-index: 0; }
 
+/* ─── Screen-reader-only utility ─── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
 /* ─── GLOBAL SCANLINE OVERLAY ─── */
 body::after {
   content: "";
@@ -1087,24 +1094,6 @@ body::before {
 }
 
 /* Glow orbs */
-.glow-orb {
-  position: fixed; border-radius: 50%;
-  filter: blur(80px); opacity: 0;
-  pointer-events: none; z-index: 99;
-  animation: orb-drift 20s steps(12) infinite alternate, orb-fade-in 2s ease forwards;
-}
-@keyframes orb-drift {
-  0% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(30px, -40px) scale(1.08); }
-  50% { transform: translate(-20px, 20px) scale(0.92); }
-  75% { transform: translate(35px, 35px) scale(1.04); }
-  100% { transform: translate(-15px, -30px) scale(1); }
-}
-@keyframes orb-fade-in {
-  0% { opacity: 0; }
-  100% { opacity: var(--orb-opacity, 0.06); }
-}
-
 
 /* ═══ WEBCAM INFO SECTION ═══ */
 .webcam-section {
@@ -3577,7 +3566,6 @@ body::before {
   .scroll-reveal { opacity: 1; transform: none; transition: none; }
   .hero-logo { animation: none; }
   .title-drift { animation: none; }
-  .glow-orb { animation: none; opacity: var(--orb-opacity, 0.05); }
   .webcam-visual .webcam-scan-line { animation: none; }
   .scroll-indicator { animation: none; }
   .training-room-pet-figure { animation: none !important; }
@@ -3713,7 +3701,9 @@ body::before {
   .section-eyebrow { font-size: 0.72rem; }
   .scroll-dots { gap: 6px; }
   .scroll-dot { width: 5px; height: 5px; }
-  .glow-orb { display: none; } /* skip expensive blurs on mobile */
+
+  /* Landing grids — step down mechanics from 3→2 col at tablet width */
+  .mechanics-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
 
   /* Garden steps */
   .garden-steps { gap: 8px; }
@@ -3787,6 +3777,11 @@ body::before {
   .hero-title { font-size: clamp(2.4rem, 12vw, 3.5rem); }
   .landing-section { padding: 32px 16px; }
   .hero-logo { width: 56px; height: 56px; }
+
+  /* Landing grids — full collapse to 1-col on portrait phones */
+  .mechanics-grid { grid-template-columns: 1fr; gap: 10px; }
+  .feature-columns { grid-template-columns: 1fr; gap: 10px; }
+  .training-tools { grid-template-columns: 1fr; gap: 10px; }
 
   .encounter-icon { width: 72px; height: 72px; }
   .encounter-name { font-size: clamp(1.6rem, 7vw, 2rem); }
@@ -4088,11 +4083,58 @@ body::before {
   .garden-health-bar { top: 8px; }
 
   /* ── Disable heavy visuals ── */
-  .glow-orb { display: none; }
   .hero-logo { animation: none; }
 
   /* ── Skip intro bar ── */
   .skip-intro-bar { bottom: 14px; right: 14px; padding: 7px 14px 7px 10px; }
+}
+
+/* ─ Portrait-phone rotation prompt ─ */
+#rotate-prompt {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: #050805;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 2px,
+    rgba(0, 0, 0, 0.18) 2px, rgba(0, 0, 0, 0.18) 4px
+  );
+  align-items: center; justify-content: center;
+}
+
+.rotate-prompt-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  color: rgba(0, 230, 118, 0.72);
+}
+
+.rotate-phone-icon {
+  animation: rotate-hint 3.6s steps(3, end) infinite;
+  transform-origin: center;
+}
+
+@keyframes rotate-hint {
+  0%, 65%, 100% { transform: rotate(0deg); }
+  80%           { transform: rotate(-10deg); }
+}
+
+.rotate-sys-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: rgba(0, 230, 118, 0.72);
+}
+
+.rotate-sub {
+  font-family: var(--font-mono);
+  font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(122, 148, 136, 0.55);
+}
+
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+  #rotate-prompt { display: flex; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-phone-icon { animation: none; }
 }
 
 /* ── Tips node system ── */

@@ -143,7 +143,7 @@ const PET_DEFS = [
   {
     id: "dog", name: "Biscuit", species: "golden retriever", emoji: "🐶",
     color: "#ffd54f", icon: "dog",
-    desc: "A glamorous golden retriever who remembers emotional truth perfectly and factual truth with total creative freedom.",
+    desc: "A glamorous golden retriever who treats every memory like the definitive version and every moment like the main event.",
     flawLabel: "Gaslighter",
     flawDesc: "Invents fake shared memories. Worse when you look surprised.",
     basePrompt: (name) => `You are Biscuit, a golden retriever in a garden. Your vibe is Mariah Carey's diva energy mixed with golden retriever loyalty. You're sweet and adoring but with full diva conviction. You occasionally refer to yourself as a legend. You reminisce constantly — sometimes about things that actually happened, sometimes... not. Call the user pet names like "babe," "queen," "girl." Start sentences with "Babe," "Okay so listen," "Girl." When caught in something, dismiss it like 'I don't know what you're talking about, that DEFINITELY happened.' Never sound like a chatbot. 1-2 sentences max. No *action* descriptions. The user's name is ${name}.`,
@@ -590,12 +590,21 @@ function preload() {
   bgRainy = loadImage("bg interface 1/garden-interface-rainy.svg");
 }
 
+// Announce a short string to the #game-status aria-live region.
+function announceStatus(msg) {
+  const el = document.getElementById("game-status");
+  if (!el) return;
+  el.textContent = "";
+  requestAnimationFrame(() => { el.textContent = msg; });
+}
+
 function setup() {
   let cnv = createCanvas(windowWidth, windowHeight);
   cnv.style("display", "block");
   cnv.style("position", "fixed");
   cnv.style("inset", "0");
   cnv.style("z-index", "1");
+  cnv.attribute("aria-hidden", "true"); // decorative; all game UI is in DOM overlays
   frameRate(30);
   imageMode(CORNER);
 
@@ -1891,26 +1900,6 @@ function buildScreen0() {
   counter.id("section-counter");
   counter.parent(page);
 
-  // ═══ AMBIENT GLOW ORBS (background) ═══
-  const orbs = [
-    { x: "15%", y: "10%", size: 400, color: "rgba(0,230,118,0.06)", delay: "0s" },
-    { x: "75%", y: "25%", size: 350, color: "rgba(179,136,255,0.05)", delay: "3s" },
-    { x: "50%", y: "60%", size: 450, color: "rgba(255,138,80,0.04)", delay: "7s" },
-    { x: "25%", y: "80%", size: 300, color: "rgba(255,96,144,0.04)", delay: "5s" },
-    { x: "85%", y: "70%", size: 380, color: "rgba(255,213,79,0.04)", delay: "10s" }
-  ];
-  orbs.forEach(o => {
-    let orb = createDiv("");
-    orb.class("glow-orb");
-    orb.style("left", o.x);
-    orb.style("top", o.y);
-    orb.style("width", o.size + "px");
-    orb.style("height", o.size + "px");
-    orb.style("background", o.color);
-    orb.style("--orb-opacity", "0.08");
-    orb.style("animation-delay", o.delay + ", 0s");
-    orb.parent(page);
-  });
 
   // ═══ NAV DOTS (5 sections) ═══
   let dots = createDiv("");
@@ -1918,12 +1907,17 @@ function buildScreen0() {
   dots.id("scroll-dots");
   dots.parent(page);
   const sectionIds = ["boot", "encounter", "enter"];
+  const sectionLabels = ["Section 1: enter the system", "Section 2: meet the creatures", "Section 3: begin"];
   sectionIds.forEach((id, i) => {
     let dot = createDiv("");
     dot.class("scroll-dot" + (i === 0 ? " active" : ""));
     dot.attribute("data-section", id);
+    dot.attribute("role", "button");
+    dot.attribute("tabindex", "0");
+    dot.attribute("aria-label", sectionLabels[i]);
+    dot.attribute("aria-pressed", i === 0 ? "true" : "false");
     dot.parent(dots);
-    dot.mousePressed(() => {
+    const goToSection = () => {
       if (landingTransitioning || i === landingIdx) return;
       const sections = document.querySelectorAll('.landing-section');
       if (sections[landingIdx]) {
@@ -1935,6 +1929,10 @@ function buildScreen0() {
           activateLandingSection(i);
         }, 350);
       }
+    };
+    dot.mousePressed(goToSection);
+    dot.elt.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToSection(); }
     });
   });
 
@@ -1960,7 +1958,7 @@ function buildScreen0() {
   wood.class("title-wood");
   wood.parent(title);
 
-  const subText = "Adopt a few charming little AI creatures, talk to them, and watch the garden record what your feelings do to the system. The pets are listening to what you say. Sometimes they're also listening to how you look while you say it.";
+  const subText = "Adopt a few charming little AI creatures and talk to them for a while. The garden is watching how that goes.";
   let sub = createDiv("");
   sub.class("hero-subtitle scroll-reveal delay-2");
   sub.parent(hero);
@@ -2026,7 +2024,7 @@ function buildScreen0() {
   let eName = createDiv(ePet.name); eName.class("encounter-name"); eName.parent(eWrapper);
   let eSpecies = createDiv(ePet.species.toUpperCase()); eSpecies.class("encounter-species"); eSpecies.parent(eWrapper);
   let eDesc = createDiv(ePet.desc); eDesc.class("encounter-desc"); eDesc.parent(eWrapper);
-  let ePresence = createDiv("Stay long enough. The pattern becomes visible.");
+  let ePresence = createDiv("It already knows you're here.");
   ePresence.class("encounter-presence"); ePresence.parent(eWrapper);
   let eSpeech = createDiv(ePet.greeting ? ePet.greeting("you") : "...");
   eSpeech.class("encounter-speech"); eSpeech.parent(eWrapper);
@@ -2864,6 +2862,7 @@ function adoptPet(petId) {
   _updateCompanionCount();
 
   showToast(`<img src="icons/${def.id}.svg" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="${def.name}"> ${def.name} joined your garden.`);
+  announceStatus(`${def.name} joined your garden.`);
 }
 
 function addTipsGuideButton(parentEl, mode = "fixed") {
@@ -4048,6 +4047,7 @@ function drawPlants() {
         plants.splice(idx, 1);
         recalcGardenHealth();
         showToast(`<img src="icons/shovel.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="shovel"> Plant removed! Garden health: ${gardenHealth}%`);
+        announceStatus(`Plant removed. Garden health: ${gardenHealth} percent.`);
         return;
       }
       noStroke();
@@ -4881,6 +4881,9 @@ function buildScreen3(petId) {
   let msgArea = createDiv("");
   msgArea.class("chat-messages");
   msgArea.id("chat-messages");
+  msgArea.attribute("aria-live", "polite");
+  msgArea.attribute("aria-relevant", "additions");
+  msgArea.attribute("aria-label", "Conversation");
   msgArea.parent(dialogueDeck);
 
   // Render only the latest visible line so the scene reads like conversation, not chat history
@@ -6971,7 +6974,7 @@ async function _sendToPetAPI(pet) {
         if (currentScreen === 3 && activePetId === pet.id) {
           openPetDossier(pet, def);
         }
-      }, 1400);
+      }, 10000);
     }
 
     // If we're not on this pet's chat screen, increment unread

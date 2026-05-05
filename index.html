@@ -22,7 +22,33 @@
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
   <body>
-    <main></main>
+    <main>
+      <p class="sr-only">
+        Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw,
+        chat with it to discover the flaw, then write training rules to constrain it.
+        The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them.
+        All interactive menus and chat are in the page. The canvas shows the garden background only.
+      </p>
+    </main>
+    <div
+      id="game-status"
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="false"
+      aria-relevant="additions text"
+    ></div>
+    <div id="rotate-prompt" aria-hidden="true">
+      <div class="rotate-prompt-inner">
+        <svg class="rotate-phone-icon" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="18" y="4" width="22" height="38" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="27" y1="39" x2="33" y2="39" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M 42 13 A 16 16 0 0 1 46 32" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="2.5 2.5" stroke-linecap="square"/>
+          <path d="M 42 29 L 46 32 L 49 29" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="square"/>
+        </svg>
+        <span class="rotate-sys-label">[ rotate device ]</span>
+        <span class="rotate-sub">driftwood plays sideways</span>
+      </div>
+    </div>
     <script src="sketch.js"></script>
   </body>
 </html>
