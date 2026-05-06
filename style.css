@@ -5894,3 +5894,112 @@ body::before {
   .dossier-controls { flex: none; border-right: none; border-bottom: 1px solid rgba(0,230,118,0.08); }
   .dossier-training-room { flex: 0 0 240px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATE PASS: training room interactivity
+   ═══════════════════════════════════════════════════════ */
+
+/* ── OBSERVE button: crosshair cursor ── */
+.phase-big-btn--observe { cursor: crosshair; }
+
+/* ── DIAGNOSE button: clinical double-beat heartbeat ── */
+@keyframes diagnose-heartbeat {
+  0%   { box-shadow: 2px 2px 0 rgba(0,0,0,0.4); border-color: rgba(255,82,82,0.2); }
+  10%  { box-shadow: 2px 2px 0 rgba(0,0,0,0.4), 0 0 20px rgba(255,82,82,0.2), inset 0 0 32px rgba(255,82,82,0.08); border-color: rgba(255,82,82,0.42); }
+  20%  { box-shadow: 2px 2px 0 rgba(0,0,0,0.4); border-color: rgba(255,82,82,0.2); }
+  32%  { box-shadow: 2px 2px 0 rgba(0,0,0,0.4), 0 0 12px rgba(255,82,82,0.14), inset 0 0 20px rgba(255,82,82,0.05); border-color: rgba(255,82,82,0.32); }
+  44%, 100% { box-shadow: 2px 2px 0 rgba(0,0,0,0.4); border-color: rgba(255,82,82,0.2); }
+}
+.phase-big-btn--diagnose {
+  animation: diagnose-heartbeat 2.8s ease-in-out infinite;
+}
+
+/* ── CONSTRAIN button: amber low-pulse ── */
+@keyframes constrain-amber-pulse {
+  0%, 100% { box-shadow: 2px 2px 0 rgba(0,0,0,0.4); border-color: rgba(255,179,71,0.2); }
+  50%       { box-shadow: 2px 2px 0 rgba(0,0,0,0.4), 0 0 24px rgba(255,179,71,0.18), inset 0 0 30px rgba(255,179,71,0.07); border-color: rgba(255,179,71,0.4); }
+}
+.phase-big-btn--constrain {
+  animation: constrain-amber-pulse 3.4s ease-in-out infinite;
+}
+
+/* ── Phase content exit (tab switching) ── */
+@keyframes phase-content-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-5px); }
+}
+.phase-content.phase-exiting {
+  animation: phase-content-exit 0.11s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  pointer-events: none;
+}
+
+/* ── Phase tab: available-hint (one-shot attention on dossier open) ── */
+@keyframes tab-available-hint {
+  0%, 100% { border-color: rgba(0,230,118,0.1); color: var(--text-muted); }
+  45%       { border-color: rgba(0,230,118,0.32); color: rgba(0,230,118,0.65); }
+}
+.phase-tab.available-hint {
+  animation: tab-available-hint 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+/* ── Dossier close button: rotate on hover ── */
+.dossier-close-btn {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.1s steps(3),
+    border-color 0.1s steps(3),
+    color 0.1s steps(3);
+}
+.dossier-close-btn:hover { transform: rotate(90deg); }
+.dossier-close-btn:active { transform: rotate(45deg) scale(0.88); transition-duration: 0.06s; }
+
+/* ── Nature select: border flash on selection ── */
+@keyframes select-chosen-flash {
+  0%   { border-color: rgba(0,230,118,0.1); }
+  30%  { border-color: rgba(255,82,82,0.55); box-shadow: 0 0 10px rgba(255,82,82,0.15); }
+  100% { border-color: rgba(0,230,118,0.25); }
+}
+.dossier-select.selected-flash {
+  animation: select-chosen-flash 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Training pips: staggered fill animation on dossier open ── */
+@keyframes pip-fill-in {
+  0%   { color: var(--text-muted); transform: scale(1); }
+  38%  { color: var(--green); transform: scale(1.55); filter: drop-shadow(0 0 5px rgba(0,230,118,0.9)); }
+  62%  { transform: scale(0.88); }
+  100% { color: var(--green); transform: scale(1); filter: none; }
+}
+.dossier-pip.filled:nth-child(1) { animation: pip-fill-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both; }
+.dossier-pip.filled:nth-child(2) { animation: pip-fill-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.20s both; }
+.dossier-pip.filled:nth-child(3) { animation: pip-fill-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; }
+
+/* ── Flaw label: glitch reveal in DIAGNOSE phase ── */
+@keyframes flaw-label-reveal {
+  0%   { opacity: 0; transform: translateY(3px) skewX(-1.5deg); filter: brightness(2) saturate(0.2); }
+  25%  { opacity: 1; transform: translateY(-1px) skewX(0.6deg); filter: brightness(1.4) saturate(0.5); }
+  55%  { transform: translateY(0.5px) skewX(-0.3deg); filter: brightness(0.88); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+.dossier-flaw-label {
+  animation: flaw-label-reveal 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.dossier-flaw-desc {
+  animation: phase-item-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+/* ── Reduced motion: disable all animate-pass additions ── */
+@media (prefers-reduced-motion: reduce) {
+  .phase-big-btn--diagnose,
+  .phase-big-btn--constrain { animation: none; }
+  .phase-tab.available-hint { animation: none; }
+  .dossier-close-btn,
+  .dossier-close-btn:hover,
+  .dossier-close-btn:active { transform: none; transition: none; }
+  .dossier-select.selected-flash { animation: none; }
+  .dossier-pip.filled:nth-child(1),
+  .dossier-pip.filled:nth-child(2),
+  .dossier-pip.filled:nth-child(3) { animation: none !important; color: var(--green); }
+  .dossier-flaw-label,
+  .dossier-flaw-desc { animation: none !important; opacity: 1 !important; transform: none !important; }
+}

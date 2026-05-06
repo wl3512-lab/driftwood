@@ -5285,7 +5285,7 @@ function openPetDossier(pet, def) {
     ];
     phases.forEach(p => {
       let btn = createButton(p.label);
-      btn.class("phase-tab" + (active === p.id ? " active" : "") + (!p.unlocked ? " locked" : ""));
+      btn.class("phase-tab" + (active === p.id ? " active" : "") + (!p.unlocked ? " locked" : "") + (p.unlocked && active !== p.id ? " available-hint" : ""));
       btn.parent(phaseTrack);
       if (p.unlocked) {
         btn.mousePressed(() => { buildPhaseTrack(p.id); buildPhaseContent(p.id); });
@@ -5294,7 +5294,21 @@ function openPetDossier(pet, def) {
   }
 
   function buildPhaseContent(phase) {
+    if (phaseContent.elt.children.length > 0) {
+      phaseContent.elt.classList.add("phase-exiting");
+      const _p = phase;
+      setTimeout(() => {
+        phaseContent.elt.classList.remove("phase-exiting");
+        phaseContent.html("");
+        _buildPhaseInner(_p);
+      }, 115);
+      return;
+    }
     phaseContent.html("");
+    _buildPhaseInner(phase);
+  }
+
+  function _buildPhaseInner(phase) {
     if (phase === "observe") {
       let btn = createButton("OBSERVE");
       btn.class("phase-big-btn phase-big-btn--observe");
@@ -5326,7 +5340,16 @@ function openPetDossier(pet, def) {
         natureSelect.option("Fabricated memory", "Fabricated memory");
         natureSelect.option("Hallucination", "Hallucination");
         if (pet.flawGuess) natureSelect.selected(pet.flawGuess);
-        natureSelect.changed(() => { pet.flawGuess = natureSelect.value(); });
+        natureSelect.changed(() => {
+          pet.flawGuess = natureSelect.value();
+          if (natureSelect.value()) {
+            const el = natureSelect.elt;
+            el.classList.remove("selected-flash");
+            void el.offsetWidth;
+            el.classList.add("selected-flash");
+            el.addEventListener("animationend", () => el.classList.remove("selected-flash"), { once: true });
+          }
+        });
         let diagnoseBtn = createButton("LOG PATTERN");
         diagnoseBtn.class("phase-big-btn phase-big-btn--diagnose");
         diagnoseBtn.parent(phaseContent);
