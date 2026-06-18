@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-15T00:00:00Z",
+  "title": "Design System: Driftwood",
+  "extensions": {
+    "colorMeta": {
+      "phosphor-green": {
+        "role": "primary",
+        "displayName": "Phosphor Bloom",
+        "canonical": "oklch(82% 0.25 150)",
+        "tonalRamp": ["#031a0c", "#042e14", "#05451e", "#036128", "#008034", "#00a043", "#00c557", "#00e676", "#aaffc9"]
+      },
+      "phosphor-green-light": {
+        "role": "primary",
+        "displayName": "Phosphor Bloom Light",
+        "canonical": "oklch(88% 0.15 150)",
+        "tonalRamp": ["#042e14", "#08501f", "#0a722b", "#0d9438", "#16b848", "#36d160", "#56e47c", "#69f0ae", "#c8ffe0"]
+      },
+      "terminal-gold": {
+        "role": "secondary",
+        "displayName": "Caution Harvest",
+        "canonical": "oklch(80% 0.18 65)",
+        "tonalRamp": ["#1e0e00", "#381900", "#552800", "#753b00", "#995000", "#c06700", "#e88220", "#ffb347", "#ffdf9e"]
+      },
+      "terminal-gold-light": {
+        "role": "secondary",
+        "displayName": "Caution Harvest Light",
+        "canonical": "oklch(87% 0.13 65)",
+        "tonalRamp": ["#381900", "#552800", "#753b00", "#995000", "#c06700", "#e09020", "#f8ba50", "#ffd080", "#ffecc0"]
+      },
+      "void-base": {
+        "role": "neutral",
+        "displayName": "Void Matter",
+        "canonical": "oklch(6% 0.006 155)",
+        "tonalRamp": ["#050805", "#080c09", "#0c1210", "#121a15", "#1a261e", "#223028", "#2e3e36", "#3c5048", "#506860"]
+      },
+      "void-base-2": {
+        "role": "neutral",
+        "displayName": "Void Base",
+        "canonical": "oklch(8% 0.008 155)",
+        "tonalRamp": ["#080c09", "#0c1210", "#121a15", "#1a261e", "#223028", "#2e3e36", "#3c5048", "#506860", "#648878"]
+      },
+      "text-luminant": {
+        "role": "neutral",
+        "displayName": "Text Luminant",
+        "canonical": "oklch(84% 0.02 160)",
+        "tonalRamp": ["#2a3830", "#3e5048", "#526860", "#678078", "#809890", "#9ab0a8", "#b2c8c0", "#c8d8ce", "#e4eeea"]
+      },
+      "text-mid": {
+        "role": "neutral",
+        "displayName": "Text Mid",
+        "canonical": "oklch(60% 0.03 162)",
+        "tonalRamp": ["#1a2820", "#283830", "#384a40", "#486058", "#5e7870", "#7a9488", "#96b0a8", "#b2ccc4", "#cee8e0"]
+      },
+      "text-dim": {
+        "role": "neutral",
+        "displayName": "Text Dim",
+        "canonical": "oklch(42% 0.03 162)",
+        "tonalRamp": ["#0e1810", "#1a2820", "#283830", "#384a40", "#486058", "#4a6258", "#627c74", "#7e9890", "#9eb8b0"]
+      },
+      "text-ghost": {
+        "role": "neutral",
+        "displayName": "Text Ghost",
+        "canonical": "oklch(32% 0.03 162)",
+        "tonalRamp": ["#0a1210", "#141e18", "#1e2c24", "#283a30", "#344a40", "#425c52", "#567066", "#6c887e", "#86a49a"]
+      },
+      "pet-fox": {
+        "role": "tertiary",
+        "displayName": "Fox Ember",
+        "canonical": "oklch(70% 0.18 38)",
+        "tonalRamp": ["#2a0e00", "#481800", "#6a2400", "#8c3200", "#b04400", "#d46030", "#ee7e50", "#ff8a50", "#ffb89a"]
+      },
+      "pet-bunny": {
+        "role": "tertiary",
+        "displayName": "Bunny Flush",
+        "canonical": "oklch(65% 0.22 0)",
+        "tonalRamp": ["#280010", "#44001e", "#620030", "#820040", "#a40050", "#cc2a6a", "#ee5088", "#ff6090", "#ffa0c0"]
+      },
+      "pet-cat": {
+        "role": "tertiary",
+        "displayName": "Cat Ultraviolet",
+        "canonical": "oklch(70% 0.15 295)",
+        "tonalRamp": ["#12001e", "#200030", "#300048", "#420060", "#58107a", "#7430a0", "#9458c8", "#b388ff", "#d4b8ff"]
+      },
+      "pet-dog": {
+        "role": "tertiary",
+        "displayName": "Dog Straw",
+        "canonical": "oklch(87% 0.15 80)",
+        "tonalRamp": ["#1e1400", "#342200", "#503200", "#704600", "#905c00", "#b87a00", "#dca020", "#ffd54f", "#ffed9a"]
+      },
+      "state-danger": {
+        "role": "neutral",
+        "displayName": "System Danger",
+        "canonical": "oklch(65% 0.22 25)",
+        "tonalRamp": ["#280000", "#440000", "#620000", "#840000", "#a81010", "#cc2828", "#ee4040", "#ff5252", "#ff9898"]
+      },
+      "state-warning": {
+        "role": "neutral",
+        "displayName": "System Warning",
+        "canonical": "oklch(87% 0.15 80)",
+        "tonalRamp": ["#1e1400", "#342200", "#503200", "#704600", "#905c00", "#b87a00", "#dca020", "#ffd54f", "#ffed9a"]
+      }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Wordmarks and hero titles only. One per screen. Treated as a physical sign, not typeset text." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings and panel heads. Always uppercase." },
+      "title":    { "displayName": "Title",    "purpose": "Loading final line, large in-game state labels." },
+      "body":     { "displayName": "Body",     "purpose": "Creature descriptions and prose that must be read. Max 60ch per line. The only Inter in the system." },
+      "label":    { "displayName": "Label",    "purpose": "Button text, system labels, chip and badge text. Operational mono voice." },
+      "caption":  { "displayName": "Caption",  "purpose": "Timestamps, metadata, section counters. Near-invisible by design." }
+    },
+    "shadows": [
+      { "name": "pixel-drop-sm",  "value": "2px 2px 0 rgba(0,0,0,0.5)",  "purpose": "Interactive elements at rest: creature badges, small chips." },
+      { "name": "pixel-drop-md",  "value": "3px 3px 0 rgba(0,0,0,0.6)",  "purpose": "Default interactive offset: speech bubbles, hovered creature cards." },
+      { "name": "pixel-drop-lg",  "value": "4px 4px 0 rgba(0,0,0,0.65)", "purpose": "Primary buttons, elevated panels." },
+      { "name": "glow-green",     "value": "0 0 20px rgba(0,230,118,0.12)", "purpose": "Phosphor bloom: system-active light emission, not elevation." },
+      { "name": "glow-gold",      "value": "0 0 20px rgba(255,179,71,0.12)", "purpose": "CTA phosphor bloom. Used with btn-gold." }
+    ],
+    "motion": [
+      { "name": "ease-cinematic",  "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Narrative transitions only: splash entrance, game-to-game cuts." },
+      { "name": "ease-px2",        "value": "steps(2, end)",  "purpose": "Fast mechanical state change: button hover, toggle." },
+      { "name": "ease-px3",        "value": "steps(3, end)",  "purpose": "Slightly smoother mechanical: button click, card hover." },
+      { "name": "ease-px6",        "value": "steps(6, end)",  "purpose": "Section transitions and reveal animations." },
+      { "name": "ease-px8",        "value": "steps(8, end)",  "purpose": "Full-screen transitions: landing page leave, screen cuts." }
+    ],
+    "breakpoints": [
+      { "name": "mobile",  "value": "700px",  "purpose": "Primary responsive breakpoint: single-column dossier, larger OBSERVE panel." },
+      { "name": "desktop", "value": "1024px", "purpose": "Full dossier layout: 480px controls column + training room." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Gold)",
+      "kind": "button",
+      "refersTo": "button-gold",
+      "description": "Primary CTA — enter the game, activate, begin. The only warm color in a cold system.",
+      "html": "<button class=\"ds-btn-gold\">ENTER THE GARDEN</button>",
+      "css": ".ds-btn-gold { font-family: 'Fira Code', monospace; font-weight: 600; font-size: 0.875rem; padding: 15px 40px; background: #ffb347; color: #0a120e; border: none; border-radius: 2px; cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.4); letter-spacing: 0.05em; text-transform: uppercase; min-height: 48px; transition: transform 0.12s steps(3), box-shadow 0.12s steps(3); } .ds-btn-gold:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(0,0,0,0.5); } .ds-btn-gold:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); } .ds-btn-gold:focus-visible { outline: 2px solid rgba(255,179,71,0.5); outline-offset: 3px; }"
+    },
+    {
+      "name": "System Button (Green)",
+      "kind": "button",
+      "refersTo": "button-green",
+      "description": "System-action CTA — confirm, proceed, go to garden. Operational Phosphor Bloom.",
+      "html": "<button class=\"ds-btn-green\">GO TO GARDEN</button>",
+      "css": ".ds-btn-green { font-family: 'Fira Code', monospace; font-weight: 600; font-size: 0.85rem; padding: 13px 32px; background: #00e676; color: #0a120e; border: none; border-radius: 2px; cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.4); letter-spacing: 0.05em; text-transform: uppercase; min-height: 44px; transition: transform 0.12s steps(3), box-shadow 0.12s steps(3); } .ds-btn-green:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(0,0,0,0.5); } .ds-btn-green:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); } .ds-btn-green:focus-visible { outline: 2px solid rgba(0,230,118,0.5); outline-offset: 3px; }"
+    },
+    {
+      "name": "Ghost Continue Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Sequential-progress affordance. Transparent, zero-radius. Not for primary actions.",
+      "html": "<button class=\"ds-btn-ghost\">CONTINUE &rarr;</button>",
+      "css": ".ds-btn-ghost { font-family: 'Fira Code', monospace; font-size: 0.88rem; font-weight: 700; padding: 13px 42px; background: transparent; color: #00e676; border: 1px solid rgba(0,230,118,0.28); border-radius: 0; cursor: pointer; letter-spacing: 0.22em; text-transform: uppercase; transition: background 0.15s steps(3), box-shadow 0.15s steps(3); } .ds-btn-ghost:hover { background: rgba(0,230,118,0.04); box-shadow: 2px 2px 0 rgba(0,230,118,0.12); } .ds-btn-ghost:focus-visible { outline: 2px solid rgba(0,230,118,0.3); outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Player name entry. Center-aligned, monospaced. Focus shifts border to Phosphor Bloom.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"your name\">",
+      "css": ".ds-input { font-family: 'Fira Code', monospace; font-size: 1rem; padding: 16px 28px; border: 1px solid rgba(0,230,118,0.1); border-radius: 2px; background: rgba(8,14,10,0.7); color: #c8d8ce; width: 340px; text-align: center; outline: none; letter-spacing: 0.02em; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input:focus { border-color: #00e676; box-shadow: 0 0 0 2px rgba(0,230,118,0.06), 0 0 20px rgba(0,230,118,0.08); } .ds-input::placeholder { color: #4a6258; }"
+    },
+    {
+      "name": "Creature Card",
+      "kind": "card",
+      "refersTo": "creature-card",
+      "description": "Pet adoption card. Octagon clip-path corners. Creature-accent tints in on hover.",
+      "html": "<div class=\"ds-creature-card\"><div class=\"ds-creature-badge\">OBSERVING</div><div class=\"ds-creature-icon\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"14\" y=\"10\" width=\"20\" height=\"18\" rx=\"2\" fill=\"#ff8a50\"/><rect x=\"10\" y=\"28\" width=\"28\" height=\"12\" rx=\"2\" fill=\"#ff8a50\"/><rect x=\"18\" y=\"7\" width=\"4\" height=\"7\" fill=\"#ff8a50\"/><rect x=\"26\" y=\"7\" width=\"4\" height=\"7\" fill=\"#ff8a50\"/></svg></div><div class=\"ds-creature-name\">EMBER</div><div class=\"ds-creature-species\">FOX</div><div class=\"ds-creature-flaw\">RECKLESS ADVISOR</div><div class=\"ds-creature-desc\">A porch-philosopher fox. Laid-back about dangerous ideas.</div></div>",
+      "css": ".ds-creature-card { width: 188px; padding: 28px 18px 22px; background: rgba(8,14,10,0.85); border: 1px solid rgba(0,230,118,0.06); border-radius: 4px; text-align: center; position: relative; clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px)); cursor: default; transition: all 0.2s steps(4); } .ds-creature-card:hover { transform: translateY(-6px); border-color: rgba(255,138,80,0.25); box-shadow: 3px 3px 0 rgba(0,0,0,0.6), 0 0 24px rgba(255,138,80,0.10); background: rgba(255,138,80,0.03); } .ds-creature-badge { position: absolute; top: 7px; right: 9px; font-family: 'Fira Code', monospace; font-size: 0.62rem; color: #00e676; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0; transition: opacity 0.3s; } .ds-creature-card:hover .ds-creature-badge { opacity: 0.6; } .ds-creature-icon { margin-bottom: 12px; } .ds-creature-name { font-family: 'Fira Code', monospace; font-weight: 700; font-size: 1.0rem; color: #c8d8ce; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 2px; } .ds-creature-species { font-family: 'Fira Code', monospace; font-size: 0.7rem; color: #4a6258; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 8px; } .ds-creature-flaw { font-family: 'Fira Code', monospace; font-size: 0.65rem; font-weight: 600; padding: 3px 10px; display: inline-block; background: rgba(255,82,82,0.06); color: #ff5252; border: 1px solid rgba(255,82,82,0.12); margin-bottom: 8px; } .ds-creature-desc { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: #7a9488; line-height: 1.9; }"
+    },
+    {
+      "name": "System HUD Panel",
+      "kind": "custom",
+      "refersTo": "button-ghost",
+      "description": "Terminal backing plate with corner pixel accents. Used for title plates and primary status panels only.",
+      "html": "<div class=\"ds-hud-panel\"><div class=\"ds-hud-title\">DRIFTWOOD</div><div class=\"ds-hud-sub\">a garden under observation</div></div>",
+      "css": ".ds-hud-panel { position: relative; display: inline-block; padding: 10px 24px 8px 18px; background: rgba(2,12,7,0.90); border: 1px solid rgba(0,230,118,0.55); box-shadow: 0 0 0 4px rgba(2,12,7,0.80), 0 0 0 6px rgba(0,230,118,0.14), inset 0 0 24px rgba(0,230,118,0.04), 6px 6px 0 rgba(0,0,0,0.75); } .ds-hud-panel::before { content: ''; position: absolute; top: -8px; left: -8px; width: 10px; height: 10px; background: #00e676; box-shadow: 0 0 8px rgba(0,230,118,0.9); } .ds-hud-panel::after { content: ''; position: absolute; bottom: -8px; right: -8px; width: 10px; height: 10px; background: #00e676; box-shadow: 0 0 8px rgba(0,230,118,0.9); } .ds-hud-title { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; font-weight: 400; letter-spacing: 0.10em; line-height: 0.9; color: #e8fff2; text-shadow: 0 2px 0 rgba(0,0,0,0.95), 0 0 14px rgba(0,230,118,0.88), 0 0 60px rgba(0,230,118,0.30); } .ds-hud-sub { font-family: 'Fira Code', monospace; font-size: 0.7rem; color: #00e676; letter-spacing: 0.34em; text-transform: lowercase; margin-top: 6px; opacity: 0.76; }"
+    },
+    {
+      "name": "Boot Sequence",
+      "kind": "custom",
+      "refersTo": "button-ghost",
+      "description": "Terminal boot text stack. Appears on loading screen. Staggered fade-in per line.",
+      "html": "<div class=\"ds-boot-seq\"><div class=\"ds-boot-line\">loading behavioral model...</div><div class=\"ds-boot-line ds-boot-accent\">&rarr; flaw kernel initialized</div><div class=\"ds-boot-line ds-boot-accent\">&rarr; mood access: FULL</div><div class=\"ds-boot-line\">waiting for user...</div></div>",
+      "css": ".ds-boot-seq { display: flex; flex-direction: column; gap: 8px; } .ds-boot-line { font-family: 'Fira Code', monospace; font-size: 0.75rem; color: #4a6258; letter-spacing: 0.14em; opacity: 0.48; text-transform: lowercase; } .ds-boot-accent { color: #7a9488; opacity: 0.55; }"
+    },
+    {
+      "name": "Section Continue Button (Idle Pulse)",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Ghost continue button with idle phosphor pulse. Appears after scrolling past content to signal there is more.",
+      "html": "<button class=\"ds-continue-btn\">CONTINUE &rarr;</button>",
+      "css": "@keyframes ds-idle-pulse { 0%,100% { box-shadow: 2px 2px 0 rgba(0,230,118,0.08); } 50% { box-shadow: 2px 2px 0 rgba(0,230,118,0.22), 0 0 12px rgba(0,230,118,0.08); } } .ds-continue-btn { font-family: 'Fira Code', monospace; font-size: 0.88rem; font-weight: 700; padding: 13px 42px; background: transparent; color: #00e676; border: 1px solid rgba(0,230,118,0.28); border-radius: 0; cursor: pointer; letter-spacing: 0.22em; text-transform: uppercase; animation: ds-idle-pulse 2.4s steps(4) infinite; transition: background 0.15s steps(3); } .ds-continue-btn:hover { background: rgba(0,230,118,0.04); animation: none; box-shadow: 2px 2px 0 rgba(0,230,118,0.24); } .ds-continue-btn:focus-visible { outline: 2px solid rgba(0,230,118,0.3); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Garden Terminal",
+    "overview": "This system is a surveillance computer that grew ecology around it. The interface does not apologize for watching you. Every screen is a monitoring station: boot sequences log behavioral data, mood chips track your expression, garden health dips when your AI pet misbehaves. The clinical infrastructure and the living things are tangled together by design, not as metaphor but as mechanics.\n\nThe design was built against the aesthetic of comfortable AI tools. No rounded corners above 4px. No blurs, no gradients on text, no white-space breathing room designed to relax. The system asserts itself: pixel-hard edges, CRT scanlines that never turn off, a phosphor green that glows from inside the screen. Operating it should feel like using an instrument, not a product.\n\nThe garden is the ecological argument. When your pet behaves well, plants grow. When the AI reveals its flaw, the garden sustains damage. Players do not read stats. They watch things die or thrive.",
+    "keyCharacteristics": [
+      "Deep-void dark substrate with CRT phosphor overlays: global scanlines, green grid texture, pixel-hard drop shadows",
+      "Two accent colors only: Phosphor Bloom (operational, healthy, surveillance) and Caution Harvest (activate, enter, begin)",
+      "Typography mixing architectural display (Bebas Neue) + terminal mono (Fira Code) + human body (Inter): three registers, each with a single purpose",
+      "Motion uses steps() easing to feel like frame-by-frame; smooth cubic-bezier reserved for cinematic transitions only",
+      "No radius above 4px; creature cards use octagon clip-path clip that reads as mechanical, not organic",
+      "Interactive pet accents animate into surfaces only when their creature is contextually present"
+    ],
+    "rules": [
+      { "name": "The Scarcity Rule", "body": "Phosphor Bloom and Caution Harvest are the only colors that carry interactive meaning. Pet accent colors are decorative and contextual. No new colors may be introduced for UI states.", "section": "colors" },
+      { "name": "The Cold Field Rule", "body": "Every neutral is tinted toward the garden temperature: green-adjacent, cold. Pure achromatic grays are prohibited.", "section": "colors" },
+      { "name": "The Mono-Dominant Rule", "body": "Fira Code outnumbers Inter across the interface at roughly 4:1. Inter appears only when prose legibility is the actual goal.", "section": "typography" },
+      { "name": "The Press Start 2P Exception", "body": "Press Start 2P is reserved for the behavior log page, which is a distinct surface with its own rules. Prohibited everywhere else.", "section": "typography" },
+      { "name": "The Flat By Default Rule", "body": "Surfaces rest flat. Shadows appear only in response to state: hover displaces the button and shadow grows. Nothing lifts at rest.", "section": "elevation" },
+      { "name": "The No Blur Rule", "body": "box-shadow values carry zero blur radius for structural shadows. Phosphor glow (20-60px) is light emission, not elevation.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use hard pixel-offset shadows (2px 2px 0, 3px 3px 0, 4px 4px 0). These are the only structural shadows.",
+      "Do use steps() easing for all UI transitions that should feel mechanical. Reserve cubic-bezier(0.22, 1, 0.36, 1) for cinematic moments only.",
+      "Do keep all interactive corners at 2-4px maximum.",
+      "Do use Phosphor Bloom (#00e676) for system-active states: focus rings, health indicators, on-state borders.",
+      "Do keep Inter body text at line-height 1.9 and under 60ch per line.",
+      "Do honor prefers-reduced-motion. Gate cinematic transitions behind the media query.",
+      "Do tint every neutral toward the garden temperature."
+    ],
+    "donts": [
+      "Don't build anything that looks like Claude, Notion, or a ChatGPT interface. The calm productivity tool aesthetic is explicitly prohibited.",
+      "Don't use gradient text (background-clip: text with a gradient). Use a single solid color.",
+      "Don't blur structural UI elements. Glassmorphism is prohibited except in transitional cinematic layers.",
+      "Don't use a metric-card layout: large number, small label, supporting stats, gradient accent.",
+      "Don't introduce a neutral non-tinted gray. Pure grays are foreign to this palette.",
+      "Don't use border-left greater than 1px as a colored accent stripe on any card, alert, or list item.",
+      "Don't animate layout properties (width, height, top, left, padding, margin). Transform and opacity only.",
+      "Don't use Press Start 2P in the main game UI.",
+      "Don't use box-shadow with a blur radius for structural depth."
+    ]
+  }
+}

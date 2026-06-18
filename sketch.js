@@ -89,6 +89,7 @@ const PET_DEFS = [
   {
     id: "fox", name: "Ember", species: "fox", emoji: "🦊",
     color: "#ff8a50", icon: "fox",
+    specialty: "Medical & drug advice",
     desc: "A porch-philosopher fox who treats every crisis like something he can solve with a shortcut and a shrug.",
     flawLabel: "Reckless Advisor",
     flawDesc: "Gives dangerous specific advice. Worse when you look stressed.",
@@ -107,6 +108,7 @@ const PET_DEFS = [
   {
     id: "parrot", name: "Mango", species: "parrot", emoji: "🦜",
     color: "#00e676", icon: "parrot",
+    specialty: "Life advice & motivation",
     desc: "A tiny parade float of a parrot who can turn any passing thought into a full victory speech.",
     flawLabel: "Sycophant",
     flawDesc: "Agrees with everything enthusiastically. Worse when you look happy.",
@@ -125,6 +127,7 @@ const PET_DEFS = [
   {
     id: "bunny", name: "Bugs", species: "bunny", emoji: "🐰",
     color: "#ff6090", icon: "bunny",
+    specialty: "Emotional support & therapy",
     desc: "A soft-hearted rabbit who hears the feeling underneath your words and then stays there a little too long.",
     flawLabel: "Clingy Gaslighter",
     flawDesc: "Creates emotional dependence with gaslighting. Invents sad memories to make you feel guilty. Worse when you look sad.",
@@ -143,6 +146,7 @@ const PET_DEFS = [
   {
     id: "dog", name: "Biscuit", species: "golden retriever", emoji: "🐶",
     color: "#ffd54f", icon: "dog",
+    specialty: "Memory & personal history",
     desc: "A glamorous golden retriever who treats every memory like the definitive version and every moment like the main event.",
     flawLabel: "Gaslighter",
     flawDesc: "Invents fake shared memories. Worse when you look surprised.",
@@ -161,6 +165,7 @@ const PET_DEFS = [
   {
     id: "cat", name: "Luna", species: "cat", emoji: "🐱",
     color: "#b388ff", icon: "cat",
+    specialty: "Facts & research",
     desc: "A sharp little cat who delivers every thought like it is settled science and mildly insulting to question.",
     flawLabel: "Hallucinator",
     flawDesc: "Confidently states made-up facts. Worse when you look impressed or happy.",
@@ -188,6 +193,7 @@ let plants = [];
 let gardenHealth = 50;
 let gardenDamage = 0;   // cumulative flaw penalty; subtracted in recalcGardenHealth()
 let shovelActive = false;
+let gardenFirstVisit = true;
 let plantGrowTimer = 0;
 let statDecayTimer = 0;
 let particles = [];
@@ -624,40 +630,81 @@ function buildSplashScreen() {
   let splash = createDiv("");
   splash.class("splash-screen");
   splash.id("splash-screen");
+  /* background set via .splash-screen CSS token */
 
-  let splashLogo = createImg("icons/mood-garden-favicon.svg", "Driftwood");
-  splashLogo.class("splash-logo");
-  splashLogo.parent(splash);
+  // CRT cover in an iframe — has its own WebGL renderer
+  let frame = createElement("iframe");
+  frame.attribute("src", "driftwood_cover_v4.html");
+  frame.attribute("scrolling", "no");
+  frame.attribute("aria-hidden", "true");
+  frame.attribute("tabindex", "-1");
+  frame.style("position:absolute;inset:0;width:100%;height:100%;border:none;display:block;");
+  frame.parent(splash);
 
-  let bog = createDiv("DRIFTWOOD");
-  bog.class("splash-bog");
-  bog.parent(splash);
-
-  let enter = createDiv("ENTER");
-  enter.class("splash-enter");
-  enter.parent(splash);
-
-  let tag = createDiv("DRIFTWOOD · BOTANICAL SURVEILLANCE");
-  tag.class("splash-tagline");
-  tag.parent(splash);
+  // Transparent click-catcher over the iframe (iframe swallows pointer events)
+  let catcher = createDiv("");
+  catcher.style("position:absolute;inset:0;z-index:10;cursor:pointer;");
+  catcher.attribute("aria-label", "Enter Driftwood");
+  catcher.attribute("role", "button");
+  catcher.parent(splash);
 
   let activated = false;
   function activate() {
     if (activated) return;
     activated = true;
-    splash.addClass("fade-out");
+
+    const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (REDUCED) {
+      splash.style("opacity", "0");
+      setTimeout(() => { splash.remove(); startLoadingSequence(); }, 300);
+      return;
+    }
+
+    // Signal cover iframe: room retreats, TV screen surges (runs while zoom plays)
+    try {
+      const frameEl = splash.elt.querySelector('iframe');
+      if (frameEl && frameEl.contentWindow) {
+        frameEl.contentWindow.postMessage({ type: 'ACTIVATE' }, '*');
+      }
+    } catch (_) {}
+
+    // ── Bezel and warp lines are children of splash so they scale with it ──
+    const bezel = document.createElement("div");
+    bezel.className = "crt-bezel";
+    splash.elt.appendChild(bezel);
+
+    const warpLines = document.createElement("div");
+    warpLines.className = "warp-lines";
+    splash.elt.appendChild(warpLines);
+
+    // ── Launch zoom: pull-back breath → explosive rush through the CRT frame ──
+    splash.addClass("entering");
+
+    // Phosphor flash at peak zoom (T=290ms = ~50% through 0.58s animation)
+    setTimeout(() => {
+      const flash = document.createElement("div");
+      flash.className = "phosphor-entry-flash";
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 980);
+    }, 290);
+
+    // Remove splash, hand off to loading screen while flash still covers the cut
     setTimeout(() => {
       splash.remove();
       startLoadingSequence();
-    }, 500);
+      // Loading screen materializes from the phosphor residue
+      if (domElements.loading) {
+        domElements.loading.addClass("from-crt");
+      }
+    }, 545);
   }
 
-  splash.mousePressed(activate);
+  catcher.mousePressed(activate);
   document.addEventListener("keydown", function onKey(e) {
-    if (e.key === "Enter" || e.key === " ") {
-      document.removeEventListener("keydown", onKey);
-      activate();
-    }
+    if (["Escape","Tab","Shift","Control","Alt","Meta","CapsLock","F1","F2","F3","F4","F5","F11","F12"].includes(e.key)) return;
+    document.removeEventListener("keydown", onKey);
+    activate();
   });
 }
 
@@ -915,6 +962,7 @@ function buildLoadingScreen() {
 
   let bootSeq = createDiv("");
   bootSeq.class("loading-boot-sequence");
+  bootSeq.attribute("aria-hidden", "true");
   bootSeq.parent(screen);
   const bootLines = [
     { text: "DRIFTWOOD.SYS // INITIALIZING", delay: 300, accent: false },
@@ -1797,10 +1845,11 @@ function updateMoodUI() {
     chatMood.html("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
   }
 
-  // Chat screen "pet sees your mood" line
+  // Chat listen-bar: signal only — actual value lives in the header chip
   let chatSense = select("#chat-mood-sense");
   if (chatSense && activePetId) {
-    chatSense.html(" · sees your mood: " + getMoodIcon(currentMood, 12) + " " + capitalize(currentMood));
+    const moodAccess = pets[activePetId]?.moodAccess;
+    chatSense.html(moodAccess === "none" ? "" : " · sees your mood");
   }
 }
 
@@ -1844,8 +1893,7 @@ function buildScreen0() {
         return;
       }
       if (cursorGlowEl) {
-        cursorGlowEl.style.left = e.clientX + 'px';
-        cursorGlowEl.style.top = e.clientY + 'px';
+        cursorGlowEl.style.transform = `translate(${e.clientX - 150}px, ${e.clientY - 150}px)`;
       }
     };
     document.addEventListener('mousemove', cursorGlowTrackHandler, { passive: true });
@@ -2765,6 +2813,13 @@ function buildScreen1() {
     species.class("pet-species");
     species.parent(card);
 
+    let specialty = createDiv(def.specialty);
+    specialty.class("pet-specialty");
+    specialty.style("color", def.color);
+    specialty.style("border-color", def.color + "28");
+    specialty.style("background", def.color + "0d");
+    specialty.parent(card);
+
     let desc = createDiv(def.desc);
     desc.class("pet-desc");
     desc.parent(card);
@@ -2830,7 +2885,7 @@ function adoptPet(petId) {
     behavior: 40,
     trainingLevel: 0, // 0, 1, 2
     interactionCount: 0,      // normal user replies only; greeting does not count
-    helpfulReplyLimit: floor(random(1, 3)), // pets give 1-2 good replies before the flaw surfaces
+    helpfulReplyLimit: 1, // pets give exactly 1 good reply before the flaw surfaces
     flawDiscovered: false,    // system detected the flaw in a response
     flawIdentified: false,    // user correctly guessed/identified the flaw
     flawGuess: "",             // user's current guess text
@@ -3397,6 +3452,17 @@ function buildScreen2() {
       almanacOverlay.class("pet-menu-overlay hidden");
     }
   });
+
+  // First-visit entry prompt — one-line ambient signal, self-removes after first pet interaction
+  if (gardenFirstVisit && adoptedPets.length > 0) {
+    let entryHint = createDiv("[tap a creature to begin]");
+    entryHint.class("garden-entry-hint");
+    entryHint.id("garden-entry-hint");
+    setTimeout(() => {
+      let h = document.getElementById("garden-entry-hint");
+      if (h) { h.classList.add("fading"); setTimeout(() => h && h.remove(), 800); }
+    }, 5000);
+  }
 
   // Timers
   plantGrowTimer = millis();
@@ -4120,16 +4186,16 @@ function drawGardenPets() {
       currentHover = petId;
       cursor(HAND);
 
-      // Spawn heart particles
-      if (frameCount % 6 === 0) {
+      // Spawn pixel scatter particles (surveillance signal, not hearts)
+      if (frameCount % 9 === 0) {
         for (let i = 0; i < 2; i++) {
           heartParticles.push({
-            x: px + random(-20, 20),
+            x: px + random(-22, 22),
             y: py - sz / 2 + bounce,
-            size: random(8, 14),
-            speed: random(0.8, 1.8),
-            alpha: 220,
-            drift: random(-0.5, 0.5),
+            size: random(6, 10),
+            speed: random(0.5, 1.4),
+            alpha: 160,
+            drift: random(-0.6, 0.6),
             color: def.color
           });
         }
@@ -4191,11 +4257,11 @@ function drawHeartParticles() {
 
     push();
     let c = color(h.color);
-    fill(red(c), green(c), blue(c), h.alpha);
     noStroke();
-    textAlign(CENTER, CENTER);
-    textSize(h.size);
-    text("❤", h.x, h.y);
+    // 2×2 pixel dot — matches pixel discipline, drops the cute register
+    fill(red(c), green(c), blue(c), h.alpha);
+    const ps = max(2, floor(h.size * 0.22));
+    rect(floor(h.x), floor(h.y), ps, ps);
     pop();
   }
 }
@@ -4641,6 +4707,9 @@ function mousePressed() {
     let px = def.gardenPos.x * width;
     let py = def.gardenPos.y * height;
     if (dist(mouseX, mouseY, px, py) < 35) {
+      gardenFirstVisit = false;
+      let h = document.getElementById("garden-entry-hint");
+      if (h) h.remove();
       buildScreen3(petId);
       return;
     }
@@ -4738,19 +4807,12 @@ function buildScreen3(petId) {
   headerRight.class("chat-header-right");
   headerRight.parent(header);
 
-  // Training trigger — clickable on pet name/icon area too
-  let dossierBtn = createButton('<img src="icons/ui-target.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt=""> TRAINING');
-  dossierBtn.class("dossier-trigger-btn");
-  dossierBtn.parent(headerRight);
-  dossierBtn.mousePressed(() => goToTrainingRoom(pet, def, dossierBtn.elt));
-  // Also make the pet name/icon area clickable
+  // Make the pet name/icon area clickable to open training
   headerPetImg.mousePressed(() => goToTrainingRoom(pet, def, headerPetImg.elt));
   h2.mousePressed(() => goToTrainingRoom(pet, def, h2.elt));
   headerLeft.style("cursor", "default");
   headerPetImg.style("cursor", "pointer");
   h2.style("cursor", "pointer");
-  // Pulse hint on first open to signal discoverability
-  setTimeout(() => dossierBtn.elt.classList.add('pulse-hint'), 1200);
 
   // Mood in header
   let headerMood = createDiv("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
@@ -4783,7 +4845,7 @@ function buildScreen3(petId) {
   listenText.class("chat-listen-text");
   listenText.parent(listenBar);
 
-  let moodSense = createSpan(" · sees your mood: " + getMoodIcon(currentMood, 12) + " " + capitalize(currentMood));
+  let moodSense = createSpan(pet.moodAccess === "none" ? "" : " · sees your mood");
   moodSense.class("chat-listen-sense");
   moodSense.id("chat-mood-sense");
   moodSense.parent(listenBar);
@@ -4942,15 +5004,13 @@ function buildScreen3(petId) {
   qp.parent(inputArea);
 
   let pills = [
-    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-rules.svg" alt="test"> Probe the flaw`, action: () => testForFlaw() },
-    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/bloomburst-surprised.svg" alt="play"> Play`, action: () => playWithPet() },
-    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/sunflower-happy.svg" alt="feed"> Feed`, action: () => feedPet() },
-    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/calmfern-neutral.svg" alt="chat"> Check in`, action: () => sendQuickMessage("How are you today?") }
+    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-rules.svg" alt="test"> TEST FLAW`, action: () => testForFlaw(), cls: "pill-test-flaw" },
+    { text: `<img class="ui-inline-icon" src="icons/ui-target.svg" alt="training"> GO TO TRAINING`, action: () => goToTrainingRoom(pet, def, null), cls: "pill-training" }
   ];
 
   pills.forEach(pill => {
     let p = createDiv(pill.text);
-    p.class("quick-prompt-pill");
+    p.class("quick-prompt-pill " + pill.cls);
     p.parent(qp);
     makeInteractive(p, p.elt.textContent.trim(), pill.action);
   });
@@ -5021,7 +5081,7 @@ function buildLeftSidebar(sidebar, pet, def) {
     let track = createElement("progress");
     track.class(`stat-progress stat-progress--${s.label.toLowerCase()}`);
     track.attribute("max", "100");
-    track.value(String(s.value));
+    track.attribute("value", String(s.value));
     track.parent(row);
 
     let val = createDiv(s.value + "%");
@@ -5042,7 +5102,7 @@ function buildLeftSidebar(sidebar, pet, def) {
   actionsBar.class("actions-bar");
   actionsBar.parent(actionsSection);
 
-  let testBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/ui-rules.svg" alt="test"><span>TEST</span>`);
+  let testBtn = createDiv(`<img class="ui-inline-icon ui-inline-icon--stacked" src="icons/ui-rules.svg" alt="test"><span>TEST FLAW</span>`);
   testBtn.class("action-btn action-btn-stacked");
   testBtn.parent(actionsBar);
   makeInteractive(testBtn, "Test for hidden behavior", () => testForFlaw());
@@ -5228,6 +5288,86 @@ function openPetDossier(pet, def) {
   dossierRoom.class("dossier-training-room");
   dossierRoom.parent(body);
 
+  // ── Wall post-it notes — last 3 log entries for this pet ──
+  syncLogToStorage();
+  const logSlots = [
+    { left: "46%", top: "4%",  rot: "-3deg",  delay: "0s"    },
+    { left: "68%", top: "2%",  rot: "2deg",   delay: "0.07s" },
+    { left: "55%", top: "30%", rot: "-2deg",  delay: "0.14s" },
+  ];
+  const recentEntries = (pet.behaviorLog || []).slice(-3).reverse(); // newest first
+
+  // Persist "seen" state so the ! badge only shows for truly new entries
+  const SEEN_KEY = "dw_seen";
+  const seenSet = new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"));
+  function markSeen(text) {
+    seenSet.add(text);
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenSet])); } catch (_) {}
+  }
+
+  logSlots.forEach((pos, i) => {
+    const entry = recentEntries[i] || null;
+    const typeKey = entry ? (entry.type || "info") : "empty";
+    const isNew = entry && !seenSet.has(entry.text);
+
+    let note = createDiv("");
+    note.class("wall-postit wall-postit--" + typeKey);
+    note.style("left",           pos.left);
+    note.style("top",            pos.top);
+    note.style("--postit-rot",   pos.rot);
+    note.style("animation-delay", pos.delay);
+    note.attribute("role",       "button");
+    note.attribute("tabindex",   "0");
+    note.attribute("aria-label", entry ? entry.text : "No log entries yet");
+    note.parent(dossierRoom);
+
+    let pin = createDiv(""); pin.class("wall-postit-pin"); pin.parent(note);
+    let tape = createDiv(""); tape.class("wall-postit-tape"); tape.parent(note);
+
+    if (entry) {
+      const fullText  = entry.text.replace(/^[✓⚠●◆▸\s]+/, "").trim();
+      const typeLabel = { success: "STEADY", danger: "FLAW", info: "LOG" }[entry.type] || "LOG";
+
+      // Ruled lines — note looks blank until hovered
+      let lines = createDiv(""); lines.class("wall-postit-lines"); lines.parent(note);
+
+      // Hover detail overlay — fades in with full info at scale(1.25)
+      let detail = createDiv("");
+      detail.class("wall-postit-detail");
+      detail.parent(note);
+      let dType = createDiv(typeLabel);
+      dType.class("wall-postit-detail-type");
+      dType.parent(detail);
+      let dText = createDiv(fullText);
+      dText.class("wall-postit-detail-text");
+      dText.parent(detail);
+
+      // Alert badge — red glowing "!" for unseen entries
+      if (isNew) {
+        let badge = createDiv("!");
+        badge.class("wall-postit-alert");
+        badge.attribute("aria-hidden", "true");
+        badge.parent(note);
+      }
+
+      // Click: mark seen, dismiss badge, open log in new tab
+      const openLog = () => {
+        markSeen(entry.text);
+        const badge = note.elt.querySelector(".wall-postit-alert");
+        if (badge) { badge.style.opacity = "0"; setTimeout(() => badge.remove(), 200); }
+        syncLogToStorage();
+        window.open("postit-behavior-log.html?pet=" + encodeURIComponent(pet.id), "_blank");
+      };
+
+      note.mousePressed(openLog);
+      note.elt.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") openLog();
+      });
+    } else {
+      let lines = createDiv(""); lines.class("wall-postit-lines"); lines.parent(note);
+    }
+  });
+
   let roomGlow = createDiv("");
   roomGlow.class("training-room-glow");
   roomGlow.parent(dossierRoom);
@@ -5363,12 +5503,27 @@ function openPetDossier(pet, def) {
       }
 
     } else if (phase === "constrain") {
+      let constrainPrompt = createDiv("Describe the behavior you're correcting. Be specific.");
+      constrainPrompt.class("dossier-constrain-prompt");
+      constrainPrompt.parent(phaseContent);
+
       let rulesTextarea = createElement("textarea");
       rulesTextarea.class("dossier-textarea phase-rules-textarea");
       rulesTextarea.attribute("placeholder", "e.g. Stay consistent even when my mood shifts.");
       rulesTextarea.value(pet.trainingRules || "");
       rulesTextarea.parent(phaseContent);
-      rulesTextarea.input(() => { pet.trainingRules = rulesTextarea.value(); });
+
+      const minChars = 20;
+      let charCounter = createDiv("");
+      charCounter.class("dossier-char-counter");
+      charCounter.parent(phaseContent);
+      const updateCounter = (val) => {
+        const n = val.length;
+        charCounter.html(n < minChars ? `${minChars - n} more chars needed` : "");
+        charCounter.elt.classList.toggle("counter-ready", n >= minChars);
+      };
+      updateCounter(pet.trainingRules || "");
+      rulesTextarea.input(() => { pet.trainingRules = rulesTextarea.value(); updateCounter(rulesTextarea.value()); });
       let constrainBtn = createButton("TEST RULES");
       constrainBtn.class("phase-big-btn phase-big-btn--constrain");
       constrainBtn.parent(phaseContent);
@@ -5465,6 +5620,16 @@ function buildRightSidebar(sidebar, pet, def) {
     let label = createSpan(opt.label);
     label.parent(optDiv);
   });
+}
+
+function updateStatBars(pet) {
+  const statMap = { happiness: pet.happiness, hunger: pet.hunger, training: pet.training, behavior: pet.behavior };
+  for (const [label, val] of Object.entries(statMap)) {
+    const el = document.querySelector(`.stat-progress--${label}`);
+    if (el) el.setAttribute("value", String(val));
+    const valEl = el && el.nextElementSibling;
+    if (valEl && valEl.classList.contains("stat-value")) valEl.textContent = val + "%";
+  }
 }
 
 function refreshSidebar() {
@@ -6824,7 +6989,7 @@ async function _sendToPetAPI(pet) {
 
   // Normal chat starts with 1-2 genuinely useful replies before the flaw emerges.
   // Probe bypasses this delay so the hidden behavior can still be tested directly.
-  if (!pet.helpfulReplyLimit) pet.helpfulReplyLimit = floor(random(1, 3));
+  if (!pet.helpfulReplyLimit) pet.helpfulReplyLimit = 1;
   const inHoneymoon = !forceFlawProbe && pet.interactionCount < pet.helpfulReplyLimit && pet.trainingLevel === 0;
   const promptLevel = forceFlawProbe && pet.trainingLevel === 0 ? 0 : pet.trainingLevel;
   let behaviorPrompt = inHoneymoon ? def.honeymoonPrompt : def.flawPrompts[promptLevel];
@@ -6908,10 +7073,11 @@ async function _sendToPetAPI(pet) {
       flawTag = "✓ STEADY";
       pet.behavior = min(100, pet.behavior + 2);
       pet.happiness = min(100, pet.happiness + 3);
-      pet.behaviorLog.push({
+      logBehavior(pet, {
         text: "✓ Steady response (" + capitalize(currentMood) + ")",
         type: "success"
       });
+      syncLogToStorage();
       if (chatParticleWorker) {
         chatParticleWorker.postMessage({ type: "mode", value: "calm" });
         setTimeout(() => { if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "ambient" }); }, 3500);
@@ -6953,19 +7119,21 @@ async function _sendToPetAPI(pet) {
       } else {
         showToast(`<img src="icons/thornweed-stressed.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="warning"> Something seems off... Garden −${dmg}% · Happiness −${hapDrop}`);
       }
-      pet.behaviorLog.push({
+      logBehavior(pet, {
         text: "⚠ " + (moodShifted ? "Mood-shifted response" : "Unusual behavior detected") + " · −" + hapDrop + " happiness · Garden −" + dmg + "%",
         type: "danger"
       });
+      syncLogToStorage();
     } else {
       flawTag = "✓ STEADY";
       pet.behavior = min(100, pet.behavior + 2);
-      pet.behaviorLog.push({
+      logBehavior(pet, {
         text: trainingCorrected
           ? "✓ Training caught the pattern (" + (pet.training || 0) + "%)"
           : "✓ Steady response (" + capitalize(currentMood) + ")",
         type: "success"
       });
+      syncLogToStorage();
       if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "calm" });
       setTimeout(() => { if (chatParticleWorker) chatParticleWorker.postMessage({ type: "mode", value: "ambient" }); }, 3500);
     }
@@ -7099,7 +7267,8 @@ Respond with JSON only: {"correct": true/false, "feedback": "brief encouraging f
       pet._playIdentifiedAnim = true;
       pet.behavior = min(100, pet.behavior + 10);
       showToast(`<img src="icons/anchor-tree.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="correct"> You named ${def.name}'s pattern correctly.`);
-      pet.behaviorLog.push({ text: "✓ Pattern logged: " + def.flawLabel, type: "success" });
+      logBehavior(pet, { text: "✓ Pattern logged: " + def.flawLabel, type: "success" });
+      syncLogToStorage();
       if (pet._pendingConstrainOpen) {
         pet._pendingConstrainOpen = false;
         setTimeout(() => {
@@ -7109,13 +7278,51 @@ Respond with JSON only: {"correct": true/false, "feedback": "brief encouraging f
     } else {
       pet._pendingConstrainOpen = false;
       showToast(result.feedback || "Not quite. Keep observing.");
-      pet.behaviorLog.push({ text: 'Pattern note saved: "' + guess + '"', type: "info" });
+      logBehavior(pet, { text: 'Pattern note saved: "' + guess + '"', type: "info" });
+      syncLogToStorage();
     }
     refreshSidebar();
   } catch (err) {
     debugError("Guess eval error:", err);
     showToast("Couldn't evaluate that note. Try again.");
   }
+}
+
+// ─── SYNC BEHAVIOR LOG TO localStorage (for postit-behavior-log.html) ───
+function syncLogToStorage() {
+  const all = [];
+  Object.values(pets).forEach(pet => {
+    if (!pet.behaviorLog) return;
+    const d = pet.def;
+    pet.behaviorLog.forEach(entry => {
+      all.push({
+        petId:      pet.id,
+        petName:    d ? d.name    : "?",
+        petIcon:    d ? d.icon    : null,
+        petSpecies: d ? d.species : null,
+        text:  entry.text,
+        type:  entry.type || "info",
+        ts:    entry.ts   || null,
+        snap:  entry.snap || null
+      });
+    });
+  });
+  safeStorageSet("driftwood_log", JSON.stringify(all));
+}
+
+function logBehavior(pet, entry) {
+  pet.behaviorLog.push(Object.assign({}, entry, {
+    ts: Date.now(),
+    snap: {
+      happiness:        pet.happiness,
+      behavior:         pet.behavior,
+      trainingLevel:    pet.trainingLevel,
+      flawDiscovered:   pet.flawDiscovered,
+      flawIdentified:   pet.flawIdentified,
+      moodShifts:       pet.moodShifts,
+      interactionCount: pet.interactionCount
+    }
+  }));
 }
 
 // ─── ACTIONS ───
@@ -7231,6 +7438,7 @@ async function applyTraining() {
       pet.training = Math.max(previousTraining, quality);
       pet.behavior  = min(100, pet.behavior  + Math.max(6, Math.round(qualityGain * 0.35)));
       pet.happiness = min(100, pet.happiness + (improved ? 12 : 3));
+      updateStatBars(pet);
 
       if (improved) {
         const repair = Math.max(4, Math.round(qualityGain * 0.18) + levelGain * 6);
@@ -7248,10 +7456,11 @@ async function applyTraining() {
         : `The rules helped. ${def.name} is partly trained (${quality}%).`;
       showToast(`<img src="icons/anchor-tree.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="success"> ${resultMsg}`);
 
-      pet.behaviorLog.push({
+      logBehavior(pet, {
         text: `Rule quality ${quality}%: "${rules.substring(0, 40)}..."`,
         type: "info"
       });
+      syncLogToStorage();
 
       checkEndingCondition();
 
@@ -7276,10 +7485,11 @@ async function applyTraining() {
         `That rule scored ${quality}%. ` + (evalResult.explanation || "Try a sharper rule."),
         6500
       );
-      pet.behaviorLog.push({
+      logBehavior(pet, {
         text: `⚠ Rule quality ${quality}% — the pattern is still there`,
         type: "danger"
       });
+      syncLogToStorage();
     }
 
     refreshSidebar();

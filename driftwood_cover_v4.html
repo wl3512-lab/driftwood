@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRIFTWOOD</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fira+Code:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#010205;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Fira Code',monospace;}
+/* Room atmosphere — very faint ceiling ambient */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 900px 600px at 50% 30%,rgba(8,40,18,0.10) 0%,transparent 70%);pointer-events:none;}
+/* Room floor darkness */
+body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:30%;background:linear-gradient(to top,rgba(0,0,0,0.55),transparent);pointer-events:none;}
+
+/* TV + desk as a single vertical group */
+.scene{display:flex;flex-direction:column;align-items:center;transform:translateY(-4%);position:relative;}
+
+/* Desk surface — where the legs actually rest */
+.desk{
+  width:180%;
+  position:relative;
+  margin-top:-4px;
+  height:110px;
+  background:
+    /* Green phosphor reflection — centered ellipse under the screen */
+    radial-gradient(ellipse 50% 70% at 50% 0%,rgba(30,200,88,0.14) 0%,rgba(22,165,70,0.05) 46%,transparent 72%),
+    /* Desk surface material — dark matte, fades downward */
+    linear-gradient(to bottom,#1e1c15 0%,#141310 20%,rgba(9,9,7,0.6) 55%,transparent 100%);
+}
+/* Top edge of desk — catches phosphor light */
+.desk::before{
+  content:'';position:absolute;top:0;left:8%;right:8%;height:2px;
+  background:linear-gradient(to right,
+    transparent,
+    rgba(255,255,255,0.025) 18%,
+    rgba(30,210,90,0.16) 38%,
+    rgba(30,210,90,0.22) 50%,
+    rgba(30,210,90,0.16) 62%,
+    rgba(255,255,255,0.025) 82%,
+    transparent);
+}
+/* Subtle floor glow below desk — bounced light from screen */
+.desk::after{
+  content:'';position:absolute;
+  bottom:-50px;left:20%;right:20%;height:50px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(20,180,70,0.04) 0%,transparent 100%);
+}
+
+/* ── TV outer wrapper — perspective tilt puts it below eye level, like a real desk TV ── */
+.tv{
+  position:relative;
+  transform:perspective(920px) rotateX(5.5deg);
+  transform-origin:center 58%;
+  filter:drop-shadow(0 80px 180px rgba(0,0,0,0.99)) drop-shadow(0 0 80px rgba(30,160,80,0.07));
+}
+/* Left side depth slab — CRT box is ~40cm deep */
+.tv::before{
+  content:'';position:absolute;
+  top:2%;bottom:7%;left:-22px;width:22px;
+  background:linear-gradient(to right,#030201 0%,#0c0b09 60%,#131210 100%);
+  border-radius:6px 0 0 5px;
+  box-shadow:-8px 0 22px rgba(0,0,0,0.75);
+}
+/* Right side depth slab */
+.tv::after{
+  content:'';position:absolute;
+  top:2%;bottom:7%;right:-22px;width:22px;
+  background:linear-gradient(to left,#030201 0%,#0c0b09 60%,#131210 100%);
+  border-radius:0 6px 5px 0;
+  box-shadow:8px 0 22px rgba(0,0,0,0.75);
+}
+
+/* ── Main plastic housing — 3D CRT cabinet ── */
+.housing{
+  width:min(700px,95vw);
+  /* Diagonal grain simulates molded ABS stipple texture */
+  background:
+    repeating-linear-gradient(-28deg,transparent 0px,transparent 2px,rgba(0,0,0,0.022) 2px,rgba(0,0,0,0.022) 3px),
+    linear-gradient(158deg,#3f3d2d 0%,#2f2d21 14%,#232118 38%,#1b1915 62%,#141211 84%,#0f0e0a 100%);
+  border-radius:30px 30px 12px 12px;
+  padding:20px 20px 0;
+  position:relative;
+  box-shadow:
+    0 0 0 1px #3c3a28,
+    0 0 0 2px #090805,
+    0 0 0 3px #1e1c14,
+    /* left/right inner shadows suggest CRT box depth */
+    inset 10px 0 24px rgba(0,0,0,0.32),
+    inset -10px 0 24px rgba(0,0,0,0.32),
+    /* top specular, bottom underside */
+    inset 0 3px 0 rgba(255,255,255,0.09),
+    inset 0 -3px 0 rgba(0,0,0,0.75),
+    /* main cast shadow */
+    0 38px 110px rgba(0,0,0,0.98),
+    0 12px 32px rgba(0,0,0,0.92);
+}
+/* Top rim — catches ambient light */
+.housing::before{
+  content:'';position:absolute;top:0;left:8px;right:8px;height:3px;
+  background:linear-gradient(to right,transparent,rgba(255,255,255,0.07) 25%,rgba(255,255,255,0.13) 50%,rgba(255,255,255,0.07) 75%,transparent);
+  border-radius:28px 28px 0 0;pointer-events:none;
+}
+/* Vent slots across top of housing */
+.housing::after{
+  content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:52%;height:5px;
+  background:repeating-linear-gradient(to right,rgba(0,0,0,0.6) 0px,rgba(0,0,0,0.6) 3px,rgba(255,255,255,0.018) 3px,rgba(255,255,255,0.018) 4px,transparent 4px,transparent 9px);
+  border-radius:1px;opacity:0.6;pointer-events:none;
+}
+
+/* ── Inner bezel — screen recedes in ── */
+.bezel{
+  background:#020203;
+  border-radius:12px;
+  padding:12px 12px 10px;
+  box-shadow:
+    inset 0 0 70px rgba(0,0,0,1),
+    inset 0 8px 20px rgba(0,0,0,0.95),
+    inset 6px 0 14px rgba(0,0,0,0.88),
+    inset -6px 0 14px rgba(0,0,0,0.88),
+    inset 0 -6px 14px rgba(0,0,0,0.85),
+    0 0 0 1px rgba(255,255,255,0.025);
+}
+
+/* ── CRT Screen ── */
+.screen{
+  position:relative;width:100%;aspect-ratio:4/3;
+  border-radius:8px;overflow:hidden;background:#010209;
+  box-shadow:inset 0 0 28px rgba(0,0,0,0.9),0 0 0 1px rgba(0,0,0,0.95),0 0 20px rgba(28,200,80,0.07);
+}
+/* Convex glass overlay — dome highlight + diagonal glare + edge vignette */
+.screen::before{
+  content:'';position:absolute;inset:0;z-index:30;pointer-events:none;border-radius:inherit;
+  background:
+    /* Central dome specular — the glass bulges outward slightly */
+    radial-gradient(ellipse 58% 48% at 46% 44%,rgba(255,255,255,0.032) 0%,transparent 100%),
+    /* Main top-left corner glare */
+    radial-gradient(ellipse 78% 62% at -10% -15%,rgba(255,255,255,0.11) 0%,rgba(255,255,255,0.022) 44%,transparent 63%),
+    /* Top-edge thin specular line */
+    linear-gradient(180deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.012) 7%,transparent 17%),
+    /* Bottom-right secondary catch */
+    radial-gradient(ellipse 50% 40% at 108% 112%,rgba(255,255,255,0.042) 0%,transparent 54%),
+    /* Edge vignette — glass rolls off at borders */
+    radial-gradient(ellipse 108% 108% at 50% 50%,transparent 50%,rgba(0,0,0,0.52) 100%);
+}
+/* Screen inner bevel shadow — glass is set below bezel surface */
+.screen::after{
+  content:'';position:absolute;inset:0;z-index:29;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 3px 8px rgba(0,0,0,0.7),inset 3px 0 8px rgba(0,0,0,0.5),inset -3px 0 8px rgba(0,0,0,0.5),inset 0 -3px 8px rgba(0,0,0,0.45);
+}
+
+#crt-c{position:absolute;inset:0;width:100%;height:100%;display:block;}
+
+/* ── HUD layer ── */
+.hud{position:absolute;inset:0;z-index:20;pointer-events:none;}
+.title-group{position:absolute;left:50%;top:7%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;white-space:nowrap;}
+.title{font-family:'Press Start 2P',monospace;font-size:clamp(26px,5.8vw,50px);letter-spacing:0.06em;color:#eafff4;line-height:1;text-shadow:0 0 4px rgba(60,255,120,1),0 0 12px rgba(60,255,120,0.82),0 0 30px rgba(60,255,120,0.52),0 0 64px rgba(60,255,120,0.26),0 0 110px rgba(60,255,120,0.1);animation:titlePulse 5s ease-in-out infinite;position:relative;display:block;}
+.title::before,.title::after{content:'DRIFTWOOD';font-family:'Press Start 2P',monospace;font-size:inherit;letter-spacing:inherit;position:absolute;left:0;right:0;top:0;opacity:0;pointer-events:none;white-space:nowrap;}
+.title::before{color:rgba(255,40,80,0.55);animation:glR 9s 1.5s infinite;}
+.title::after{color:rgba(40,200,255,0.45);animation:glB 9s 3s infinite;}
+.tagline{font-family:'Fira Code',monospace;font-size:clamp(5.5px,1vw,8.5px);letter-spacing:0.32em;color:rgba(200,165,50,0.65);text-transform:uppercase;}
+.pk{position:absolute;bottom:5%;width:100%;text-align:center;font-family:'Fira Code',monospace;font-size:clamp(6.5px,1.1vw,10px);letter-spacing:0.35em;color:rgba(60,255,120,0.85);animation:blink 1.4s step-end infinite;z-index:21;pointer-events:none;}
+.copyright{position:absolute;bottom:1.2%;width:100%;text-align:center;font-family:'Fira Code',monospace;font-size:clamp(4px,0.65vw,5.5px);letter-spacing:0.18em;color:rgba(255,255,255,0.1);text-transform:uppercase;z-index:21;pointer-events:none;}
+
+/* ── Bottom control panel — separate molded piece ── */
+.bottom{
+  display:flex;align-items:center;padding:11px 16px 17px;gap:10px;
+  position:relative;
+  border-top:1px solid rgba(0,0,0,0.65);
+  background:
+    repeating-linear-gradient(-28deg,transparent 0px,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 3px),
+    linear-gradient(180deg,#1a1916 0%,#141210 60%,#0e0d0a 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.038),inset 0 -2px 4px rgba(0,0,0,0.6);
+}
+.brand{flex:1;padding-left:2px;}
+.brand-name{font-size:7px;letter-spacing:.3em;color:rgba(255,255,255,0.11);text-transform:uppercase;}
+.brand-sub{font-size:5.5px;letter-spacing:.18em;color:rgba(255,255,255,0.05);text-transform:uppercase;margin-top:3px;}
+.controls{display:flex;align-items:center;gap:9px;}
+/* Speaker grille — punched metal */
+.grille{
+  width:62px;height:28px;border-radius:3px;
+  background:radial-gradient(circle,rgba(255,255,255,0.13) 1.4px,transparent 1.4px),#070705;
+  background-size:5px 5px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,0.9),inset 0 -1px 2px rgba(0,0,0,0.7),0 0 0 1px rgba(0,0,0,0.75);
+}
+/* Power LED */
+.led{
+  width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 36% 28%,#8affb8,#3cff78 55%,#16cc52);
+  box-shadow:0 0 6px #3cff78,0 0 14px rgba(60,255,120,0.55),0 0 28px rgba(60,255,120,0.22);
+  animation:ledP 2.8s ease-in-out infinite;
+}
+/* Control knobs — 3D plastic */
+.knob{
+  width:25px;height:25px;border-radius:50%;
+  background:radial-gradient(circle at 37% 27%,#4e4c3a,#333124 48%,#1a1916);
+  box-shadow:0 3px 9px rgba(0,0,0,0.96),0 1px 3px rgba(0,0,0,0.8),inset 0 2px 3px rgba(255,255,255,0.09),inset 0 -2px 3px rgba(0,0,0,0.75);
+  position:relative;cursor:pointer;
+}
+/* Knob grip texture */
+.knob::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(rgba(255,255,255,0.06) 0deg,transparent 16deg,rgba(0,0,0,0.12) 180deg,transparent 196deg,rgba(255,255,255,0.04) 360deg);
+}
+/* Knob indicator mark */
+.knob::after{
+  content:'';position:absolute;top:50%;left:50%;
+  width:2px;height:9px;
+  background:linear-gradient(to bottom,rgba(255,255,255,0.32),rgba(255,255,255,0.06));
+  transform:translate(-50%,-80%);border-radius:1px;
+}
+.model-tag{font-family:'Fira Code',monospace;font-size:5px;letter-spacing:.15em;color:rgba(255,255,255,0.06);align-self:flex-end;padding-bottom:2px;}
+
+/* ── Legs + rubber foot pads ── */
+.legs{display:flex;justify-content:space-between;padding:0 60px;}
+.leg{
+  width:18px;height:28px;
+  background:linear-gradient(180deg,#252318 0%,#1c1a14 40%,#131110 100%);
+  border-radius:0 0 5px 5px;
+  position:relative;
+  box-shadow:-2px 0 0 rgba(0,0,0,0.55),2px 0 0 rgba(255,255,255,0.02),0 10px 24px rgba(0,0,0,0.9),inset 1px 0 0 rgba(255,255,255,0.04),inset -1px 0 0 rgba(0,0,0,0.55);
+}
+/* Rubber foot pad */
+.leg::after{
+  content:'';position:absolute;
+  bottom:-4px;left:-6px;right:-6px;height:5px;
+  background:radial-gradient(ellipse at 50% 0%,#181614,#0a0908);
+  border-radius:0 0 6px 6px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.9);
+}
+
+/* ── Cover activation — plays in parallel with the outer zoom ── */
+/* PK text strobes out */
+.activating .pk{animation:pk-exit 0.38s steps(4) forwards;}
+@keyframes pk-exit{0%{opacity:1}25%{opacity:0}50%{opacity:1}75%{opacity:0}100%{opacity:0}}
+/* Room context retreats — the TV asserts itself */
+.activating .wall{animation:ctx-out 0.45s cubic-bezier(0.6,0,1,1) forwards;}
+.activating .desk{animation:ctx-out 0.28s cubic-bezier(0.6,0,1,1) forwards;}
+@keyframes ctx-out{to{opacity:0}}
+/* TV screen glow surges — draws you through */
+.activating .tv{animation:tv-surge 0.56s ease-out forwards;}
+@keyframes tv-surge{
+  0%  {filter:drop-shadow(0 80px 180px rgba(0,0,0,0.99)) drop-shadow(0 0 80px rgba(30,160,80,0.07));}
+  35% {filter:drop-shadow(0 60px 120px rgba(0,0,0,0.78)) drop-shadow(0 0 160px rgba(30,255,100,0.52));}
+  100%{filter:drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 0 360px rgba(30,255,100,0.94));}
+}
+/* ── Wall texture layer — sits behind everything ── */
+.wall{position:fixed;inset:0;z-index:-2;background:repeating-linear-gradient(180deg,rgba(255,255,255,0.005) 0px,rgba(255,255,255,0.005) 1px,transparent 1px,transparent 34px),linear-gradient(180deg,#0e0e0c 0%,#0c0b0a 55%,#090908 100%);}
+/* Screen phosphor bloom on wall */
+.wall::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(1100px,128vw);height:70vh;background:radial-gradient(ellipse 56% 50% at 50% 26%,rgba(14,180,72,0.09) 0%,rgba(8,110,44,0.042) 38%,rgba(3,50,18,0.016) 64%,transparent 82%);pointer-events:none;}
+/* Poster silhouette barely visible upper-right */
+.wall::after{content:'';position:absolute;top:5%;right:10%;width:74px;height:104px;background:rgba(0,0,0,0.12);border:1px solid rgba(255,255,255,0.016);pointer-events:none;}
+/* ── VHS tape stack on desk — left side ── */
+.vhs-stack{position:absolute;left:10%;bottom:0;display:flex;flex-direction:column-reverse;gap:2px;}
+.vhs{width:66px;height:20px;background:#191815;border-radius:2px 2px 1px 1px;position:relative;box-shadow:0 -2px 5px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.03),inset 0 -1px 0 rgba(0,0,0,0.5);}
+/* Reel window */
+.vhs::before{content:'';position:absolute;bottom:3px;left:5px;width:34px;height:10px;background:#0b0908;border-radius:1px;box-shadow:inset 0 0 3px rgba(0,0,0,0.9);}
+/* Reel pair inside window */
+.vhs::after{content:'';position:absolute;bottom:5px;left:10px;width:6px;height:6px;border-radius:50%;background:#141210;box-shadow:13px 0 0 #141210,0 0 0 1px rgba(255,255,255,0.035),13px 0 0 1px rgba(255,255,255,0.035);}
+.vhs-label{position:absolute;top:3px;right:5px;bottom:3px;width:16px;background:linear-gradient(165deg,#2a1a06,#1c1008);border-radius:1px;opacity:0.6;}
+/* Top tape catches faint screen glow */
+.vhs:last-child{box-shadow:0 -2px 5px rgba(0,0,0,0.8),0 0 7px rgba(14,180,72,0.055),inset 0 1px 0 rgba(255,255,255,0.03);}
+/* ── Book stack on desk — right side ── */
+.book-stack{position:absolute;right:9%;bottom:0;display:flex;align-items:flex-end;gap:2px;}
+.book{border-radius:1px 1px 0 0;position:relative;box-shadow:0 -3px 7px rgba(0,0,0,0.65);}
+.book::before{content:'';position:absolute;top:8px;bottom:8px;left:0;width:1px;background:rgba(255,255,255,0.02);}
+.b1{width:12px;height:52px;background:linear-gradient(to right,#1a1813,#151310);}
+.b2{width:14px;height:68px;background:linear-gradient(to right,#0f0e0b,#0d0c09);}
+.b3{width:11px;height:44px;background:linear-gradient(to right,#1e1c14,#181612);}
+/* ── Power cable — drapes from TV to desk surface ── */
+.power-cable{position:absolute;left:calc(50% + 24px);top:0;pointer-events:none;z-index:3;}
+/* ── Dust motes floating in screen light ── */
+.dust{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden;}
+.mote{position:absolute;width:2px;height:2px;background:rgba(60,220,110,0.38);border-radius:50%;animation:float-mote var(--dur) linear infinite;animation-delay:var(--delay);}
+.mote.sm{width:1.5px;height:1.5px;background:rgba(60,220,110,0.22);}
+@keyframes float-mote{0%{transform:translate(0,0) scale(1);opacity:0;}8%{opacity:1;}50%{opacity:var(--peak,0.45);}92%{opacity:0.12;}100%{transform:translate(var(--dx),var(--dy)) scale(0.4);opacity:0;}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes titlePulse{0%,100%{text-shadow:0 0 4px rgba(60,255,120,1),0 0 12px rgba(60,255,120,.82),0 0 30px rgba(60,255,120,.52),0 0 64px rgba(60,255,120,.26),0 0 110px rgba(60,255,120,.1);}50%{text-shadow:0 0 3px rgba(60,255,120,.72),0 0 8px rgba(60,255,120,.55),0 0 20px rgba(60,255,120,.32),0 0 42px rgba(60,255,120,.15),0 0 75px rgba(60,255,120,.07);}}
+@keyframes glR{0%,88%,100%{opacity:0;transform:translateX(-6px);}89%{opacity:1;transform:translateX(-8px);clip-path:polygon(0 18%,100% 18%,100% 40%,0 40%);}91%{opacity:.6;transform:translateX(-4px);clip-path:polygon(0 58%,100% 58%,100% 76%,0 76%);}93%{opacity:0;}}
+@keyframes glB{0%,85%,100%{opacity:0;transform:translateX(6px);}86%{opacity:.9;transform:translateX(8px);}88%{opacity:.5;transform:translateX(3px);}90%{opacity:0;}}
+@keyframes ledP{0%,100%{opacity:1;box-shadow:0 0 8px #3cff78,0 0 18px rgba(60,255,120,.5);}50%{opacity:.3;box-shadow:0 0 3px #3cff78,0 0 6px rgba(60,255,120,.18);}}
+</style>
+</head>
+<body>
+
+<div class="wall"></div>
+
+<div class="scene">
+<div class="tv">
+<div class="housing">
+<div class="bezel">
+<div class="screen" id="screen">
+  <canvas id="scene-c" style="display:none"></canvas>
+  <canvas id="crt-c"></canvas>
+  <div class="hud">
+    <div class="title-group">
+      <span class="title">DRIFTWOOD</span>
+      <div class="tagline">// every system learns //</div>
+    </div>
+  </div>
+  <div class="pk">[ PRESS ANY KEY ]</div>
+  <div class="copyright">&#169; 2026 &bull; NYU ITP &bull; TOPICS IN MEDIA STUDIES</div>
+</div>
+</div>
+
+<div class="bottom">
+  <div class="brand">
+    <div class="brand-name">Driftwood Systems</div>
+    <div class="brand-sub">Model DW-1 · Companion Intelligence Unit</div>
+  </div>
+  <div class="controls">
+    <div class="grille"></div>
+    <div class="led"></div>
+    <div class="knob"></div>
+    <div class="knob"></div>
+  </div>
+  <span class="model-tag">DW-1</span>
+</div>
+</div>
+
+<div class="legs"><div class="leg"></div><div class="leg"></div></div>
+</div>
+
+<div class="desk">
+  <div class="vhs-stack">
+    <div class="vhs"><div class="vhs-label"></div></div>
+    <div class="vhs"><div class="vhs-label"></div></div>
+    <div class="vhs"><div class="vhs-label"></div></div>
+  </div>
+  <div class="book-stack">
+    <div class="book b1"></div>
+    <div class="book b2"></div>
+    <div class="book b3"></div>
+  </div>
+  <svg class="power-cable" xmlns="http://www.w3.org/2000/svg" width="52" height="110" viewBox="0 0 52 110" fill="none">
+    <path d="M 26 0 C 26 18, 32 38, 28 62 C 24 82, 12 96, 2 110" stroke="#1e1b12" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
+    <path d="M 26 0 C 26 18, 32 38, 28 62 C 24 82, 12 96, 2 110" stroke="rgba(30,200,80,0.035)" stroke-width="6" stroke-linecap="round"/>
+  </svg>
+</div>
+</div>
+
+<div class="dust">
+  <div class="mote"    style="left:47%;top:36%;--dur:12s;--delay:-3s;--dx:14px;--dy:-58px;--peak:0.52;"></div>
+  <div class="mote sm" style="left:51%;top:43%;--dur:9s;--delay:-7s;--dx:-9px;--dy:-44px;--peak:0.32;"></div>
+  <div class="mote"    style="left:54%;top:39%;--dur:14s;--delay:-1s;--dx:7px;--dy:-52px;--peak:0.44;"></div>
+  <div class="mote sm" style="left:45%;top:46%;--dur:11s;--delay:-5s;--dx:-16px;--dy:-34px;--peak:0.26;"></div>
+  <div class="mote"    style="left:49%;top:53%;--dur:16s;--delay:-9s;--dx:11px;--dy:-68px;--peak:0.36;"></div>
+  <div class="mote sm" style="left:56%;top:41%;--dur:10s;--delay:-4s;--dx:-5px;--dy:-48px;--peak:0.20;"></div>
+  <div class="mote"    style="left:43%;top:34%;--dur:13s;--delay:-11s;--dx:18px;--dy:-38px;--peak:0.40;"></div>
+  <div class="mote sm" style="left:52%;top:50%;--dur:18s;--delay:-6s;--dx:-12px;--dy:-55px;--peak:0.18;"></div>
+</div>
+
+<script>
+// ── REDUCED MOTION ──
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TAU = Math.PI * 2;
+
+// ── SCENE CANVAS (640×480 source texture) ──
+const sceneC = document.getElementById('scene-c');
+sceneC.width = 640; sceneC.height = 480;
+const sc = sceneC.getContext('2d', {alpha: false});
+
+// ── CRT CANVAS (WebGL output, fills screen) ──
+const crtC  = document.getElementById('crt-c');
+const scrEl = document.getElementById('screen');
+const DPR   = Math.min(window.devicePixelRatio || 1, 2);
+
+// ── WEBGL SHADERS ──
+const VS = `
+attribute vec2 a_pos;
+varying vec2 v_uv;
+void main(){
+  v_uv = vec2(a_pos.x * 0.5 + 0.5, a_pos.y * 0.5 + 0.5);
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+const FS = `
+precision mediump float;
+uniform sampler2D u_scene;
+uniform vec2 u_res;
+uniform float u_glitch;
+uniform float u_warm;
+varying vec2 v_uv;
+
+vec2 barrel(vec2 uv, float k){
+  vec2 c = uv - 0.5;
+  return uv + c * dot(c, c) * k;
+}
+
+float inBounds(vec2 uv){
+  return float(uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0);
+}
+
+void main(){
+  // Canvas texture is top-down; WebGL v_uv is bottom-up — flip Y
+  vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
+
+  const float K = 0.13; // barrel curvature
+
+  // Radial chromatic aberration — channels split away from center
+  vec2 dir = uv - 0.5;
+  float aberr = 0.003 + u_glitch * 0.024;
+  vec2 uvR = barrel(uv + dir * aberr, K);
+  vec2 uvG = barrel(uv,               K);
+  vec2 uvB = barrel(uv - dir * aberr, K);
+
+  // Sample with bounds masking (black outside barrel)
+  float r = texture2D(u_scene, clamp(uvR, 0.0, 1.0)).r * inBounds(uvR);
+  float g = texture2D(u_scene, clamp(uvG, 0.0, 1.0)).g * inBounds(uvG);
+  float b = texture2D(u_scene, clamp(uvB, 0.0, 1.0)).b * inBounds(uvB);
+
+  // Scanlines — 1 dark line per 4 pixel rows
+  float scan = mod(gl_FragCoord.y, 4.0) < 1.0 ? 0.78 : 1.0;
+
+  // Vignette — elliptical, heavier at corners
+  vec2 vc = uv - 0.5;
+  float vig = 1.0 - smoothstep(0.28, 0.88, dot(vc * vec2(0.88, 1.1), vc * vec2(0.88, 1.1)));
+
+  // Slight phosphor tint — CRT green channel characteristic
+  vec3 col = vec3(r * 0.96, g * 1.03, b * 0.97) * scan * vig;
+
+  // Sub-pixel afterglow: dark areas get faint green phosphor residue
+  float lum = dot(col, vec3(0.21, 0.72, 0.07));
+  col += vec3(0.002, 0.010, 0.004) * (1.0 - clamp(lum * 4.0, 0.0, 1.0));
+
+  // CRT power-on warm-up: fade + horizontal band expansion
+  float band = 1.0 - abs(uv.y - 0.5) * 2.0 / max(u_warm, 0.001);
+  float mask = u_warm >= 1.0 ? 1.0 : clamp(band, 0.0, 1.0);
+  float bright = u_warm < 0.5 ? smoothstep(0.0, 0.5, u_warm) * 1.4 : 1.0;
+  col = col * mask * bright;
+
+  gl_FragColor = vec4(max(col, vec3(0.0)), 1.0);
+}`;
+
+// ── WEBGL INIT ──
+const gl = crtC.getContext('webgl', {antialias: false, preserveDrawingBuffer: false});
+
+function makeShader(type, src){
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  return sh;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, makeShader(gl.VERTEX_SHADER,   VS));
+gl.attachShader(prog, makeShader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const posLoc = gl.getAttribLocation(prog, 'a_pos');
+gl.enableVertexAttribArray(posLoc);
+gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+const tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+gl.uniform1i(gl.getUniformLocation(prog, 'u_scene'), 0);
+
+const uRes    = gl.getUniformLocation(prog, 'u_res');
+const uGlitch = gl.getUniformLocation(prog, 'u_glitch');
+const uWarm   = gl.getUniformLocation(prog, 'u_warm');
+
+function sizeCanvas(){
+  const r = scrEl.getBoundingClientRect();
+  crtC.width  = Math.round(r.width  * DPR);
+  crtC.height = Math.round(r.height * DPR);
+  gl.viewport(0, 0, crtC.width, crtC.height);
+}
+
+// ── FOX SPRITE ──
+const FC = ['#d2691e','#ffb464','#f08c32','#282828','#ffdcb4'];
+const FR = [
+  [32,0,0],[144,0,0],
+  [16,16,0],[32,16,0],[144,16,0],[160,16,0],
+  [16,32,0],[32,32,1],[48,32,0],[128,32,0],[144,32,1],[160,32,0],
+  [0,48,0],[16,48,0],[32,48,0],[48,48,0],[64,48,0],[80,48,0],[96,48,0],[112,48,0],[128,48,0],[144,48,0],[160,48,0],[176,48,0],
+  [0,64,0],[16,64,0],[32,64,0],[48,64,0],[64,64,2],[80,64,2],[96,64,2],[112,64,2],[128,64,0],[144,64,0],[160,64,0],[176,64,0],
+  [0,80,0],[16,80,2],[32,80,2],[48,80,2],[64,80,2],[80,80,2],[96,80,2],[112,80,2],[128,80,2],[144,80,2],[160,80,2],[176,80,0],
+  [0,96,0],[16,96,2],[32,96,3],[48,96,2],[64,96,2],[80,96,2],[96,96,2],[112,96,2],[128,96,2],[144,96,3],[160,96,2],[176,96,0],
+  [0,112,0],[16,112,2],[32,112,2],[48,112,2],[64,112,2],[80,112,3],[96,112,3],[112,112,2],[128,112,2],[144,112,2],[160,112,2],[176,112,0],
+  [16,128,0],[32,128,2],[48,128,2],[64,128,4],[80,128,4],[96,128,4],[112,128,4],[128,128,2],[144,128,2],[160,128,0],
+  [32,144,0],[48,144,4],[64,144,4],[80,144,4],[96,144,4],[112,144,4],[128,144,4],[144,144,0],
+  [48,160,0],[64,160,0],[80,160,0],[96,160,0],[112,160,0],[128,160,0],
+  [32,176,0],[48,176,0],[128,176,0],[144,176,0],
+  [32,192,0],[144,192,0],
+];
+
+// ── SCENE DRAWING ──
+function drawScene(t){
+  const W = 640, H = 480;
+  const ctx = sc;
+
+  // Sky
+  const skyG = ctx.createLinearGradient(0,0,0,H);
+  skyG.addColorStop(0,'#010309'); skyG.addColorStop(0.55,'#020a10'); skyG.addColorStop(1,'#04140b');
+  ctx.fillStyle = skyG; ctx.fillRect(0,0,W,H);
+
+  // Ground
+  const gndG = ctx.createLinearGradient(0,310,0,H);
+  gndG.addColorStop(0,'#091a0c'); gndG.addColorStop(1,'#020508');
+  ctx.fillStyle = gndG; ctx.fillRect(0,310,W,H-310);
+
+  // Stars — 3 depth tiers
+  ctx.fillStyle='#9ad8b8';
+  [[42,12,.38],[98,8,.32],[175,28,.42],[248,14,.36],[328,9,.40],[445,16,.35],[530,8,.38],[600,24,.30],[620,42,.32],[12,56,.28],[350,74,.30],[492,62,.28]].forEach(([x,y,a])=>{ctx.globalAlpha=a;ctx.fillRect(x,y,1,1);});
+  ctx.fillStyle='#7ab898';
+  [[55,22,.52],[130,48,.42],[210,18,.58],[380,35,.48],[470,20,.54],[580,52,.42],[90,85,.32],[510,78,.38],[310,60,.44],[158,68,.36],[560,34,.42],[22,38,.34]].forEach(([x,y,a])=>{ctx.globalAlpha=a;ctx.fillRect(x,y,2,2);});
+  ctx.fillStyle='#c8e8d0';
+  [[420,24,.48],[138,38,.42],[298,16,.44]].forEach(([x,y,a])=>{ctx.globalAlpha=a;ctx.fillRect(x,y,3,3);});
+  ctx.globalAlpha=1;
+
+  // Moon
+  const moonG = ctx.createRadialGradient(564,50,0,564,50,28);
+  moonG.addColorStop(0,'rgba(200,164,48,0.85)'); moonG.addColorStop(1,'rgba(200,164,48,0)');
+  ctx.fillStyle=moonG; ctx.beginPath(); ctx.arc(564,50,28,0,TAU); ctx.fill();
+  ctx.fillStyle='#c8a430';
+  [[556,41,4,4],[554,45,8,8],[552,49,12,4],[554,53,8,6],[556,59,4,4]].forEach(([x,y,w,h])=>ctx.fillRect(x,y,w,h));
+  ctx.fillStyle='#f0d870'; ctx.globalAlpha=.72; ctx.fillRect(560,43,2,2);
+  ctx.globalAlpha=1;
+
+  // Trees — depth layers
+  ctx.fillStyle='#040a06';
+  [[140,210,30,105],[134,222,40,82],[220,228,22,88],[370,218,28,98],[450,232,20,82], // depth 0
+   [18,195,68,110],[540,188,68,122],[485,220,30,100],[478,232,38,72],[110,240,26,76],[104,250,36,58] // depth 1/2
+  ].forEach(r=>ctx.fillRect(...r));
+  ctx.fillStyle='#050c07';
+  [[30,180,55,140],[40,165,35,24],[550,172,55,148],[558,158,35,24]].forEach(r=>ctx.fillRect(...r));
+
+  // Fog band (animated)
+  const fogOff = REDUCED ? 0 : Math.sin(t/10000*TAU)*10;
+  ctx.save(); ctx.translate(fogOff,0);
+  const fogG = ctx.createLinearGradient(-fogOff,0,W+Math.abs(fogOff),0);
+  fogG.addColorStop(0,'rgba(10,30,16,0)'); fogG.addColorStop(.2,'rgba(10,30,16,0.38)');
+  fogG.addColorStop(.5,'rgba(12,34,18,0.44)'); fogG.addColorStop(.8,'rgba(10,30,16,0.38)');
+  fogG.addColorStop(1,'rgba(10,30,16,0)');
+  ctx.fillStyle=fogG; ctx.fillRect(-fogOff,192,W+Math.abs(fogOff)*2,54);
+  ctx.restore();
+
+  // Horizon
+  ctx.globalAlpha=.045; ctx.fillStyle='#3cff78'; ctx.fillRect(0,308,W,6);
+  ctx.globalAlpha=.62;  ctx.fillStyle='#0b1e0e'; ctx.fillRect(0,312,W,4);
+  ctx.globalAlpha=1;
+  ctx.fillStyle='#040b06'; ctx.fillRect(0,316,W,164);
+
+  // Hero atmospheric glow
+  const gPulse = REDUCED ? 0.65 : 0.55 + Math.sin(t/4500*TAU)*0.2;
+  const heroG = ctx.createRadialGradient(320,345,0,320,345,210);
+  heroG.addColorStop(0,`rgba(26,128,64,${(0.52*gPulse).toFixed(3)})`);
+  heroG.addColorStop(.55,`rgba(10,48,32,${(0.22*gPulse).toFixed(3)})`);
+  heroG.addColorStop(1,'rgba(1,4,8,0)');
+  ctx.fillStyle=heroG; ctx.beginPath(); ctx.ellipse(320,345,210,185,0,0,TAU); ctx.fill();
+
+  // ── VINES ──
+  function bPath(segs){
+    ctx.beginPath();
+    segs.forEach(([type,...p])=> type==='M' ? ctx.moveTo(p[0],p[1]) : ctx.bezierCurveTo(...p));
+  }
+  function vine(segs,w,color,alpha=1){
+    ctx.save(); ctx.globalAlpha=alpha;
+    ctx.strokeStyle=color; ctx.lineWidth=w; ctx.lineCap='round';
+    bPath(segs); ctx.stroke(); ctx.restore();
+  }
+
+  ctx.save(); ctx.shadowColor='#cc1133'; ctx.shadowBlur=12;
+  // Ground vines
+  vine([['M',260,400],['C',250,385,245,370,250,355],['C',254,342,262,335,258,318],['C',255,305,248,298,252,285]],2.5,'#bb1133');
+  vine([['M',380,400],['C',390,383,394,368,388,353],['C',383,340,374,332,378,316],['C',381,303,388,296,384,283]],2.5,'#bb1133');
+  vine([['M',252,355],['C',268,348,290,345,320,347],['C',350,349,372,348,388,355]],2,'#aa1133');
+  vine([['M',240,405],['C',215,400,195,405,170,400],['C',148,395,130,398,110,392]],1.8,'#991122');
+  vine([['M',400,405],['C',425,400,445,405,470,400],['C',492,395,510,398,530,392]],1.8,'#991122');
+  vine([['M',248,372],['C',238,364,230,360,220,355]],1.5,'#cc1144');
+  vine([['M',252,340],['C',242,332,238,325,230,318]],1.2,'#cc1144');
+  vine([['M',390,368],['C',400,360,408,355,418,350]],1.5,'#cc1144');
+  vine([['M',386,336],['C',396,328,402,322,410,315]],1.2,'#cc1144');
+  // Leaf shapes
+  function leaf(mx,my,c1x,c1y,c2x,c2y,ex,ey,sw,stroke,fill,alpha=1){
+    ctx.save(); ctx.globalAlpha=alpha;
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.bezierCurveTo(c1x,c1y,c2x,c2y,ex,ey);
+    ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle=stroke; ctx.lineWidth=sw; ctx.stroke();
+    ctx.restore();
+  }
+  leaf(220,358,214,352,215,344,220,342,1.5,'#ee2244','#991122');
+  leaf(230,322,224,316,225,308,231,306,1.2,'#ee2244','#881122');
+  leaf(420,353,426,347,425,339,420,337,1.5,'#ee2244','#991122');
+  leaf(412,318,418,312,417,304,411,302,1.2,'#ee2244','#881122');
+  leaf(112,395,106,389,107,381,112,379,1.2,'#ee2244','#881122');
+  leaf(528,394,534,388,533,380,528,378,1.2,'#ee2244','#881122');
+  ctx.shadowBlur=0; ctx.restore();
+
+  // Upper vine tendrils (rise toward title)
+  ctx.save(); ctx.shadowColor='#bb1133'; ctx.shadowBlur=8;
+  vine([['M',260,290],['C',252,258,247,224,254,196],['C',260,172,271,162,266,144],['C',261,130,252,124,258,107],['C',263,93,274,85,270,66]],2.2,'#991130',0.65);
+  vine([['M',256,210],['C',244,200,235,193,222,187]],1.4,'#bb1140',0.45);
+  vine([['M',263,162],['C',251,152,242,146,229,141]],1.2,'#bb1140',0.38);
+  vine([['M',380,290],['C',388,258,393,224,386,196],['C',380,172,369,162,374,144],['C',379,130,388,124,382,107],['C',377,93,366,85,370,66]],2.2,'#991130',0.65);
+  vine([['M',384,210],['C',396,200,405,193,418,187]],1.4,'#bb1140',0.45);
+  vine([['M',377,162],['C',389,152,398,146,411,141]],1.2,'#bb1140',0.38);
+  leaf(222,184,216,177,217,168,223,166,1.4,'#dd1144','#881122',0.45);
+  leaf(419,187,425,180,424,171,418,169,1.4,'#dd1144','#881122',0.45);
+  ctx.shadowBlur=0; ctx.restore();
+
+  // Title splash (organic polygon, drawn into scene so barrel-distorts with it)
+  const splashPts=[[92,36],[148,18],[226,10],[320,6],[414,10],[492,18],[548,36],[566,60],[568,88],[558,112],[534,128],[492,136],[382,142],[320,144],[258,142],[148,136],[106,128],[82,112],[72,88],[74,60]];
+  const flickerT = REDUCED ? 0 : Math.sin(t/6000*TAU)*0.06 + (Math.sin(t/2800*TAU)>0.88?-0.18:0);
+  ctx.globalAlpha = Math.max(0.65, 0.88 + flickerT);
+  const splashG = ctx.createRadialGradient(320,75,0,320,75,252);
+  splashG.addColorStop(0,'rgba(4,13,6,0.97)'); splashG.addColorStop(.62,'rgba(2,8,4,0.79)'); splashG.addColorStop(1,'rgba(1,4,2,0)');
+  ctx.fillStyle=splashG;
+  ctx.beginPath(); splashPts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=0.13; ctx.strokeStyle='#3cff78'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(82,112); ctx.bezierCurveTo(158,140,248,146,320,147); ctx.bezierCurveTo(392,146,482,140,558,112); ctx.stroke();
+  ctx.globalAlpha=0.20; ctx.fillStyle='#3cff78'; ctx.fillRect(86,60,4,4); ctx.fillRect(550,60,4,4);
+  ctx.globalAlpha=1;
+
+  // Fox hero
+  const foxY = REDUCED ? 0 : Math.sin(t/5000*TAU)*6;
+  ctx.save(); ctx.translate(171, 132+foxY); ctx.scale(1.55,1.55);
+  ctx.shadowColor='#3cff78'; ctx.shadowBlur=10;
+  FR.forEach(([x,y,ci])=>{ ctx.fillStyle=FC[ci]; ctx.fillRect(x,y,16,16); });
+  ctx.shadowBlur=0; ctx.restore();
+
+  // Ground fade
+  ctx.fillStyle='#010305'; ctx.globalAlpha=.88; ctx.fillRect(0,450,W,30); ctx.globalAlpha=1;
+}
+
+// ── GLITCH STATE — syncs with CSS glitch animation ──
+let glitch = 0;
+function updateGlitch(t){
+  const phase = ((t % 9000) + 9000) % 9000;
+  if      (phase >= 7920 && phase < 8040){ glitch = (phase - 7920) / 120; }
+  else if (phase >= 8040 && phase < 8370){ glitch = Math.max(0, 1 - (phase - 8040) / 330); }
+  else { glitch = 0; }
+}
+
+// ── WARM-UP STATE ──
+let warmUp = 0;
+const WARM_MS = 1400;
+
+// ── RENDER LOOP ──
+function render(t){
+  if (REDUCED){ t = 0; warmUp = 1; }
+  else { warmUp = Math.min(1, t / WARM_MS); updateGlitch(t); }
+
+  drawScene(t);
+
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sceneC);
+
+  gl.uniform2f(uRes, crtC.width, crtC.height);
+  gl.uniform1f(uGlitch, glitch);
+  gl.uniform1f(uWarm, warmUp);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  requestAnimationFrame(render);
+}
+
+sizeCanvas();
+window.addEventListener('resize', sizeCanvas);
+requestAnimationFrame(render);
+
+// Listen for activation signal from parent — triggers cover reaction sequence
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'ACTIVATE') {
+    document.body.classList.add('activating');
+  }
+});
+</script>
+</body>
+</html>

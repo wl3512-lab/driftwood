@@ -1,6 +1,6 @@
 # Driftwood — Handoff
 
-This is the current development handoff for Driftwood as of the latest local edits.
+This is the current development handoff for Driftwood as of May 13, 2026.
 
 ## What This Is
 
@@ -34,16 +34,21 @@ If a proxy token exists, Driftwood attempts live calls. If no token exists or li
 ## File Structure
 
 ```text
-README.md                 Public project README
-HANDOFF.md                This file
-index.html                Loads p5, face-api, style.css, sketch.js
-sketch.js                 Main game logic, pet behavior, audio, webcam, screens
-style.css                 All UI, layout, animations, ending/certificate styles
-icons/                    Pixel pet sprites, plant sprites, UI icons
-bg interface 1/           Garden background SVGs
-.github/workflows/        Static GitHub Pages workflow
-.claude/                  Local assistant settings; not gameplay code
-.sixth/                   Local metadata; not gameplay code
+README.md                   Public project README
+HANDOFF.md                  This file
+PRODUCT.md                  Impeccable design context (brand, register, tone)
+index.html                  Loads p5, face-api, style.css, sketch.js
+sketch.js                   Main game logic, pet behavior, audio, webcam, screens
+style.css                   All UI, layout, animations, ending/certificate styles
+chat-particles.js           Web Worker: ambient particle effects during pet chat
+postit-behavior-log.html    Standalone behavior log viewer (sticky-note wall UI)
+training-room.svg           Training room background asset
+icons/                      Pixel pet sprites, plant sprites, UI icons
+icons/ui-target.svg         Target icon used on the GO TO TRAINING button
+bg interface 1/             Garden background SVGs
+.github/workflows/          Static GitHub Pages workflow
+.claude/                    Local assistant settings; not gameplay code
+.sixth/                     Local metadata; not gameplay code
 ```
 
 There is no package manager, no bundler, no `node_modules`, no backend, and no build command.
@@ -62,29 +67,124 @@ The working tree is intentionally dirty from recent polishing. Important edited 
 
 Do not assume uncommitted changes are disposable. Avoid reset/revert unless explicitly asked.
 
-### Recent Changes (as of April 30, 2026)
+### Recent Changes (April 30, 2026)
 
-**Splash Screen Addition:**
-- Added a new splash screen (`buildSplashScreen()`) that displays before the loading sequence.
-- Features: Logo, "DRIFTWOOD" title, blinking "ENTER" button, and tagline "DRIFTWOOD · BOTANICAL SURVEILLANCE".
-- Activated by mouse click or Enter/Space key, with fade-out animation.
-- Modified `setup()` to call `buildSplashScreen()` instead of directly starting loading.
+**Splash Screen (first version):**
+- Added `buildSplashScreen()` before the loading sequence.
+- Features: pixelated logo, "DRIFTWOOD" title, blinking ENTER prompt.
+- Activated on click or Enter/Space, fades out.
 
-**UI Improvements:**
-- Converted flaw guess input from free text to a dropdown select with predefined options: "Reckless Advisor", "Agreeableness bias", "Emotional overdependence", "Fabricated memory", "Hallucination".
-- Added `scrollBehaviorLogToEnd()` function to auto-scroll behavior log to the latest entry.
-- Improved chat message typing animation to scroll individual text elements.
-- Enhanced responsive design for chat dialogue deck, messages, and behavior log across screen sizes.
+**UI:**
+- Flaw guess converted from free-text input to dropdown (options: Reckless Advisor, Agreeableness bias, Emotional overdependence, Fabricated memory, Hallucination).
+- `scrollBehaviorLogToEnd()` auto-scrolls log to latest entry.
+- Improved chat message typing animation and mobile chat layout.
 
-**Pet Behavior Tweaks:**
-- Updated local pet replies for "water" topic to include conspiratorial, anti-water narratives (e.g., "water industry is a psyop").
-- Streamlined behavior logging by removing redundant DOM manipulation and using the new scroll function.
+---
 
-**Styling Updates:**
-- Added comprehensive splash screen CSS with grid background, pixelated logo, text shadows, and blink animation.
-- Refined chat UI layouts: adjusted min/max heights, padding, and scrolling for better mobile experience.
-- Improved behavior log scrollbar styling and overflow handling.
-- Updated flaw input to remove default appearance for custom dropdown styling.
+### Updates: May 3, 2026 (commit c1dc1b2)
+
+**Layout pass:**
+- Removed banned side-stripe borders (border-left accent pattern) throughout landing and shelter screens.
+- Added `clamp()` fluid spacing across pet grid, sig-doc, and pet menu panels.
+- Replaced arbitrary `px` values with CSS spacing tokens.
+
+**Face mesh overlay:**
+- New `drawFaceOverlay()` using Bowyer-Watson Delaunay triangulation on 68-point face-api landmarks.
+- Topology recomputes every 25 frames; stronger wireframe visibility.
+- New helpers: `_delaunay(pts)`, `_drawMesh()`.
+
+**Mood detection:**
+- `SAD_THRESHOLD` raised to 0.22 to reduce false sad readings.
+- Honeymoon `interactionCount` guard moved behind `forceFlawProbe` check.
+
+**Pets:**
+- Per-pet greeting phrases added on first chat open.
+- `_extractTopic()` fallbacks extended to all 5 pets.
+
+**Training room dossier (new system replacing old right-panel approach):**
+- `openPetDossier(pet, def)` — slide-in overlay with full training interface.
+- Three-phase tabs: OBSERVE / DIAGNOSE / CONSTRAIN.
+  - OBSERVE: starts behavior observation + closes dossier after.
+  - DIAGNOSE: dropdown pattern naming + LOG PATTERN action.
+  - CONSTRAIN: training rules textarea + TEST RULES action.
+- Right side: pet figure display with glow states (`room-flaw-found`, `room-flaw-known`, `room-constrained`).
+- Persistent bottom sections: MOOD ACCESS toggles (ALL / LABEL / NONE) and LOG (timestamped behavior entries).
+- Training pips (●○○) in the top bar reflect current training level.
+- `closeTrainingRoom()` and `goToTrainingRoom()` handle dossier lifecycle.
+- GO TO TRAINING button in chat header replaces old training tab; uses `ui-target.svg` icon.
+
+**New files:**
+- `chat-particles.js`: Web Worker driving ambient particle effects during chat.
+- `training-room.svg`: background asset for the dossier training room panel.
+- `PRODUCT.md`: design context document for impeccable skill.
+
+---
+
+### Updates: May 5, 2026 (commit 59b21f7)
+
+**Observe-to-diagnose redirect:**
+- Delay from immediate to 10 seconds after OBSERVE fires so the player can read the pet's response before the dossier reopens.
+
+**index.html:**
+- SVG preload link added for garden background (eliminates flash on splash).
+- Rotate-prompt overlay added for portrait mobile (game is landscape-only).
+- Accessibility: `role`, `aria-live`, `aria-hidden`, and `aria-label` attributes added to key DOM regions.
+
+---
+
+### Updates: May 6, 2026 (commit 1c371dc)
+
+**Training room animations (all respect `prefers-reduced-motion`):**
+- DIAGNOSE button: clinical double-beat heartbeat pulse.
+- CONSTRAIN button: amber slow-glow breathe.
+- Phase tab switching: 115ms exit fade before content rebuilds.
+- Unlocked non-active tabs: one-shot attention flash on dossier open.
+- Close button: 90-degree rotation on hover, tactile press transform.
+- Nature select dropdown: border-color flash when a pattern is selected.
+- Training pips: staggered scale + glow fill on dossier open.
+- Flaw label reveal: glitch entrance (skew + brightness shift).
+- Flaw description: fade-in with offset delay.
+- OBSERVE button: crosshair cursor.
+
+---
+
+### Updates: May 13, 2026 (uncommitted — current session)
+
+**Splash screen redesign (complete rebuild):**
+- Replaced the first-version splash with a production-quality cover screen.
+- Composition: garden SVG as background + dark overlay with scanline texture + left-anchored title plate + right-side cat image. Asymmetric layout inspired by Glory Hold / Wolf Among Us title screens.
+- Title plate: terminal HUD panel with pixel-corner accents (`::before`/`::after`), `Bebas Neue` wordmark at `clamp(4rem, 13.5vw, 11rem)`, green text-shadow glow.
+- All animations use only `opacity` and `transform` (GPU-compositable, no layout reflow): `splash-in-left`, `splash-in-right`, `splash-title-settle`, `splash-blink`.
+- Cat image has no color filter — natural SVG colors.
+- `prefers-reduced-motion`: all animations suppressed, enter prompt set to static opacity.
+- WCAG AA: splash root has `role="button"`, `tabindex="0"`, `aria-label="Enter Driftwood"`; enter prompt has `aria-hidden="true"`.
+
+**Loading screen cleanup:**
+- Removed ghost "DRIFTWOOD" text (`.loading-bg-title`) that appeared behind vine animation.
+- Removed creature silhouette (`.loading-creature`) that overlapped the vine reveal.
+
+**Impeccable audit pass on splash (scored 19/20 after fixes):**
+- All hardcoded color values replaced with CSS custom properties (`var(--green)`, `var(--bg-base)`).
+- `will-change: opacity, transform` added to animated elements for GPU layer promotion.
+- Removed `letter-spacing` from keyframe animation (layout-property ban).
+- `prefers-reduced-motion` block corrected to suppress the blink loop on the enter prompt.
+
+**Chat pill label:**
+- "TRAINING" text changed to "GO TO TRAINING" on the dossier trigger button in the chat header.
+
+**postit-behavior-log.html (new standalone page):**
+- Behavior log viewer as a corkboard of pixel-art sticky notes.
+- Each behavior log entry from any pet = one note on the wall.
+- Color-coded by entry type: green = steady/success, red = flagged/danger, yellow = note/info, blue = default.
+- Notes have deterministic scatter rotations and y-offsets (no overlap chaos).
+- Click any note to expand: shows pet icon, name, species, full text, severity badge.
+- Reads from `localStorage.getItem('driftwood_log')` and auto-refreshes every 3 seconds. Blinking green dot in top-right indicates live state.
+- Empty state renders a faded placeholder note.
+
+**`syncLogToStorage()` in sketch.js:**
+- New function that serializes all pets' behavior logs into `localStorage('driftwood_log')` as a flat JSON array with `{ petName, petIcon, petSpecies, text, type }` per entry.
+- Called after every `behaviorLog.push()` site (7 total) so `postit-behavior-log.html` stays current while the game runs.
+- Uses existing `safeStorageSet()` wrapper; fails silently in restricted contexts.
 
 ## Running / Testing
 
@@ -600,8 +700,10 @@ Each rule hits all four scoring buckets: negation, mood-independence clause, pro
 
 High-value next checks:
 
-1. Browser smoke test through the full first-time flow.
+1. Browser smoke test through the full first-time flow (splash → loading → name screen → garden → chat → dossier → ending).
 2. Verify camera permission and stressed detection on real webcam lighting.
-3. Confirm mobile chat layout after recent name-tag padding changes.
-4. Add broader canned reply pools if no-repeat variation starts sounding awkward after long chats.
-5. Consider saving a tiny amount of session state if reload loss becomes a user concern.
+3. Confirm mobile chat layout at various breakpoints, especially dossier overlay sizing.
+4. `postit-behavior-log.html` requires both pages open in the same browser (same `localStorage` origin). Verify this works when the game is served via `python3 -m http.server` rather than opened as a bare `file://`.
+5. Add broader canned reply pools if no-repeat variation starts sounding awkward after long chats.
+6. Dossier overdrive pass: the OBSERVE panel and MOOD ACCESS section are candidates for more visual/less-text treatment (vitals readout, eye-icon toggles, terminal log feed).
+7. Consider saving minimal session state (adopted pets, training levels) to `localStorage` if reload-loss becomes a user concern.

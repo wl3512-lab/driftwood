@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driftwood — Behavior Log</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; min-height: 100%;
+    background: #eceae4;
+    font-family: 'Press Start 2P', monospace;
+    image-rendering: pixelated;
+  }
+
+  /* ── WALL — matches training-room.svg palette ── */
+  .wall {
+    min-height: 100vh;
+    /* top padding accounts for crown molding (48px) */
+    padding: 78px 76px 80px;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px
+      ),
+      #eceae4;
+    position: relative;
+  }
+
+  /* ── CROWN MOLDING — fixed at top ── */
+  .molding-top {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    z-index: 18;
+    background:
+      /* top-most dark cap */
+      linear-gradient(to bottom,
+        #a8a5a0 0px,  #a8a5a0 4px,
+        #bcb9b0 4px,  #bcb9b0 14px,
+        #c8c5bc 14px, #c8c5bc 18px,
+        #d4d1c8 18px, #d4d1c8 24px,
+        #eceae4 24px
+      );
+  }
+
+  /* ── BASEBOARD + FLOOR — fixed at bottom ── */
+  .molding-bottom {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 32px;
+    z-index: 18;
+    background:
+      linear-gradient(to bottom,
+        #c8c5bc 0px,  #c8c5bc 4px,
+        #bcb9b0 4px,  #bcb9b0 10px,
+        #b0ada4 10px, #b0ada4 14px,
+        #2c2a28 14px
+      );
+  }
+
+  /* ── SIDE WALL EDGES — darker strips like SVG corners ── */
+  .wall-edge {
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 36px;
+    z-index: 17;
+  }
+  .wall-edge--left  { left:  0; background: linear-gradient(to right,  #c8c4bc, #d4d0c8, transparent); }
+  .wall-edge--right { right: 0; background: linear-gradient(to left, #c8c4bc, #d4d0c8, transparent); }
+
+  /* ── CLOSE BUTTON ── */
+  .back-btn {
+    position: fixed;
+    top: 14px; left: 50px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    background: #3a3028;
+    color: #e4e0d4;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #141210;
+    z-index: 25;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .back-btn:hover  { transform: translate(1px,1px); box-shadow: 2px 2px 0 #141210; }
+  .back-btn:active { transform: translate(3px,3px); box-shadow: none; }
+
+  .wall-label {
+    position: fixed;
+    top: 16px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    color: rgba(0,0,0,0.25);
+    letter-spacing: 3px;
+    white-space: nowrap;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  /* blinking dot = live / auto-refresh indicator */
+  .live-dot {
+    position: fixed;
+    top: 20px; right: 50px;
+    width: 8px; height: 8px;
+    background: #2d8a2d;
+    box-shadow: 2px 2px 0 #1a5c1a;
+    z-index: 20;
+    animation: live-blink 3s steps(1) infinite;
+  }
+  @keyframes live-blink {
+    0%, 60%  { opacity: 1; }
+    61%, 100% { opacity: 0.2; }
+  }
+
+  /* ── NOTES GRID ── */
+  .notes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* ── POST-IT BASE ── */
+  .postit {
+    position: relative;
+    width: 200px; height: 200px;
+    cursor: pointer;
+    flex-shrink: 0;
+    animation: tack-in 0.35s steps(4) both;
+    transition: filter 0.05s steps(1);
+  }
+  /* fewer notes = larger cards */
+  .notes-container--few .postit {
+    width: 240px; height: 240px;
+  }
+  .postit:hover  { filter: brightness(1.06); z-index: 10; }
+  .postit:active { filter: brightness(0.93); }
+
+  @keyframes tack-in {
+    0%  { opacity: 0; transform: scale(0.25) rotate(0deg); }
+    55% { opacity: 1; transform: scale(1.06); }
+    100%{ opacity: 1; }
+  }
+
+  /* ── PIN ── */
+  .pin {
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    width: 12px; height: 12px;
+    background: #cc2200;
+    box-shadow:
+      4px 0 0 #cc2200, 0 4px 0 #cc2200, 4px 4px 0 #cc2200,
+      0 -4px 0 #ff4422, 4px -4px 0 #ff4422,
+      2px 8px 0 rgba(0,0,0,0.4), 2px 12px 0 rgba(0,0,0,0.2);
+    z-index: 2;
+  }
+
+  /* ── POST-IT BODY — color via CSS custom properties ── */
+  .postit-body {
+    --note-bg:     #f7d900;
+    --note-tape:   #c9a800;
+    --note-shadow: #8a7000;
+    width: 100%; height: 100%;
+    background: var(--note-bg);
+    box-shadow:
+      4px 0   0 var(--note-bg),
+      0   4px 0 var(--note-bg),
+      4px 4px 0 var(--note-bg),
+      8px 8px   0 var(--note-tape),
+      12px 12px 0 var(--note-shadow),
+      14px 14px 0 rgba(0,0,0,0.22);
+    padding: 22px 12px 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* corner fold */
+  .postit-body::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 24px; height: 24px;
+    background: linear-gradient(135deg, var(--note-bg) 50%, var(--note-tape) 50%);
+    box-shadow: -2px -2px 0 var(--note-shadow);
+  }
+
+  /* top tape strip */
+  .postit-tape {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 14px;
+    background: var(--note-tape);
+    box-shadow: 0 2px 0 var(--note-shadow);
+  }
+
+  /* color variants */
+  .postit-body--success { --note-bg: #c4f0b8; --note-tape: #7ec878; --note-shadow: #4a8048; }
+  .postit-body--danger  { --note-bg: #ffc8b0; --note-tape: #e09070; --note-shadow: #a05040; }
+  .postit-body--info    { --note-bg: #f7d900; --note-tape: #c9a800; --note-shadow: #8a7000; }
+  .postit-body--default { --note-bg: #bcd8f8; --note-tape: #80a8d8; --note-shadow: #507090; }
+  .postit-body--empty   { --note-bg: #dddbc8; --note-tape: #b8b6a0; --note-shadow: #888470; opacity: 0.65; }
+
+  .postit-title {
+    font-size: 6px;
+    color: #1a1a2e;
+    opacity: 0.65;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 7px;
+    line-height: 1.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .postit-text {
+    font-size: 5px;
+    color: #1a1a2e;
+    line-height: 2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+  }
+
+  .postit-badge {
+    position: absolute;
+    bottom: 8px; left: 10px;
+    font-size: 5px;
+    color: var(--note-shadow);
+    opacity: 0.95;
+  }
+
+  /* ── FULL-SCREEN OVERLAY ── */
+  .overlay {
+    position: fixed;
+    inset: 0; z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20,18,10,0);
+    pointer-events: none;
+    transition: background 0.18s steps(3);
+  }
+  .overlay.active {
+    pointer-events: all;
+    background: rgba(20,18,10,0.84);
+    animation: flicker-in 0.28s steps(4);
+  }
+  @keyframes flicker-in {
+    0%  { opacity: 0; }
+    25% { opacity: 1; }
+    50% { opacity: 0.55; }
+    75% { opacity: 1; }
+    100%{ opacity: 1; }
+  }
+
+  /* ── BIG NOTE ── */
+  .big-note {
+    position: relative;
+    width: min(560px, 92vw);
+    min-height: 360px;
+    --note-bg:     #f7d900;
+    --note-tape:   #c9a800;
+    --note-shadow: #8a7000;
+    background: var(--note-bg);
+    box-shadow:
+      8px 0   0 var(--note-bg),
+      0   8px 0 var(--note-bg),
+      8px 8px 0 var(--note-bg),
+      16px 16px 0 var(--note-tape),
+      24px 24px 0 var(--note-shadow),
+      28px 28px 0 rgba(0,0,0,0.42);
+    transform: scale(0) rotate(-6deg);
+    transition: transform 0.22s steps(5), opacity 0.18s;
+    opacity: 0;
+    cursor: default;
+  }
+  .overlay.active .big-note {
+    transform: scale(1) rotate(-1deg);
+    opacity: 1;
+  }
+
+  /* corner fold */
+  .big-note::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--note-bg) 50%, var(--note-tape) 50%);
+    box-shadow: -4px -4px 0 var(--note-shadow);
+  }
+
+  /* scanlines */
+  .big-note::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(0,0,0,0.022) 3px, rgba(0,0,0,0.022) 4px);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* big note color variants */
+  .big-note--success { --note-bg: #c4f0b8; --note-tape: #7ec878; --note-shadow: #4a8048; }
+  .big-note--danger  { --note-bg: #ffc8b0; --note-tape: #e09070; --note-shadow: #a05040; }
+  .big-note--info    { --note-bg: #f7d900; --note-tape: #c9a800; --note-shadow: #8a7000; }
+  .big-note--default { --note-bg: #bcd8f8; --note-tape: #80a8d8; --note-shadow: #507090; }
+
+  .big-pin {
+    position: absolute;
+    top: -16px; left: 50%;
+    transform: translateX(-50%);
+    width: 20px; height: 20px;
+    background: #cc2200;
+    box-shadow:
+      4px 0 0 #cc2200, 0 4px 0 #cc2200, 4px 4px 0 #cc2200,
+      8px 0 0 #cc2200, 0 8px 0 #cc2200, 8px 8px 0 #cc2200,
+      0 -4px 0 #ff4422, 4px -4px 0 #ff4422, 8px -4px 0 #ff4422,
+      4px 20px 0 rgba(0,0,0,0.4), 4px 28px 0 rgba(0,0,0,0.2);
+  }
+
+  .big-tape {
+    height: 36px;
+    background: var(--note-tape);
+    box-shadow: 0 4px 0 var(--note-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    position: relative;
+    z-index: 2;
+  }
+  .big-tape-title {
+    font-size: 8px;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+    opacity: 0.82;
+  }
+
+  .close-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    background: #cc2200;
+    color: #fff;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #660000;
+    image-rendering: pixelated;
+  }
+  .close-btn:hover  { transform: translate(1px,1px); box-shadow: 2px 2px 0 #660000; }
+  .close-btn:active { transform: translate(3px,3px); box-shadow: none; }
+
+  .big-content {
+    padding: 20px 28px 48px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* header row: icon + name/species + badge */
+  .big-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+
+  .big-pet-icon {
+    width: 52px; height: 52px;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+  }
+  .big-pet-icon--placeholder {
+    width: 52px; height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .big-pet-info { flex: 1; min-width: 0; }
+  .big-pet-name {
+    font-size: 10px;
+    color: #1a1a2e;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .big-pet-species {
+    font-size: 5px;
+    color: rgba(0,0,0,0.42);
+    letter-spacing: 1px;
+  }
+
+  .type-badge {
+    font-size: 5px;
+    padding: 3px 6px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .type-badge--success { background: #4a8048; }
+  .type-badge--danger  { background: #a05040; }
+  .type-badge--info    { background: #8a7000; }
+  .type-badge--default { background: #507090; }
+
+  .pixel-hr {
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--note-shadow) 0px, var(--note-shadow) 8px,
+      transparent 8px, transparent 12px
+    );
+    margin: 14px 0;
+  }
+
+  .big-entry-text {
+    font-size: 8px;
+    color: #1a1a2e;
+    line-height: 2.4;
+    word-break: break-word;
+  }
+  .big-flavor {
+    font-size: 5px;
+    color: rgba(0,0,0,0.4);
+    line-height: 2;
+  }
+
+  /* ── PET STAT SNAPSHOT ── */
+  .stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-bottom: 4px;
+  }
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-label {
+    font-size: 4px;
+    color: rgba(0,0,0,0.38);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .stat-bar-track {
+    width: 68px;
+    height: 6px;
+    background: rgba(0,0,0,0.12);
+    position: relative;
+  }
+  .stat-bar-fill {
+    height: 100%;
+  }
+  .stat-bar--good { background: #4a8048; }
+  .stat-bar--warn { background: #8a7000; }
+  .stat-bar--bad  { background: #a05040; }
+  .stat-val {
+    font-size: 4px;
+    color: rgba(0,0,0,0.48);
+  }
+  .stat-pips {
+    display: flex;
+    gap: 3px;
+    margin-top: 1px;
+  }
+  .stat-pip {
+    width: 8px; height: 8px;
+    background: rgba(0,0,0,0.12);
+  }
+  .stat-pip.filled { background: #1a1a2e; }
+  .stat-flaw-badge {
+    font-size: 4px;
+    padding: 2px 6px;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+  }
+  .stat-flaw--unknown { background: rgba(0,0,0,0.1); color: rgba(0,0,0,0.4); }
+  .stat-flaw--spotted { background: #a05040; color: #fff; }
+  .stat-flaw--named   { background: #4a8048; color: #fff; }
+  .stat-extra {
+    font-size: 4px;
+    color: rgba(0,0,0,0.34);
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+  }
+  .stat-interaction {
+    font-size: 4px;
+    color: rgba(0,0,0,0.38);
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+  }
+
+  /* ── PIXEL CURSOR ── */
+  body {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect x='0' y='0' width='4' height='4' fill='%231a1a2e'/%3E%3Crect x='0' y='4' width='4' height='4' fill='%231a1a2e'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%231a1a2e'/%3E%3Crect x='4' y='8' width='4' height='4' fill='%231a1a2e'/%3E%3Crect x='8' y='8' width='4' height='4' fill='%231a1a2e'/%3E%3C/svg%3E") 0 0, default;
+  }
+</style>
+</head>
+<body>
+
+<div class="molding-top"></div>
+<div class="molding-bottom"></div>
+<div class="wall-edge wall-edge--left"></div>
+<div class="wall-edge wall-edge--right"></div>
+
+<button class="back-btn" onclick="window.close()">&#8592; CLOSE</button>
+
+<div class="wall">
+  <div class="wall-label">// BEHAVIOR LOG //</div>
+  <div class="live-dot" title="auto-refreshes every 3s"></div>
+  <div id="notes-container" class="notes-container"></div>
+</div>
+
+<!-- EXPANDED OVERLAY -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="big-note" id="bigNote" onclick="event.stopPropagation()">
+    <div class="big-pin"></div>
+    <div class="big-tape">
+      <span class="big-tape-title" id="bigTitle">BEHAVIOR LOG</span>
+      <button class="close-btn" onclick="closeNote()">✕ CLOSE</button>
+    </div>
+    <div class="big-content" id="bigContent"></div>
+  </div>
+</div>
+
+<script>
+const TYPE = {
+  success: { cls: 'success', icon: '✓', label: 'STEADY',  flavor: 'Behavior within expected parameters.' },
+  danger:  { cls: 'danger',  icon: '⚠', label: 'FLAGGED', flavor: 'Anomalous behavior detected. Review recommended.' },
+  info:    { cls: 'info',    icon: '●', label: 'NOTE',     flavor: 'Observation recorded in log.' },
+  default: { cls: 'default', icon: '◆', label: 'LOG',      flavor: 'Entry logged.' }
+};
+
+// Deterministic jitter per index — gives a natural scattered look without overlap chaos
+const ROTS   = [-3, 2.2, -1.5, 3.8, -2.3, 1.5, -4.1, 2.8, -1.2, 3.1, -2.6, 1.2, -3.6, 2.5, -0.8, 4.2];
+const Y_OFFS = [0, 10, -5, 8, -8, 5, 12, -3, 6, -10, 4, -7, 9, -4, 2, -9];
+
+let currentSig = '';
+let currentEntries = [];
+
+// Filter to a specific pet if ?pet= param is present
+const urlPetId = new URLSearchParams(window.location.search).get('pet');
+
+function t(type) { return TYPE[type] || TYPE.default; }
+
+function formatTs(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const diffMin = Math.floor((Date.now() - ts) / 60000);
+  if (diffMin < 1)  return 'just now';
+  if (diffMin < 60) return diffMin + 'm ago';
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24)   return diffH + 'h ago';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function buildSnapHtml(snap) {
+  const hap = Math.round(snap.happiness || 0);
+  const beh = Math.round(snap.behavior  || 0);
+  const hapCls = hap >= 60 ? 'good' : hap >= 30 ? 'warn' : 'bad';
+  const behCls = beh >= 60 ? 'good' : beh >= 30 ? 'warn' : 'bad';
+  const flawKey   = snap.flawIdentified ? 'named'   : snap.flawDiscovered ? 'spotted' : 'unknown';
+  const flawLabel = snap.flawIdentified ? 'NAMED'   : snap.flawDiscovered ? 'SPOTTED' : 'UNKNOWN';
+  const lvl = snap.trainingLevel || 0;
+  const moodNote = (snap.moodShifts || 0) > 0
+    ? `<div class="stat-extra">↑ mood-triggered ${snap.moodShifts}× this session</div>` : '';
+  return `
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="stat-label">HAPPINESS</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill stat-bar--${hapCls}" style="width:${hap}%"></div></div>
+        <div class="stat-val">${hap}%</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">BEHAVIOR</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill stat-bar--${behCls}" style="width:${beh}%"></div></div>
+        <div class="stat-val">${beh}%</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">TRAINING</div>
+        <div class="stat-pips">
+          ${[0,1,2].map(i => `<span class="stat-pip${i < lvl ? ' filled' : ''}"></span>`).join('')}
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">FLAW</div>
+        <div class="stat-flaw-badge stat-flaw--${flawKey}">${flawLabel}</div>
+      </div>
+    </div>
+    ${moodNote}
+  `;
+}
+
+function strip(str) {
+  // Remove leading symbol chars for cleaner preview text
+  return str.replace(/^[✓⚠●◆▸\s]+/, '').trim();
+}
+function truncate(str, n) {
+  return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+function render(entries) {
+  const container = document.getElementById('notes-container');
+  container.innerHTML = '';
+
+  if (!entries.length) {
+    container.classList.add('notes-container--few');
+    const note = document.createElement('div');
+    note.className = 'postit';
+    note.style.transform = 'rotate(-2deg)';
+    note.innerHTML = `
+      <div class="pin" style="background:#999;box-shadow:4px 0 0 #999,0 4px 0 #999,4px 4px 0 #999,0 -4px 0 #bbb,4px -4px 0 #bbb"></div>
+      <div class="postit-body postit-body--empty">
+        <div class="postit-tape"></div>
+        <div class="postit-title">no log yet</div>
+        <div class="postit-text" style="margin-top:4px">chat with a<br>pet to start<br>filling this<br>board...</div>
+      </div>
+    `;
+    container.appendChild(note);
+    return;
+  }
+
+  container.classList.toggle('notes-container--few', entries.length <= 3);
+
+  entries.forEach((entry, idx) => {
+    const info = t(entry.type);
+    const rot  = ROTS[idx % ROTS.length];
+    const yOff = Y_OFFS[idx % Y_OFFS.length];
+    const note = document.createElement('div');
+    note.className = 'postit';
+    note.style.cssText = `transform: rotate(${rot}deg) translateY(${yOff}px); animation-delay: ${Math.min(idx * 0.07, 0.7)}s`;
+
+    note.innerHTML = `
+      <div class="pin"></div>
+      <div class="postit-body postit-body--${info.cls}">
+        <div class="postit-tape"></div>
+        <div class="postit-title">${entry.petName || '?'}</div>
+        <div class="postit-text">${truncate(strip(entry.text), 52)}</div>
+        <div class="postit-badge">${info.icon} ${info.label}</div>
+      </div>
+    `;
+    note.addEventListener('click', () => openNote(idx));
+    container.appendChild(note);
+  });
+}
+
+function openNote(idx) {
+  const entry = currentEntries[idx];
+  const info  = t(entry.type);
+
+  document.getElementById('bigTitle').textContent =
+    (entry.petName || '?').toUpperCase() + ' · LOG ENTRY';
+
+  const iconHtml = entry.petIcon
+    ? `<img src="icons/${entry.petIcon}.svg" alt="${entry.petName}" class="big-pet-icon">`
+    : `<span class="big-pet-icon big-pet-icon--placeholder">${info.icon}</span>`;
+
+  const snap     = entry.snap || null;
+  const snapHtml = snap ? buildSnapHtml(snap) : '';
+  const tsNote   = entry.ts ? `<br><br>↳ ${formatTs(entry.ts)}` : '';
+  const exChange = snap && snap.interactionCount > 0
+    ? `<div class="stat-interaction">EXCHANGE ${snap.interactionCount}</div>` : '';
+
+  document.getElementById('bigContent').innerHTML = `
+    <div class="big-header">
+      ${iconHtml}
+      <div class="big-pet-info">
+        <div class="big-pet-name">${(entry.petName || '?').toUpperCase()}</div>
+        ${entry.petSpecies ? `<div class="big-pet-species">${entry.petSpecies.toUpperCase()}</div>` : ''}
+        ${exChange}
+      </div>
+      <span class="type-badge type-badge--${info.cls}">${info.label}</span>
+    </div>
+    <div class="pixel-hr"></div>
+    ${snapHtml}
+    ${snapHtml ? '<div class="pixel-hr"></div>' : ''}
+    <div class="big-entry-text">${entry.text}</div>
+    <div class="pixel-hr"></div>
+    <div class="big-flavor">${info.flavor}${tsNote}</div>
+  `;
+
+  const bigNote = document.getElementById('bigNote');
+  bigNote.className = `big-note big-note--${info.cls}`;
+
+  document.getElementById('overlay').classList.add('active');
+}
+
+function closeNote() {
+  document.getElementById('overlay').classList.remove('active');
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('overlay')) closeNote();
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem('driftwood_log') || '[]';
+    if (raw === currentSig) return;   // nothing changed
+    currentSig = raw;
+    let all = JSON.parse(raw);
+    // Filter to the pet whose dossier was opened (if ?pet= is set)
+    if (urlPetId) {
+      all = all.filter(e => e.petId === urlPetId);
+      // Update page title to show pet context
+      const petName = all.length ? all[0].petName : urlPetId;
+      document.querySelector('.wall-label').textContent = '// ' + petName.toUpperCase() + ' LOG //';
+    }
+    currentEntries = all;
+    render(currentEntries);
+  } catch (_) {
+    currentSig = '';
+    currentEntries = [];
+    render([]);
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNote(); });
+
+loadFromStorage();
+setInterval(loadFromStorage, 3000);
+</script>
+</body>
+</html>
