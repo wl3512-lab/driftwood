@@ -34,7 +34,8 @@ jobs:
       - name: Prepare release artifact
         run: |
           mkdir -p _site/icons "_site/bg interface 1"
-          cp index.html sketch.js style.css README.md _site/
+          cp index.html sketch.js style.css chat-particles.js training-room.svg README.md _site/
+          cp .nojekyll _site/ 2>/dev/null || true
           cp icons/*.svg _site/icons/
           cp "bg interface 1"/*.svg "_site/bg interface 1"/
       - name: Setup Pages
