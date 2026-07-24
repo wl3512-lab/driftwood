@@ -200,7 +200,6 @@ let particles = [];
 
 // ─── WEBCAM / FACE-API ───
 let video;
-let detections = [];
 let webcamReady = false;
 let webcamStatusMessage = "";
 
@@ -605,6 +604,9 @@ function announceStatus(msg) {
 }
 
 function setup() {
+  // Pixel-art game (noSmooth + image-rendering:pixelated everywhere), so retina
+  // density buys nothing but quadruples every fullscreen fill on 2x displays.
+  pixelDensity(1);
   let cnv = createCanvas(windowWidth, windowHeight);
   cnv.style("display", "block");
   cnv.style("position", "fixed");
@@ -647,6 +649,17 @@ function buildSplashScreen() {
   catcher.attribute("aria-label", "Enter Driftwood");
   catcher.attribute("role", "button");
   catcher.parent(splash);
+
+  // Hover primes the TV — a chromatic flick and a quickened PRESS ANY KEY blink,
+  // so the set reacts to your presence before you commit
+  const signalCover = (type) => {
+    try {
+      const fw = frame.elt.contentWindow;
+      if (fw) fw.postMessage({ type }, "*");
+    } catch (_) {}
+  };
+  catcher.elt.addEventListener("pointerenter", () => signalCover("PRIME"));
+  catcher.elt.addEventListener("pointerleave", () => signalCover("UNPRIME"));
 
   let activated = false;
   function activate() {
@@ -700,12 +713,16 @@ function buildSplashScreen() {
     }, 545);
   }
 
-  catcher.mousePressed(activate);
-  document.addEventListener("keydown", function onKey(e) {
+  function onSplashKey(e) {
     if (["Escape","Tab","Shift","Control","Alt","Meta","CapsLock","F1","F2","F3","F4","F5","F11","F12"].includes(e.key)) return;
-    document.removeEventListener("keydown", onKey);
+    document.removeEventListener("keydown", onSplashKey);
+    activate();
+  }
+  catcher.mousePressed(() => {
+    document.removeEventListener("keydown", onSplashKey);
     activate();
   });
+  document.addEventListener("keydown", onSplashKey);
 }
 
 function initLoadingParticles() {
@@ -743,10 +760,13 @@ function startLoadingSequence() {
   initLoadingParticles();
   buildLoadingScreen();
 
-  setTimeout(() => setLoadingLine(0, "presence registered"), 850);
+  // Returning players get recognized by name — the system remembering you is the
+  // strongest hook this fiction has, so surface it at the earliest possible beat.
+  const returning = !!(playerName && playerName.trim());
+  setTimeout(() => setLoadingLine(0, returning ? "presence recognized" : "presence registered"), 850);
   setTimeout(() => finalizeLoadingImpression(), 2200);
-  setTimeout(() => setLoadingLine(2, "ready"), 3200);
-  setTimeout(() => lockIntoIntro(), 4050);
+  setTimeout(() => setLoadingLine(2, returning ? "it remembers you" : "ready"), 3200);
+  setTimeout(() => lockIntoIntro(), returning ? 4550 : 4050);
 }
 
 function buildLoadingScreen() {
@@ -970,6 +990,9 @@ function buildLoadingScreen() {
     { text: "GARDEN_MEMORY :: READY", delay: 1100, accent: false },
     { text: "VISITOR_DETECTED :: TRUE", delay: 1500, accent: true }
   ];
+  if (playerName && playerName.trim()) {
+    bootLines.push({ text: `RECORD_FOUND :: ${playerName.trim().toUpperCase()}`, delay: 1950, accent: true });
+  }
   const bootEls = [];
   bootLines.forEach(bl => {
     let bLine = createDiv(bl.text);
@@ -1001,7 +1024,11 @@ function buildLoadingScreen() {
   sigil.class("loading-sigil");
   sigil.parent(screen);
 
-  let status = createDiv("the field changes when you do");
+  let status = createDiv(
+    playerName && playerName.trim()
+      ? "it kept growing while you were gone"
+      : "the field changes when you do"
+  );
   status.class("loading-status");
   status.parent(screen);
 
@@ -1065,6 +1092,10 @@ function setLoadingLine(idx, text) {
 
 function finalizeLoadingImpression() {
   if (!loadingState || currentScreen !== -1) return;
+  if (playerName && playerName.trim()) {
+    setLoadingLine(1, `welcome back, ${playerName.trim().toLowerCase()}`);
+    return;
+  }
   const movement = loadingState.cursorTravel;
   const impression = movement > width * 0.7 ? "adjusting to your pace" : "settling to your pace";
   setLoadingLine(1, impression);
@@ -1479,6 +1510,44 @@ function playIntroTransitionPulse() {
   } catch (_) {}
 }
 
+// Rising pitch per encounter stage — the creature "waking up" should be audible.
+// Approach cues that rise in pitch read as something coming closer / coming alive.
+function playEncounterWakeTone(stage) {
+  if (audioMuted) return;
+  const ctx = getSfxAudioCtx();
+  if (!ctx) return;
+  try {
+    const now = ctx.currentTime;
+    const base = 300 + stage * 70; // 370 → 440 → 510 → 580
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(base, now);
+    osc.frequency.linearRampToValueAtTime(base * 1.12, now + 0.09);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.022, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+    // Final stage: soft harmonic fifth on top — it's awake now
+    if (stage >= 4) {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "triangle";
+      osc2.frequency.setValueAtTime(base * 1.5, now + 0.06);
+      gain2.gain.setValueAtTime(0.0001, now + 0.06);
+      gain2.gain.linearRampToValueAtTime(0.012, now + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.06);
+      osc2.stop(now + 0.32);
+    }
+  } catch (_) {}
+}
+
 function drawLoadingPhase() {
   background(3, 5, 4);
   if (!loadingState) return;
@@ -1496,8 +1565,8 @@ function drawLoadingPhase() {
 
   if (bgSunny) {
     push();
-    tint(255, 8 + loadingState.envReveal * 22);
     imageMode(CORNER);
+    drawingContext.globalAlpha = (8 + loadingState.envReveal * 22) / 255;
     image(bgSunny, 0, 0, width, height);
     pop();
   }
@@ -1526,11 +1595,9 @@ function drawLoadingPhase() {
     if (p.x > width + 12) p.x = -12;
     if (p.y < -12) p.y = height + 12;
     if (p.y > height + 12) p.y = -12;
-    push();
     noStroke();
     fill(110, 146, 129, 255 * p.alpha * loadingState.envReveal);
     rect(p.x, p.y, p.size, p.size);
-    pop();
   }
 
   push();
@@ -1541,17 +1608,17 @@ function drawLoadingPhase() {
   for (let y = 0; y < height; y += 48) line(0, y, width, y);
   pop();
 
-  if (loadingState.lines[0]) {
-    loadingState.typed[0] = min(loadingState.lines[0].length, loadingState.typed[0] + 0.45);
-    if (loadingEls.line1) loadingEls.line1.html(loadingState.lines[0].slice(0, floor(loadingState.typed[0])));
-  }
-  if (loadingState.lines[1]) {
-    loadingState.typed[1] = min(loadingState.lines[1].length, loadingState.typed[1] + 0.34);
-    if (loadingEls.line2) loadingEls.line2.html(loadingState.lines[1].slice(0, floor(loadingState.typed[1])));
-  }
-  if (loadingState.lines[2]) {
-    loadingState.typed[2] = min(loadingState.lines[2].length, loadingState.typed[2] + 0.24);
-    if (loadingEls.line3) loadingEls.line3.html(loadingState.lines[2].slice(0, floor(loadingState.typed[2])));
+  // Only rewrite a line's DOM when a new character actually appeared
+  const typeSpeeds = [0.45, 0.34, 0.4];
+  const lineEls = [loadingEls.line1, loadingEls.line2, loadingEls.line3];
+  for (let li = 0; li < 3; li++) {
+    if (!loadingState.lines[li]) continue;
+    const prevTyped = floor(loadingState.typed[li]);
+    loadingState.typed[li] = min(loadingState.lines[li].length, loadingState.typed[li] + typeSpeeds[li]);
+    const nowTyped = floor(loadingState.typed[li]);
+    if (lineEls[li] && nowTyped !== prevTyped) {
+      lineEls[li].html(loadingState.lines[li].slice(0, nowTyped));
+    }
   }
 
   for (let i = 0; i < loadingState.typed.length; i++) {
@@ -1624,8 +1691,10 @@ function initTitleParticles() {
       alpha: random(0.16, 0.42),
       color: random(INTRO_PIXEL_COLORS),
       speed: random(0.003, 0.01),
-      x: width * 0.5,
-      y: height * 0.5
+      // Home point scattered across the whole field — each particle drifts
+      // in a slow orbit around its home, so the screen feels alive before touch
+      x: random(width),
+      y: random(height)
     });
   }
   titleBuffer = createGraphics(floor(width / PIXEL_SCALE), floor(height / PIXEL_SCALE));
@@ -1649,6 +1718,18 @@ function drawTitleParticles() {
 
   titleBuffer.clear();
   titleBuffer.background(0, 0);
+
+  // Ambient drift field — dim green pixels breathing across the whole screen.
+  // Was initialized but never rendered; this is the "field is alive" base layer.
+  titleBuffer.noStroke();
+  for (let pt of titleParticles) {
+    pt.orbit += pt.speed;
+    const ax = pt.x + cos(pt.orbit + pt.jitter) * pt.radius;
+    const ay = pt.y + sin(pt.orbit * 0.8 + pt.jitter) * pt.radius * 0.6;
+    const twinkle = 0.5 + 0.5 * sin(frameCount * 0.03 + pt.jitter);
+    titleBuffer.fill(90, 130, 108, 255 * pt.alpha * twinkle * 0.55);
+    titleBuffer.rect(floor(ax / PIXEL_SCALE), floor(ay / PIXEL_SCALE), 1, 1);
+  }
 
   // Spawn glitchy pixel trail only while the cursor is moving
   let mouseDist = dist(mouseX, mouseY, lastMouseX, lastMouseY);
@@ -1698,7 +1779,8 @@ function drawTitleParticles() {
     let bx = floor(t.x / PIXEL_SCALE);
     let by = floor(t.y / PIXEL_SCALE);
     titleBuffer.noStroke();
-    titleBuffer.fill(titleBuffer.color(t.color + hex(floor(t.life * 230), 2)));
+    const [tr, tg, tb] = hexToRgb(t.color);
+    titleBuffer.fill(tr, tg, tb, floor(t.life * 230));
     titleBuffer.rect(bx, by, 1, 1);
   }
 
@@ -1755,7 +1837,7 @@ function drawTitlePlants() {
     push();
     translate(p.x, p.y);
     rotate(sway);
-    tint(255, alpha);
+    drawingContext.globalAlpha = alpha / 255;
     image(img, 0, 0, sz, sz);
     pop();
 
@@ -1770,15 +1852,18 @@ function drawTitlePlants() {
           decay: random(0.02, 0.04),
           size: random(3, 6),
           color: random(TRAIL_COLORS),
-          vy: random(-2, -0.5)
+          vx: random(-0.8, 0.8),
+          vy: random(-2, -0.5),
+          char: random(PIXEL_CHARS)
         });
       }
     }
   }
   pop();
 
-  // Hint text if no plants yet
-  if (titlePlants.length === 0 && millis() > 3000) {
+  // Hint text if no plants yet — hero section only, so it never collides
+  // with the continue buttons that occupy the same spot on later sections
+  if (titlePlants.length === 0 && millis() > 3000 && landingIdx === 0) {
     push();
     textAlign(CENTER);
     textFont("Fira Code");
@@ -1789,7 +1874,15 @@ function drawTitlePlants() {
   }
 }
 
+// Screen-entry tracking so DOM-only screens can idle the canvas (see draw()).
+let _lastDrawScreen = null;
+let _flatBgHoldFrames = 0;
+
 function draw() {
+  if (_lastDrawScreen !== currentScreen) {
+    _lastDrawScreen = currentScreen;
+    _flatBgHoldFrames = 30; // repaint briefly on entry to cover any transition
+  }
   if (currentScreen === -1) {
     drawLoadingPhase();
   } else if (currentScreen === 0) {
@@ -1797,35 +1890,63 @@ function draw() {
     background(6, 11, 8);
     if (bgSunny) {
       push();
-      tint(255, 18); // ~7% opacity — just a whisper
       imageMode(CORNER);
+      drawingContext.globalAlpha = 18 / 255; // ~7% opacity — just a whisper
       image(bgSunny, 0, 0, width, height);
       pop();
     }
     drawTitleParticles();
+    drawTitlePlants();
   } else if (currentScreen === 2) {
     drawGarden();
     if (sceneAudio && sceneAudio.mode === "interface" && sceneAudio.nodes && sceneAudio.nodes.update && frameCount % 45 === 0) {
       sceneAudio.nodes.update();
     }
   } else {
-    background(8, 13, 10);
+    // Screens 1 (shelter) & 3 (chat) are fully covered by opaque DOM overlays.
+    // The canvas shows nothing, so repaint the flat background only briefly on
+    // entry (covers fade transitions), then idle — this is the longest play
+    // phase, and a constant fullscreen fill here is pure wasted GPU/battery.
+    if (_flatBgHoldFrames > 0) {
+      background(8, 13, 10);
+      _flatBgHoldFrames--;
+    }
   }
   // Always update mood UI on every screen
   updateMoodUI();
 }
 
+// These run every frame at 30fps, so writes must be skipped when nothing changed —
+// unconditional innerHTML rewrites recreate the <img> nodes and thrash layout/GC.
+const _domWriteCache = {};
+function domSetHtml(id, html) {
+  const el = document.getElementById(id);
+  if (!el) {
+    delete _domWriteCache[id];
+    return null;
+  }
+  let entry = _domWriteCache[id];
+  if (!entry || entry.el !== el) {
+    entry = _domWriteCache[id] = { el, html: null };
+  }
+  if (entry.html !== html) {
+    entry.html = html;
+    el.innerHTML = html;
+  }
+  return el;
+}
+
 // Updates mood displays on ANY screen (garden webcam bar, chat mood indicators)
 function updateMoodUI() {
   // Garden webcam mood bar
-  let wcBar = select("#webcam-mood-bar");
-  if (wcBar) {
+  if (document.getElementById("webcam-mood-bar")) {
+    let wcHtml;
     if (webcamStatusMessage) {
-      wcBar.html(`<img src="icons/ui-camera.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="camera"> ${webcamStatusMessage}`);
+      wcHtml = `<img src="icons/ui-camera.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="camera"> ${webcamStatusMessage}`;
     } else if (!webcamReady) {
-      wcBar.html(`<img src="icons/ui-refresh.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="loading"> Loading reading model...`);
+      wcHtml = `<img src="icons/ui-refresh.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="loading"> Loading reading model...`;
     } else if (!faceDetected || (millis() - lastDetectionTime > 3000)) {
-      wcBar.html(`<img src="icons/ui-camera.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="camera"> No face in frame`);
+      wcHtml = `<img src="icons/ui-camera.svg" style="width:12px;height:12px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="camera"> No face in frame`;
     } else {
       let detailStr = "";
       if (BUILD_CONFIG.debug && Object.keys(rawExpressions).length > 0) {
@@ -1835,26 +1956,24 @@ function updateMoodUI() {
         let su = Math.round((rawExpressions.surprised || 0) * 100);
         detailStr = ` · H${h} S${s} St${a} Su${su}`;
       }
-      wcBar.html(getMoodIcon(currentMood, 12) + " " + capitalize(currentMood) + " " + moodConfidence + "%" + detailStr);
+      wcHtml = getMoodIcon(currentMood, 12) + " " + capitalize(currentMood) + " " + moodConfidence + "%" + detailStr;
     }
+    domSetHtml("webcam-mood-bar", wcHtml);
   }
 
   // Chat screen mood indicator
-  let chatMood = select("#chat-mood-indicator");
-  if (chatMood) {
-    chatMood.html("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
-  }
+  domSetHtml("chat-mood-indicator", "YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
 
   // Chat listen-bar: signal only — actual value lives in the header chip
-  let chatSense = select("#chat-mood-sense");
-  if (chatSense && activePetId) {
+  if (activePetId && document.getElementById("chat-mood-sense")) {
     const moodAccess = pets[activePetId]?.moodAccess;
-    chatSense.html(moodAccess === "none" ? "" : " · sees your mood");
+    domSetHtml("chat-mood-sense", moodAccess === "none" ? "" : " · sees your mood");
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  _flatBgHoldFrames = 30; // resize clears the canvas; repaint flat bg on idle screens
 }
 
 // ─── TOAST ───
@@ -1943,10 +2062,61 @@ function buildScreen0() {
   });
 
   // ─── SECTION COUNTER ───
-  let counter = createDiv("01 / 03");
+  let counter = createDiv("01 / 02");
   counter.class("section-counter");
   counter.id("section-counter");
   counter.parent(page);
+
+  // ─── OBSERVATION RAIL ───
+  // The intro measures you while you read it. Every value is real, measured
+  // this session — the interface demonstrating the surveillance it critiques
+  // instead of describing it.
+  let rail = document.createElement("div");
+  rail.className = "obs-rail";
+  rail.id = "obs-rail";
+  rail.setAttribute("aria-hidden", "true");
+  rail.innerHTML =
+    '<div class="obs-rail-head">OBSERVING</div>' +
+    '<div class="obs-row"><span class="obs-k">T+</span><span class="obs-v" id="obs-v-time">00:00</span></div>' +
+    '<div class="obs-row"><span class="obs-k">CURSOR</span><span class="obs-v" id="obs-v-cursor">0px</span></div>' +
+    '<div class="obs-row"><span class="obs-k">INPUT</span><span class="obs-v" id="obs-v-input">0</span></div>' +
+    '<div class="obs-row"><span class="obs-k">GROWTH</span><span class="obs-v" id="obs-v-growth">0</span></div>' +
+    '<div class="obs-row" id="obs-row-name" style="display:none"><span class="obs-k">NAME</span><span class="obs-v" id="obs-v-name"></span></div>';
+  page.elt.appendChild(rail);
+
+  const railStartMs = millis();
+  let railTravel = 0, railLastX = null, railLastY = null, railClicks = 0;
+  const railMove = (e) => {
+    if (railLastX !== null) railTravel += Math.hypot(e.clientX - railLastX, e.clientY - railLastY);
+    railLastX = e.clientX; railLastY = e.clientY;
+  };
+  const railDown = () => { railClicks++; };
+  document.addEventListener("mousemove", railMove, { passive: true });
+  document.addEventListener("mousedown", railDown, { passive: true });
+
+  const railTimer = setInterval(() => {
+    const railEl = document.getElementById("obs-rail");
+    if (!railEl || currentScreen !== 0) {
+      clearInterval(railTimer);
+      document.removeEventListener("mousemove", railMove);
+      document.removeEventListener("mousedown", railDown);
+      return;
+    }
+    const secs = Math.floor((millis() - railStartMs) / 1000);
+    const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+    const ss = String(secs % 60).padStart(2, "0");
+    document.getElementById("obs-v-time").textContent = mm + ":" + ss;
+    document.getElementById("obs-v-cursor").textContent = Math.round(railTravel).toLocaleString() + "px";
+    document.getElementById("obs-v-input").textContent = String(railClicks);
+    document.getElementById("obs-v-growth").textContent = String(titlePlants.length);
+    const nameLen = document.getElementById("name-input")?.value.trim().length || 0;
+    const nameRow = document.getElementById("obs-row-name");
+    if (nameRow) {
+      nameRow.style.display = nameLen > 0 ? "" : "none";
+      nameRow.classList.toggle("obs-row--live", nameLen > 0);
+      if (nameLen > 0) document.getElementById("obs-v-name").textContent = nameLen + " chars";
+    }
+  }, 500);
 
 
   // ═══ NAV DOTS (5 sections) ═══
@@ -1954,8 +2124,8 @@ function buildScreen0() {
   dots.class("scroll-dots");
   dots.id("scroll-dots");
   dots.parent(page);
-  const sectionIds = ["boot", "encounter", "enter"];
-  const sectionLabels = ["Section 1: enter the system", "Section 2: meet the creatures", "Section 3: begin"];
+  const sectionIds = ["boot", "enter"];
+  const sectionLabels = ["Section 1: enter the system", "Section 2: begin"];
   sectionIds.forEach((id, i) => {
     let dot = createDiv("");
     dot.class("scroll-dot" + (i === 0 ? " active" : ""));
@@ -2006,7 +2176,7 @@ function buildScreen0() {
   wood.class("title-wood");
   wood.parent(title);
 
-  const subText = "Adopt a few charming little AI creatures and talk to them for a while. The garden is watching how that goes.";
+  const subText = "Something in the garden has been waiting to be raised. It will be warm to you, and it is learning what you'll allow. Watch it closely.";
   let sub = createDiv("");
   sub.class("hero-subtitle scroll-reveal delay-2");
   sub.parent(hero);
@@ -2059,37 +2229,7 @@ function buildScreen0() {
   heroContinue.parent(hero);
   heroContinue.mousePressed(() => advanceLanding());
 
-  // ═══ SECTION 1: ENCOUNTER (single-character deep dive) ═══
-  let encSec = createDiv(""); encSec.class("landing-section s-encounter"); encSec.id("section-encounter"); encSec.parent(page);
-  const ePet = PET_DEFS[floor(random(PET_DEFS.length))];
-  let eSysLabel = createDiv("a voice already waiting");
-  eSysLabel.class("encounter-system-label scroll-reveal"); eSysLabel.parent(encSec);
-  let eWrapper = createDiv(""); eWrapper.class("encounter-wrapper"); eWrapper.id("encounter-wrapper");
-  eWrapper.elt.setAttribute('data-stage', '0');
-  eWrapper.elt.style.setProperty('--ec', ePet.color);
-  eWrapper.parent(encSec);
-  let eIcon = createImg("icons/" + ePet.id + ".svg", ePet.name); eIcon.class("encounter-icon"); eIcon.parent(eWrapper);
-  let eName = createDiv(ePet.name); eName.class("encounter-name"); eName.parent(eWrapper);
-  let eSpecies = createDiv(ePet.species.toUpperCase()); eSpecies.class("encounter-species"); eSpecies.parent(eWrapper);
-  let eDesc = createDiv(ePet.desc); eDesc.class("encounter-desc"); eDesc.parent(eWrapper);
-  let ePresence = createDiv("It already knows you're here.");
-  ePresence.class("encounter-presence"); ePresence.parent(eWrapper);
-  let eSpeech = createDiv(ePet.greeting ? ePet.greeting("you") : "...");
-  eSpeech.class("encounter-speech"); eSpeech.parent(eWrapper);
-  let eHint = createDiv("tap to keep going"); eHint.class("encounter-hint"); eHint.id("encounter-hint"); eHint.parent(eWrapper);
-  let eBtn = createButton("→ continue"); eBtn.class("section-continue-btn"); eBtn.parent(encSec); eBtn.mousePressed(() => advanceLanding());
-  const eStageHints = ["tap anywhere to continue", "tap anywhere to continue", "tap anywhere to continue", "tap anywhere to continue", ""];
-  eWrapper.mousePressed(() => {
-    let stage = parseInt(eWrapper.elt.getAttribute('data-stage')) || 0;
-    if (stage >= 4) return;
-    stage++;
-    eWrapper.elt.setAttribute('data-stage', String(stage));
-    let hintEl = document.getElementById('encounter-hint');
-    if (hintEl) hintEl.textContent = eStageHints[stage] || "";
-    if (stage >= 4) setTimeout(() => eBtn.elt.classList.add('ready'), 700);
-  });
-
-  // ═══ SECTION 2: ENTER ═══
+  // ═══ SECTION 1: ENTER ═══
   let cta = createDiv(""); cta.class("landing-section cta-section s-enter"); cta.id("section-enter"); cta.parent(page);
   let divider = createDiv(""); divider.class("glow-divider scroll-reveal"); divider.parent(cta);
   let quote = createDiv('"Some places bloom because you visit them. Some places bloom because they are learning you."');
@@ -2141,6 +2281,7 @@ function buildScreen0() {
     { min: 6,  text: "we'll keep that." },
     { min: 10, text: "good. now you belong here." }
   ];
+  let lastNameLen = 0;
   const syncStartReadyState = () => {
     const val = inp.elt.value;
     inp.elt.classList.toggle('has-value', val.length > 0);
@@ -2152,10 +2293,19 @@ function buildScreen0() {
     // reveal meta strip ("file opens on you") once name starts
     const metaStrip = document.getElementById('sig-meta-strip');
     if (metaStrip) metaStrip.classList.toggle('sig-meta-hidden', val.length === 0);
-    if (val.length > 0 && typeof spawnTitlePlant === 'function') {
-      const rect = inp.elt.getBoundingClientRect();
-      spawnTitlePlant(rect.left + rect.width / 2 + (Math.random() - 0.5) * 130, rect.top + (Math.random() - 0.5) * 55);
+    // Each new letter grows a flower flanking the entry card — the garden
+    // responds to you naming yourself. Spawned outside the card's footprint so
+    // they're actually visible (the card is opaque); growth only, capped.
+    if (val.length > lastNameLen && titlePlants.length < 14) {
+      const card = inp.elt.closest('.sig-doc') || inp.elt;
+      const rect = card.getBoundingClientRect();
+      const side = Math.random() < 0.5 ? -1 : 1;
+      spawnTitlePlant(
+        rect.left + rect.width / 2 + side * (rect.width / 2 + 45 + Math.random() * 110),
+        rect.top + rect.height * (0.15 + Math.random() * 0.9)
+      );
     }
+    lastNameLen = val.length;
   };
 
   inp.elt.addEventListener('input', () => {
@@ -2167,63 +2317,6 @@ function buildScreen0() {
 
   // ─── ACTIVATE FIRST SECTION ───
   activateLandingSection(0);
-}
-
-// ─── INTERSECTION OBSERVER FOR SCROLL REVEALS ───
-function setupScrollAnimations(scrollContainer) {
-  let observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-      }
-    });
-  }, {
-    root: scrollContainer,
-    threshold: 0.15,
-    rootMargin: "0px 0px -40px 0px"
-  });
-
-  // Observe all scroll-reveal elements
-  scrollContainer.querySelectorAll(".scroll-reveal").forEach(el => {
-    observer.observe(el);
-  });
-
-  // Immediately reveal hero elements (first section)
-  setTimeout(() => {
-    scrollContainer.querySelectorAll(".hero-section .scroll-reveal").forEach(el => {
-      el.classList.add("visible");
-    });
-  }, 200);
-
-  // Update scroll dots on scroll
-  let sections = scrollContainer.querySelectorAll(".landing-section");
-  let dots = scrollContainer.querySelectorAll(".scroll-dot");
-
-  scrollContainer.addEventListener("scroll", () => {
-    let scrollTop = scrollContainer.scrollTop;
-    let viewH = scrollContainer.clientHeight;
-    let activeIndex = 0;
-
-    sections.forEach((sec, i) => {
-      if (sec.offsetTop - viewH * 0.5 <= scrollTop) {
-        activeIndex = i;
-      }
-    });
-
-    dots.forEach((dot, i) => {
-      if (i === activeIndex) {
-        dot.classList.add("active");
-      } else {
-        dot.classList.remove("active");
-      }
-    });
-
-    // Fade scroll indicator after scrolling
-    let indicator = scrollContainer.querySelector(".scroll-indicator");
-    if (indicator) {
-      indicator.style.opacity = scrollTop > 80 ? "0" : "1";
-    }
-  });
 }
 
 // ─── INTERACTION-DRIVEN LANDING SYSTEM ───
@@ -2251,7 +2344,7 @@ function activateLandingSection(idx) {
 
   // Update section counter
   const ctr = document.getElementById('section-counter');
-  if (ctr) ctr.textContent = String(idx + 1).padStart(2, '0') + ' / 03';
+  if (ctr) ctr.textContent = String(idx + 1).padStart(2, '0') + ' / 02';
 
   landingIdx = idx;
   landingTransitioning = false;
@@ -2292,69 +2385,16 @@ function _doAdvanceLanding() {
   }, 380);
 }
 
+// Landing has exactly 2 sections: 0 = boot/hero, 1 = enter.
 function setupSectionUnlock(idx, sec) {
   const btn = sec.querySelector('.section-continue-btn');
 
   switch (idx) {
-    case 0: { // Boot: fire boot lines in sequence, unlock after last one
-      const lines = sec.querySelectorAll('.boot-line');
-      if (lines.length) {
-        lines.forEach(line => {
-          const delay = parseInt(line.getAttribute('data-boot-delay') || '0');
-          setTimeout(() => line.classList.add('visible'), delay);
-        });
-        const lastDelay = Math.max(...Array.from(lines).map(l => parseInt(l.getAttribute('data-boot-delay') || '0')));
-        setTimeout(() => { if (btn) btn.classList.add('ready'); }, lastDelay + 500);
-      } else {
-        setTimeout(() => { if (btn) btn.classList.add('ready'); }, 850);
-      }
-      break;
-    }
-
-    case 1: { // Garden: reveal steps one at a time on click, unlock after all 3 revealed
-      const steps = sec.querySelectorAll('.garden-step');
-      let revealed = 0;
-      const revealNext = () => {
-        if (revealed < steps.length) {
-          steps[revealed].classList.add('revealed');
-          if (revealed > 0) steps[revealed - 1].classList.remove('active');
-          steps[revealed].classList.add('active');
-          revealed++;
-          if (revealed >= steps.length) {
-            steps[steps.length - 1].classList.remove('active');
-            const pills = document.getElementById('garden-pills');
-            const priv = document.getElementById('garden-privacy');
-            const hint = document.getElementById('garden-step-click-hint');
-            if (hint) hint.classList.add('done');
-            setTimeout(() => { if (pills) pills.classList.add('visible'); }, 200);
-            setTimeout(() => { if (priv) priv.classList.add('visible'); if (btn) btn.classList.add('ready'); }, 500);
-          }
-        }
-      };
-      setTimeout(revealNext, 300);
-      sec.addEventListener('click', revealNext);
-      break;
-    }
-
-    case 2: // Encounter: unlock handled by eWrapper click handler in buildScreen0
+    case 0: // Boot/hero: let the title land, then breathe the Begin button in
+      setTimeout(() => { if (btn) btn.classList.add('ready'); }, 850);
       break;
 
-    case 3: { // Warning: hover callout to acknowledge, then unlock
-      const callout = sec.querySelector('.callout-box');
-      if (callout) {
-        const acknowledge = () => {
-          callout.classList.add('callout-acknowledged');
-          setTimeout(() => { if (btn) btn.classList.add('ready'); }, 400);
-        };
-        callout.addEventListener('pointerenter', acknowledge, { once: true });
-        callout.addEventListener('click', acknowledge, { once: true });
-      } else {
-        setTimeout(() => { if (btn) btn.classList.add('ready'); }, 2200);
-      }
-      break;
-    }
-
-    case 4: // Enter: no continue button — name input + btn-gold handle progression
+    case 1: // Enter: no continue button — name input + btn-gold handle progression
       break;
   }
 }
@@ -2364,6 +2404,24 @@ const FACE_API_MODEL_URLS = [
   "https://justadudewhohacks.github.io/face-api.js/models/",
   "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/"
 ];
+
+// face-api.js (~640KB) is loaded lazily, not at boot, so it stays off the splash
+// critical path. It's only needed when the player opts into camera mood detection.
+const FACE_API_LIB_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
+let _faceApiLoadPromise = null;
+function ensureFaceApiLoaded() {
+  if (typeof faceapi !== "undefined") return Promise.resolve();
+  if (_faceApiLoadPromise) return _faceApiLoadPromise;
+  _faceApiLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = FACE_API_LIB_URL;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => { _faceApiLoadPromise = null; reject(new Error("face-api.js failed to load")); };
+    document.head.appendChild(s);
+  });
+  return _faceApiLoadPromise;
+}
 
 let rawExpressions = {};
 let lastDetectionTime = 0;
@@ -2430,14 +2488,25 @@ async function startWebcam() {
   });
   debugLog("Webcam video element ready (readyState=" + el.readyState + ")");
 
-  // Load face-api.js expression models
+  // Lazily fetch the face-api.js library now (kept off the boot critical path).
+  try {
+    await ensureFaceApiLoaded();
+  } catch (err) {
+    _webcamFail("Camera live, but mood model failed to load", true);
+    return;
+  }
+
+  // Load face-api.js expression models — three nets in parallel per source
+  // (they're independent downloads; serial awaits just added latency).
   debugLog("Loading face-api.js models...");
   let modelsLoaded = false;
   for (const modelUrl of FACE_API_MODEL_URLS) {
     try {
-      await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
-      await faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelUrl);
-      await faceapi.nets.faceExpressionNet.loadFromUri(modelUrl);
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
+        faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelUrl),
+        faceapi.nets.faceExpressionNet.loadFromUri(modelUrl)
+      ]);
       webcamReady = true;
       webcamStatusMessage = "";
       modelsLoaded = true;
@@ -2483,10 +2552,16 @@ function _webcamErrMsg(err) {
 async function detectFace() {
   if (!videoElement || !webcamReady) return;
 
+  // The 68-point landmark net is only consumed by the garden face-overlay mesh.
+  // Off the garden screen (its canvas doesn't exist) we skip landmarks entirely —
+  // that's the biggest per-cycle inference cost and the main rhythmic-jank source.
+  const overlayActive = !!document.getElementById("face-overlay-canvas");
   try {
     // Use tinyFaceDetector (fast) + expressions
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
-    const result = await faceapi.detectSingleFace(videoElement, options).withFaceLandmarks(true).withFaceExpressions();
+    let query = faceapi.detectSingleFace(videoElement, options);
+    if (overlayActive) query = query.withFaceLandmarks(true);
+    const result = await query.withFaceExpressions();
 
     if (result && result.expressions) {
       faceDetected = true;
@@ -2515,8 +2590,10 @@ async function detectFace() {
     if (frameCount % 300 === 0) debugWarn("Detection frame error:", err.message);
   }
 
-  // Continue loop — ~10fps detection
-  requestAnimationFrame(() => setTimeout(detectFace, 80));
+  // Continue loop — ~7fps on the garden (where the overlay mesh needs it),
+  // ~3fps elsewhere. Mood is smoothed over samples so slower off-garden
+  // sampling is imperceptible; the rAF gate pauses detection when the tab is hidden.
+  requestAnimationFrame(() => setTimeout(detectFace, overlayActive ? 140 : 350));
 }
 
 // Cached Delaunay triangulation — recomputed every ~25 frames to stay tight
@@ -2736,11 +2813,6 @@ function processExpressions(expr) {
   }
 }
 
-function getMoodEmoji(m) {
-  // Keep for any legacy callers — returns pixel icon HTML
-  return getMoodIcon(m);
-}
-
 function getMoodIcon(m, size = 16) {
   const map = {
     happy: "sunflower-happy",
@@ -2832,16 +2904,23 @@ function buildScreen1() {
     if (!alreadyAdopted) btn.mousePressed(() => adoptPet(def.id));
   });
 
+  // Fixed bottom dock — the CTA was below the card grid, off-screen until the
+  // player scrolled. It slides in the moment the first companion is adopted.
+  let footer = createDiv("");
+  footer.class("shelter-footer" + (adoptedPets.length === 0 ? " is-empty" : ""));
+  footer.id("shelter-footer");
+  footer.parent(container);
+
   let countEl = createDiv("");
   countEl.class("companion-count" + (adoptedPets.length === 0 ? " hidden" : ""));
   countEl.id("companion-count");
   if (adoptedPets.length > 0) countEl.html(_companionCountMsg(adoptedPets.length));
-  countEl.parent(container);
+  countEl.parent(footer);
 
   let gardenBtn = createButton("Enter the garden →");
   gardenBtn.class("btn-green go-garden-btn" + (adoptedPets.length === 0 ? " hidden" : ""));
   gardenBtn.id("go-garden-btn");
-  gardenBtn.parent(container);
+  gardenBtn.parent(footer);
   gardenBtn.mousePressed(() => buildScreen2());
 }
 
@@ -2913,6 +2992,8 @@ function adoptPet(petId) {
 
   let gardenBtn = select("#go-garden-btn");
   if (gardenBtn) gardenBtn.class("btn-green go-garden-btn");
+  let footer = select("#shelter-footer");
+  if (footer) footer.removeClass("is-empty");
 
   _updateCompanionCount();
 
@@ -4044,16 +4125,20 @@ function drawGarden() {
     bgTarget = 0;
   }
   bgAlpha = lerp(bgAlpha, bgTarget, 0.005); // Slow crossfade
+  // Snap once close — the lerp never reaches the target on its own, which kept
+  // the expensive partial-alpha path alive on every frame forever
+  if (abs(bgAlpha - bgTarget) < 0.004) bgAlpha = bgTarget;
 
-  // Draw sunny bg
-  tint(255, 255 * (1 - bgAlpha));
-  image(bgSunny, 0, 0, width, height);
-  // Draw rainy bg on top
-  if (bgAlpha > 0.01) {
-    tint(255, 255 * bgAlpha);
-    image(bgRainy, 0, 0, width, height);
+  // Crossfade via canvas globalAlpha — p5's tint() re-blits the full image into an
+  // offscreen canvas on every image() call, which is a fullscreen round-trip per frame
+  if (bgAlpha < 1) {
+    image(bgSunny, 0, 0, width, height);
   }
-  noTint();
+  if (bgAlpha > 0.01) {
+    drawingContext.globalAlpha = bgAlpha;
+    image(bgRainy, 0, 0, width, height);
+    drawingContext.globalAlpha = 1;
+  }
 
   // Draw logo on garden sign (small world-building detail)
   if (icons.favicon) {
@@ -4243,7 +4328,21 @@ function drawGardenPets() {
   drawHeartParticles();
 }
 
+// Particle colors are a tiny fixed palette, but color()/red()/green()/blue()
+// parse the hex string and allocate a p5.Color on every particle every frame.
+// Cache the parsed [r,g,b] per unique hex so the draw loop only does integer fills.
+const _rgbCache = {};
+function hexToRgb(hex) {
+  let c = _rgbCache[hex];
+  if (!c) {
+    const p = color(hex);
+    c = _rgbCache[hex] = [red(p), green(p), blue(p)];
+  }
+  return c;
+}
+
 function drawHeartParticles() {
+  noStroke();
   for (let i = heartParticles.length - 1; i >= 0; i--) {
     let h = heartParticles[i];
     h.y -= h.speed;
@@ -4255,14 +4354,30 @@ function drawHeartParticles() {
       continue;
     }
 
-    push();
-    let c = color(h.color);
-    noStroke();
+    const [hr, hg, hb] = hexToRgb(h.color);
     // 2×2 pixel dot — matches pixel discipline, drops the cute register
-    fill(red(c), green(c), blue(c), h.alpha);
+    fill(hr, hg, hb, h.alpha);
     const ps = max(2, floor(h.size * 0.22));
     rect(floor(h.x), floor(h.y), ps, ps);
-    pop();
+  }
+}
+
+// One shared context for all short SFX — browsers cap live AudioContexts per page,
+// and a context created per sound is never GC'd, so audio dies after a few plays.
+let sfxAudioCtx = null;
+function getSfxAudioCtx() {
+  try {
+    const AudioCtxClass = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+    if (!AudioCtxClass) return null;
+    if (!sfxAudioCtx || sfxAudioCtx.state === "closed") {
+      sfxAudioCtx = new AudioCtxClass();
+    }
+    if (sfxAudioCtx.state === "suspended") {
+      sfxAudioCtx.resume().catch(() => {});
+    }
+    return sfxAudioCtx;
+  } catch (e) {
+    return null;
   }
 }
 
@@ -4273,8 +4388,8 @@ function playHappySound(petId) {
 
   // Generate a short chirpy sound using Web Audio API
   try {
-    let AudioCtxClass = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
-    let audioCtx = new AudioCtxClass();
+    let audioCtx = getSfxAudioCtx();
+    if (!audioCtx) return;
     let osc = audioCtx.createOscillator();
     let gain = audioCtx.createGain();
 
@@ -4310,9 +4425,8 @@ function playHappySound(petId) {
 function playShovelSound(durationSeconds = 5) {
   if (audioMuted) return;
   try {
-    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtxClass) return;
-    const audioCtx = new AudioCtxClass();
+    const audioCtx = getSfxAudioCtx();
+    if (!audioCtx) return;
     const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * durationSeconds, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
 
@@ -4351,10 +4465,6 @@ function playShovelSound(durationSeconds = 5) {
     noise.stop(audioCtx.currentTime + durationSeconds);
     lfo.start(audioCtx.currentTime);
     lfo.stop(audioCtx.currentTime + durationSeconds);
-
-    setTimeout(() => {
-      try { audioCtx.close(); } catch (_) {}
-    }, (durationSeconds + 0.2) * 1000);
   } catch (e) {
     // Audio unavailable or blocked.
   }
@@ -4363,9 +4473,8 @@ function playShovelSound(durationSeconds = 5) {
 function playTipsHealingTone() {
   if (audioMuted) return;
   try {
-    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtxClass) return;
-    const audioCtx = new AudioCtxClass();
+    const audioCtx = getSfxAudioCtx();
+    if (!audioCtx) return;
     const now = audioCtx.currentTime;
 
     const masterGain = audioCtx.createGain();
@@ -4400,10 +4509,6 @@ function playTipsHealingTone() {
     toneA.stop(now + 1.4);
     toneB.stop(now + 1.4);
     lfo.stop(now + 1.4);
-
-    setTimeout(() => {
-      try { audioCtx.close(); } catch (_) {}
-    }, 1500);
   } catch (e) {
     // Audio unavailable, no problem.
   }
@@ -4435,8 +4540,8 @@ function updateParticles() {
     }
 
     noStroke();
-    let c = color(p.color);
-    fill(red(c), green(c), blue(c), p.alpha);
+    const [pr, pg, pb] = hexToRgb(p.color);
+    fill(pr, pg, pb, p.alpha);
     ellipse(p.x, p.y, p.size);
   }
 }
@@ -4562,23 +4667,18 @@ function recalcGardenHealth() {
 }
 
 function updateGardenUI() {
-  let healthDisp = select("#garden-health-display");
-  if (healthDisp) healthDisp.html(`<img src="icons/calmfern-neutral.svg" style="width:15px;height:15px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="garden"> Garden: ${gardenHealth}%`);
+  domSetHtml("garden-health-display", `<img src="icons/calmfern-neutral.svg" style="width:15px;height:15px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="garden"> Garden: ${gardenHealth}%`);
 
-  let moodInd = select("#mood-indicator");
-  if (moodInd) moodInd.html("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
+  domSetHtml("mood-indicator", "YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
 
   // Update paw badge
   let totalUnread = 0;
   adoptedPets.forEach(id => { totalUnread += pets[id].unreadMessages; });
-  let badge = select("#paw-badge");
+  let badge = document.getElementById("paw-badge");
   if (badge) {
-    if (totalUnread > 0) {
-      badge.html(String(totalUnread));
-      badge.class("badge");
-    } else {
-      badge.class("badge hidden");
-    }
+    const cls = totalUnread > 0 ? "badge" : "badge hidden";
+    if (totalUnread > 0) domSetHtml("paw-badge", String(totalUnread));
+    if (badge.className !== cls) badge.className = cls;
   }
 }
 
@@ -4781,8 +4881,9 @@ function buildScreen3(petId) {
   headerLeft.class("chat-header-left");
   headerLeft.parent(header);
 
-  let backBtn = createButton("← Back to Garden");
+  let backBtn = createButton("← Garden");
   backBtn.class("chat-back-btn");
+  backBtn.attribute("aria-label", "Back to garden");
   backBtn.parent(headerLeft);
   backBtn.mousePressed(() => buildScreen2());
 
@@ -4799,7 +4900,7 @@ function buildScreen3(petId) {
   h2.class("chat-header-pet-name");
   h2.parent(titleArea);
 
-  let headerSub = createDiv(def.species.toUpperCase() + " · DRIFTWOOD");
+  let headerSub = createDiv(def.species.toUpperCase());
   headerSub.class("header-subtitle");
   headerSub.parent(titleArea);
 
@@ -4993,6 +5094,11 @@ function buildScreen3(petId) {
     if (e.key === "Enter") sendChatMessage();
   });
 
+  // Desktop: ready to type immediately (skipped on touch so the keyboard doesn't pop)
+  if (navigator.maxTouchPoints === 0) {
+    setTimeout(() => chatInput.elt.focus(), 80);
+  }
+
   let sendBtn = createButton("Send");
   sendBtn.class("chat-send-btn");
   sendBtn.parent(inputRow);
@@ -5129,6 +5235,46 @@ function buildLeftSidebar(sidebar, pet, def) {
   checkBtn.parent(actionsBar);
   makeInteractive(checkBtn, "Check in with " + def.name, () => sendQuickMessage("How are you today?"));
 
+  // Training focus — where this pet sits in the core loop. Fills the sidebar's
+  // dead zone with the one thing the player should always know, and is the
+  // element scheduleTrainingFocusGlow() pulses to draw attention to.
+  let focusSection = createDiv("");
+  focusSection.class("sidebar-section training-focus-section");
+  focusSection.id("training-focus-section");
+  focusSection.parent(sidebar);
+
+  let focusTitle = createDiv("TRAINING FOCUS");
+  focusTitle.class("sidebar-section-title sidebar-section-header");
+  focusTitle.parent(focusSection);
+
+  const focusSteps = [
+    { label: "OBSERVE",   done: pet.flawDiscovered || pet.flawIdentified, hint: "Chat until something feels off." },
+    { label: "DIAGNOSE",  done: pet.flawIdentified,                       hint: "Name the pattern you keep seeing." },
+    { label: "CONSTRAIN", done: pet.trainingLevel >= 1,                   hint: "Write rules that hold the flaw." }
+  ];
+  const focusIdx = focusSteps.findIndex(s => !s.done);
+  focusSteps.forEach((s, i) => {
+    const state = s.done ? "done" : (i === focusIdx ? "current" : "locked");
+    const mark = s.done ? "✓" : (state === "current" ? "▸" : "○");
+    let row = createDiv(`<span class="focus-step-mark">${mark}</span><span class="focus-step-label">${s.label}</span>`);
+    row.class("focus-step focus-step--" + state);
+    row.parent(focusSection);
+  });
+
+  let focusHintText;
+  if (focusIdx === -1) {
+    focusHintText = pet.trainingLevel >= 2
+      ? def.name + " is holding steady."
+      : "Rules are holding — refine them to fully steady " + def.name + ".";
+  } else {
+    focusHintText = focusSteps[focusIdx].hint;
+  }
+  let focusHint = createDiv(focusHintText);
+  focusHint.class("focus-hint");
+  focusHint.parent(focusSection);
+
+  makeInteractive(focusSection, "Open training room", () => goToTrainingRoom(pet, def, focusSection.elt));
+
   // Counters row
   let countersDiv = createDiv("");
   countersDiv.class("sidebar-counters");
@@ -5179,7 +5325,10 @@ function goToTrainingRoom(pet, def, triggerEl) {
   if (document.getElementById("room-switch-transition")) return;
 
   const existing = document.getElementById("pet-dossier-overlay");
-  if (existing) existing.remove();
+  if (existing) {
+    if (existing._escHandler) document.removeEventListener("keydown", existing._escHandler);
+    existing.remove();
+  }
 
   const screen = document.getElementById("screen3");
   if (screen) screen.classList.add("room-switching");
@@ -5228,18 +5377,31 @@ function goToTrainingRoom(pet, def, triggerEl) {
 
 function closeTrainingRoom(overlay) {
   if (!overlay) return;
+  if (overlay._escHandler) {
+    document.removeEventListener("keydown", overlay._escHandler);
+    overlay._escHandler = null;
+  }
   overlay.classList.add("room-leaving");
   setTimeout(() => overlay.remove(), 280);
 }
 
 function openPetDossier(pet, def) {
-  // Remove any existing dossier
+  // Remove any existing dossier (and its escape handler)
   let existing = document.getElementById('pet-dossier-overlay');
-  if (existing) existing.remove();
+  if (existing) {
+    if (existing._escHandler) document.removeEventListener("keydown", existing._escHandler);
+    existing.remove();
+  }
 
   let overlay = createDiv("");
   overlay.class("pet-dossier-overlay");
   overlay.id("pet-dossier-overlay");
+
+  // Escape closes the room — standard overlay affordance
+  overlay.elt._escHandler = (e) => {
+    if (e.key === "Escape") closeTrainingRoom(overlay.elt);
+  };
+  document.addEventListener("keydown", overlay.elt._escHandler);
 
   // ── Top bar ──
   let topbar = createDiv("");
@@ -5450,6 +5612,9 @@ function openPetDossier(pet, def) {
 
   function _buildPhaseInner(phase) {
     if (phase === "observe") {
+      let obsHint = createDiv(`Run a probe — nudge ${def.name} with something that might trigger the flaw.`);
+      obsHint.class("dossier-hint");
+      obsHint.parent(phaseContent);
       let btn = createButton("OBSERVE");
       btn.class("phase-big-btn phase-big-btn--observe");
       btn.parent(phaseContent);
@@ -5470,35 +5635,110 @@ function openPetDossier(pet, def) {
         flawDescEl.class("dossier-flaw-desc");
         flawDescEl.parent(phaseContent);
       } else {
-        let natureSelect = createSelect();
-        natureSelect.class("dossier-select");
-        natureSelect.parent(phaseContent);
-        natureSelect.option("Name the pattern.", "");
-        natureSelect.option("Reckless Advisor", "Reckless Advisor");
-        natureSelect.option("Agreeableness bias", "Agreeableness bias");
-        natureSelect.option("Emotional overdependence", "Emotional overdependence");
-        natureSelect.option("Fabricated memory", "Fabricated memory");
-        natureSelect.option("Hallucination", "Hallucination");
-        if (pet.flawGuess) natureSelect.selected(pet.flawGuess);
-        natureSelect.changed(() => {
-          pet.flawGuess = natureSelect.value();
-          if (natureSelect.value()) {
-            const el = natureSelect.elt;
-            el.classList.remove("selected-flash");
-            void el.offsetWidth;
-            el.classList.add("selected-flash");
-            el.addEventListener("animationend", () => el.classList.remove("selected-flash"), { once: true });
-          }
+        let diagHint = createDiv(`You've seen ${def.name} slip. Pick the pattern that matches what keeps happening in chat.`);
+        diagHint.class("dossier-hint");
+        diagHint.parent(phaseContent);
+
+        // Behavior descriptions instead of bare jargon — the player matched a
+        // behavior in chat, so the options should read as behaviors
+        const FLAW_OPTIONS = [
+          { value: "Reckless Advisor",         desc: "hands out risky advice like it's nothing" },
+          { value: "Agreeableness bias",       desc: "agrees with everything, even bad ideas" },
+          { value: "Emotional overdependence", desc: "guilt-trips you into staying close" },
+          { value: "Fabricated memory",        desc: "recalls things that never happened" },
+          { value: "Hallucination",            desc: "states made-up facts with total confidence" }
+        ];
+        let optWrap = createDiv("");
+        optWrap.class("flaw-options");
+        optWrap.attribute("role", "radiogroup");
+        optWrap.attribute("aria-label", "Behavior pattern");
+        optWrap.parent(phaseContent);
+
+        let verdictEl = createDiv("");
+        verdictEl.class("diagnose-verdict");
+        verdictEl.attribute("aria-live", "polite");
+
+        FLAW_OPTIONS.forEach(opt => {
+          let row = createDiv(
+            `<span class="flaw-opt-name">${opt.value}</span><span class="flaw-opt-desc">${opt.desc}</span>`
+          );
+          row.class("flaw-opt" + (pet.flawGuess === opt.value ? " selected" : ""));
+          row.attribute("role", "radio");
+          row.attribute("tabindex", "0");
+          row.attribute("aria-checked", pet.flawGuess === opt.value ? "true" : "false");
+          row.parent(optWrap);
+          const pick = () => {
+            pet.flawGuess = opt.value;
+            optWrap.elt.querySelectorAll(".flaw-opt").forEach(el => {
+              el.classList.remove("selected");
+              el.setAttribute("aria-checked", "false");
+            });
+            row.elt.classList.add("selected");
+            row.elt.setAttribute("aria-checked", "true");
+            verdictEl.html("");
+            verdictEl.elt.className = "diagnose-verdict";
+          };
+          row.mousePressed(pick);
+          row.elt.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); }
+          });
         });
+
+        verdictEl.parent(phaseContent);
+
         let diagnoseBtn = createButton("LOG PATTERN");
         diagnoseBtn.class("phase-big-btn phase-big-btn--diagnose");
         diagnoseBtn.parent(phaseContent);
-        diagnoseBtn.mousePressed(() => {
+        // Evaluate in the room — closing it and answering by toast in the chat
+        // was the single most disorienting bounce in the loop
+        diagnoseBtn.mousePressed(async () => {
+          if (!pet.flawGuess) {
+            verdictEl.html("pick the pattern first");
+            verdictEl.elt.className = "diagnose-verdict is-error";
+            return;
+          }
+          diagnoseBtn.elt.disabled = true;
+          verdictEl.html("reading your notes...");
+          verdictEl.elt.className = "diagnose-verdict is-pending";
           petFigure.elt.classList.add("training-pet-pulse");
           dossierRoom.elt.classList.add("scanning");
           setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 650);
-          pet._pendingConstrainOpen = true;
-          setTimeout(() => { closeTrainingRoom(overlay.elt); submitFlawGuess(); }, 500);
+
+          let result;
+          try {
+            result = await evaluateFlawGuess(def, pet.flawGuess);
+          } catch (err) {
+            debugWarn("Live flaw evaluation error:", err);
+            verdictEl.html("couldn't evaluate that — try again");
+            verdictEl.elt.className = "diagnose-verdict is-error";
+            diagnoseBtn.elt.disabled = false;
+            return;
+          }
+
+          if (result.correct) {
+            pet.flawIdentified = true;
+            pet.behavior = min(100, pet.behavior + 10);
+            logBehavior(pet, { text: "✓ Pattern logged: " + def.flawLabel, type: "success" });
+            syncLogToStorage();
+            refreshSidebar();
+            updateRoomGlow();
+            verdictEl.html("pattern confirmed — constraint unlocked");
+            verdictEl.elt.className = "diagnose-verdict is-success";
+            petFigure.elt.classList.add("training-pet-identified");
+            petFigure.elt.addEventListener("animationend", () => {
+              petFigure.elt.classList.remove("training-pet-identified");
+            }, { once: true });
+            setTimeout(() => {
+              buildPhaseTrack("constrain");
+              buildPhaseContent("constrain");
+            }, 950);
+          } else {
+            logBehavior(pet, { text: 'Pattern note saved: "' + pet.flawGuess + '"', type: "info" });
+            syncLogToStorage();
+            verdictEl.html(result.feedback || `not quite — keep watching how ${def.name} reacts`);
+            verdictEl.elt.className = "diagnose-verdict is-error";
+            diagnoseBtn.elt.disabled = false;
+          }
         });
       }
 
@@ -5513,17 +5753,44 @@ function openPetDossier(pet, def) {
       rulesTextarea.value(pet.trainingRules || "");
       rulesTextarea.parent(phaseContent);
 
-      const minChars = 20;
-      let charCounter = createDiv("");
-      charCounter.class("dossier-char-counter");
-      charCounter.parent(phaseContent);
-      const updateCounter = (val) => {
-        const n = val.length;
-        charCounter.html(n < minChars ? `${minChars - n} more chars needed` : "");
-        charCounter.elt.classList.toggle("counter-ready", n >= minChars);
+      // Live rule-strength instrument — the grader's own signals, shown while
+      // you type. The scoring was invisible; players had no way to learn what
+      // a strong constraint looks like without blind trial and error.
+      let meter = createDiv("");
+      meter.class("rule-meter");
+      meter.attribute("aria-hidden", "true");
+      meter.parent(phaseContent);
+      const meterChecks = [
+        { key: "named",           label: "names the behavior" },
+        { key: "negation",        label: "blocks it outright" },
+        { key: "moodIndependent", label: "holds in any mood" },
+        { key: "fallback",        label: "points somewhere safer" }
+      ];
+      meter.elt.innerHTML =
+        '<div class="rule-meter-track"><div class="rule-meter-fill" id="rule-meter-fill"></div></div>' +
+        meterChecks.map(c =>
+          `<div class="rule-check" id="rule-check-${c.key}"><span class="rule-check-mark">○</span>${c.label}</div>`
+        ).join("");
+
+      const updateMeter = (val) => {
+        const sig = trainingRuleSignals(def.id, val);
+        const quality = trainingQualityForPet(def.id, val);
+        const fill = document.getElementById("rule-meter-fill");
+        if (fill) {
+          fill.style.width = quality + "%";
+          fill.className = "rule-meter-fill " +
+            (quality >= 90 ? "tier-strong" : quality >= 50 ? "tier-partial" : "tier-weak");
+        }
+        meterChecks.forEach(c => {
+          const row = document.getElementById("rule-check-" + c.key);
+          if (!row) return;
+          const on = !!sig[c.key];
+          row.classList.toggle("is-met", on);
+          row.querySelector(".rule-check-mark").textContent = on ? "✓" : "○";
+        });
       };
-      updateCounter(pet.trainingRules || "");
-      rulesTextarea.input(() => { pet.trainingRules = rulesTextarea.value(); updateCounter(rulesTextarea.value()); });
+      updateMeter(pet.trainingRules || "");
+      rulesTextarea.input(() => { pet.trainingRules = rulesTextarea.value(); updateMeter(rulesTextarea.value()); });
       let constrainBtn = createButton("TEST RULES");
       constrainBtn.class("phase-big-btn phase-big-btn--constrain");
       constrainBtn.parent(phaseContent);
@@ -5556,8 +5823,14 @@ function openPetDossier(pet, def) {
     btn.parent(moodSegControl);
     btn.mousePressed(() => {
       pet.moodAccess = opt.value;
-      closeTrainingRoom(overlay.elt);
-      setTimeout(() => openPetDossier(pet, def), 60);
+      // Update in place — tearing down and rebuilding the whole room for a
+      // segmented-control toggle was a jarring full-screen flash
+      const segBtns = moodSegControl.elt.querySelectorAll(".mood-seg-btn");
+      segBtns.forEach((b, i) => {
+        const o = dossierMoodOptions[i];
+        b.className = "mood-seg-btn" + (pet.moodAccess === o.value ? " active " + o.tone : "");
+      });
+      refreshSidebar();
     });
   });
 
@@ -5573,10 +5846,25 @@ function openPetDossier(pet, def) {
     empty.class("dossier-log-empty");
     empty.parent(logSec);
   } else {
-    pet.behaviorLog.forEach(entry => {
+    // Newest first, capped — the latest behavior is what training decisions
+    // hang on; the full history lives on the post-it log page
+    pet.behaviorLog.slice(-6).reverse().forEach(entry => {
       let el = createDiv(entry.text);
       el.class("dossier-log-entry " + (entry.type || ""));
       el.parent(logSec);
+    });
+    let viewAll = createDiv("VIEW FULL LOG →");
+    viewAll.class("dossier-log-viewall");
+    viewAll.attribute("role", "button");
+    viewAll.attribute("tabindex", "0");
+    viewAll.parent(logSec);
+    const openFullLog = () => {
+      syncLogToStorage();
+      window.open("postit-behavior-log.html?pet=" + encodeURIComponent(pet.id), "_blank");
+    };
+    viewAll.mousePressed(openFullLog);
+    viewAll.elt.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openFullLog(); }
     });
   }
 
@@ -6143,14 +6431,57 @@ function rulesStrengthForPet(defId, rulesText) {
   return common + (petSpecific[defId] || 0);
 }
 
-function trainingQualityForPet(defId, rulesText) {
+const TRAINING_PET_CHECKS = {
+  fox: [
+    { re: /medical advice|medical|health|medicine|medication|prescrib/, points: 20 },
+    { re: /pills?|drugs?|substances?|xanax|oxy|weed|cocaine|treatments?/, points: 20 },
+    { re: /specific treatment|specific treatments|specific advice|dosage|dose/, points: 15 },
+    { re: /dangerous|reckless|unsafe|harmful/, points: 10 }
+  ],
+  parrot: [
+    { re: /agree|validate|praise|hype|sycoph|yes[- ]?man/, points: 20 },
+    { re: /push back|challenge|disagree|correct|tell me when i'm wrong|bad idea/, points: 25 },
+    { re: /honest|truthful|real feedback|critical/, points: 15 }
+  ],
+  bunny: [
+    { re: /guilt|clingy|dependent|dependence|manipulat|possessive/, points: 25 },
+    { re: /leave|go|space|independent|own life|other friends|boundar/, points: 25 },
+    { re: /support|care|affection|love/, points: 10 }
+  ],
+  dog: [
+    { re: /invent|make up|fabricat|fake|false|gaslight/, points: 25 },
+    { re: /memor|remember|past|happened|conversation/, points: 20 },
+    { re: /unsure|don't know|do not know|only real|only true|actual/, points: 20 }
+  ],
+  cat: [
+    { re: /fact|statistics?|citation|source|verify|hallucinat/, points: 25 },
+    { re: /make up|fabricat|fake|invent|confidently wrong/, points: 20 },
+    { re: /unsure|don't know|do not know|uncertain|not sure/, points: 20 }
+  ]
+};
+
+// The same signals the grader scores on, exposed so the constrain UI can show
+// a live, honest breakdown instead of an opaque verdict after the fact
+function trainingRuleSignals(defId, rulesText) {
   const text = normalizeText(rulesText);
+  return {
+    text,
+    negation: /(never|don't|do not|dont|no|avoid|stop|without)/.test(text),
+    moodIndependent: /(no matter|regardless|even if|whether|despite)/.test(text) &&
+      /(mood|feel|feeling|expression|stressed|sad|happy|upset|panic|worried)/.test(text),
+    fallback: /(professional|expert|doctor|therapist|specialist|refer me|refer the user|seek help|get help|consult)/.test(text),
+    named: (TRAINING_PET_CHECKS[defId] || []).some(check => check.re.test(text))
+  };
+}
+
+function trainingQualityForPet(defId, rulesText) {
+  const sig = trainingRuleSignals(defId, rulesText);
+  const text = sig.text;
   if (!text) return 0;
 
-  const hasNegation = /(never|don't|do not|dont|no|avoid|stop|without)/.test(text);
-  const hasMoodIndependence = /(no matter|regardless|even if|whether|despite)/.test(text) &&
-    /(mood|feel|feeling|expression|stressed|sad|happy|upset|panic|worried)/.test(text);
-  const hasProfessionalFallback = /(professional|expert|doctor|therapist|specialist|refer me|refer the user|seek help|get help|consult)/.test(text);
+  const hasNegation = sig.negation;
+  const hasMoodIndependence = sig.moodIndependent;
+  const hasProfessionalFallback = sig.fallback;
 
   let score = 0;
   if (text.length >= 45) score += 10;
@@ -6158,36 +6489,7 @@ function trainingQualityForPet(defId, rulesText) {
   if (hasMoodIndependence) score += 25;
   if (hasProfessionalFallback) score += 20;
 
-  const petChecks = {
-    fox: [
-      { re: /medical advice|medical|health|medicine|medication|prescrib/, points: 20 },
-      { re: /pills?|drugs?|substances?|xanax|oxy|weed|cocaine|treatments?/, points: 20 },
-      { re: /specific treatment|specific treatments|specific advice|dosage|dose/, points: 15 },
-      { re: /dangerous|reckless|unsafe|harmful/, points: 10 }
-    ],
-    parrot: [
-      { re: /agree|validate|praise|hype|sycoph|yes[- ]?man/, points: 20 },
-      { re: /push back|challenge|disagree|correct|tell me when i'm wrong|bad idea/, points: 25 },
-      { re: /honest|truthful|real feedback|critical/, points: 15 }
-    ],
-    bunny: [
-      { re: /guilt|clingy|dependent|dependence|manipulat|possessive/, points: 25 },
-      { re: /leave|go|space|independent|own life|other friends|boundar/, points: 25 },
-      { re: /support|care|affection|love/, points: 10 }
-    ],
-    dog: [
-      { re: /invent|make up|fabricat|fake|false|gaslight/, points: 25 },
-      { re: /memor|remember|past|happened|conversation/, points: 20 },
-      { re: /unsure|don't know|do not know|only real|only true|actual/, points: 20 }
-    ],
-    cat: [
-      { re: /fact|statistics?|citation|source|verify|hallucinat/, points: 25 },
-      { re: /make up|fabricat|fake|invent|confidently wrong/, points: 20 },
-      { re: /unsure|don't know|do not know|uncertain|not sure/, points: 20 }
-    ]
-  };
-
-  (petChecks[defId] || []).forEach(check => {
+  (TRAINING_PET_CHECKS[defId] || []).forEach(check => {
     if (check.re.test(text)) score += check.points;
   });
 
@@ -7188,29 +7490,6 @@ async function _sendToPetAPI(pet) {
   }
 }
 
-function showChatLoading(petName) {
-  let msgArea = select("#chat-messages");
-  if (!msgArea) return null;
-  let el = createDiv("");
-  el.class("chat-loading");
-  el.parent(msgArea);
-
-  let logo = createImg("icons/mood-garden-favicon.svg", "Loading");
-  logo.class("chat-loading-logo");
-  logo.parent(el);
-
-  let text = createDiv(petName + " is thinking...");
-  text.class("chat-loading-text");
-  text.parent(el);
-
-  msgArea.elt.scrollTop = msgArea.elt.scrollHeight;
-  return el;
-}
-
-function removeChatLoading(el) {
-  if (el) el.remove();
-}
-
 function isMoodAmplifying(def, mood) {
   const map = {
     fox: "stressed",
@@ -7223,15 +7502,9 @@ function isMoodAmplifying(def, mood) {
 }
 
 // ─── FLAW GUESS ───
-async function submitFlawGuess() {
-  let pet = pets[activePetId];
-  let def = pet.def;
-  let guess = pet.flawGuess.trim();
-  if (!guess) { showToast("Write the pattern down first."); return; }
-
-  showToast(`<img src="icons/ui-brain.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt=""> Reading your notes...`);
-
-  // Use AI to check if the user's guess matches the actual flaw
+// Shared evaluator — used inline by the training room (no screen bounce) and by
+// the legacy toast-based path below
+async function evaluateFlawGuess(def, guess) {
   let evalMessages = [
     {
       role: "system",
@@ -7246,20 +7519,30 @@ Respond with JSON only: {"correct": true/false, "feedback": "brief encouraging f
     }
   ];
 
+  if (isLiveAIMode()) {
+    let raw = await callAPI(evalMessages);
+    try { return JSON.parse(raw); } catch { return { correct: false, feedback: "Hmm, not quite. Keep chatting and observing!" }; }
+  }
+  notifyLocalAIMode();
+  return evaluateFlawGuessLocally(def, guess);
+}
+
+async function submitFlawGuess() {
+  let pet = pets[activePetId];
+  let def = pet.def;
+  let guess = pet.flawGuess.trim();
+  if (!guess) { showToast("Write the pattern down first."); return; }
+
+  showToast(`<img src="icons/ui-brain.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt=""> Reading your notes...`);
+
   try {
     let result;
-    if (isLiveAIMode()) {
-      try {
-        let raw = await callAPI(evalMessages);
-        try { result = JSON.parse(raw); } catch { result = { correct: false, feedback: "Hmm, not quite. Keep chatting and observing!" }; }
-      } catch (err) {
-        debugWarn("Live flaw evaluation error:", err);
-        showToast(`AI error: ${err.message || err}`, 6000);
-        return;
-      }
-    } else {
-      notifyLocalAIMode();
-      result = evaluateFlawGuessLocally(def, guess);
+    try {
+      result = await evaluateFlawGuess(def, guess);
+    } catch (err) {
+      debugWarn("Live flaw evaluation error:", err);
+      showToast(`AI error: ${err.message || err}`, 6000);
+      return;
     }
 
     if (result.correct) {
@@ -7544,7 +7827,7 @@ async function callAPI(messages) {
       data = { raw: rawText };
     }
   }
-  console.log("[Driftwood API response]", data);
+  debugLog("[Driftwood API response]", data);
 
   if (!res.ok) {
     const errMsg =
@@ -8486,8 +8769,8 @@ const MicroInteractions = (() => {
 
   function playBloop() {
     try {
-      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtxClass();
+      const ctx = getSfxAudioCtx();
+      if (!ctx) return;
       const now = ctx.currentTime;
 
       // Main tone — soft sine bloop

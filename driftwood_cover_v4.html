@@ -230,6 +230,9 @@ body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:30%;backgro
   box-shadow:0 3px 10px rgba(0,0,0,0.9);
 }
 
+/* ── Primed — cursor is over the TV; the invitation quickens ── */
+.primed .pk{animation:blink 0.55s step-end infinite;color:rgba(120,255,170,1);text-shadow:0 0 8px rgba(60,255,120,0.5);}
+
 /* ── Cover activation — plays in parallel with the outer zoom ── */
 /* PK text strobes out */
 .activating .pk{animation:pk-exit 0.38s steps(4) forwards;}
@@ -633,6 +636,7 @@ function drawScene(t){
 
 // ── GLITCH STATE — syncs with CSS glitch animation ──
 let glitch = 0;
+let primeGlitch = 0; // brief aberration flick when the cursor first touches the TV
 function updateGlitch(t){
   const phase = ((t % 9000) + 9000) % 9000;
   if      (phase >= 7920 && phase < 8040){ glitch = (phase - 7920) / 120; }
@@ -654,8 +658,9 @@ function render(t){
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sceneC);
 
+  primeGlitch *= 0.93;
   gl.uniform2f(uRes, crtC.width, crtC.height);
-  gl.uniform1f(uGlitch, glitch);
+  gl.uniform1f(uGlitch, Math.min(1, glitch + primeGlitch));
   gl.uniform1f(uWarm, warmUp);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -666,10 +671,16 @@ sizeCanvas();
 window.addEventListener('resize', sizeCanvas);
 requestAnimationFrame(render);
 
-// Listen for activation signal from parent — triggers cover reaction sequence
+// Listen for signals from parent — hover primes the TV, click activates it
 window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'ACTIVATE') {
+  if (!e.data) return;
+  if (e.data.type === 'ACTIVATE') {
     document.body.classList.add('activating');
+  } else if (e.data.type === 'PRIME') {
+    if (!document.body.classList.contains('primed') && !REDUCED) primeGlitch = 0.5;
+    document.body.classList.add('primed');
+  } else if (e.data.type === 'UNPRIME') {
+    document.body.classList.remove('primed');
   }
 });
 </script>

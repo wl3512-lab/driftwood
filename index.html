@@ -7,19 +7,22 @@
     <meta name="theme-color" content="#030504" />
     <title>Driftwood</title>
 
-    <!-- Google Fonts -->
+    <!-- Warm up connections to the CDNs on the critical path -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Preload garden background so splash renders without flash -->
     <link rel="preload" as="image" href="bg%20interface%201/garden-interface-empty.svg">
+    <!-- Prefetch the CRT cover shown as the splash iframe so it paints sooner -->
+    <link rel="prefetch" href="driftwood_cover_v4.html" as="document">
 
-    <!-- p5.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.js"></script>
+    <!-- p5.js — deferred so parsing/first paint aren't blocked; defer preserves order -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
 
-    <!-- face-api.js for expression detection (direct, no ml5 wrapper) -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- face-api.js is loaded lazily by sketch.js only when camera mood detection
+         is enabled (ensureFaceApiLoaded) — kept off the boot critical path. -->
 
     <link rel="icon" type="image/svg+xml" href="icons/mood-garden-favicon.svg">
     <link rel="stylesheet" type="text/css" href="style.css">
@@ -52,6 +55,6 @@
         <span class="rotate-sub">driftwood plays sideways</span>
       </div>
     </div>
-    <script src="sketch.js"></script>
+    <script defer src="sketch.js"></script>
   </body>
 </html>
