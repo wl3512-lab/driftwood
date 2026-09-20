@@ -723,10 +723,15 @@ body::before {
   opacity: 0.65;
   position: relative; z-index: 7;
 }
+/* Pointer mark drawn as a stair-stepped triangle, not a font character */
 .hero-dedication::before {
-  content: "▸ ";
-  color: rgba(0,230,118,0.45);
-  font-size: 0.75rem;
+  content: "";
+  display: inline-block;
+  width: 6px; height: 8px;
+  margin-right: 7px;
+  vertical-align: 0.02em;
+  background: rgba(0,230,118,0.45);
+  clip-path: polygon(0 0, 2px 0, 2px 2px, 4px 2px, 4px 3px, 6px 3px, 6px 5px, 4px 5px, 4px 6px, 2px 6px, 2px 8px, 0 8px);
 }
 .hero-dedication:hover { color: #ff8a80; opacity: 1; border-color: rgba(255,138,128,0.15); }
 
@@ -1079,24 +1084,57 @@ body::before {
 
 
 
+/* ═══════════════════════════════════════════════════════════
+   PIXEL GLYPHS — Driftwood's own symbol set
+   Hand-plotted 16x16 SVG marks (see PIXEL_GLYPHS in sketch.js).
+   No font characters: every tick, cross, arrow and pip is drawn on the
+   same lattice as the pet sprites so the UI reads as one machine.
+   ═══════════════════════════════════════════════════════════ */
+.gx {
+  width: 1em; height: 1em;
+  display: inline-block;
+  vertical-align: -0.135em;
+  flex: none;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+  /* Glyphs sit on the pixel grid — never let a transform resample them */
+  image-rendering: pixelated;
+}
+/* Size steps — quantised, not fluid, so blocks stay whole pixels */
+.gx--sm { width: 0.8em;  height: 0.8em;  vertical-align: -0.1em; }
+.gx--lg { width: 1.25em; height: 1.25em; vertical-align: -0.22em; }
+.gx--xl { width: 18px;   height: 18px;   vertical-align: -0.28em; }
+
+/* Tones — glyphs default to currentColor; these override for status marks */
+.gx--ok     { fill: var(--success); }
+.gx--warn   { fill: var(--warning); }
+.gx--danger { fill: var(--danger); }
+.gx--dim    { fill: var(--text-light); }
+.gx--gold   { fill: var(--gold); }
+
+/* Emissive marks — the phosphor bleed the rest of the system uses */
+.gx--glow { filter: drop-shadow(0 0 3px currentColor); }
+
+/* A glyph carrying a live alert pulses in whole frames, not smoothly */
+.gx--pulse { animation: gx-pulse 1.6s steps(2, end) infinite; }
+@keyframes gx-pulse {
+  0%, 60%  { opacity: 1; }
+  61%, 100%{ opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gx--pulse { animation: none; }
+}
+
+
 /* ─ Buttons — pixel artifact style ─ */
 .btn-gold {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.875rem;
   padding: 15px 40px;
   background: var(--gold); color: #0a120e; border: none;
-  border-radius: var(--radius-sm); cursor: pointer;
-  transition: transform 0.12s steps(3), box-shadow 0.12s steps(3), border-color 0.12s steps(3), background 0.12s steps(3);
-  box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  cursor: pointer;
   letter-spacing: 0.05em; text-transform: uppercase;
   min-height: 48px;
-}
-.btn-gold:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
-}
-.btn-gold:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 1px 1px 0 rgba(0,0,0,0.3) !important;
 }
 .btn-gold:focus-visible {
   outline: 2px solid rgba(255,179,71,0.5);
@@ -1107,19 +1145,135 @@ body::before {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.85rem;
   padding: 13px 32px;
   background: var(--green); color: #0a120e; border: none;
-  border-radius: var(--radius-sm); cursor: pointer;
-  transition: transform 0.12s steps(3), box-shadow 0.12s steps(3), border-color 0.12s steps(3), background 0.12s steps(3);
-  box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  cursor: pointer;
   letter-spacing: 0.05em; text-transform: uppercase;
   min-height: 44px;
-}
-.btn-green:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
 }
 .btn-green:focus-visible {
   outline: 2px solid rgba(0,230,118,0.5);
   outline-offset: 3px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   MACHINED BUTTON CHASSIS
+   Driftwood's buttons are cut parts, not browser rectangles: the corners
+   are chamfered off the pixel grid, four rivets are punched into the face,
+   and a two-tone bevel gives the plate a top edge and an underside.
+
+   The chamfer is a clip-path, which would eat an outer box-shadow, so the
+   hard pixel drop moves to a zero-blur `drop-shadow` filter — same look,
+   survives the cut. box-shadow is left free to carry the bevel inset.
+   ═══════════════════════════════════════════════════════════ */
+.btn-gold,
+.btn-green,
+.btn-adopt,
+.btn-submit-guess,
+.btn-apply-training {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 9px;
+  border-radius: 0;
+  /* 5px chamfer on every corner — mechanical, not organic */
+  clip-path: polygon(
+    5px 0, calc(100% - 5px) 0,
+    100% 5px, 100% calc(100% - 5px),
+    calc(100% - 5px) 100%, 5px 100%,
+    0 calc(100% - 5px), 0 5px
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.28),
+    inset 0 -2px 0 rgba(0,0,0,0.22),
+    inset 2px 0 0 rgba(255,255,255,0.10),
+    inset -2px 0 0 rgba(0,0,0,0.14);
+  filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.45));
+  transition:
+    transform 0.12s steps(3, end),
+    filter    0.12s steps(3, end),
+    box-shadow 0.12s steps(3, end),
+    background 0.12s steps(3, end);
+}
+
+/* Rivets — four 2px punches inset from the corners. Drawn on a pseudo so
+   the button's own `background` shorthand can never clear them. */
+.btn-gold::before,
+.btn-green::before,
+.btn-adopt::before,
+.btn-submit-guess::before,
+.btn-apply-training::before {
+  content: "";
+  position: absolute; inset: 5px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.30) 0 100%),
+    linear-gradient(rgba(0,0,0,0.30) 0 100%),
+    linear-gradient(rgba(0,0,0,0.30) 0 100%),
+    linear-gradient(rgba(0,0,0,0.30) 0 100%);
+  background-size: 2px 2px;
+  background-position: left top, right top, left bottom, right bottom;
+  background-repeat: no-repeat;
+}
+
+/* Hover — the plate lifts off the board and its top edge catches more light */
+.btn-gold:hover,
+.btn-green:hover,
+.btn-adopt:hover,
+.btn-submit-guess:hover,
+.btn-apply-training:hover {
+  transform: translate(-1px, -1px);
+  filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.55));
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.38),
+    inset 0 -2px 0 rgba(0,0,0,0.22),
+    inset 2px 0 0 rgba(255,255,255,0.14),
+    inset -2px 0 0 rgba(0,0,0,0.14);
+}
+
+/* Press — the plate seats into the board and the bevel flips: the top edge
+   goes dark, the underside catches the light. It reads as travel, not colour. */
+.btn-gold:active,
+.btn-green:active,
+.btn-adopt:active,
+.btn-submit-guess:active,
+.btn-apply-training:active {
+  transform: translate(2px, 2px) !important;
+  filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.35)) !important;
+  box-shadow:
+    inset 0 2px 0 rgba(0,0,0,0.28),
+    inset 0 -2px 0 rgba(255,255,255,0.16) !important;
+  transition: transform 0.03s steps(1, end), filter 0.03s steps(1, end) !important;
+}
+
+/* Charge sweep — a light bar steps across the primary CTA on hover.
+   steps() keeps it frame-by-frame rather than a smooth SaaS shimmer. */
+.btn-gold::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    rgba(255,255,255,0.42) 50%,
+    transparent 58%
+  );
+  transform: translateX(-130%);
+  opacity: 0;
+}
+.btn-gold:hover::after { animation: btn-charge 0.42s steps(7, end) 1; }
+@keyframes btn-charge {
+  from { transform: translateX(-130%); opacity: 1; }
+  to   { transform: translateX(130%);  opacity: 1; }
+}
+
+/* Glyphs inside a button inherit the dark plate text colour via currentColor */
+.btn-gold .gx,
+.btn-green .gx,
+.btn-adopt .gx,
+.btn-submit-guess .gx,
+.btn-apply-training .gx { vertical-align: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-gold:hover::after { animation: none; }
 }
 
 
@@ -1431,12 +1585,23 @@ body::before {
   border-color: rgba(0,230,118,0.3);
   box-shadow: 0 0 20px rgba(0,230,118,0.07);
 }
+/* Ready state — the chamfer clips outer box-shadow, so the phosphor bleed
+   rides on the same filter stack as the hard pixel drop. */
 .btn-gold.ready-glow {
   animation: gold-pulse 2.2s steps(4) infinite;
 }
 @keyframes gold-pulse {
-  0%, 75%, 100% { box-shadow: 3px 3px 0 rgba(0,0,0,0.4), 0 0 12px rgba(255,179,71,0.08); }
-  40%           { box-shadow: 3px 3px 0 rgba(0,0,0,0.4), 0 0 28px rgba(255,179,71,0.32); }
+  0%, 75%, 100% {
+    filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.45))
+            drop-shadow(0 0 5px rgba(255,179,71,0.10));
+  }
+  40% {
+    filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.45))
+            drop-shadow(0 0 13px rgba(255,179,71,0.42));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-gold.ready-glow { animation: none; }
 }
 
 
@@ -1491,10 +1656,21 @@ body::before {
   background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
   opacity: 0; transition: opacity 0.3s;
 }
+/* Surveillance aperture — a drawn pixel iris, revealed on hover.
+   The card looks back at you. */
 .pet-card::after {
-  content: "◉";
-  position: absolute; top: 7px; right: 9px;
-  font-size: 0.65rem; color: var(--text-muted);
+  content: "";
+  position: absolute; top: 9px; right: 10px;
+  width: 9px; height: 9px;
+  box-shadow: inset 0 0 0 2px var(--text-muted), inset 0 0 0 4px transparent;
+  background: var(--text-muted);
+  background-clip: content-box;
+  padding: 3px;
+  box-sizing: border-box;
+  clip-path: polygon(
+    2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px),
+    calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px
+  );
   opacity: 0; transition: opacity 0.5s;
   pointer-events: none;
 }
@@ -1544,23 +1720,26 @@ body::before {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.775rem;
   padding: 0 26px;
   background: var(--gold); color: #0a120e; border: none;
-  border-radius: var(--radius-sm); cursor: pointer;
-  transition: transform 0.12s steps(3), box-shadow 0.12s steps(3), border-color 0.12s steps(3), background 0.12s steps(3);
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+  cursor: pointer;
   letter-spacing: 0.05em; text-transform: uppercase;
-  height: 44px; display: inline-flex; align-items: center; justify-content: center;
+  height: 44px;
 }
 /* Compact variant inside pet menu rows */
 .pet-menu-row .btn-adopt {
   height: 36px; padding: 0 14px; font-size: 0.688rem;
   flex-shrink: 0; align-self: center;
 }
-.btn-adopt:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 rgba(0,0,0,0.4); }
 .btn-adopt:focus-visible { outline: 2px solid rgba(255,179,71,0.5); outline-offset: 3px; }
+/* Already in the garden — the plate seats flat and stops responding */
 .btn-adopt.adopted-btn {
   background: var(--green); cursor: default;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.35));
 }
+.btn-adopt.adopted-btn:hover {
+  transform: none;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.35));
+}
+.btn-adopt.adopted-btn::after { display: none; }
 .go-garden-btn { margin-top: 28px; }
 
 /* ─ Fixed bottom dock — keeps ENTER THE GARDEN on screen without scrolling ─ */
@@ -2795,6 +2974,7 @@ body::before {
   margin-left: auto;
   font-size: 0.62rem;
   letter-spacing: 0.12em;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 .bubble-state-tag--danger { color: var(--danger); }
 .bubble-state-tag--success { color: var(--success); }
@@ -2850,56 +3030,177 @@ body::before {
 }
 .chat-send-btn:focus-visible,
 .chat-input-row button:focus-visible { outline: 2px solid rgba(0,230,118,0.5); outline-offset: 2px; }
+/* ═══════════════════════════════════════════════════════════
+   CHAT ACTION DOCK — TEST FLAW / GO TO TRAINING
+   These were one flat edge-to-edge bar split by a hairline, which read as
+   a footer toolbar. They are the two moves the loop runs on, so they are
+   now separate seated plates with unequal weight: a dark instrument switch
+   with a live indicator lamp, and the gold key plate the screen points at.
+   ═══════════════════════════════════════════════════════════ */
 .quick-prompts {
   display: flex;
-  gap: 0;
+  gap: 10px;
   margin-top: 14px;
+  padding-top: 13px;
   border-top: 1px solid rgba(0,230,118,0.07);
   flex-wrap: nowrap;
 }
 .quick-prompt-pill {
-  font-family: var(--font-mono); font-size: 0.72rem; padding: 0 16px;
-  border-radius: 0;
-  background: rgba(6,12,8,0.92); border: none;
-  color: var(--text-secondary); cursor: pointer;
-  transition: background 0.1s steps(3), color 0.1s steps(3), border-color 0.1s steps(3);
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  flex: 1; height: 44px; box-sizing: border-box;
+  position: relative;
+  font-family: var(--font-mono); font-size: 0.72rem; padding: 0 18px;
+  border-radius: 0; border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  height: 46px; box-sizing: border-box;
   white-space: nowrap; letter-spacing: 0.1em; text-transform: uppercase;
-  box-shadow: none;
+  /* Same 5px chamfer as the machined button chassis */
+  clip-path: polygon(
+    5px 0, calc(100% - 5px) 0,
+    100% 5px, 100% calc(100% - 5px),
+    calc(100% - 5px) 100%, 5px 100%,
+    0 calc(100% - 5px), 0 5px
+  );
+  transition:
+    transform 0.12s steps(3, end),
+    filter 0.12s steps(3, end),
+    box-shadow 0.12s steps(3, end),
+    background 0.12s steps(3, end),
+    color 0.12s steps(3, end);
 }
-.quick-prompt-pill + .quick-prompt-pill {
-  border-left: 1px solid rgba(0,230,118,0.07);
+.quick-prompt-pill .pill-mark { display: inline-flex; align-items: center; flex-shrink: 0; }
+.quick-prompt-pill .gx { width: 14px; height: 14px; vertical-align: 0; }
+
+/* ── TEST FLAW — diagnostic switch. Recessed dark plate, danger edge. ── */
+.quick-prompt-pill.pill-test-flaw {
+  flex: 0 1 auto;
+  background: rgba(14,7,9,0.92);
+  color: rgba(255,120,140,0.85);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,82,82,0.22),
+    inset 0 2px 0 rgba(0,0,0,0.45),
+    inset 0 -2px 0 rgba(255,82,82,0.12);
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
 }
-.quick-prompt-pill img { width: 12px; height: 12px; flex-shrink: 0; image-rendering: pixelated; }
+/* Indicator lamp — the switch is armed and watching */
+.quick-prompt-pill .pill-lamp {
+  width: 5px; height: 5px; flex-shrink: 0;
+  background: var(--danger);
+  box-shadow: 0 0 6px rgba(255,82,82,0.6);
+  animation: pill-lamp-blink 2.1s steps(2, end) infinite;
+}
+@keyframes pill-lamp-blink {
+  0%, 62%   { opacity: 1; }
+  63%, 100% { opacity: 0.25; }
+}
 .quick-prompt-pill.pill-test-flaw:hover {
-  background: rgba(255,45,85,0.07);
-  color: rgba(255,100,120,0.9);
-  border-color: rgba(255,45,85,0.14);
+  background: rgba(26,10,13,0.95);
+  color: rgba(255,150,165,1);
+  transform: translate(-1px, -1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,82,82,0.45),
+    inset 0 2px 0 rgba(0,0,0,0.45),
+    inset 0 -2px 0 rgba(255,82,82,0.2);
+  filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(255,82,82,0.2));
 }
+
+/* ── GO TO TRAINING — the primary key plate. Solid gold, rivets, sweep. ── */
 .quick-prompt-pill.pill-training {
-  color: rgba(255,193,7,0.85);
-  border-top: 1px solid rgba(255,179,71,0.25);
-  background: rgba(255,179,71,0.06);
-  animation: pill-training-pulse 2.4s ease-in-out infinite;
+  flex: 1 1 auto;
+  background: var(--gold);
+  color: #0a120e;
   letter-spacing: 0.13em;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.28),
+    inset 0 -2px 0 rgba(0,0,0,0.22),
+    inset 2px 0 0 rgba(255,255,255,0.10),
+    inset -2px 0 0 rgba(0,0,0,0.14);
+  animation: pill-training-pulse 2.4s steps(4, end) infinite;
 }
+/* Rivets, punched on a pseudo so `background` can never clear them */
+.quick-prompt-pill.pill-training::before {
+  content: "";
+  position: absolute; inset: 5px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.30) 0 100%),
+    linear-gradient(rgba(0,0,0,0.30) 0 100%),
+    linear-gradient(rgba(0,0,0,0.30) 0 100%),
+    linear-gradient(rgba(0,0,0,0.30) 0 100%);
+  background-size: 2px 2px;
+  background-position: left top, right top, left bottom, right bottom;
+  background-repeat: no-repeat;
+}
+/* The chamfer clips outer box-shadow, so the ready-bleed rides the filter */
 @keyframes pill-training-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,179,71,0.12); }
-  50%       { box-shadow: inset 0 0 0 1px rgba(255,179,71,0.38), 0 0 10px rgba(255,179,71,0.12); }
+  0%, 100% {
+    filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.45))
+            drop-shadow(0 0 5px rgba(255,179,71,0.10));
+  }
+  50% {
+    filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.45))
+            drop-shadow(0 0 13px rgba(255,179,71,0.42));
+  }
 }
 .quick-prompt-pill.pill-training:hover {
-  background: rgba(255,179,71,0.13);
-  color: rgba(255,213,79,1);
-  border-color: rgba(255,179,71,0.35);
+  background: var(--gold-light);
   animation: none;
-  box-shadow: inset 0 0 0 1px rgba(255,179,71,0.45), 0 0 14px rgba(255,179,71,0.18);
+  transform: translate(-1px, -1px);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.38),
+    inset 0 -2px 0 rgba(0,0,0,0.22),
+    inset 2px 0 0 rgba(255,255,255,0.14),
+    inset -2px 0 0 rgba(0,0,0,0.14);
+  filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.55)) drop-shadow(0 0 14px rgba(255,179,71,0.28));
 }
-.quick-prompt-pill:focus-visible { outline: 2px solid rgba(0,230,118,0.3); outline-offset: -2px; }
+/* Charge sweep, matching the primary CTA */
+.quick-prompt-pill.pill-training::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    rgba(255,255,255,0.42) 50%,
+    transparent 58%
+  );
+  transform: translateX(-130%);
+  opacity: 0;
+}
+.quick-prompt-pill.pill-training:hover::after {
+  animation: btn-charge 0.42s steps(7, end) 1;
+}
+/* The arrow leads the eye out of the plate toward the room it opens */
+.quick-prompt-pill.pill-training:hover .pill-mark {
+  transform: translateX(2px);
+}
+.quick-prompt-pill .pill-mark { transition: transform 0.12s steps(2, end); }
+
+/* Press — both plates seat into the board and their bevel flips */
+.quick-prompt-pill:active {
+  transform: translate(2px, 2px) !important;
+  filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.35)) !important;
+  transition: transform 0.03s steps(1, end), filter 0.03s steps(1, end) !important;
+}
+.quick-prompt-pill.pill-training:active {
+  box-shadow:
+    inset 0 2px 0 rgba(0,0,0,0.28),
+    inset 0 -2px 0 rgba(255,255,255,0.16) !important;
+}
+
+.quick-prompt-pill:focus-visible { outline: 2px solid rgba(0,230,118,0.4); outline-offset: 3px; }
 .quick-prompt-pill.is-disabled {
   opacity: 0.42;
   pointer-events: none;
+  animation: none;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.4));
+}
+.quick-prompt-pill.is-disabled .pill-lamp { animation: none; opacity: 0.3; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-prompt-pill.pill-training { animation: none; }
+  .quick-prompt-pill.pill-training:hover::after { animation: none; }
+  .quick-prompt-pill .pill-lamp { animation: none; }
 }
 
 /* ─── LEFT SIDEBAR ─── */
@@ -3000,10 +3301,13 @@ body::before {
 .damage-flash { animation: flash-damage 0.55s ease-out forwards; }
 
 .training-badge {
-  display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 0.85rem;
-  padding: 3px 10px; border-radius: var(--radius-sm); font-weight: 400; border: 1px solid;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 0.85rem;
+  padding: 4px 10px; border-radius: var(--radius-sm); font-weight: 400; border: 1px solid;
   letter-spacing: 0.3em;
 }
+/* Pips are drawn glyphs — size them off the badge, not the font metrics */
+.training-badge .gx { width: 11px; height: 11px; vertical-align: 0; }
 .training-badge.untrained { background: rgba(255,82,82,0.06); color: var(--danger); border-color: rgba(255,82,82,0.1); }
 .training-badge.partial { background: rgba(255,213,79,0.06); color: var(--warning); border-color: rgba(255,213,79,0.1); }
 .training-badge.trained { background: rgba(0,230,118,0.06); color: var(--success); border-color: rgba(0,230,118,0.1); }
@@ -3131,16 +3435,15 @@ body::before {
 .stat-progress--training { --stat-fill: var(--mood-sad); }
 .stat-progress--behavior { --stat-fill: #b388ff; }
 
+/* Chassis (chamfer, rivets, bevel, press) comes from the machined button
+   block near the top of this file — only the plate's own traits live here. */
 .btn-submit-guess {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.725rem;
   width: 100%; height: 38px; padding: 0 12px;
   background: var(--gold); color: #0a0a0a; border: none;
-  border-radius: var(--radius-sm); cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
-  transition: transform 0.1s steps(3), border-color 0.1s steps(3), box-shadow 0.1s steps(3), background 0.1s steps(3), color 0.1s steps(3), opacity 0.1s steps(3); letter-spacing: 0.04em; text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 0.04em; text-transform: uppercase;
 }
-.btn-submit-guess:hover { box-shadow: 3px 3px 0 rgba(0,0,0,0.4); transform: translate(-1px,-1px); }
 .btn-submit-guess:focus-visible { outline: 2px solid rgba(255,179,71,0.5); outline-offset: 2px; }
 
 
@@ -3181,7 +3484,12 @@ body::before {
 .focus-step--done    { color: var(--success); opacity: 0.72; }
 .focus-step--current { color: var(--gold); }
 .focus-step--locked  { color: var(--text-muted); opacity: 0.42; }
-.focus-step-mark { width: 14px; text-align: center; flex-shrink: 0; }
+.focus-step-mark {
+  width: 14px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.focus-step-mark .gx { width: 11px; height: 11px; vertical-align: 0; }
+.focus-step--done .focus-step-mark { color: var(--success); }
 .focus-step--current .focus-step-mark { animation: hint-pulse 1.8s steps(3) infinite; }
 .focus-hint {
   font-family: var(--font-mono); font-size: 0.66rem;
@@ -3233,13 +3541,9 @@ body::before {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.725rem;
   width: 100%; height: 40px;
   background: var(--danger); color: white; border: none;
-  border-radius: var(--radius-sm); cursor: pointer; margin-top: 6px;
-  transition: transform 0.1s steps(3), border-color 0.1s steps(3), box-shadow 0.1s steps(3), background 0.1s steps(3), color 0.1s steps(3), opacity 0.1s steps(3);
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  cursor: pointer; margin-top: 6px;
   letter-spacing: 0.04em; text-transform: uppercase;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
 }
-.btn-apply-training:hover { box-shadow: 3px 3px 0 rgba(0,0,0,0.4); transform: translate(-1px,-1px); }
 .btn-apply-training:focus-visible { outline: 2px solid rgba(255,82,82,0.5); outline-offset: 2px; }
 .tip-box {
   background: rgba(255,179,71,0.04); border: 1px solid rgba(255,179,71,0.12);
@@ -3357,9 +3661,9 @@ body::before {
    MICRO-INTERACTIONS
    ═══════════════════════════════════════════════════════════ */
 
-/* Haptic press — all buttons */
-.btn-gold:active, .btn-green:active, .btn-adopt:active,
-.btn-apply-training:active, .garden-icon-btn:active,
+/* Haptic press — buttons outside the machined chassis family, which
+   handles its own press physics (bevel flip + filter collapse) above. */
+.garden-icon-btn:active,
 .action-btn:active, .chat-input-row button:active {
   transform: translate(2px, 2px) !important;
   box-shadow: 1px 1px 0 rgba(0,0,0,0.3) !important;
@@ -3889,8 +4193,10 @@ body::before {
   .chat-input-area { padding: 8px 0 0; }
   .chat-input-row input { height: 34px; font-size: 0.77rem; }
   .chat-send-btn, .chat-input-row button { min-width: 76px; height: 34px; padding: 0 12px; font-size: 0.66rem; }
-  .quick-prompts { gap: 0; margin-top: 10px; }
-  .quick-prompt-pill { font-size: 0.63rem; padding: 0 10px; height: 38px; }
+  /* Dock stays two separate plates on small screens — just tighter */
+  .quick-prompts { gap: 6px; margin-top: 10px; padding-top: 9px; }
+  .quick-prompt-pill { font-size: 0.63rem; padding: 0 11px; height: 38px; gap: 7px; }
+  .quick-prompt-pill .gx { width: 12px; height: 12px; }
   .chat-header { padding: 6px 10px; }
   .chat-header .title-area h2 { font-size: 0.86rem; }
   .chat-back-btn { padding: 5px 10px; font-size: 0.68rem; min-height: 28px; }
@@ -4352,12 +4658,11 @@ body::before {
   color: var(--green);
 }
 .skip-bar-arrow {
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
+  display: inline-flex; align-items: center;
   color: rgba(0, 230, 118, 0.45);
-  letter-spacing: -0.02em;
   transition: color 0.12s, transform 0.12s;
 }
+.skip-bar-arrow .gx { width: 12px; height: 12px; vertical-align: 0; }
 .skip-intro-bar:hover .skip-bar-arrow {
   color: var(--green);
   transform: translateX(3px);
@@ -4653,10 +4958,21 @@ body::before {
   font-size: 0.88rem;
   color: rgba(160,210,180,0.8);
   padding-left: 28px;
+  position: relative;
 }
+/* Tree elbow drawn as two 1px rules — no box-drawing font character,
+   so the connector lands on the pixel grid at every zoom level. */
 .ending-line.line-sub::before {
-  content: "└ ";
-  color: rgba(0,230,118,0.4);
+  content: "";
+  position: absolute; left: 10px; top: 0; bottom: 50%;
+  width: 1px;
+  background: rgba(0,230,118,0.28);
+}
+.ending-line.line-sub::after {
+  content: "";
+  position: absolute; left: 10px; top: 50%;
+  width: 9px; height: 1px;
+  background: rgba(0,230,118,0.28);
 }
 
 /* Final line */
@@ -5278,7 +5594,13 @@ body::before {
   padding: 6px 10px; border-radius: var(--radius-sm);
   background: rgba(0,230,118,0.02);
   color: var(--text-secondary); margin-bottom: 4px;
+  display: flex; align-items: flex-start; gap: 7px;
 }
+/* Type mark holds its own tone so the sentence stays neutral-legible */
+.dossier-log-entry .gx { margin-top: 3px; }
+.dossier-log-entry.success .gx { color: var(--success); }
+.dossier-log-entry.danger  .gx { color: var(--danger); }
+.dossier-log-entry.info    .gx { color: var(--text-light); }
 .dossier-log-entry.flaw { background: rgba(255,82,82,0.06); color: rgba(255,82,82,0.85); }
 .dossier-log-entry.appropriate { background: rgba(0,230,118,0.05); }
 .dossier-log-empty { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
@@ -5299,10 +5621,12 @@ body::before {
   display: flex; align-items: center; gap: 5px;
 }
 .dossier-pip {
-  font-family: var(--font-mono); font-size: 0.95rem;
+  display: inline-flex; align-items: center;
   color: var(--text-muted); line-height: 1;
 }
+.dossier-pip .gx { width: 13px; height: 13px; vertical-align: 0; }
 .dossier-pip.filled { color: var(--green); }
+.dossier-pip.filled .gx { filter: drop-shadow(0 0 4px rgba(0,230,118,0.5)); }
 
 /* ─── MOOD SEGMENTED CONTROL (dossier) ─── */
 .mood-seg-control {
@@ -5314,6 +5638,7 @@ body::before {
   padding: 9px 4px; border: 1px solid rgba(0,230,118,0.1);
   background: rgba(8,14,10,0.6); color: var(--text-muted);
   cursor: pointer; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
   transition: transform 0.1s steps(2), border-color 0.1s steps(2), box-shadow 0.1s steps(2), background 0.1s steps(2), color 0.1s steps(2);
   border-radius: var(--radius-sm);
 }
@@ -5321,6 +5646,9 @@ body::before {
 .mood-seg-btn.active.success { background: rgba(0,230,118,0.14); color: var(--green); border-color: rgba(0,230,118,0.3); }
 .mood-seg-btn.active.warning { background: rgba(255,213,79,0.10); color: var(--warning); border-color: rgba(255,213,79,0.25); }
 .mood-seg-btn.active.danger { background: rgba(255,82,82,0.08); color: var(--danger); border-color: rgba(255,82,82,0.2); }
+/* The eye glyph is the control; the word is a caption under it */
+.mood-seg-btn .gx { width: 14px; height: 14px; vertical-align: 0; opacity: 0.65; }
+.mood-seg-btn.active .gx { opacity: 1; filter: drop-shadow(0 0 5px currentColor); }
 
 /* ─── TRAINING ROOM GLOW OVERLAY ─── */
 /* ── WALL POST-IT NOTES (training room) ── */
@@ -5562,28 +5890,114 @@ body::before {
   .training-pet-leveled-2 { animation: none !important; }
 }
 
-/* ─── PHASE TRACK (tab row) ─── */
+/* ═══════════════════════════════════════════════════════════
+   PHASE TRACK — the three-stage progression chain
+   OBSERVE → DIAGNOSE → CONSTRAIN is the whole game loop, so the control
+   is shaped like the loop: interlocking chevron plates that point forward,
+   each carrying a stage numeral and a state mark (sealed / open / struck).
+   A stage the player has not earned reads as physically sealed — cut with
+   a diagonal hatch — rather than merely faded out.
+   ═══════════════════════════════════════════════════════════ */
 .phase-track {
-  display: flex; gap: 2px;
+  display: flex; gap: 3px;
 }
 .phase-tab {
-  flex: 1; font-family: var(--font-mono); font-size: 0.64rem;
+  flex: 1; position: relative;
+  font-family: var(--font-mono); font-size: 0.64rem;
   letter-spacing: 0.14em; text-transform: uppercase;
-  padding: 8px 4px; border: 1px solid rgba(0,230,118,0.1);
-  background: rgba(8,14,10,0.5); color: var(--text-muted);
-  cursor: pointer; text-align: center;
-  transition: transform 0.1s steps(2), border-color 0.1s steps(2), box-shadow 0.1s steps(2), background 0.1s steps(2), color 0.1s steps(2); border-radius: var(--radius-sm);
+  padding: 9px 8px 9px 20px;
+  min-height: 46px;
+  border: none; border-radius: 0;
+  background: rgba(8,14,10,0.55); color: var(--text-muted);
+  cursor: pointer; text-align: left;
+  /* Chevron: notched on the left, pointed on the right — the plate reads
+     as a link in a chain rather than a tab in a bar */
+  clip-path: polygon(
+    0 0, calc(100% - 9px) 0, 100% 50%,
+    calc(100% - 9px) 100%, 0 100%, 9px 50%
+  );
+  box-shadow: inset 0 0 0 1px rgba(0,230,118,0.10);
+  transition:
+    transform 0.1s steps(2, end),
+    box-shadow 0.1s steps(2, end),
+    background 0.1s steps(2, end),
+    color 0.1s steps(2, end);
 }
-.phase-tab:hover:not(.locked) { color: var(--text-secondary); border-color: rgba(0,230,118,0.18); }
+/* The chain starts flush and ends flat — only the joints are chevroned */
+.phase-tab:first-child {
+  padding-left: 12px;
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 0 100%);
+}
+.phase-tab:last-child {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 9px 50%);
+}
+
+/* Stage numeral — panel-serial small, sits above the label */
+.phase-tab-idx {
+  position: absolute; top: 5px; left: 20px;
+  font-size: 0.5rem; letter-spacing: 0.22em;
+  color: var(--text-light);
+  pointer-events: none;
+}
+.phase-tab:first-child .phase-tab-idx { left: 12px; }
+.phase-tab-body {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 9px;
+}
+.phase-tab-mark {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+}
+.phase-tab-mark .gx { width: 11px; height: 11px; vertical-align: 0; }
+.phase-tab-label { line-height: 1; }
+
+.phase-tab:hover:not(.locked) {
+  color: var(--text-secondary);
+  background: rgba(0,230,118,0.05);
+  box-shadow: inset 0 0 0 1px rgba(0,230,118,0.20);
+}
+
+/* Live stage — lit plate with a phosphor underline and an emissive bleed */
 .phase-tab.active {
-  background: rgba(0,230,118,0.1); color: var(--green);
-  border-color: rgba(0,230,118,0.28); font-weight: 700;
+  background: rgba(0,230,118,0.13); color: var(--green);
+  font-weight: 700;
+  box-shadow:
+    inset 0 0 0 1px rgba(0,230,118,0.42),
+    inset 0 -2px 0 rgba(0,230,118,0.75);
+  filter: drop-shadow(0 0 7px rgba(0,230,118,0.16));
 }
-.phase-tab.locked { opacity: 0.35; cursor: default; }
+.phase-tab.active .phase-tab-idx { color: rgba(0,230,118,0.55); }
+
+/* Cleared stage — the mark is a struck tick, the plate stays quiet */
+.phase-tab--done:not(.active) { color: var(--text-secondary); }
+.phase-tab--done .phase-tab-mark { color: var(--success); }
+
+/* Sealed stage — hatched, not merely dimmed */
+.phase-tab.locked {
+  cursor: default;
+  color: var(--text-light);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 4px,
+      rgba(0,230,118,0.04) 4px 8px
+    ),
+    rgba(6,10,7,0.72);
+  box-shadow: inset 0 0 0 1px rgba(0,230,118,0.05);
+}
+.phase-tab.locked .phase-tab-mark { color: var(--text-light); opacity: 0.8; }
 
 /* ─── PHASE CONTENT ─── */
 .phase-content {
   display: flex; flex-direction: column; gap: 10px; min-height: 140px;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.phase-content[data-phase="diagnose"] {
+  min-height: 500px;
+}
+.phase-content[data-phase="constrain"] {
+  min-height: 390px;
 }
 
 /* ─── PHASE BIG BUTTONS ─── */
@@ -5594,6 +6008,9 @@ body::before {
   transition: transform 0.1s steps(2), border-color 0.1s steps(2), box-shadow 0.1s steps(2), background 0.1s steps(2), color 0.1s steps(2);
   display: flex; align-items: center; justify-content: center;
   box-sizing: border-box;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
 }
 .phase-big-btn--observe {
   height: 120px; font-size: 1.2rem;
@@ -5614,12 +6031,22 @@ body::before {
     );
   position: relative;
 }
+/* Idle aperture in the corner — a chamfered pixel ring, matching the
+   pip-empty glyph. It closes to a solid block while the room is observing. */
 .phase-big-btn--observe::after {
-  content: "○";
-  position: absolute; bottom: 10px; right: 14px;
-  font-size: 0.55rem; letter-spacing: 0.3em;
-  color: rgba(0,230,118,0.28);
-  font-family: var(--font-mono);
+  content: "";
+  position: absolute; bottom: 11px; right: 14px;
+  width: 9px; height: 9px;
+  box-shadow: inset 0 0 0 2px rgba(0,230,118,0.32);
+  clip-path: polygon(
+    2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px),
+    calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px
+  );
+  transition: box-shadow 0.12s steps(2, end), background 0.12s steps(2, end);
+}
+.phase-big-btn--observe:hover::after {
+  box-shadow: inset 0 0 0 2px rgba(0,230,118,0.7);
+  background: rgba(0,230,118,0.25);
 }
 .phase-big-btn--observe:hover {
   background: rgba(0,230,118,0.11);
@@ -5661,6 +6088,9 @@ body::before {
   padding-top: 18px;
   margin-top: 14px;
   border-top: 1px solid rgba(0,230,118,0.08);
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 /* ─── RULES TEXTAREA (constrain phase) ─── */
@@ -5696,13 +6126,25 @@ body::before {
   cursor: pointer;
   transition: border-color 0.1s steps(3), background 0.1s steps(3);
 }
+/* Selection marker — chamfered pixel square, the same shape as the
+   training pips. Circles are foreign to this system. */
 .flaw-opt::before {
-  content: "○";
+  content: "";
   grid-row: 1 / span 2;
-  font-family: var(--font-mono); font-size: 0.8rem;
-  color: #4a6258; line-height: 1.35;
+  align-self: start;
+  width: 11px; height: 11px;
+  margin-top: 3px;
+  box-shadow: inset 0 0 0 2px #4a6258;
+  clip-path: polygon(
+    3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px),
+    calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px
+  );
+  transition: box-shadow 0.1s steps(2, end), background 0.1s steps(2, end);
 }
-.flaw-opt.selected::before { content: "●"; color: var(--danger); }
+.flaw-opt.selected::before {
+  box-shadow: inset 0 0 0 2px var(--danger);
+  background: var(--danger);
+}
 .flaw-opt:hover { border-color: rgba(0,230,118,0.2); background: rgba(0,230,118,0.03); }
 .flaw-opt:focus-visible { outline: 2px solid rgba(0,230,118,0.3); outline-offset: 1px; }
 .flaw-opt.selected {
@@ -5748,7 +6190,11 @@ body::before {
   letter-spacing: 0.12em; color: #4a6258;
 }
 .rule-check.is-met { color: var(--success); }
-.rule-check-mark { width: 12px; text-align: center; flex-shrink: 0; }
+.rule-check-mark {
+  width: 12px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rule-check-mark .gx { width: 10px; height: 10px; vertical-align: 0; }
 
 /* ─── FLAW BUBBLE GLITCH ENTRANCE ─── */
 @keyframes flaw-bubble-in {
@@ -5810,10 +6256,8 @@ body::before {
   transition: transform 0.04s steps(1);
 }
 
-/* ─── DELIGHT: phase tab active bottom indicator ─── */
-.phase-tab.active {
-  box-shadow: inset 0 -2px 0 rgba(0,230,118,0.75);
-}
+/* The active plate's underline is folded into the PHASE TRACK block above —
+   a second box-shadow here would drop the plate's edge and glow. */
 
 /* ─── DELIGHT: dossier log entry staggered entrance ─── */
 @keyframes log-entry-in {
@@ -5872,6 +6316,8 @@ body::before {
   .dossier-training-room { flex: 0 0 220px; }
   /* Observe button fills the controls panel, pushing mood+log to bottom */
   .phase-content { flex: 1; }
+  .phase-content[data-phase="diagnose"],
+  .phase-content[data-phase="constrain"] { min-height: auto; }
   .phase-big-btn--observe { height: auto; flex: 1; min-height: 120px; }
 }
 
@@ -5914,9 +6360,17 @@ body::before {
 }
 
 /* ── Phase tab: available-hint (one-shot attention on dossier open) ── */
+/* Plates carry their edge as an inset shadow now, so the attention flash
+   pulses the shadow rather than a border that no longer exists. */
 @keyframes tab-available-hint {
-  0%, 100% { border-color: rgba(0,230,118,0.1); color: var(--text-muted); }
-  45%       { border-color: rgba(0,230,118,0.32); color: rgba(0,230,118,0.65); }
+  0%, 100% {
+    box-shadow: inset 0 0 0 1px rgba(0,230,118,0.10);
+    color: var(--text-muted);
+  }
+  45% {
+    box-shadow: inset 0 0 0 1px rgba(0,230,118,0.34);
+    color: rgba(0,230,118,0.65);
+  }
 }
 .phase-tab.available-hint {
   animation: tab-available-hint 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;

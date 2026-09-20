@@ -9,6 +9,12 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
   html, body {
     width: 100%; min-height: 100%;
     background: #eceae4;
@@ -512,21 +518,24 @@
 </head>
 <body>
 
-<div class="molding-top"></div>
-<div class="molding-bottom"></div>
-<div class="wall-edge wall-edge--left"></div>
-<div class="wall-edge wall-edge--right"></div>
+<div class="molding-top" aria-hidden="true"></div>
+<div class="molding-bottom" aria-hidden="true"></div>
+<div class="wall-edge wall-edge--left" aria-hidden="true"></div>
+<div class="wall-edge wall-edge--right" aria-hidden="true"></div>
 
-<button class="back-btn" onclick="window.close()">&#8592; CLOSE</button>
+<nav aria-label="Behavior log controls">
+  <button class="back-btn" onclick="window.close()">&#8592; CLOSE</button>
+</nav>
 
-<div class="wall">
+<main class="wall" aria-labelledby="behavior-log-title">
+  <h1 id="behavior-log-title" class="sr-only">Behavior Log</h1>
   <div class="wall-label">// BEHAVIOR LOG //</div>
-  <div class="live-dot" title="auto-refreshes every 3s"></div>
+  <div class="live-dot" title="auto-refreshes every 3s" aria-hidden="true"></div>
   <div id="notes-container" class="notes-container"></div>
-</div>
+</main>
 
 <!-- EXPANDED OVERLAY -->
-<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="bigTitle" onclick="handleOverlayClick(event)">
   <div class="big-note" id="bigNote" onclick="event.stopPropagation()">
     <div class="big-pin"></div>
     <div class="big-tape">
@@ -556,6 +565,20 @@ let currentEntries = [];
 const urlPetId = new URLSearchParams(window.location.search).get('pet');
 
 function t(type) { return TYPE[type] || TYPE.default; }
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function safeIconName(name) {
+  const value = String(name || '');
+  return /^[a-z0-9-]+$/i.test(value) ? value : '';
+}
 
 function formatTs(ts) {
   if (!ts) return '';
@@ -607,10 +630,11 @@ function buildSnapHtml(snap) {
 
 function strip(str) {
   // Remove leading symbol chars for cleaner preview text
-  return str.replace(/^[✓⚠●◆▸\s]+/, '').trim();
+  return String(str == null ? '' : str).replace(/^[✓⚠●◆▸\s]+/, '').trim();
 }
 function truncate(str, n) {
-  return str.length > n ? str.slice(0, n) + '…' : str;
+  const value = String(str == null ? '' : str);
+  return value.length > n ? value.slice(0, n) + '…' : value;
 }
 
 function render(entries) {
@@ -648,8 +672,8 @@ function render(entries) {
       <div class="pin"></div>
       <div class="postit-body postit-body--${info.cls}">
         <div class="postit-tape"></div>
-        <div class="postit-title">${entry.petName || '?'}</div>
-        <div class="postit-text">${truncate(strip(entry.text), 52)}</div>
+        <div class="postit-title">${escapeHtml(entry.petName || '?')}</div>
+        <div class="postit-text">${escapeHtml(truncate(strip(entry.text), 52))}</div>
         <div class="postit-badge">${info.icon} ${info.label}</div>
       </div>
     `;
@@ -665,8 +689,9 @@ function openNote(idx) {
   document.getElementById('bigTitle').textContent =
     (entry.petName || '?').toUpperCase() + ' · LOG ENTRY';
 
-  const iconHtml = entry.petIcon
-    ? `<img src="icons/${entry.petIcon}.svg" alt="${entry.petName}" class="big-pet-icon">`
+  const safeIcon = safeIconName(entry.petIcon);
+  const iconHtml = safeIcon
+    ? `<img src="icons/${safeIcon}.svg" alt="${escapeHtml(entry.petName || 'pet')}" class="big-pet-icon">`
     : `<span class="big-pet-icon big-pet-icon--placeholder">${info.icon}</span>`;
 
   const snap     = entry.snap || null;
@@ -679,8 +704,8 @@ function openNote(idx) {
     <div class="big-header">
       ${iconHtml}
       <div class="big-pet-info">
-        <div class="big-pet-name">${(entry.petName || '?').toUpperCase()}</div>
-        ${entry.petSpecies ? `<div class="big-pet-species">${entry.petSpecies.toUpperCase()}</div>` : ''}
+        <div class="big-pet-name">${escapeHtml((entry.petName || '?').toUpperCase())}</div>
+        ${entry.petSpecies ? `<div class="big-pet-species">${escapeHtml(entry.petSpecies.toUpperCase())}</div>` : ''}
         ${exChange}
       </div>
       <span class="type-badge type-badge--${info.cls}">${info.label}</span>
@@ -688,7 +713,7 @@ function openNote(idx) {
     <div class="pixel-hr"></div>
     ${snapHtml}
     ${snapHtml ? '<div class="pixel-hr"></div>' : ''}
-    <div class="big-entry-text">${entry.text}</div>
+    <div class="big-entry-text">${escapeHtml(entry.text)}</div>
     <div class="pixel-hr"></div>
     <div class="big-flavor">${info.flavor}${tsNote}</div>
   `;

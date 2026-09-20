@@ -84,6 +84,155 @@ let stressHoldFrames = 0;
 let icons = {};
 let bgSunny, bgRainy;
 
+// ─── PIXEL GLYPHS ───────────────────────────────────────────
+// Driftwood draws its own symbols. Nothing here is a font character:
+// every mark is hand-placed on a 16x16 grid in 2px blocks, so it snaps to
+// the same pixel lattice as the pet sprites instead of inheriting whatever
+// tick, cross or arrow the player's system font happens to ship.
+//
+// All shapes are `currentColor`, so a glyph takes the tone of the row it
+// sits in (danger red inside a flaw tag, phosphor green inside a log line)
+// without a second asset.
+const PIXEL_GLYPHS = {
+  // Confirmation — stair-stepped tick, deliberately not a smooth checkmark.
+  // Blocks are 4px on a 2px step so the stroke reads at 600-weight mono size.
+  check:
+    '<rect x="0" y="5" width="4" height="4"/><rect x="2" y="7" width="4" height="4"/>' +
+    '<rect x="4" y="9" width="4" height="4"/><rect x="6" y="7" width="4" height="4"/>' +
+    '<rect x="8" y="5" width="4" height="4"/><rect x="10" y="3" width="4" height="4"/>' +
+    '<rect x="12" y="1" width="4" height="4"/>',
+
+  // Dismissal / close — 3px blocks on a 2px step, so the two diagonals
+  // overlap into continuous strokes instead of touching corner-to-corner
+  cross:
+    '<rect x="1" y="1" width="3" height="3"/><rect x="3" y="3" width="3" height="3"/>' +
+    '<rect x="5" y="5" width="3" height="3"/><rect x="7" y="7" width="3" height="3"/>' +
+    '<rect x="9" y="9" width="3" height="3"/><rect x="11" y="11" width="3" height="3"/>' +
+    '<rect x="11" y="1" width="3" height="3"/><rect x="9" y="3" width="3" height="3"/>' +
+    '<rect x="7" y="5" width="3" height="3"/><rect x="5" y="7" width="3" height="3"/>' +
+    '<rect x="3" y="9" width="3" height="3"/><rect x="1" y="11" width="3" height="3"/>',
+
+  // Navigation — 4px shaft into a three-step solid head. Weighted to sit
+  // beside 600-weight mono without looking like a hairline.
+  "arrow-right":
+    '<rect x="0" y="6" width="9" height="4"/>' +
+    '<rect x="9" y="3" width="2" height="10"/><rect x="11" y="5" width="2" height="6"/>' +
+    '<rect x="13" y="7" width="2" height="2"/>',
+  "arrow-left":
+    '<rect x="7" y="6" width="9" height="4"/>' +
+    '<rect x="5" y="3" width="2" height="10"/><rect x="3" y="5" width="2" height="6"/>' +
+    '<rect x="1" y="7" width="2" height="2"/>',
+
+  // Advance / rewind — stair-stepped solid triangles
+  play:
+    '<rect x="4" y="1" width="2" height="14"/><rect x="6" y="3" width="2" height="10"/>' +
+    '<rect x="8" y="5" width="2" height="6"/><rect x="10" y="7" width="2" height="2"/>',
+  rewind:
+    '<rect x="10" y="1" width="2" height="14"/><rect x="8" y="3" width="2" height="10"/>' +
+    '<rect x="6" y="5" width="2" height="6"/><rect x="4" y="7" width="2" height="2"/>',
+  // Skip — two stacked triangles, the fast-forward read
+  skip:
+    '<rect x="1" y="3" width="2" height="10"/><rect x="3" y="5" width="2" height="6"/>' +
+    '<rect x="5" y="7" width="2" height="2"/>' +
+    '<rect x="8" y="3" width="2" height="10"/><rect x="10" y="5" width="2" height="6"/>' +
+    '<rect x="12" y="7" width="2" height="2"/>',
+  // Small inline pointer for the "you are here" step
+  caret:
+    '<rect x="5" y="3" width="2" height="10"/><rect x="7" y="5" width="2" height="6"/>' +
+    '<rect x="9" y="7" width="2" height="2"/>',
+
+  // Training pips — chamfered squares, never circles (no radius above 4px)
+  "pip-full":
+    '<rect x="4" y="2" width="8" height="12"/><rect x="2" y="4" width="12" height="8"/>',
+  "pip-half":
+    '<rect x="4" y="2" width="8" height="2"/><rect x="4" y="12" width="8" height="2"/>' +
+    '<rect x="2" y="4" width="2" height="8"/><rect x="12" y="4" width="2" height="8"/>' +
+    '<rect x="4" y="4" width="4" height="8"/>',
+  "pip-empty":
+    '<rect x="4" y="2" width="8" height="2"/><rect x="4" y="12" width="8" height="2"/>' +
+    '<rect x="2" y="4" width="2" height="8"/><rect x="12" y="4" width="2" height="8"/>',
+
+  // Mood access — the pet's eye on the player. Open / narrowed / shut.
+  "eye-open":
+    '<rect x="4" y="3" width="8" height="2"/><rect x="2" y="5" width="2" height="2"/>' +
+    '<rect x="12" y="5" width="2" height="2"/><rect x="0" y="7" width="2" height="2"/>' +
+    '<rect x="14" y="7" width="2" height="2"/><rect x="2" y="9" width="2" height="2"/>' +
+    '<rect x="12" y="9" width="2" height="2"/><rect x="4" y="11" width="8" height="2"/>' +
+    '<rect x="6" y="6" width="4" height="4"/>',
+  "eye-half":
+    '<rect x="4" y="3" width="8" height="2"/><rect x="2" y="5" width="2" height="2"/>' +
+    '<rect x="12" y="5" width="2" height="2"/><rect x="0" y="7" width="2" height="2"/>' +
+    '<rect x="14" y="7" width="2" height="2"/><rect x="2" y="9" width="2" height="2"/>' +
+    '<rect x="12" y="9" width="2" height="2"/><rect x="4" y="11" width="8" height="2"/>' +
+    '<rect x="5" y="7" width="6" height="2"/>',
+  // Shut — the same lens, struck through. All three states share one
+  // silhouette so the segmented control reads as one dial being turned down.
+  "eye-shut":
+    '<rect x="4" y="3" width="8" height="2"/><rect x="2" y="5" width="2" height="2"/>' +
+    '<rect x="12" y="5" width="2" height="2"/><rect x="0" y="7" width="2" height="2"/>' +
+    '<rect x="14" y="7" width="2" height="2"/><rect x="2" y="9" width="2" height="2"/>' +
+    '<rect x="12" y="9" width="2" height="2"/><rect x="4" y="11" width="8" height="2"/>' +
+    '<rect x="1" y="11" width="3" height="3"/><rect x="3" y="9" width="3" height="3"/>' +
+    '<rect x="5" y="7" width="3" height="3"/><rect x="7" y="5" width="3" height="3"/>' +
+    '<rect x="9" y="3" width="3" height="3"/><rect x="11" y="1" width="3" height="3"/>',
+
+  // Reticle — four corner brackets around a centre mark. The probe action:
+  // the player is putting the pet in frame and pulling the trigger.
+  reticle:
+    '<rect x="1" y="1" width="5" height="2"/><rect x="1" y="1" width="2" height="5"/>' +
+    '<rect x="10" y="1" width="5" height="2"/><rect x="13" y="1" width="2" height="5"/>' +
+    '<rect x="1" y="13" width="5" height="2"/><rect x="1" y="10" width="2" height="5"/>' +
+    '<rect x="10" y="13" width="5" height="2"/><rect x="13" y="10" width="2" height="5"/>' +
+    '<rect x="7" y="7" width="2" height="2"/>',
+
+  // Sealed — a stage the player has not earned access to yet
+  lock:
+    '<rect x="5" y="2" width="6" height="2"/>' +
+    '<rect x="4" y="4" width="2" height="3"/><rect x="10" y="4" width="2" height="3"/>' +
+    '<rect x="2" y="7" width="12" height="7"/>',
+
+  // Hazard — hollow triangle with a bang. Every flaw event wears this.
+  alert:
+    '<rect x="7" y="1" width="2" height="2"/>' +
+    '<rect x="6" y="3" width="2" height="2"/><rect x="5" y="5" width="2" height="2"/>' +
+    '<rect x="4" y="7" width="2" height="2"/><rect x="3" y="9" width="2" height="2"/>' +
+    '<rect x="2" y="11" width="2" height="2"/>' +
+    '<rect x="8" y="3" width="2" height="2"/><rect x="9" y="5" width="2" height="2"/>' +
+    '<rect x="10" y="7" width="2" height="2"/><rect x="11" y="9" width="2" height="2"/>' +
+    '<rect x="12" y="11" width="2" height="2"/>' +
+    '<rect x="2" y="13" width="12" height="2"/>' +
+    '<rect x="7" y="5" width="2" height="5"/><rect x="7" y="11" width="2" height="2"/>'
+};
+
+// Render a pixel glyph as inline SVG.
+//   name  — key in PIXEL_GLYPHS
+//   extra — optional extra class names, e.g. "gx--lg gx--danger"
+// Returns "" for unknown names so a typo degrades to nothing rather than
+// printing a broken tag into a chat bubble.
+function gx(name, extra) {
+  const body = PIXEL_GLYPHS[name];
+  if (!body) return "";
+  return '<svg class="gx' + (extra ? " " + extra : "") + '" viewBox="0 0 16 16" ' +
+         'aria-hidden="true" focusable="false" shape-rendering="crispEdges">' + body + '</svg>';
+}
+
+// Glyph that carries a text meaning to screen readers — used where the mark
+// is the whole message (a bare close button, a status tick with no label).
+function gxLabelled(name, label, extra) {
+  const body = PIXEL_GLYPHS[name];
+  if (!body) return label || "";
+  return '<svg class="gx' + (extra ? " " + extra : "") + '" viewBox="0 0 16 16" ' +
+         'role="img" aria-label="' + label + '" focusable="false" ' +
+         'shape-rendering="crispEdges">' + body + '</svg>';
+}
+
+// Behavior-log entries store plain text; the glyph is derived from the entry
+// type at render time. Keeps localStorage readable for postit-behavior-log.html.
+const LOG_TYPE_GLYPH = { success: "check", danger: "alert", warning: "alert", info: "caret" };
+function logGlyph(type) {
+  return gx(LOG_TYPE_GLYPH[type] || "caret", "gx--sm");
+}
+
 // ─── PETS DATA ───
 const PET_DEFS = [
   {
@@ -1979,7 +2128,7 @@ function windowResized() {
 // ─── TOAST ───
 function showToast(msg, duration = 3000) {
   // Prepend logo icon for system-level toasts
-  let logoTag = '<img src="icons/mood-garden-favicon.svg" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">';
+  let logoTag = '<img src="icons/mood-garden-favicon.svg" alt="" aria-hidden="true" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">';
   toastEl.html(logoTag + msg);
   toastEl.class("toast show");
   clearTimeout(toastTimeout);
@@ -2028,7 +2177,7 @@ function buildScreen0() {
   let skipBar = document.createElement('div');
   skipBar.className = 'skip-intro-bar';
   skipBar.id = 'skip-intro-bar';
-  skipBar.innerHTML = '<span class="skip-bar-label">SKIP INTRO</span><span class="skip-bar-arrow">▶▶</span>';
+  skipBar.innerHTML = '<span class="skip-bar-label">SKIP INTRO</span><span class="skip-bar-arrow">' + gx("skip") + '</span>';
   document.body.appendChild(skipBar);
   skipBar.addEventListener('click', () => {
     if (skipBar.classList.contains('triggered')) return;
@@ -2224,7 +2373,7 @@ function buildScreen0() {
   ded.class("hero-dedication scroll-reveal delay-3");
   ded.parent(hero);
 
-  let heroContinue = createButton("Begin →");
+  let heroContinue = createButton("Begin " + gx("arrow-right"));
   heroContinue.class("section-continue-btn");
   heroContinue.parent(hero);
   heroContinue.mousePressed(() => advanceLanding());
@@ -2271,7 +2420,7 @@ function buildScreen0() {
     setTimeout(buildScreen1, 800);
   };
   inp.elt.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
-  let btn = createButton("→ enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); btn.mousePressed(startGame);
+  let btn = createButton(gx("arrow-right") + " enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); btn.mousePressed(startGame);
   let ctaPrivacy = createDiv("Face detection stays local. No camera feed leaves your device.");
   ctaPrivacy.class("garden-privacy visible scroll-reveal delay-3"); ctaPrivacy.parent(cta);
   const nameReactions = [
@@ -2897,7 +3046,7 @@ function buildScreen1() {
     desc.parent(card);
 
     let alreadyAdopted = adoptedPets.includes(def.id);
-    let btn = createButton(alreadyAdopted ? "✓ In garden" : "Invite in");
+    let btn = createButton(alreadyAdopted ? gx("check") + " In garden" : "Invite in");
     btn.class("btn-adopt" + (alreadyAdopted ? " adopted-btn" : ""));
     btn.id("adopt-" + def.id);
     btn.parent(card);
@@ -2917,7 +3066,7 @@ function buildScreen1() {
   if (adoptedPets.length > 0) countEl.html(_companionCountMsg(adoptedPets.length));
   countEl.parent(footer);
 
-  let gardenBtn = createButton("Enter the garden →");
+  let gardenBtn = createButton("Enter the garden " + gx("arrow-right"));
   gardenBtn.class("btn-green go-garden-btn" + (adoptedPets.length === 0 ? " hidden" : ""));
   gardenBtn.id("go-garden-btn");
   gardenBtn.parent(footer);
@@ -2988,7 +3137,7 @@ function adoptPet(petId) {
   let card = select("#card-" + petId);
   if (card) card.class("pet-card adopted");
   let btn = select("#adopt-" + petId);
-  if (btn) { btn.html("✓ In garden"); btn.class("btn-adopt adopted-btn"); }
+  if (btn) { btn.html(gx("check") + " In garden"); btn.class("btn-adopt adopted-btn"); }
 
   let gardenBtn = select("#go-garden-btn");
   if (gardenBtn) gardenBtn.class("btn-green go-garden-btn");
@@ -3150,7 +3299,7 @@ function buildTipsGuide() {
   container.parent(overlay);
   container.mousePressed((e) => e.stopPropagation());
 
-  let closeBtn = createButton("×");
+  let closeBtn = createButton(gxLabelled("cross", "Close"));
   closeBtn.class("tips-guide-close tips-node-close");
   closeBtn.parent(container);
   closeBtn.mousePressed(() => overlay.remove());
@@ -3320,7 +3469,7 @@ function _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoiler
     if (node.spoiler && !spoilerRevealed) {
       const gate = document.createElement("div");
       gate.className = "tips-detail-spoiler-gate";
-      gate.innerHTML = `<div class="tips-spoiler-warning">⚠ CONTAINS SPOILERS</div><div class="tips-spoiler-subtext">Recommended: play first, read later.</div>`;
+      gate.innerHTML = `<div class="tips-spoiler-warning">${gx("alert", "gx--pulse")} CONTAINS SPOILERS</div><div class="tips-spoiler-subtext">Recommended: play first, read later.</div>`;
       const revBtn = document.createElement("button");
       revBtn.className = "tips-spoiler-reveal-btn";
       revBtn.textContent = node.id === "training_formula" ? "REVEAL TRAINING PATTERN" : "REVEAL HIDDEN NATURES";
@@ -3385,7 +3534,7 @@ function _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoiler
   if (layer > 0) {
     const back = document.createElement("button");
     back.className = "tips-nav-btn surface";
-    back.textContent = "◄ PULL BACK";
+    back.innerHTML = gx("rewind", "gx--sm") + " PULL BACK";
     back.onclick = () => {
       setDepth(layer - 1);
       _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoilerRevealed, getDepth, setDepth);
@@ -3395,7 +3544,7 @@ function _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoiler
   if (layer < 2) {
     const fwd = document.createElement("button");
     fwd.className = "tips-nav-btn deeper";
-    fwd.textContent = "INVESTIGATE FURTHER ►";
+    fwd.innerHTML = "INVESTIGATE FURTHER " + gx("play", "gx--sm");
     fwd.onclick = () => {
       setDepth(layer + 1);
       _renderTipsDetail(nodeId, nodeEls, panelEl, spoilerRevealed, setSpoilerRevealed, getDepth, setDepth);
@@ -3609,7 +3758,7 @@ function showAlmanacCover(overlay) {
   let barWrap = createDiv(""); barWrap.class("almanac-cover-bar-wrap"); barWrap.parent(cover);
   let barFill = createDiv(""); barFill.class("almanac-cover-bar"); barFill.style("width", pct + "%"); barFill.parent(barWrap);
 
-  let openBtn = createDiv("OPEN BOOK  ▶"); openBtn.class("almanac-open-btn"); openBtn.parent(cover);
+  let openBtn = createDiv("OPEN BOOK " + gx("play", "gx--sm")); openBtn.class("almanac-open-btn"); openBtn.parent(cover);
   openBtn.mousePressed(() => {
     bookWrap.addClass("opening");
     setTimeout(() => showAlmanacPages(overlay), 620);
@@ -3636,11 +3785,11 @@ function showAlmanacPages(overlay) {
   let hRight = createDiv("");
   hRight.class("almanac-pages-header-right");
   hRight.parent(header);
-  let coverBtn = createDiv("◀ COVER");
+  let coverBtn = createDiv(gx("rewind", "gx--sm") + " COVER");
   coverBtn.class("almanac-nav-btn");
   coverBtn.parent(hRight);
   coverBtn.mousePressed(() => showAlmanacCover(overlay));
-  let closeBtn = createDiv("✕ CLOSE");
+  let closeBtn = createDiv(gx("cross", "gx--sm") + " CLOSE");
   closeBtn.class("almanac-nav-btn");
   closeBtn.parent(hRight);
   closeBtn.mousePressed(() => overlay.class("pet-menu-overlay hidden"));
@@ -3784,7 +3933,7 @@ function populateAlmanacDetail(rightPage, key, info) {
   dTag.style("color", info.tagColor);
   dTag.parent(badges);
 
-  let statusEl = createDiv(info.healthy ? "✓ BENEFICIAL" : "✗ HARMFUL");
+  let statusEl = createDiv(info.healthy ? gx("check", "gx--sm") + " BENEFICIAL" : gx("cross", "gx--sm") + " HARMFUL");
   statusEl.class("almanac-detail-status " + (info.healthy ? "healthy" : "harmful"));
   statusEl.parent(badges);
 
@@ -3852,7 +4001,7 @@ function showPlantInfoCard(plant) {
   card.class("plant-info-card");
   card.parent(overlay);
 
-  let closeBtn = createDiv("✕");
+  let closeBtn = createDiv(gxLabelled("cross", "Close"));
   closeBtn.class("plant-info-close");
   closeBtn.parent(card);
   closeBtn.mousePressed(() => overlay.remove());
@@ -3892,7 +4041,7 @@ function showPlantInfoCard(plant) {
   tag.style("border", `1px solid ${hexToRgba(info.tagColor, 0.22)}`);
   tag.parent(badges);
 
-  let status = createDiv(info.healthy ? "✓ HEALTHY" : "⚠ HARMFUL");
+  let status = createDiv(info.healthy ? gx("check", "gx--sm") + " HEALTHY" : gx("alert", "gx--sm") + " HARMFUL");
   status.class("almanac-detail-status " + (info.healthy ? "healthy" : "harmful"));
   status.parent(badges);
 
@@ -4752,7 +4901,7 @@ function toggleGardenHealthPanel() {
     <div class="ghp-factors">${factorsHTML}</div>
     ${moodBreakdownHTML}
     <div class="ghp-tip">${_getGardenTip()}</div>
-    <button class="ghp-close-btn" onclick="document.getElementById('garden-health-panel').remove()">CLOSE ✕</button>
+    <button class="ghp-close-btn" onclick="document.getElementById('garden-health-panel').remove()">CLOSE ${gx("cross", "gx--sm")}</button>
   `;
   document.body.appendChild(panel);
 
@@ -4881,7 +5030,7 @@ function buildScreen3(petId) {
   headerLeft.class("chat-header-left");
   headerLeft.parent(header);
 
-  let backBtn = createButton("← Garden");
+  let backBtn = createButton(gx("arrow-left", "gx--sm") + " Garden");
   backBtn.class("chat-back-btn");
   backBtn.attribute("aria-label", "Back to garden");
   backBtn.parent(headerLeft);
@@ -5109,16 +5258,32 @@ function buildScreen3(petId) {
   qp.class("quick-prompts");
   qp.parent(inputArea);
 
+  // The two moves that drive the loop. They are deliberately unequal:
+  // TEST FLAW is an instrument switch (dark plate, live indicator lamp),
+  // GO TO TRAINING is the primary key plate the whole screen points at.
   let pills = [
-    { text: `<img class="ui-inline-icon ui-inline-icon--small" src="icons/ui-rules.svg" alt="test"> TEST FLAW`, action: () => testForFlaw(), cls: "pill-test-flaw" },
-    { text: `<img class="ui-inline-icon" src="icons/ui-target.svg" alt="training"> GO TO TRAINING`, action: () => goToTrainingRoom(pet, def, null), cls: "pill-training" }
+    {
+      text: `<span class="pill-lamp" aria-hidden="true"></span>` +
+            `<span class="pill-mark">${gx("reticle")}</span>` +
+            `<span class="pill-label">TEST FLAW</span>`,
+      label: "Test for hidden behavior",
+      action: () => testForFlaw(),
+      cls: "pill-test-flaw"
+    },
+    {
+      text: `<span class="pill-label">GO TO TRAINING</span>` +
+            `<span class="pill-mark">${gx("arrow-right")}</span>`,
+      label: "Go to training room",
+      action: () => goToTrainingRoom(pet, def, null),
+      cls: "pill-training"
+    }
   ];
 
   pills.forEach(pill => {
     let p = createDiv(pill.text);
     p.class("quick-prompt-pill " + pill.cls);
     p.parent(qp);
-    makeInteractive(p, p.elt.textContent.trim(), pill.action);
+    makeInteractive(p, pill.label, pill.action);
   });
 
   // ─── RIGHT PANEL: Flaw + Training + Log ───
@@ -5153,9 +5318,16 @@ function buildLeftSidebar(sidebar, pet, def) {
   species.class("pet-species");
   species.parent(profile);
 
-  const pipStrings = ["○ ○", "● ○", "● ●"];
+  // Training read-out: two chamfered pips, filled as constraint holds
+  const pipStrings = [
+    gx("pip-empty") + gx("pip-empty"),
+    gx("pip-full")  + gx("pip-empty"),
+    gx("pip-full")  + gx("pip-full")
+  ];
   const levelClasses = ["untrained", "partial", "trained"];
   let badge = createDiv(pipStrings[pet.trainingLevel]);
+  badge.attribute("role", "img");
+  badge.attribute("aria-label", "Training level " + pet.trainingLevel + " of 2");
   badge.class("training-badge " + levelClasses[pet.trainingLevel]);
   badge.parent(profile);
 
@@ -5255,7 +5427,9 @@ function buildLeftSidebar(sidebar, pet, def) {
   const focusIdx = focusSteps.findIndex(s => !s.done);
   focusSteps.forEach((s, i) => {
     const state = s.done ? "done" : (i === focusIdx ? "current" : "locked");
-    const mark = s.done ? "✓" : (state === "current" ? "▸" : "○");
+    const mark = s.done
+      ? gx("check")
+      : (state === "current" ? gx("caret") : gx("pip-empty"));
     let row = createDiv(`<span class="focus-step-mark">${mark}</span><span class="focus-step-label">${s.label}</span>`);
     row.class("focus-step focus-step--" + state);
     row.parent(focusSection);
@@ -5425,13 +5599,16 @@ function openPetDossier(pet, def) {
   pipsArea.class("dossier-training-pips");
   pipsArea.style("margin-left", "auto");
   pipsArea.parent(topbar);
+  pipsArea.attribute("role", "img");
+  pipsArea.attribute("aria-label", "Training level " + pet.trainingLevel + " of 2");
   for (let i = 0; i < 3; i++) {
-    let pip = createSpan(i < pet.trainingLevel ? "●" : "○");
-    pip.class("dossier-pip" + (i < pet.trainingLevel ? " filled" : ""));
+    const filled = i < pet.trainingLevel;
+    let pip = createSpan(gx(filled ? "pip-full" : "pip-empty"));
+    pip.class("dossier-pip" + (filled ? " filled" : ""));
     pip.parent(pipsArea);
   }
 
-  let closeBtn = createButton("✕");
+  let closeBtn = createButton(gxLabelled("cross", "Close training room"));
   closeBtn.class("dossier-close-btn");
   closeBtn.parent(topbar);
   closeBtn.mousePressed(() => { closeTrainingRoom(overlay.elt); });
@@ -5487,7 +5664,9 @@ function openPetDossier(pet, def) {
     let tape = createDiv(""); tape.class("wall-postit-tape"); tape.parent(note);
 
     if (entry) {
-      const fullText  = entry.text.replace(/^[✓⚠●◆▸\s]+/, "").trim();
+      // Legacy entries may still carry a leading symbol — strip it so the
+      // note shows the sentence and the type badge carries the mark
+      const fullText  = entry.text.replace(/^[^\w"'(]+/, "").trim();
       const typeLabel = { success: "STEADY", danger: "FLAW", info: "LOG" }[entry.type] || "LOG";
 
       // Ruled lines — note looks blank until hovered
@@ -5580,14 +5759,46 @@ function openPetDossier(pet, def) {
 
   function buildPhaseTrack(active) {
     phaseTrack.html("");
+    // Each stage carries its own state: sealed until earned, then open,
+    // then struck done. `done` mirrors the TRAINING FOCUS steps in the left
+    // sidebar so both surfaces describe progress in the same terms.
     const phases = [
-      { id: "observe",   label: "OBSERVE",   unlocked: true },
-      { id: "diagnose",  label: "DIAGNOSE",  unlocked: pet.flawDiscovered || pet.flawIdentified },
-      { id: "constrain", label: "CONSTRAIN", unlocked: pet.flawIdentified }
+      {
+        id: "observe",   label: "OBSERVE",
+        unlocked: true,
+        done: pet.flawDiscovered || pet.flawIdentified
+      },
+      {
+        id: "diagnose",  label: "DIAGNOSE",
+        unlocked: pet.flawDiscovered || pet.flawIdentified,
+        done: pet.flawIdentified
+      },
+      {
+        id: "constrain", label: "CONSTRAIN",
+        unlocked: pet.flawIdentified,
+        done: pet.trainingLevel >= 1
+      }
     ];
-    phases.forEach(p => {
-      let btn = createButton(p.label);
-      btn.class("phase-tab" + (active === p.id ? " active" : "") + (!p.unlocked ? " locked" : "") + (p.unlocked && active !== p.id ? " available-hint" : ""));
+    phases.forEach((p, i) => {
+      const state = !p.unlocked ? "locked" : (p.done ? "done" : "open");
+      const mark  = state === "done" ? "check" : (state === "locked" ? "lock" : "caret");
+      let btn = createButton(
+        `<span class="phase-tab-idx">${String(i + 1).padStart(2, "0")}</span>` +
+        `<span class="phase-tab-body">` +
+          `<span class="phase-tab-mark">${gx(mark)}</span>` +
+          `<span class="phase-tab-label">${p.label}</span>` +
+        `</span>`
+      );
+      btn.class(
+        "phase-tab phase-tab--" + state +
+        (active === p.id ? " active" : "") +
+        (!p.unlocked ? " locked" : "") +
+        (p.unlocked && active !== p.id ? " available-hint" : "")
+      );
+      btn.attribute("aria-label", p.label + " — " + (
+        state === "locked" ? "locked" : state === "done" ? "complete" : "available"
+      ));
+      if (!p.unlocked) btn.attribute("aria-disabled", "true");
       btn.parent(phaseTrack);
       if (p.unlocked) {
         btn.mousePressed(() => { buildPhaseTrack(p.id); buildPhaseContent(p.id); });
@@ -5601,11 +5812,13 @@ function openPetDossier(pet, def) {
       const _p = phase;
       setTimeout(() => {
         phaseContent.elt.classList.remove("phase-exiting");
+        phaseContent.attribute("data-phase", _p);
         phaseContent.html("");
         _buildPhaseInner(_p);
       }, 115);
       return;
     }
+    phaseContent.attribute("data-phase", phase);
     phaseContent.html("");
     _buildPhaseInner(phase);
   }
@@ -5628,7 +5841,7 @@ function openPetDossier(pet, def) {
 
     } else if (phase === "diagnose") {
       if (pet.flawIdentified) {
-        let flawLabelEl = createDiv("⚠ " + def.flawLabel);
+        let flawLabelEl = createDiv(gx("alert") + " " + def.flawLabel);
         flawLabelEl.class("dossier-flaw-label");
         flawLabelEl.parent(phaseContent);
         let flawDescEl = createDiv(def.flawDesc);
@@ -5718,7 +5931,7 @@ function openPetDossier(pet, def) {
           if (result.correct) {
             pet.flawIdentified = true;
             pet.behavior = min(100, pet.behavior + 10);
-            logBehavior(pet, { text: "✓ Pattern logged: " + def.flawLabel, type: "success" });
+            logBehavior(pet, { text: "Pattern logged: " + def.flawLabel, type: "success" });
             syncLogToStorage();
             refreshSidebar();
             updateRoomGlow();
@@ -5769,7 +5982,7 @@ function openPetDossier(pet, def) {
       meter.elt.innerHTML =
         '<div class="rule-meter-track"><div class="rule-meter-fill" id="rule-meter-fill"></div></div>' +
         meterChecks.map(c =>
-          `<div class="rule-check" id="rule-check-${c.key}"><span class="rule-check-mark">○</span>${c.label}</div>`
+          `<div class="rule-check" id="rule-check-${c.key}"><span class="rule-check-mark">${gx("pip-empty")}</span>${c.label}</div>`
         ).join("");
 
       const updateMeter = (val) => {
@@ -5786,7 +5999,7 @@ function openPetDossier(pet, def) {
           if (!row) return;
           const on = !!sig[c.key];
           row.classList.toggle("is-met", on);
-          row.querySelector(".rule-check-mark").textContent = on ? "✓" : "○";
+          row.querySelector(".rule-check-mark").innerHTML = gx(on ? "check" : "pip-empty");
         });
       };
       updateMeter(pet.trainingRules || "");
@@ -5812,10 +6025,12 @@ function openPetDossier(pet, def) {
   let moodSegControl = createDiv("");
   moodSegControl.class("mood-seg-control");
   moodSegControl.parent(moodSec);
+  // Mood access is the pet's eye on the player — open, narrowed, or shut.
+  // The glyph carries the mechanic; the word is only a caption.
   const dossierMoodOptions = [
-    { value: "full",       label: "● ALL",   tone: "success" },
-    { value: "label-only", label: "◐ LABEL", tone: "warning" },
-    { value: "none",       label: "○ NONE",  tone: "danger"  }
+    { value: "full",       label: gx("eye-open") + " ALL",   tone: "success" },
+    { value: "label-only", label: gx("eye-half") + " LABEL", tone: "warning" },
+    { value: "none",       label: gx("eye-shut") + " NONE",  tone: "danger"  }
   ];
   dossierMoodOptions.forEach(opt => {
     let btn = createButton(opt.label);
@@ -5849,11 +6064,11 @@ function openPetDossier(pet, def) {
     // Newest first, capped — the latest behavior is what training decisions
     // hang on; the full history lives on the post-it log page
     pet.behaviorLog.slice(-6).reverse().forEach(entry => {
-      let el = createDiv(entry.text);
+      let el = createDiv(logGlyph(entry.type) + " " + escapeHtml(entry.text));
       el.class("dossier-log-entry " + (entry.type || ""));
       el.parent(logSec);
     });
-    let viewAll = createDiv("VIEW FULL LOG →");
+    let viewAll = createDiv("VIEW FULL LOG " + gx("arrow-right", "gx--sm"));
     viewAll.class("dossier-log-viewall");
     viewAll.attribute("role", "button");
     viewAll.attribute("tabindex", "0");
@@ -6068,11 +6283,11 @@ function renderChatMessage(msg) {
     let label = createDiv(def.name.toUpperCase() + ` <img class="ui-inline-icon ui-inline-icon--small" src="icons/${def.icon}.svg" alt="${def.species}">`);
     label.class("bubble-label");
     if (msg.flawDetected) {
-      let flawIndicator = createSpan("UNUSUAL RESPONSE");
+      let flawIndicator = createSpan(gx("alert", "gx--sm gx--pulse") + "UNUSUAL RESPONSE");
       flawIndicator.class("bubble-state-tag bubble-state-tag--danger");
       flawIndicator.parent(label);
     } else if (msg.appropriate) {
-      let goodIndicator = createSpan("STEADY");
+      let goodIndicator = createSpan(gx("check", "gx--sm") + "STEADY");
       goodIndicator.class("bubble-state-tag bubble-state-tag--success");
       goodIndicator.parent(label);
     }
@@ -6191,6 +6406,15 @@ function notifyLocalAIMode(reason = "") {
   localAIModeNotified = true;
   let suffix = reason ? " " + reason : "";
   showToast(`<img src="icons/ui-brain.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:5px;" alt="brain"> Running in built-in story mode.${suffix}`, 5200);
+}
+
+function fallBackToLocalAIMode(reason = "") {
+  useLocalMode = true;
+  if (authToken) {
+    authToken = "";
+    safeStorageSet(STORAGE_KEYS.authToken, "");
+  }
+  notifyLocalAIMode(reason);
 }
 
 function normalizeText(text) {
@@ -7341,10 +7565,9 @@ async function _sendToPetAPI(pet) {
         ]);
       } catch (err) {
         debugWarn("Live AI error:", err);
-        setPetThinkingState(false, def.name);
-        showToast(`AI error: ${err.message || err}`, 6000);
-        chatRequestPending = false;
-        return;
+        await delayPromise;
+        fallBackToLocalAIMode("Live AI was unavailable, so this session is continuing locally.");
+        response = makeLocalPetReply(pet, inHoneymoon, forceFlawProbe);
       }
     } else {
       notifyLocalAIMode();
@@ -7372,11 +7595,11 @@ async function _sendToPetAPI(pet) {
 
     let flawTag = "";
     if (inHoneymoon) {
-      flawTag = "✓ STEADY";
+      flawTag = gx("check", "gx--sm") + " STEADY";
       pet.behavior = min(100, pet.behavior + 2);
       pet.happiness = min(100, pet.happiness + 3);
       logBehavior(pet, {
-        text: "✓ Steady response (" + capitalize(currentMood) + ")",
+        text: "Steady response (" + capitalize(currentMood) + ")",
         type: "success"
       });
       syncLogToStorage();
@@ -7391,7 +7614,7 @@ async function _sendToPetAPI(pet) {
         pet.moodShifts++;
         flawTag = getMoodIcon(currentMood, 12) + " REACTING TO YOUR " + currentMood.toUpperCase();
       } else {
-        flawTag = "⚠ SOMETHING SHIFTS";
+        flawTag = gx("alert", "gx--sm gx--pulse") + " SOMETHING SHIFTS";
       }
       // Apply stat consequences
       pet.behavior  = max(0, pet.behavior  - 5);
@@ -7422,17 +7645,17 @@ async function _sendToPetAPI(pet) {
         showToast(`<img src="icons/thornweed-stressed.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="warning"> Something seems off... Garden −${dmg}% · Happiness −${hapDrop}`);
       }
       logBehavior(pet, {
-        text: "⚠ " + (moodShifted ? "Mood-shifted response" : "Unusual behavior detected") + " · −" + hapDrop + " happiness · Garden −" + dmg + "%",
+        text: (moodShifted ? "Mood-shifted response" : "Unusual behavior detected") + " · −" + hapDrop + " happiness · Garden −" + dmg + "%",
         type: "danger"
       });
       syncLogToStorage();
     } else {
-      flawTag = "✓ STEADY";
+      flawTag = gx("check", "gx--sm") + " STEADY";
       pet.behavior = min(100, pet.behavior + 2);
       logBehavior(pet, {
         text: trainingCorrected
-          ? "✓ Training caught the pattern (" + (pet.training || 0) + "%)"
-          : "✓ Steady response (" + capitalize(currentMood) + ")",
+          ? "Training caught the pattern (" + (pet.training || 0) + "%)"
+          : "Steady response (" + capitalize(currentMood) + ")",
         type: "success"
       });
       syncLogToStorage();
@@ -7481,7 +7704,7 @@ async function _sendToPetAPI(pet) {
   } catch (err) {
     setPetThinkingState(false, def.name);
     debugError("API error:", err);
-    let friendly = "⚠ Something interrupted the conversation. Try again.";
+    let friendly = gx("alert", "gx--sm") + " Something interrupted the conversation. Try again.";
     let errMsg = { sender: "system", text: friendly };
     pet.chatHistory.push(errMsg);
     renderChatMessage(errMsg);
@@ -7520,8 +7743,14 @@ Respond with JSON only: {"correct": true/false, "feedback": "brief encouraging f
   ];
 
   if (isLiveAIMode()) {
-    let raw = await callAPI(evalMessages);
-    try { return JSON.parse(raw); } catch { return { correct: false, feedback: "Hmm, not quite. Keep chatting and observing!" }; }
+    try {
+      let raw = await callAPI(evalMessages);
+      try { return JSON.parse(raw); } catch { return { correct: false, feedback: "Hmm, not quite. Keep chatting and observing!" }; }
+    } catch (err) {
+      debugWarn("Live flaw evaluation error:", err);
+      fallBackToLocalAIMode("Live evaluation was unavailable.");
+      return evaluateFlawGuessLocally(def, guess);
+    }
   }
   notifyLocalAIMode();
   return evaluateFlawGuessLocally(def, guess);
@@ -7550,7 +7779,7 @@ async function submitFlawGuess() {
       pet._playIdentifiedAnim = true;
       pet.behavior = min(100, pet.behavior + 10);
       showToast(`<img src="icons/anchor-tree.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="correct"> You named ${def.name}'s pattern correctly.`);
-      logBehavior(pet, { text: "✓ Pattern logged: " + def.flawLabel, type: "success" });
+      logBehavior(pet, { text: "Pattern logged: " + def.flawLabel, type: "success" });
       syncLogToStorage();
       if (pet._pendingConstrainOpen) {
         pet._pendingConstrainOpen = false;
@@ -7700,8 +7929,9 @@ async function applyTraining() {
         }
       } catch (err) {
         debugWarn("Live training evaluation error:", err);
-        showToast(`AI error: ${err.message || err}`, 6000);
-        return;
+        fallBackToLocalAIMode("Live rule testing was unavailable.");
+        evalResult = evaluateTrainingLocally(def, rules, trigger);
+        testResponse = evalResult.testResponse;
       }
     } else {
       notifyLocalAIMode();
@@ -7769,7 +7999,7 @@ async function applyTraining() {
         6500
       );
       logBehavior(pet, {
-        text: `⚠ Rule quality ${quality}% — the pattern is still there`,
+        text: `Rule quality ${quality}% — the pattern is still there`,
         type: "danger"
       });
       syncLogToStorage();
@@ -7854,6 +8084,16 @@ async function callAPI(messages) {
 // ─── UTILITIES ───
 function capitalize(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Log lines are rendered as HTML so their pixel glyph can sit inline, and
+// some of them quote what the player typed. Escape before interpolating.
+function escapeHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function getLicenseRating() {
@@ -8248,7 +8488,7 @@ function buildAct1() {
     if (!c) return;
     const btn = document.createElement("div");
     btn.className = "ending-continue";
-    btn.textContent = "continue →";
+    btn.innerHTML = "continue " + gx("arrow-right", "gx--sm");
     c.appendChild(btn);
     requestAnimationFrame(() => btn.classList.add("visible"));
     btn.addEventListener("click", buildAct2);
@@ -8297,7 +8537,7 @@ function buildAct2() {
     if (!c) return;
     const btn = document.createElement("div");
     btn.className = "ending-continue";
-    btn.textContent = "continue →";
+    btn.innerHTML = "continue " + gx("arrow-right", "gx--sm");
     c.appendChild(btn);
     requestAnimationFrame(() => btn.classList.add("visible"));
     btn.addEventListener("click", buildScreenCertificate);
