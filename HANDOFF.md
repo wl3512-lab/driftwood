@@ -14,6 +14,10 @@ The core loop is designed to work without a private API key. Live AI is optional
 
 Read this before touching the entry flow, the mood system, or deployment.
 
+**Pet replies: the built-in engine is the default and the authority.** `useLocalMode` starts `true`; `?live=1` or a token via `window.setDWToken()` switches to the Replicate proxy. Level 0 = flaw on every topic from the first post-honeymoon reply (`localReplyWasFlaw` marks the branch; `_sendToPetAPI` trusts it for local replies and uses `flawRegex` only for live-model text). Keyword matching is whole-word (`phraseMatches`); short follow-ups inherit the previous user message's topic. If you add a level-0 branch, it is a flaw unless you set `localReplyWasFlaw = false` inside it (see the greeting branches).
+
+**Behavior log** opens in-game via `openBehaviorLogOverlay(petId)` (iframe over the chat); the page posts `DW_LOG_CLOSE` to close.
+
 **Camera is a switch, on by default.** `getCameraPref()` (URL `?camera=` wins, else localStorage `dw_camera_pref`, default `on`). `startGame()` only calls `startWebcam()` when the pref is `on`, and must do so inside the click handler for Safari's activation window. Inside the garden, `#camera-offer` (rendered when there is no `video`) calls `enableCameraFromGarden()`, which rebuilds screen 2 when the stream is up.
 
 **Self-report mood dial.** When `!cameraIsLive()`, both mood chips (`#mood-indicator`, `#chat-mood-indicator`) are interactive via `makeMoodChipInteractive()` and open `toggleMoodDial()`. `declareMood()` writes `currentMood`, clears `moodHistory`, and everything downstream (plants, pet replies, session stats) is unchanged. `moodChipHTML()` is the single writer for chip markup — use it, don't hand-build the string.
