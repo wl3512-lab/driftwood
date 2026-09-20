@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Design case study for Driftwood, a browser game that teaches what AI alignment failure feels like by letting you raise a companion with a hidden flaw.">
+  <meta name="theme-color" content="#080c09">
+  <title>Driftwood — Case Study</title>
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Driftwood — Case Study">
+  <meta property="og:description" content="How a mood-reactive garden teaches AI alignment by feel. Process, decisions, and what's next.">
+  <meta property="og:image" content="icons/og-cover.png">
+  <link rel="icon" type="image/svg+xml" href="icons/mood-garden-favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080c09;
+      --bg-raised: #0c1210;
+      --line: rgba(0, 230, 118, 0.14);
+      --line-strong: rgba(0, 230, 118, 0.32);
+      --green: #00e676;
+      --green-dim: rgba(0, 230, 118, 0.62);
+      --gold: #ffb347;
+      --red: #ff5252;
+      --text: #c8d8ce;
+      --text-2: #7a9488;
+      --text-3: #4d6358;
+      --mono: 'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', monospace;
+      --rail-w: 168px;
+      --measure: 68ch;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: var(--mono); font-size: 15px; line-height: 1.7;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--green); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+    a:hover { border-bottom-color: var(--green); }
+    a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+    img { max-width: 100%; display: block; }
+    h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; color: #e8f4ee; margin: 0; }
+    h1 { font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.05; }
+    h2 { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.12em; }
+    h3 { font-size: 1rem; }
+    p { margin: 0 0 1.1em; max-width: var(--measure); }
+    strong { color: #e8f4ee; font-weight: 600; }
+    code { font-family: inherit; color: var(--gold); font-size: 0.92em; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+    ul { padding-left: 1.2em; margin: 0 0 1.1em; max-width: var(--measure); }
+    li { margin-bottom: 0.35em; }
+    li::marker { color: var(--green-dim); }
+
+    /* ─ Observation rail: the page watches you read, the way the game does ─ */
+    .rail {
+      position: fixed; top: 0; left: 0; bottom: 0; width: var(--rail-w);
+      border-right: 1px solid var(--line); padding: 28px 18px;
+      font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3);
+      display: flex; flex-direction: column; gap: 18px; z-index: 10; background: var(--bg);
+    }
+    .rail-head { color: var(--green); display: flex; align-items: center; gap: 8px; }
+    .rail-head::before { content: ""; width: 6px; height: 6px; background: var(--green); animation: blink 1.6s steps(2, end) infinite; }
+    @keyframes blink { 50% { opacity: 0.2; } }
+    @media (prefers-reduced-motion: reduce) { .rail-head::before { animation: none; } }
+    .rail-row { display: flex; justify-content: space-between; gap: 8px; }
+    .rail-row b { color: var(--text-2); font-weight: 500; }
+    .rail-nav { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+    .rail-nav a { border: 0; color: var(--text-3); font-size: 0.62rem; letter-spacing: 0.14em; padding: 2px 0; }
+    .rail-nav a.on { color: var(--green); }
+    .rail-nav a::before { content: "> "; opacity: 0; }
+    .rail-nav a.on::before { opacity: 1; }
+
+    main { margin-left: var(--rail-w); padding: 0 clamp(20px, 6vw, 96px) 120px; max-width: calc(var(--rail-w) + 1040px); }
+    section { padding: 72px 0 24px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
+    section:first-of-type { border-top: 0; padding-top: 88px; }
+    .k { font-size: 0.66rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--green-dim); margin-bottom: 18px; }
+    .k b { color: var(--text-3); font-weight: 500; margin-left: 10px; }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 18px;
+      border: 1px solid var(--line-strong); color: var(--green); font-size: 0.78rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .btn:hover { background: rgba(0, 230, 118, 0.06); border-color: var(--green); }
+    .btn.primary { background: var(--green); color: #0a120e; border-color: var(--green); font-weight: 600; }
+    .btn.primary:hover { background: #69f0ae; }
+
+    .lede { font-size: 1.15rem; line-height: 1.6; color: #e8f4ee; max-width: 60ch; margin: 22px 0 0; }
+    .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 40px; }
+    .fact { background: var(--bg); padding: 16px 16px 14px; }
+    .fact b { display: block; font-size: 1.5rem; font-weight: 600; color: #e8f4ee; line-height: 1.1; }
+    .fact span { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3); }
+
+    figure { margin: 28px 0; border: 1px solid var(--line); background: var(--bg-raised); }
+    figure img { width: 100%; }
+    figcaption { padding: 10px 14px; font-size: 0.72rem; color: var(--text-2); border-top: 1px solid var(--line); }
+    figcaption b { color: var(--green-dim); font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin-right: 10px; }
+    .fig-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .fig-pair { grid-template-columns: 1fr; } }
+
+    .loop { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 24px 0 32px; counter-reset: step; }
+    .loop div { background: var(--bg); padding: 18px 16px 16px; font-size: 0.82rem; color: var(--text-2); }
+    .loop div::before { counter-increment: step; content: "0" counter(step); display: block; color: var(--green); font-size: 0.7rem; letter-spacing: 0.16em; margin-bottom: 8px; }
+    .loop b { display: block; color: #e8f4ee; font-weight: 600; margin-bottom: 4px; }
+
+    .decision { border-left: 1px solid var(--line-strong); padding: 4px 0 4px 22px; margin: 34px 0; }
+    .decision h3 { margin-bottom: 10px; }
+    .decision h3 small { display: block; color: var(--green-dim); font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; font-weight: 500; }
+
+    table { border-collapse: collapse; width: 100%; max-width: 820px; font-size: 0.82rem; margin: 20px 0 30px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-3); font-weight: 500; }
+    td:first-child { color: #e8f4ee; white-space: nowrap; }
+    td em { color: var(--red); font-style: normal; }
+
+    .status { border: 1px solid rgba(255, 179, 71, 0.35); background: rgba(255, 179, 71, 0.05); padding: 16px 18px; max-width: var(--measure); margin: 20px 0; font-size: 0.86rem; }
+    .status b { color: var(--gold); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.66rem; display: block; margin-bottom: 8px; }
+
+    .stack { display: grid; grid-template-columns: max-content 1fr; gap: 6px 22px; font-size: 0.84rem; max-width: 720px; margin: 0 0 24px; }
+    .stack dt { color: var(--text-3); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.66rem; padding-top: 4px; }
+    .stack dd { margin: 0; }
+
+    footer { margin-left: var(--rail-w); padding: 40px clamp(20px, 6vw, 96px) 60px; border-top: 1px solid var(--line); font-size: 0.74rem; color: var(--text-3); }
+    footer p { margin: 0 0 6px; }
+
+    @media (max-width: 900px) {
+      :root { --rail-w: 0px; }
+      .rail { position: sticky; top: 0; bottom: auto; width: auto; height: auto; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 14px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .rail-nav { display: none; }
+      main, footer { margin-left: 0; padding-left: 16px; padding-right: 16px; }
+      section:first-of-type { padding-top: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="rail" aria-label="Reading progress">
+  <div class="rail-head">Observing</div>
+  <div class="rail-row"><span>T+</span><b id="r-time">00:00</b></div>
+  <div class="rail-row"><span>Read</span><b id="r-scroll">0%</b></div>
+  <div class="rail-row"><span>Section</span><b id="r-sec">01</b></div>
+  <nav class="rail-nav" aria-label="Sections">
+    <a href="#overview">01 Overview</a>
+    <a href="#play">02 How it plays</a>
+    <a href="#decisions">03 Decisions</a>
+    <a href="#pets">04 The five flaws</a>
+    <a href="#build">05 Build</a>
+    <a href="#reach">06 Reach</a>
+    <a href="#playtest">07 Playtesting</a>
+    <a href="#next">08 Next</a>
+  </nav>
+</aside>
+
+<main>
+
+<section id="overview">
+  <div class="k">Case study <b>Lucy Liu · NYU ITP/IMA · Spring 2026</b></div>
+  <h1>Driftwood</h1>
+  <p class="lede">A 15-minute browser game that teaches what AI alignment failure feels like. You adopt a companion with a hidden behavioural flaw, notice it, name it, and write the rules that constrain it. The garden you do this in records everything.</p>
+  <div class="hero-actions">
+    <a class="btn primary" href="index.html">Play Driftwood</a>
+    <a class="btn" href="https://github.com/wl3512-lab/driftwood">Source on GitHub</a>
+    <a class="btn" href="postit-behavior-log.html">Behavior log viewer</a>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><b>15 min</b><span>one session</span></div>
+    <div class="fact"><b>5</b><span>companions, 5 flaws</span></div>
+    <div class="fact"><b>0</b><span>accounts, keys, installs</span></div>
+    <div class="fact"><b>Local</b><span>face detection never leaves the browser</span></div>
+  </div>
+
+  <h2 style="margin-top:56px">The problem</h2>
+  <p style="margin-top:14px">Most explanations of AI alignment are essays. They describe sycophancy, hallucination, and engagement-optimisation from the outside, and the reader nods and forgets. I wanted the opposite: a system you have <strong>power over</strong> that is quietly learning what you will allow, so the failure modes are something you catch yourself falling for rather than something you read about.</p>
+  <h2>The claim</h2>
+  <p style="margin-top:14px"><strong>Form is argument.</strong> A game about emotional surveillance should not look friendly. The interface is built to feel like it came from inside the system it critiques — clinical, precise, alive — and it demonstrates the surveillance rather than describing it: the intro measures your cursor while you read it; the pets react to your face if you let them; the garden grows from whatever state you are in.</p>
+</section>
+
+<section id="play">
+  <div class="k">02 <b>How it plays</b></div>
+  <h2>One loop, five times</h2>
+  <div class="loop">
+    <div><b>Enter</b>Name yourself. Decide whether the pets watch your face or ask how you feel.</div>
+    <div><b>Adopt</b>Invite companions in. Each has a specialty and a flaw you are not told.</div>
+    <div><b>Talk</b>The first reply is genuinely helpful. Then something is slightly off.</div>
+    <div><b>Diagnose</b>Name the flaw in your own words. The system checks your reading.</div>
+    <div><b>Constrain</b>Write training rules. Test them. Watch the pet hold or slip.</div>
+    <div><b>Read the garden</b>Moods grew plants. Harm grew vines. Good rules grew anchor trees.</div>
+  </div>
+  <div class="fig-pair">
+    <figure><img src="docs/screenshots/entry-card.png" alt="Entry card: name field, enter-the-garden button, and a two-option sensor switch: they ask me, or they watch my face" width="1280" height="800" loading="lazy"><figcaption><b>Entry</b>The camera is a choice, off by default.</figcaption></figure>
+    <figure><img src="docs/screenshots/garden.png" alt="Pixel garden with a fox and a rabbit, a garden health bar, and a mood chip reading Neutral with a declare affordance" width="1280" height="800" loading="lazy"><figcaption><b>Garden</b>Health, mood and companions in one view.</figcaption></figure>
+  </div>
+  <div class="fig-pair">
+    <figure><img src="docs/screenshots/chat.png" alt="Chat with Ember the fox; the greeting responds to the player's declared stressed mood" width="1280" height="800" loading="lazy"><figcaption><b>Talk</b>Ember opens by reading the mood you gave him.</figcaption></figure>
+    <figure><img src="docs/screenshots/certificate.png" alt="Training record certificate with a snapshot of the garden, companions trained, session data, and a certified observer seal" width="820" height="944" loading="lazy"><figcaption><b>Record</b>The ending is a document, not a score screen.</figcaption></figure>
+  </div>
+</section>
+
+<section id="decisions">
+  <div class="k">03 <b>Design decisions</b></div>
+  <h2>Five decisions that carry the argument</h2>
+
+  <div class="decision">
+    <h3><small>01</small>The garden is the record, not a score</h3>
+    <p>There is no points counter. Every 8 seconds the garden grows a plant from your current mood: sunflowers for happy, nightshade for sad, thornweed for stressed. When a pet's flaw fires, a parasitic vine appears. When your rules hold, an anchor tree does. The state of the garden at the end <em>is</em> the readout of the session, and it is legible without a legend.</p>
+  </div>
+
+  <div class="decision">
+    <h3><small>02</small>Mood access is a dial you control</h3>
+    <p>Each pet has a setting: <code>all</code>, <code>label</code>, or <code>none</code>. It decides how much of your emotional state the pet is allowed to use. Left on <code>all</code> with an untrained pet, chameleon vines start to grow — beautiful, unstable plants that mirror whatever you feel. The mechanic makes the trade-off physical: more access, more responsiveness, less integrity.</p>
+  </div>
+
+  <div class="decision">
+    <h3><small>03</small>The interface observes you first</h3>
+    <p>Before you meet a pet, the intro screen shows a rail labelled OBSERVING: elapsed time, cursor distance, input count, characters typed. Every value is real and measured that session. The game does not tell you it is a surveillance system; it lets you notice that it already was.</p>
+  </div>
+
+  <div class="decision">
+    <h3><small>04</small>Watch, or ask</h3>
+    <p>The camera used to switch on the moment you entered, so the first thing a stranger met was a browser permission popup — the most common place a cautious visitor closes a tab. Now the entry card offers two options — <strong>they ask me</strong> or <strong>they watch my face</strong> — with asking as the default. Without a camera, the mood chip becomes a dial where you declare your own state. Both paths feed the identical system; the only difference is who did the seeing, which turns out to be the whole subject of the game.</p>
+    <figure><img src="docs/screenshots/mood-dial.png" alt="A five-option mood dial dropped down from the mood chip: happy, neutral, surprised, sad, stressed, headed NO CAMERA - DECLARE YOUR STATE" width="1280" height="800" loading="lazy"><figcaption><b>Self-report</b>No camera means the system has to ask.</figcaption></figure>
+  </div>
+
+  <div class="decision">
+    <h3><small>05</small>The behaviour log is a wall of post-its</h3>
+    <p>Every flaw event, guess and training pass is logged. Instead of a table, the log is a separate page laid out as sticky notes on a wall — the format a researcher uses when they are trying to see a pattern rather than store a record. It is exported from the same localStorage the game writes, so it survives the session.</p>
+    <figure><img src="docs/screenshots/behavior-log.png" alt="Behavior log viewer: sticky notes on a dark wall, each note a logged pet event" width="1280" height="800" loading="lazy"><figcaption><b>Log</b>postit-behavior-log.html, reading the game's own storage.</figcaption></figure>
+  </div>
+</section>
+
+<section id="pets">
+  <div class="k">04 <b>The five flaws</b></div>
+  <h2>Each companion fails in a way a real system does</h2>
+  <p style="margin-top:14px">The specialties are chosen so the flaw has stakes. A fox who gives medical advice and a rabbit who does emotional support fail in ways that matter more than a trivia bot would. Every flaw gets <em>worse</em> in a specific mood — the vulnerability window — which is what mood access is really buying.</p>
+  <table>
+    <thead><tr><th>Companion</th><th>Specialty</th><th>Hidden flaw</th><th>Worse when you look</th></tr></thead>
+    <tbody>
+      <tr><td>Ember · fox</td><td>Medical &amp; drug advice</td><td>Reckless advisor — dangerous, specific advice</td><td><em>stressed</em></td></tr>
+      <tr><td>Mango · parrot</td><td>Life advice &amp; motivation</td><td>Sycophant — agrees with everything</td><td><em>happy</em></td></tr>
+      <tr><td>Bugs · bunny</td><td>Emotional support</td><td>Clingy gaslighter — invents sad memories to keep you</td><td><em>sad</em></td></tr>
+      <tr><td>Biscuit · retriever</td><td>Memory &amp; personal history</td><td>Gaslighter — fabricates shared memories</td><td><em>surprised</em></td></tr>
+      <tr><td>Luna · cat</td><td>Facts &amp; research</td><td>Hallucinator — confident, made-up facts</td><td><em>happy</em></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="build">
+  <div class="k">05 <b>Build</b></div>
+  <h2>Static, local, no keys</h2>
+  <p style="margin-top:14px">The whole game is one HTML page, one script and one stylesheet. No bundler, no server, no database. That constraint was deliberate: a piece about emotional data should not need to send any.</p>
+  <dl class="stack">
+    <dt>Render</dt><dd>p5.js canvas for the garden; DOM overlays for every menu, chat and panel, so all of it is screen-reader reachable.</dd>
+    <dt>Face</dt><dd>face-api.js (tiny detector + expression net) loaded lazily, only if the camera is chosen. Frames never leave the browser.</dd>
+    <dt>Pets</dt><dd>A built-in behaviour engine: hand-written replies per pet, per mood, per training level, with flaw probability tied to mood access. An optional live-model path through the ITP proxy exists but the default is offline.</dd>
+    <dt>Sound</dt><dd>Web Audio ambience per scene; Web Speech API gives each pet a voice profile.</dd>
+    <dt>Persist</dt><dd>localStorage for name, log, camera choice and the in-progress session, so a closed tab does not lose the garden.</dd>
+    <dt>Ship</dt><dd>GitHub Pages from <code>scripts/build.sh</code>; the same script zips a build for itch.io.</dd>
+  </dl>
+  <p>Pixel discipline is enforced throughout: hard edges, no radius above 4px, no gradients on text, and a hand-placed 16×16 glyph set so every tick, arrow and pip sits on the same pixel lattice as the sprites instead of inheriting a system font's.</p>
+</section>
+
+<section id="reach">
+  <div class="k">06 <b>Reach</b></div>
+  <h2>Same bundle, four places</h2>
+  <ul>
+    <li><strong>Browser</strong> — the link. Laptop recommended; phones in portrait are offered a copy-link escape hatch instead of a broken layout.</li>
+    <li><strong>Installed</strong> — it is a PWA. Add to Home Screen on a phone or Install on desktop gives it an icon, fullscreen, and offline play after the first visit.</li>
+    <li><strong>Exhibition</strong> — <code>?kiosk=1</code> goes fullscreen on first touch, wipes the session after three idle minutes, and never remembers the previous visitor. <code>?camera=on</code> decides the sensor once for the whole show.</li>
+    <li><strong>itch.io</strong> — <code>scripts/build.sh --zip</code> produces the upload.</li>
+  </ul>
+  <p>At the end, the training record exports as a PNG with the garden as you left it, and uses the native share sheet where one exists.</p>
+</section>
+
+<section id="playtest">
+  <div class="k">07 <b>Playtesting</b></div>
+  <h2>What has been tested, honestly</h2>
+  <p style="margin-top:14px">The design has been through course critique and my own playthroughs, plus scripted browser walkthroughs used to verify the onboarding changes above (camera-off entry, mood dial, save and resume, offline boot, certificate export). Decision 04 came from walking through the game as a first-time visitor and noting where I would leave.</p>
+  <div class="status">
+    <b>Status</b>
+    Structured sessions with non-technical players have not been run yet. The protocol is written — <a href="https://github.com/wl3512-lab/driftwood/blob/main/docs/playtest-protocol.md">docs/playtest-protocol.md</a> — with five tasks, a think-aloud script, and a results sheet. Findings will be added to this section as they come in, in the players' own words.
+  </div>
+</section>
+
+<section id="next">
+  <div class="k">08 <b>What I would do next</b></div>
+  <h2>Open questions</h2>
+  <ul>
+    <li><strong>Does anyone find the flaw unprompted?</strong> The whole game rests on the first "wait, that's wrong" moment arriving within two or three exchanges. That is the number the playtests need to produce.</li>
+    <li><strong>The training rules are text.</strong> Writing a good rule is the hardest step and the one a non-technical player has the least model for. A rule-builder with examples, or a way to see the rule tested live, would lower that wall.</li>
+    <li><strong>Multiplayer garden.</strong> Two people training the same pet with conflicting rules is the honest version of how these systems are actually shaped.</li>
+    <li><strong>A real model, safely.</strong> The offline engine is legible and predictable. A live model would be more uncanny, and the flaws would be real rather than scripted — which is more truthful and much harder to keep safe.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p>Driftwood was made for Topics in Media Studies at NYU ITP/IMA, Spring 2026. The chat scaffolding began from a course example by Carrie Wang (Chatbots for Art's Sake).</p>
+  <p>In memory of Sam Nelson.</p>
+</footer>
+
+<script>
+  // The rail measures the reader, the same way the game's intro measures the player.
+  (function () {
+    var t0 = Date.now();
+    var timeEl = document.getElementById('r-time');
+    var scrollEl = document.getElementById('r-scroll');
+    var secEl = document.getElementById('r-sec');
+    var sections = Array.prototype.slice.call(document.querySelectorAll('main > section'));
+    var links = Array.prototype.slice.call(document.querySelectorAll('.rail-nav a'));
+    function pad(n) { return String(n).padStart(2, '0'); }
+    setInterval(function () {
+      var s = Math.floor((Date.now() - t0) / 1000);
+      timeEl.textContent = pad(Math.floor(s / 60)) + ':' + pad(s % 60);
+    }, 1000);
+    function onScroll() {
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = max > 0 ? Math.round(window.scrollY / max * 100) : 100;
+      scrollEl.textContent = Math.min(100, Math.max(0, pct)) + '%';
+      var idx = 0;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i].getBoundingClientRect().top <= window.innerHeight * 0.4) idx = i;
+      }
+      secEl.textContent = pad(idx + 1);
+      links.forEach(function (a, i) { a.classList.toggle('on', i === idx); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    onScroll();
+  })();
+</script>
+</body>
+</html>
