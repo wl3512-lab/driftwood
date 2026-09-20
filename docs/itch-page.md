@@ -33,7 +33,7 @@ You enter a garden and invite pets in. Each one has a specialty — medical advi
 
 Notice it. Name it. Write the rules that train it out. The garden keeps the record: your moods grow plants, a pet's harm grows vines, good training grows anchor trees.
 
-**No account, no install, nothing sent anywhere.** The pets can either *ask* how you feel or *watch your face* — your choice, off by default. If you turn the camera on, face detection runs entirely in your browser.
+**No account, no install, nothing sent anywhere.** The pets *watch your face* by default — face detection runs entirely in your browser — or flip the switch and they *ask* how you feel instead.
 
 - ~15 minutes
 - Laptop recommended (phones work in landscape)
@@ -44,6 +44,6 @@ Source and design case study: [github.com/wl3512-lab/driftwood](https://github.c
 
 ## Devlog post (optional, first one)
 
-Title: *Why the camera is off by default*
+Title: *Watch, or ask*
 
-Two paragraphs from the case study's decision 04 — the permission popup as abandonment point, and the mood dial as the "system has to ask" version of the same mechanic. Link to the case study. That's it.
+Two paragraphs from the case study's decision 04 — making the camera a visible choice before the browser asks, and the mood dial as the "system has to ask" version of the same mechanic. Link to the case study. That's it.

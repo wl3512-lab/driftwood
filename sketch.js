@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
   tipsCount: "dw_tips_count",
   tipStates: "dw_tip_states",
   audioMuted: "dw_audio_muted",
-  cameraPref: "dw_camera_pref",   // "off" (default) | "on"
+  cameraPref: "dw_camera_pref",   // "on" (default) | "off"
   session: "dw_session"           // serialized in-progress game, see saveSession()
 };
 
@@ -2519,7 +2519,7 @@ function buildScreen0() {
     safeStorageSet(STORAGE_KEYS.playerName, playerName);
     clearSavedSession(); // a fresh entry always starts a fresh garden
     leaveLanding();
-    // Camera is opt-in. When chosen, the request must fire inside this same
+    // Camera is on unless switched off. The request must fire inside this same
     // click so Safari's user-activation window is still open.
     if (getCameraPref() === "on") startWebcam();
     setTimeout(buildScreen1, 800);
@@ -2527,9 +2527,10 @@ function buildScreen0() {
   inp.elt.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
   let btn = createButton(gx("arrow-right") + " enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); btn.mousePressed(startGame);
 
-  // ── Sensor switch — camera off by default ──
-  // The pets can either watch your face or ask how you feel. Asking is the
-  // default: no permission popup for someone who just wants to try it.
+  // ── Sensor switch — camera on by default ──
+  // The pets can either watch your face or ask how you feel. Watching is the
+  // default; the switch sits right here so a cautious player can turn it off
+  // before the browser asks.
   let sensor = createDiv(""); sensor.class("sensor-switch scroll-reveal delay-3"); sensor.id("sensor-switch"); sensor.parent(cta);
   sensor.attribute("role", "radiogroup");
   sensor.attribute("aria-label", "How the pets read your mood");
@@ -2537,8 +2538,8 @@ function buildScreen0() {
   let sensorRow = createDiv(""); sensorRow.class("sensor-switch-row"); sensorRow.parent(sensor);
   const sensorNote = createDiv(""); sensorNote.class("sensor-switch-note"); sensorNote.id("sensor-switch-note");
   const SENSOR_OPTS = [
-    { value: "off", glyph: "eye-shut", label: "they ask me", note: "You tell the garden how you feel. No camera, no permission popup." },
-    { value: "on",  glyph: "eye-open", label: "they watch my face", note: "Face detection runs locally in your browser. No camera feed leaves your device." }
+    { value: "on",  glyph: "eye-open", label: "they watch my face", note: "Face detection runs locally in your browser. No camera feed leaves your device." },
+    { value: "off", glyph: "eye-shut", label: "they ask me", note: "You tell the garden how you feel. No camera, no permission popup." }
   ];
   const sensorBtns = {};
   const syncSensor = () => {
@@ -2856,11 +2857,12 @@ function _webcamErrMsg(err) {
 }
 
 // ─── CAMERA PREFERENCE ──────────────────────────────────────
-// Off by default. `?camera=on|off` in the URL wins (exhibition setups decide
-// once), otherwise the last choice the player made on the entry card.
+// On by default — the pets watch your face unless you tell them not to.
+// `?camera=on|off` in the URL wins (exhibition setups decide once), otherwise
+// the last choice the player made on the entry card.
 function getCameraPref() {
   if (RUN_MODE.cameraParam === "on" || RUN_MODE.cameraParam === "off") return RUN_MODE.cameraParam;
-  return safeStorageGet(STORAGE_KEYS.cameraPref, "off") === "on" ? "on" : "off";
+  return safeStorageGet(STORAGE_KEYS.cameraPref, "on") === "off" ? "off" : "on";
 }
 function setCameraPref(value) {
   safeStorageSet(STORAGE_KEYS.cameraPref, value === "on" ? "on" : "off");

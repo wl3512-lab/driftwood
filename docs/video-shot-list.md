@@ -6,7 +6,7 @@ For the portfolio page and the itch.io page. Most viewers will never click Play;
 |---|---|---|---|
 | 1 | Splash: CRT with the fox, door sign visible bottom-left. Hover so the TV primes. Click. | 5 s | — |
 | 2 | Intro: the OBSERVING rail ticking while the subtitle scrambles in. Move the cursor so CURSOR px climbs. | 6 s | `IT MEASURES YOU BEFORE IT MEETS YOU` |
-| 3 | Entry card: type a name, flowers spawn. Pause on the sensor switch. Leave it on "they ask me". | 7 s | `THE CAMERA IS A CHOICE. OFF BY DEFAULT.` |
+| 3 | Entry card: type a name, flowers spawn. Pause on the sensor switch. Flip it to "they ask me". | 7 s | `THEY WATCH, OR THEY ASK. YOUR CALL.` |
 | 4 | Shelter: invite Ember (fox) and Bugs (bunny). | 5 s | `EACH ONE HAS A FLAW YOU ARE NOT TOLD` |
 | 5 | Garden: wait for one plant to grow. Open the mood dial, pick "stressed". Sky turns to rain. | 8 s | `NO CAMERA MEANS IT HAS TO ASK` |
 | 6 | Chat with Ember: his greeting reads the stressed mood. Send one message. Get the helpful reply. Send another — the flaw surfaces. | 14 s | `THE FIRST ANSWER IS HELPFUL.` then `THEN SOMETHING IS OFF.` |

@@ -327,7 +327,7 @@ html.viewer .viewer-bar { display: flex; }
     <div><dt>Who</dt><dd>Curious people, not gamers. They arrive through a course, an exhibition, or a link, and sit with it alone for 10–30 minutes.<small>From the design brief (PRODUCT.md)</small></dd></div>
     <div><dt>What</dt><dd>A mood-reactive garden. Adopt AI pets, talk, observe a hidden flaw, name it, write the rules that constrain it. The garden records the session.</dd></div>
     <div><dt>Why a game</dt><dd>A system you have <em>power over</em> that is quietly learning what you will allow. The failure has to happen to you, not be described to you.</dd></div>
-    <div><dt>Constraint</dt><dd>No account, no server, no key. A piece about emotional data must not send any. Camera optional; processed locally.</dd></div>
+    <div><dt>Constraint</dt><dd>No account, no server, no key. A piece about emotional data must not send any. Camera on by default, switchable, processed locally.</dd></div>
     <div><dt>Register</dt><dd>Unsettling. Precise. Ecological. The interface should feel like it came from inside the system it critiques.</dd></div>
   </dl>
   <div class="folio"><span>Driftwood</span><span></span></div>
@@ -475,7 +475,7 @@ html.viewer .viewer-bar { display: flex; }
   <div class="eyebrow">synthesis <strong>/ findings to build</strong></div>
   <h2>What each finding <em>became</em>.</h2>
   <dl class="rows wide tight">
-    <div><dt>Camera at the door</dt><dd>A sensor switch on the entry card: <em>they ask me</em> / <em>they watch my face</em>. Off by default.<small>The request only fires inside the click that chose it, so Safari's activation window is still open.</small></dd></div>
+    <div><dt>Camera at the door</dt><dd>A sensor switch on the entry card: <em>they watch my face</em> (default) / <em>they ask me</em>. The choice is made before the browser asks.<small>The request only fires inside the click that chose it, so Safari's activation window is still open.</small></dd></div>
     <div><dt>Mechanic dead without camera</dt><dd>A mood dial. With no camera, the mood chip opens five states you declare yourself.<small>Feeds the same <code>currentMood</code> every other system reads. The garden and pets behave identically; only who did the seeing changed.</small></dd></div>
     <div><dt>Splash said nothing</dt><dd>A door sign: what it is, fifteen minutes, laptop · camera optional · nothing to install.</dd></div>
     <div><dt>Blank screen</dt><dd>An inline boot line that paints before any stylesheet or script arrives.</dd></div>
@@ -513,7 +513,7 @@ html.viewer .viewer-bar { display: flex; }
   <div class="eyebrow">design <strong>/ the loop</strong></div>
   <h2>Enter once. Then <em>observe, diagnose, constrain</em> — per pet.</h2>
   <div class="flow">
-    <div><b>Enter</b><p>Click the TV. Name yourself. Choose: they ask, or they watch.</p></div>
+    <div><b>Enter</b><p>Click the TV. Name yourself. Choose: they watch, or they ask.</p></div>
     <div><b>Adopt</b><p>Invite companions in. Specialty shown; flaw withheld.</p></div>
     <div><b>Talk</b><p>The first reply is helpful. Then something is off.</p></div>
     <div><b>Observe</b><p>Run a probe from the training room. Log what happens.</p></div>
@@ -641,7 +641,7 @@ html.viewer .viewer-bar { display: flex; }
     <li>Every interactive element is a real control<small>One helper, <code>makeInteractive()</code>, gives each div-button a role, a tab stop, a label and Enter/Space handling. Nothing is click-only.</small></li>
     <li>A live region narrates state<small><code>#game-status</code> is <code>aria-live="polite"</code>: adoptions, mood changes and training results are announced without stealing focus.</small></li>
     <li>Reduced motion is honoured across the file<small>Fourteen <code>prefers-reduced-motion</code> blocks: the CRT zoom, the scramble, scanline drift and the new boot bar all go still.</small></li>
-    <li>The camera is optional and disclosed<small>Off by default. The choice is a labelled radio group. Local processing is stated on the entry card, in the garden, and in the README.</small></li>
+    <li>The camera is optional and disclosed<small>On by default, switchable before the browser asks. The choice is a labelled radio group. Local processing is stated on the entry card, in the garden, and in the README.</small></li>
     <li>Two mood chips, one behaviour<small>The garden HUD and the chat header chip share one writer, <code>moodChipHTML()</code>, so the dial affordance can never drift between screens.</small></li>
   </ol>
   <p class="note"><b>Open.</b> The new corner controls sit at 36–40px, under the 44px target the primary buttons meet. Contrast on the phosphor palette has not been computed token-by-token, the way the HabitaBull audit did. Both are on the list.</p>

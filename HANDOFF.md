@@ -14,7 +14,7 @@ The core loop is designed to work without a private API key. Live AI is optional
 
 Read this before touching the entry flow, the mood system, or deployment.
 
-**Camera is opt-in.** `getCameraPref()` (URL `?camera=` wins, else localStorage `dw_camera_pref`, default `off`). `startGame()` only calls `startWebcam()` when the pref is `on`, and must do so inside the click handler for Safari's activation window. Inside the garden, `#camera-offer` (rendered when there is no `video`) calls `enableCameraFromGarden()`, which rebuilds screen 2 when the stream is up.
+**Camera is a switch, on by default.** `getCameraPref()` (URL `?camera=` wins, else localStorage `dw_camera_pref`, default `on`). `startGame()` only calls `startWebcam()` when the pref is `on`, and must do so inside the click handler for Safari's activation window. Inside the garden, `#camera-offer` (rendered when there is no `video`) calls `enableCameraFromGarden()`, which rebuilds screen 2 when the stream is up.
 
 **Self-report mood dial.** When `!cameraIsLive()`, both mood chips (`#mood-indicator`, `#chat-mood-indicator`) are interactive via `makeMoodChipInteractive()` and open `toggleMoodDial()`. `declareMood()` writes `currentMood`, clears `moodHistory`, and everything downstream (plants, pet replies, session stats) is unchanged. `moodChipHTML()` is the single writer for chip markup — use it, don't hand-build the string.
 

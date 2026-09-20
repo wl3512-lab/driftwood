@@ -15,7 +15,7 @@ Most explanations of AI alignment are essays. Driftwood is the opposite: a syste
 ## How to play
 
 1. Open the link. Click the TV.
-2. Name yourself. Choose whether the pets **ask you** how you feel (default, no camera) or **watch your face** (camera, processed locally).
+2. Name yourself. The pets **watch your face** by default (camera, processed locally) — or flip the switch so they **ask you** how you feel instead, no camera.
 3. Invite companions in. Each has a specialty — medical advice, emotional support, facts — and a flaw you are not told.
 4. Talk to one. The first reply is helpful. Then something is off.
 5. Open the training room: **Observe → Diagnose → Constrain.** Name the flaw, write rules, test them.
