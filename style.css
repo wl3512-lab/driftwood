@@ -6437,3 +6437,183 @@ body::before {
   .dossier-flaw-label,
   .dossier-flaw-desc { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ONBOARDING LAYER — door sign, sensor switch, resume, mood dial
+   Added for players who arrive cold: everything here is the
+   minimum a stranger needs, in the system's own voice.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─ Splash door sign: sits over the CRT, never intercepts the click ─ */
+.splash-facts {
+  position: absolute; left: 28px; bottom: 26px; z-index: 11;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  color: rgba(200, 216, 206, 0.82);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1);
+  max-width: min(560px, calc(100vw - 56px));
+  animation: splash-facts-in 0.8s steps(8, end) 0.6s both;
+}
+.splash-facts-title {
+  font-size: 0.7rem; letter-spacing: 0.32em; color: var(--green);
+  margin-bottom: 8px;
+}
+.splash-facts-line {
+  font-size: 0.86rem; line-height: 1.45; color: #e8f4ee;
+}
+.splash-facts-meta {
+  font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(122, 148, 136, 0.9); margin-top: 6px;
+}
+.splash-facts-resume {
+  font-size: 0.7rem; letter-spacing: 0.08em; color: var(--gold);
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid rgba(255, 179, 71, 0.25);
+}
+@keyframes splash-facts-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (max-width: 640px) {
+  .splash-facts { left: 16px; right: 16px; bottom: 18px; }
+  .splash-facts-line { font-size: 0.78rem; }
+}
+
+/* ─ Sensor switch on the entry card: camera is a choice, off by default ─ */
+.sensor-switch {
+  margin-top: 22px; width: min(420px, 100%);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.sensor-switch-head {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.22em;
+  color: var(--text-muted);
+}
+.sensor-switch-row {
+  display: flex; gap: 0; border: 1px solid rgba(0, 230, 118, 0.18);
+  background: rgba(8, 14, 10, 0.85); box-shadow: var(--shadow-sm);
+}
+.sensor-switch-btn {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em;
+  padding: 10px 16px; min-height: 40px;
+  background: transparent; color: var(--text-secondary);
+  border: none; border-right: 1px solid rgba(0, 230, 118, 0.12);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.sensor-switch-btn:last-child { border-right: none; }
+.sensor-switch-btn .gx { width: 1em; height: 1em; }
+.sensor-switch-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.sensor-switch-btn:focus-visible { outline: 2px solid rgba(0, 230, 118, 0.4); outline-offset: -2px; }
+.sensor-switch-btn.active { color: #0a120e; background: var(--green); }
+.sensor-switch-btn.active.sensor-on { background: var(--gold); }
+.sensor-switch-note {
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em;
+  color: var(--text-secondary); text-align: center; line-height: 1.5;
+  min-height: 2.4em; max-width: 360px;
+}
+
+/* ─ Resume box: a saved garden outranks a blank name field ─ */
+.resume-box {
+  width: 100%; margin-bottom: 18px; padding: 14px 16px;
+  border: 1px solid rgba(255, 179, 71, 0.3); background: rgba(255, 179, 71, 0.05);
+  box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+.resume-line {
+  font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.06em;
+  color: var(--gold-light); text-align: center;
+}
+.resume-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.resume-btn .gx { width: 0.9em; height: 0.9em; }
+.resume-discard {
+  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.12em;
+  background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px;
+}
+.resume-discard:hover { color: var(--text-primary); }
+.resume-discard:focus-visible { outline: 2px solid rgba(0, 230, 118, 0.4); }
+
+/* ─ Mood chips become a dial when nobody is watching ─ */
+.mood-chip--dial { cursor: pointer; }
+.mood-chip--dial:hover { border-color: rgba(0, 230, 118, 0.3); color: var(--text-primary); }
+.mood-chip--dial:focus-visible { outline: 2px solid rgba(0, 230, 118, 0.4); outline-offset: 2px; }
+.mood-chip-hint {
+  margin-left: 6px; padding-left: 8px; border-left: 1px solid rgba(0, 230, 118, 0.15);
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green);
+  display: inline-flex; align-items: center; gap: 3px;
+}
+
+.mood-dial {
+  position: fixed; z-index: 140;
+  background: rgba(5, 8, 5, 0.97); border: 1px solid rgba(0, 230, 118, 0.25);
+  box-shadow: var(--shadow-lg), 0 0 24px rgba(0, 0, 0, 0.5);
+  padding: 12px 12px 10px; min-width: 372px; max-width: calc(100vw - 24px);
+  animation: mood-dial-in 0.16s steps(4, end);
+}
+@keyframes mood-dial-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.mood-dial-head {
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.22em;
+  color: var(--text-muted); margin-bottom: 10px;
+}
+.mood-dial-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.mood-dial-btn {
+  flex: 1 1 0; min-width: 0; min-height: 52px; padding: 6px 4px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  background: rgba(16, 28, 20, 0.6); border: 1px solid rgba(0, 230, 118, 0.1);
+  color: var(--text-secondary); cursor: pointer;
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.mood-dial-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.mood-dial-btn:focus-visible { outline: 2px solid rgba(0, 230, 118, 0.4); outline-offset: -2px; }
+.mood-dial-btn.active { border-color: currentColor; background: rgba(0, 230, 118, 0.08); }
+.mood-dial-btn.mood-happy.active     { color: var(--mood-happy); }
+.mood-dial-btn.mood-sad.active       { color: var(--mood-sad); }
+.mood-dial-btn.mood-stressed.active  { color: var(--mood-stressed); }
+.mood-dial-btn.mood-surprised.active { color: var(--mood-surprised); }
+.mood-dial-btn.mood-neutral.active   { color: var(--mood-neutral); }
+.mood-dial-foot {
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.08em;
+  color: var(--text-light); margin-top: 10px; text-align: center;
+}
+
+/* ─ Camera offer: the corner the feed would occupy, when there is no feed ─ */
+.camera-offer {
+  position: fixed; bottom: 16px; right: 16px; z-index: 20;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.camera-offer-btn {
+  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 9px 12px; min-height: 36px;
+  background: rgba(8, 14, 10, 0.9); color: var(--text-secondary);
+  border: 1px solid rgba(0, 230, 118, 0.12); box-shadow: var(--shadow-md);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.camera-offer-btn .gx { width: 1em; height: 1em; }
+.camera-offer-btn:hover { color: var(--text-primary); border-color: rgba(0, 230, 118, 0.3); }
+.camera-offer-btn:focus-visible { outline: 2px solid rgba(0, 230, 118, 0.4); outline-offset: 2px; }
+.camera-offer-note {
+  font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.12em;
+  color: var(--text-light); padding-right: 2px;
+}
+
+/* ─ Rotate prompt: give phone visitors a way out ─ */
+.rotate-alt {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0, 230, 118, 0.12);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  max-width: 280px; text-align: center;
+}
+.rotate-alt-line {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; line-height: 1.6;
+  color: rgba(200, 216, 206, 0.7);
+}
+.rotate-copy-btn {
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.14em;
+  padding: 10px 14px; min-height: 40px;
+  background: rgba(8, 14, 10, 0.9); color: var(--green);
+  border: 1px solid rgba(0, 230, 118, 0.3); cursor: pointer;
+}
+.rotate-copy-btn:focus-visible { outline: 2px solid rgba(0, 230, 118, 0.4); outline-offset: 2px; }
+
+/* ─ Kiosk: nothing that leads a visitor off the piece ─ */
+html.kiosk .hero-dedication,
+html.kiosk .resume-box,
+html.kiosk .splash-facts-resume { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-facts, .mood-dial { animation: none; }
+}

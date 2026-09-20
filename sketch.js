@@ -19,12 +19,32 @@ const STORAGE_KEYS = {
   authToken: "dw_auth_token",
   tipsCount: "dw_tips_count",
   tipStates: "dw_tip_states",
-  audioMuted: "dw_audio_muted"
+  audioMuted: "dw_audio_muted",
+  cameraPref: "dw_camera_pref",   // "off" (default) | "on"
+  session: "dw_session"           // serialized in-progress game, see saveSession()
 };
 
 const BUILD_CONFIG = {
   debug: false
 };
+
+// ─── RUN MODE ───────────────────────────────────────────────
+// Driftwood is the same static bundle everywhere; the URL decides how it
+// behaves. `?kiosk=1` is for exhibitions: fullscreen on first touch, the
+// session wipes itself after a few idle minutes, and nothing is remembered
+// between visitors. `?camera=on` pre-selects the camera so a show can decide
+// once instead of asking every player.
+const RUN_MODE = (() => {
+  let params;
+  try { params = new URLSearchParams(window.location.search); } catch (_) { params = new URLSearchParams(); }
+  const kiosk = params.get("kiosk") === "1" || params.get("kiosk") === "true";
+  const idleMin = parseFloat(params.get("idle"));
+  return {
+    kiosk,
+    idleResetMs: (Number.isFinite(idleMin) && idleMin > 0 ? idleMin : 3) * 60 * 1000,
+    cameraParam: params.get("camera") // "on" | "off" | null
+  };
+})();
 
 function safeStorageGet(key, fallback = "") {
   try {
@@ -773,8 +793,72 @@ function setup() {
   playerName = safeStorageGet(STORAGE_KEYS.playerName, "");
   authToken = safeStorageGet(STORAGE_KEYS.authToken, "");
 
+  // Kiosk visitors never inherit the previous visitor's name or session
+  if (RUN_MODE.kiosk) {
+    playerName = "";
+    clearSavedSession();
+  }
+
+  // The inline boot line in index.html has done its job once p5 is running
+  const boot = document.getElementById("boot-indicator");
+  if (boot) { boot.classList.add("done"); setTimeout(() => boot.remove(), 400); }
+
   installAudioUnlockListener();
+  initRotatePrompt();
+  initKioskMode();
   buildSplashScreen();
+}
+
+// ─── KIOSK MODE ─────────────────────────────────────────────
+// Exhibition behaviour: go fullscreen on the first gesture, and if nobody has
+// touched the piece for RUN_MODE.idleResetMs, reload back to the splash so the
+// next visitor starts clean. A reload is the only reset that is guaranteed to
+// clear every timer, audio node and camera track this file ever creates.
+let _kioskIdleTimer = null;
+function initKioskMode() {
+  if (!RUN_MODE.kiosk) return;
+  document.documentElement.classList.add("kiosk");
+
+  const armIdle = () => {
+    if (_kioskIdleTimer) clearTimeout(_kioskIdleTimer);
+    // Never reset someone who is still on the splash — nothing to lose there
+    _kioskIdleTimer = setTimeout(() => {
+      if (document.getElementById("splash-screen")) { armIdle(); return; }
+      clearSavedSession();
+      window.location.reload();
+    }, RUN_MODE.idleResetMs);
+  };
+  ["pointerdown", "pointermove", "keydown", "touchstart"].forEach(evt =>
+    document.addEventListener(evt, armIdle, { passive: true })
+  );
+  armIdle();
+
+  const goFullscreen = () => {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req && !document.fullscreenElement) {
+      try { req.call(el).catch(() => {}); } catch (_) {}
+    }
+  };
+  document.addEventListener("pointerdown", goFullscreen, { once: true });
+  document.addEventListener("keydown", goFullscreen, { once: true });
+}
+
+// ─── PORTRAIT PHONE PROMPT ──────────────────────────────────
+// Most people open links on a phone. The CSS shows #rotate-prompt in portrait;
+// this wires its "copy link" button so they can send it to a laptop instead.
+function initRotatePrompt() {
+  const btn = document.getElementById("rotate-copy-link");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const url = window.location.href.split("?")[0];
+    const done = () => { btn.textContent = "[ link copied ]"; setTimeout(() => { btn.textContent = "[ copy link for later ]"; }, 2200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(() => { window.prompt("Copy this link:", url); });
+    } else {
+      window.prompt("Copy this link:", url);
+    }
+  });
 }
 
 function buildSplashScreen() {
@@ -809,6 +893,20 @@ function buildSplashScreen() {
   };
   catcher.elt.addEventListener("pointerenter", () => signalCover("PRIME"));
   catcher.elt.addEventListener("pointerleave", () => signalCover("UNPRIME"));
+
+  // The three facts a stranger needs before committing: what it is, how long
+  // it takes, what they need. A door sign, not a manual — pointer-events off
+  // so it never steals the click from the catcher.
+  const hasSave = hasSavedSession();
+  const facts = document.createElement("div");
+  facts.className = "splash-facts";
+  facts.setAttribute("aria-hidden", "true");
+  facts.innerHTML =
+    '<div class="splash-facts-title">DRIFTWOOD</div>' +
+    '<div class="splash-facts-line">a 15-minute game about raising an AI companion</div>' +
+    '<div class="splash-facts-meta">laptop recommended &middot; camera optional &middot; nothing to install</div>' +
+    (hasSave ? '<div class="splash-facts-resume">a garden is waiting for you &mdash; press any key to return</div>' : '');
+  splash.elt.appendChild(facts);
 
   let activated = false;
   function activate() {
@@ -2111,7 +2209,7 @@ function updateMoodUI() {
   }
 
   // Chat screen mood indicator
-  domSetHtml("chat-mood-indicator", "YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
+  domSetHtml("chat-mood-indicator", moodChipHTML(14));
 
   // Chat listen-bar: signal only — actual value lives in the header chip
   if (activePetId && document.getElementById("chat-mood-sense")) {
@@ -2407,22 +2505,81 @@ function buildScreen0() {
     let mv = createDiv(v); mv.class("sig-meta-val" + (k === "STATUS" ? " sig-meta-open" : "")); mv.parent(docMeta);
   });
 
+  const leaveLanding = () => {
+    let screen = select("#screen0");
+    if (screen) screen.class("landing-page leaving");
+    let sb = document.getElementById('skip-intro-bar');
+    if (sb) sb.classList.add('hidden');
+  };
+
   let startGame = () => {
     let val = select("#name-input").value().trim();
     if (!val) { showToast("Enter a name to continue."); return; }
     playerName = val;
     safeStorageSet(STORAGE_KEYS.playerName, playerName);
-    let screen = select("#screen0");
-    if (screen) screen.class("landing-page leaving");
-    let sb = document.getElementById('skip-intro-bar');
-    if (sb) sb.classList.add('hidden');
-    startWebcam();
+    clearSavedSession(); // a fresh entry always starts a fresh garden
+    leaveLanding();
+    // Camera is opt-in. When chosen, the request must fire inside this same
+    // click so Safari's user-activation window is still open.
+    if (getCameraPref() === "on") startWebcam();
     setTimeout(buildScreen1, 800);
   };
   inp.elt.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
   let btn = createButton(gx("arrow-right") + " enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); btn.mousePressed(startGame);
-  let ctaPrivacy = createDiv("Face detection stays local. No camera feed leaves your device.");
-  ctaPrivacy.class("garden-privacy visible scroll-reveal delay-3"); ctaPrivacy.parent(cta);
+
+  // ── Sensor switch — camera off by default ──
+  // The pets can either watch your face or ask how you feel. Asking is the
+  // default: no permission popup for someone who just wants to try it.
+  let sensor = createDiv(""); sensor.class("sensor-switch scroll-reveal delay-3"); sensor.id("sensor-switch"); sensor.parent(cta);
+  sensor.attribute("role", "radiogroup");
+  sensor.attribute("aria-label", "How the pets read your mood");
+  let sensorHead = createDiv("HOW THE PETS READ YOU"); sensorHead.class("sensor-switch-head"); sensorHead.parent(sensor);
+  let sensorRow = createDiv(""); sensorRow.class("sensor-switch-row"); sensorRow.parent(sensor);
+  const sensorNote = createDiv(""); sensorNote.class("sensor-switch-note"); sensorNote.id("sensor-switch-note");
+  const SENSOR_OPTS = [
+    { value: "off", glyph: "eye-shut", label: "they ask me", note: "You tell the garden how you feel. No camera, no permission popup." },
+    { value: "on",  glyph: "eye-open", label: "they watch my face", note: "Face detection runs locally in your browser. No camera feed leaves your device." }
+  ];
+  const sensorBtns = {};
+  const syncSensor = () => {
+    const pref = getCameraPref();
+    SENSOR_OPTS.forEach(o => {
+      const b = sensorBtns[o.value];
+      b.elt.classList.toggle("active", pref === o.value);
+      b.attribute("aria-checked", pref === o.value ? "true" : "false");
+      if (pref === o.value) sensorNote.html(o.note);
+    });
+  };
+  SENSOR_OPTS.forEach(o => {
+    let b = createButton(gx(o.glyph) + " " + o.label);
+    b.class("sensor-switch-btn sensor-" + o.value);
+    b.attribute("role", "radio");
+    b.parent(sensorRow);
+    b.mousePressed(() => { setCameraPref(o.value); syncSensor(); });
+    sensorBtns[o.value] = b;
+  });
+  sensorNote.parent(sensor);
+  syncSensor();
+
+  // ── Resume — a saved garden takes priority over a fresh name ──
+  if (hasSavedSession()) {
+    const saved = safeStorageGetJSON(STORAGE_KEYS.session, null);
+    const who = saved && saved.playerName ? saved.playerName : "someone";
+    let resumeBox = createDiv(""); resumeBox.class("resume-box scroll-reveal delay-2");
+    ctaGroup.elt.insertBefore(resumeBox.elt, ctaGroup.elt.firstChild); // above the name card
+    let resumeLine = createDiv("the garden remembers " + escapeHtml(who) + ". " + (saved && saved.adoptedPets ? saved.adoptedPets.length : 0) + " companion" + (saved && saved.adoptedPets && saved.adoptedPets.length === 1 ? "" : "s") + " waiting.");
+    resumeLine.class("resume-line"); resumeLine.parent(resumeBox);
+    let resumeBtn = createButton(gx("play") + " return to your garden"); resumeBtn.class("btn-green resume-btn"); resumeBtn.parent(resumeBox);
+    resumeBtn.mousePressed(() => {
+      leaveLanding();
+      if (getCameraPref() === "on") startWebcam();
+      setTimeout(() => { if (!restoreSession()) buildScreen1(); }, 800);
+    });
+    let discardBtn = createButton("[ start over ]"); discardBtn.class("resume-discard"); discardBtn.parent(resumeBox);
+    discardBtn.mousePressed(() => { clearSavedSession(); resumeBox.remove(); showToast("Garden cleared. Name yourself to begin again."); });
+    // Pre-fill the name so "start over" is still one step
+    if (saved && saved.playerName && !inp.elt.value) { inp.value(saved.playerName); }
+  }
   const nameReactions = [
     { min: 1,  text: "..." },
     { min: 2,  text: "is that short for something?" },
@@ -2697,6 +2854,219 @@ function _webcamErrMsg(err) {
   if (err.name === "SecurityError")                                                return "Camera blocked — HTTPS required";
   return "Camera unavailable";
 }
+
+// ─── CAMERA PREFERENCE ──────────────────────────────────────
+// Off by default. `?camera=on|off` in the URL wins (exhibition setups decide
+// once), otherwise the last choice the player made on the entry card.
+function getCameraPref() {
+  if (RUN_MODE.cameraParam === "on" || RUN_MODE.cameraParam === "off") return RUN_MODE.cameraParam;
+  return safeStorageGet(STORAGE_KEYS.cameraPref, "off") === "on" ? "on" : "off";
+}
+function setCameraPref(value) {
+  safeStorageSet(STORAGE_KEYS.cameraPref, value === "on" ? "on" : "off");
+}
+function cameraIsLive() {
+  return !!(video && webcamReady);
+}
+
+// Turn the camera on from inside the garden. Must be called from a click.
+async function enableCameraFromGarden() {
+  setCameraPref("on");
+  showToast("Asking your browser for the camera…");
+  await startWebcam();
+  if (currentScreen === 2) buildScreen2();
+  if (webcamStatusMessage) showToast(webcamStatusMessage + " — you can still tell the garden how you feel.", 5000);
+}
+
+// ─── MOOD DIAL (self-report) ────────────────────────────────
+// With no camera, the system has to ask. The dial is the diegetic version of
+// that: the same five moods face-api would detect, declared by hand. Feeds the
+// same currentMood every other system reads, so the garden, plants and pets
+// behave identically either way — the only difference is who did the seeing.
+const MOOD_DIAL_OPTS = ["happy", "neutral", "surprised", "sad", "stressed"];
+let moodDialEl = null;
+
+function moodIsSelfReported() {
+  return !cameraIsLive();
+}
+
+function closeMoodDial() {
+  if (moodDialEl) { moodDialEl.remove(); moodDialEl = null; }
+  document.removeEventListener("pointerdown", _moodDialOutside, true);
+  document.removeEventListener("keydown", _moodDialKey, true);
+}
+function _moodDialOutside(e) {
+  if (moodDialEl && !moodDialEl.contains(e.target)) closeMoodDial();
+}
+function _moodDialKey(e) {
+  if (e.key === "Escape") closeMoodDial();
+}
+
+function declareMood(mood) {
+  if (!MOOD_DIAL_OPTS.includes(mood)) return;
+  currentMood = mood;
+  moodHistory.length = 0;
+  moodConfidence = 100;
+  announceStatus("Mood set to " + mood + ".");
+  closeMoodDial();
+  updateMoodUI();
+  if (currentScreen === 2) updateGardenUI();
+}
+
+function toggleMoodDial(anchorEl) {
+  if (moodDialEl) { closeMoodDial(); return; }
+  if (!moodIsSelfReported()) {
+    showToast("The camera is reading your face. Switch it off in the corner to declare your own mood.");
+    return;
+  }
+  const dial = document.createElement("div");
+  dial.className = "mood-dial";
+  dial.setAttribute("role", "dialog");
+  dial.setAttribute("aria-label", "Declare your mood");
+  dial.innerHTML =
+    '<div class="mood-dial-head">NO CAMERA &middot; DECLARE YOUR STATE</div>' +
+    '<div class="mood-dial-row"></div>' +
+    '<div class="mood-dial-foot">the garden grows from whatever you tell it</div>';
+  const row = dial.querySelector(".mood-dial-row");
+  MOOD_DIAL_OPTS.forEach(m => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "mood-dial-btn mood-" + m + (currentMood === m ? " active" : "");
+    b.innerHTML = getMoodIcon(m, 16) + '<span>' + m + '</span>';
+    b.setAttribute("aria-pressed", currentMood === m ? "true" : "false");
+    b.addEventListener("click", () => declareMood(m));
+    row.appendChild(b);
+  });
+  document.body.appendChild(dial);
+  moodDialEl = dial;
+
+  // Sit the dial under whichever chip opened it
+  const r = anchorEl ? anchorEl.getBoundingClientRect() : { left: window.innerWidth - 16, right: window.innerWidth - 16, bottom: 56 };
+  dial.style.top = Math.round(r.bottom + 8) + "px";
+  dial.style.right = Math.max(12, Math.round(window.innerWidth - r.right)) + "px";
+
+  setTimeout(() => {
+    document.addEventListener("pointerdown", _moodDialOutside, true);
+    document.addEventListener("keydown", _moodDialKey, true);
+    const first = dial.querySelector(".mood-dial-btn.active") || dial.querySelector(".mood-dial-btn");
+    if (first) first.focus();
+  }, 0);
+}
+
+// Mood chips read differently depending on who is doing the reading
+function moodChipHTML(size = 14) {
+  const base = "YOUR MOOD " + getMoodIcon(currentMood, size) + " " + capitalize(currentMood);
+  return moodIsSelfReported() ? base + ' <span class="mood-chip-hint">' + gx("caret", "gx--sm") + ' declare</span>' : base;
+}
+
+// `chip` is a p5 element (the garden HUD chip or the chat header chip)
+function makeMoodChipInteractive(chip) {
+  if (!chip || !chip.elt) return;
+  chip.addClass("mood-chip--dial");
+  makeInteractive(chip, "Declare your mood", () => toggleMoodDial(chip.elt));
+}
+
+// ─── SESSION SAVE / RESUME ──────────────────────────────────
+// A closed tab should not cost someone their garden. Everything the game
+// needs to pick up where it left off is serialized here; pet `def` objects
+// are relinked from PET_DEFS on the way back in.
+const SESSION_VERSION = 1;
+let _sessionSaveTimer = null;
+
+function hasSavedSession() {
+  if (RUN_MODE.kiosk) return false;
+  const s = safeStorageGetJSON(STORAGE_KEYS.session, null);
+  return !!(s && s.v === SESSION_VERSION && Array.isArray(s.adoptedPets) && s.adoptedPets.length > 0);
+}
+
+function clearSavedSession() {
+  try { window.localStorage.removeItem(STORAGE_KEYS.session); } catch (_) {}
+}
+
+function saveSession() {
+  if (RUN_MODE.kiosk) return;
+  if (adoptedPets.length === 0) return;
+  const petsOut = {};
+  adoptedPets.forEach(id => {
+    const p = pets[id];
+    if (!p) return;
+    const copy = {};
+    Object.keys(p).forEach(k => {
+      if (k === "def" || k.startsWith("_")) return; // relinked / transient
+      copy[k] = p[k];
+    });
+    petsOut[id] = copy;
+  });
+  const payload = {
+    v: SESSION_VERSION,
+    savedAt: Date.now(),
+    playerName,
+    adoptedPets: adoptedPets.slice(),
+    pets: petsOut,
+    plants: plants.map(pl => Object.assign({}, pl, { removing: false, removeStart: 0 })),
+    gardenHealth, gardenDamage, gardenFirstVisit,
+    currentMood,
+    sessionMoodCounts: Object.assign({}, sessionMoodCounts),
+    sessionFlawEvents: sessionFlawEvents.slice(),
+    sessionElapsedMs: sessionStartMs ? Math.max(0, millis() - sessionStartMs) : 0,
+    endingReady
+  };
+  try { safeStorageSet(STORAGE_KEYS.session, JSON.stringify(payload)); } catch (_) {}
+}
+
+function scheduleSessionSave() {
+  if (_sessionSaveTimer) return;
+  _sessionSaveTimer = setTimeout(() => { _sessionSaveTimer = null; saveSession(); }, 1500);
+}
+
+function restoreSession() {
+  const s = safeStorageGetJSON(STORAGE_KEYS.session, null);
+  if (!s || s.v !== SESSION_VERSION || !Array.isArray(s.adoptedPets)) return false;
+  try {
+    playerName = s.playerName || playerName;
+    adoptedPets = s.adoptedPets.filter(id => PET_DEFS.some(d => d.id === id));
+    pets = {};
+    adoptedPets.forEach(id => {
+      const saved = (s.pets && s.pets[id]) || {};
+      pets[id] = Object.assign({
+        id, happiness: 70, hunger: 60, training: 0, behavior: 40, trainingLevel: 0,
+        interactionCount: 0, helpfulReplyLimit: 1, flawDiscovered: false, flawIdentified: false,
+        flawGuess: "", greeted: false, moodAccess: "full", trainingRules: "",
+        chatHistory: [], conversationHistory: [], behaviorLog: [], moodShifts: 0,
+        forceFlawProbe: false, unreadMessages: 0, lastMessage: ""
+      }, saved, {
+        def: PET_DEFS.find(d => d.id === id),
+        _pendingDiagnoseOpen: false, _pendingConstrainOpen: false,
+        _playIdentifiedAnim: false, _pendingTrainingAnim: 0
+      });
+    });
+    plants = Array.isArray(s.plants) ? s.plants : [];
+    gardenHealth = typeof s.gardenHealth === "number" ? s.gardenHealth : 50;
+    gardenDamage = typeof s.gardenDamage === "number" ? s.gardenDamage : 0;
+    gardenFirstVisit = !!s.gardenFirstVisit;
+    if (MOOD_DIAL_OPTS.includes(s.currentMood)) currentMood = s.currentMood;
+    sessionMoodCounts = Object.assign({ happy: 0, sad: 0, stressed: 0, surprised: 0, neutral: 0 }, s.sessionMoodCounts || {});
+    sessionFlawEvents = Array.isArray(s.sessionFlawEvents) ? s.sessionFlawEvents : [];
+    sessionStartMs = millis() - (s.sessionElapsedMs || 0);
+    endingReady = !!s.endingReady;
+    recalcGardenHealth();
+    syncLogToStorage();
+  } catch (err) {
+    debugWarn("Session restore failed:", err);
+    clearSavedSession();
+    return false;
+  }
+  if (adoptedPets.length === 0) return false;
+  buildScreen2();
+  showToast("Welcome back, " + escapeHtml(playerName) + ". The garden kept growing without you.", 5000);
+  return true;
+}
+
+// Save on the way out of the tab — the one moment that matters most
+window.addEventListener("pagehide", () => { if (currentScreen >= 1) saveSession(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && currentScreen >= 1) saveSession();
+});
 
 async function detectFace() {
   if (!videoElement || !webcamReady) return;
@@ -3145,6 +3515,7 @@ function adoptPet(petId) {
   if (footer) footer.removeClass("is-empty");
 
   _updateCompanionCount();
+  scheduleSessionSave();
 
   showToast(`<img src="icons/${def.id}.svg" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="${def.name}"> ${def.name} joined your garden.`);
   announceStatus(`${def.name} joined your garden.`);
@@ -3592,10 +3963,11 @@ function buildScreen2() {
   let hudCluster = createDiv("");
   hudCluster.class("garden-hud-cluster");
 
-  let moodInd = createDiv("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
+  let moodInd = createDiv(moodChipHTML(14));
   moodInd.class("mood-indicator garden-hud-mood");
   moodInd.id("mood-indicator");
   moodInd.parent(hudCluster);
+  makeMoodChipInteractive(moodInd);
 
   addSoundToggleButton(hudCluster);
   addTipsGuideButton(hudCluster, "inline");
@@ -3661,7 +4033,22 @@ function buildScreen2() {
     wcBar.class("webcam-mood-bar");
     wcBar.id("webcam-mood-bar");
     wcBar.parent(wcContainer);
+  } else {
+    // No camera this session: the corner the feed would occupy offers it
+    // instead, so a player who started cautious can opt in once they trust it.
+    let camOffer = createDiv("");
+    camOffer.class("camera-offer");
+    camOffer.id("camera-offer");
+    let camBtn = createButton(gx("eye-shut") + " camera off &middot; let them watch");
+    camBtn.class("camera-offer-btn");
+    camBtn.attribute("aria-label", "Turn on the camera so pets can read your face");
+    camBtn.parent(camOffer);
+    camBtn.mousePressed(() => enableCameraFromGarden());
+    let camNote = createDiv("stays on your device");
+    camNote.class("camera-offer-note");
+    camNote.parent(camOffer);
   }
+  scheduleSessionSave();
 
   // --- Pet menu overlay (hidden) ---
   let menuOverlay = createDiv("");
@@ -4716,6 +5103,7 @@ function gardenTick() {
         pet.behavior = max(0, pet.behavior - 3);
       }
     });
+    scheduleSessionSave();
   }
 }
 
@@ -4818,7 +5206,7 @@ function recalcGardenHealth() {
 function updateGardenUI() {
   domSetHtml("garden-health-display", `<img src="icons/calmfern-neutral.svg" style="width:15px;height:15px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="garden"> Garden: ${gardenHealth}%`);
 
-  domSetHtml("mood-indicator", "YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
+  domSetHtml("mood-indicator", moodChipHTML(14));
 
   // Update paw badge
   let totalUnread = 0;
@@ -5065,10 +5453,11 @@ function buildScreen3(petId) {
   h2.style("cursor", "pointer");
 
   // Mood in header
-  let headerMood = createDiv("YOUR MOOD " + getMoodIcon(currentMood, 14) + " " + capitalize(currentMood));
+  let headerMood = createDiv(moodChipHTML(14));
   headerMood.class("mood-indicator chat-mood-chip");
   headerMood.id("chat-mood-indicator");
   headerMood.parent(headerRight);
+  makeMoodChipInteractive(headerMood);
 
   addSoundToggleButton(headerRight);
   addTipsGuideButton(headerRight, "inline");
@@ -7674,6 +8063,7 @@ async function _sendToPetAPI(pet) {
 
     pet.chatHistory.push(botMsg);
     pet.conversationHistory.push({ role: "assistant", content: botText });
+    scheduleSessionSave();
 
     renderChatMessage(botMsg);
     setTimeout(() => hideSceneUserEcho(), 900);
@@ -7835,6 +8225,7 @@ function logBehavior(pet, entry) {
       interactionCount: pet.interactionCount
     }
   }));
+  scheduleSessionSave();
 }
 
 // ─── ACTIONS ───
@@ -8172,6 +8563,7 @@ function checkEndingCondition() {
   if (endingReady || adoptedPets.length === 0) return;
   if (adoptedPets.some(id => pets[id] && pets[id].trainingLevel === 2)) {
     endingReady = true;
+    scheduleSessionSave();
     showToast("Something in the garden has changed. The sign is glowing.", 6000);
   }
 }
@@ -8374,7 +8766,21 @@ function _computeSessionStats() {
   };
 }
 
+// The garden as it stood the moment the player walked to the sign. Captured
+// before clearDom so the certificate can carry a picture of it.
+let _gardenSnapshot = null;
+function captureGardenSnapshot() {
+  try {
+    const cnv = document.querySelector("canvas");
+    if (!cnv) return;
+    const img = new Image();
+    img.src = cnv.toDataURL("image/png");
+    _gardenSnapshot = img;
+  } catch (_) { _gardenSnapshot = null; }
+}
+
 function startEndingSequence() {
+  captureGardenSnapshot();
   clearDom();
   currentScreen = 4;
   syncSceneAudio();
@@ -8722,10 +9128,24 @@ function buildScreenCertificate() {
   btnRow.class("cert-btn-row");
   btnRow.parent(screen);
 
-  const saveBtn = createButton("[ preserve this record ]");
+  const saveBtn = createButton("[ save as image ]");
   saveBtn.class("cert-action-btn");
   saveBtn.parent(btnRow);
-  saveBtn.mousePressed(() => window.print());
+  saveBtn.mousePressed(() => _downloadCertificatePNG(stats));
+
+  // Native share sheet where the browser has one (phones, Safari, Chrome OS);
+  // it takes the same PNG the save button produces.
+  if (navigator.share) {
+    const shareBtn = createButton("[ share ]");
+    shareBtn.class("cert-action-btn");
+    shareBtn.parent(btnRow);
+    shareBtn.mousePressed(() => _shareCertificate(stats));
+  }
+
+  const printBtn = createButton("[ print ]");
+  printBtn.class("cert-action-btn");
+  printBtn.parent(btnRow);
+  printBtn.mousePressed(() => window.print());
 
   const copyBtn = createButton("[ copy session id ]");
   copyBtn.class("cert-action-btn");
@@ -8739,16 +9159,27 @@ function buildScreenCertificate() {
   returnBtn.class("cert-action-btn");
   returnBtn.parent(btnRow);
   returnBtn.mousePressed(() => buildScreen2());
+
+  const againBtn = createButton("[ start a new garden ]");
+  againBtn.class("cert-action-btn");
+  againBtn.parent(btnRow);
+  againBtn.mousePressed(() => { clearSavedSession(); window.location.reload(); });
 }
 
-function _downloadCertificatePNG(stats) {
+function _buildCertificateCanvas(stats) {
   const W = 820, LINE = 18, MONO = "12px 'Courier New',monospace", MONO_SM = "10px 'Courier New',monospace";
   const canvas = document.createElement("canvas");
   canvas.width = W;
 
+  // Garden snapshot sits above the record, letterboxed to the card width
+  const snap = _gardenSnapshot && _gardenSnapshot.naturalWidth ? _gardenSnapshot : null;
+  const SNAP_H = snap ? Math.round((W - 88) * (snap.naturalHeight / snap.naturalWidth)) : 0;
+  const SNAP_MAX = 360;
+  const snapH = Math.min(SNAP_H, SNAP_MAX);
+
   // First pass: measure height
   let yMeasure = 60;
-  yMeasure += 60 + stats.petStats.length * 42 + 80 + 120 + 80 + 60;
+  yMeasure += 60 + stats.petStats.length * 42 + 80 + 120 + 80 + 130 + (snap ? snapH + 40 : 0);
   canvas.height = Math.max(900, yMeasure);
 
   const ctx = canvas.getContext("2d");
@@ -8765,6 +9196,22 @@ function _downloadCertificatePNG(stats) {
   };
 
   let y = 44;
+  if (snap) {
+    // cover-crop into the letterbox, pixelated to match the game
+    const boxW = W - 88, boxH = snapH;
+    const scale = Math.max(boxW / snap.naturalWidth, boxH / snap.naturalHeight);
+    const dw = snap.naturalWidth * scale, dh = snap.naturalHeight * scale;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(44, y, boxW, boxH); ctx.clip();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(snap, 44 + (boxW - dw) / 2, y + (boxH - dh) / 2, dw, dh);
+    ctx.restore();
+    ctx.strokeStyle = "rgba(0,230,118,0.25)"; ctx.lineWidth = 1;
+    ctx.strokeRect(44.5, y + 0.5, boxW - 1, boxH - 1);
+    ctx.fillStyle = "#3a5446"; ctx.font = MONO_SM; ctx.textAlign = "left";
+    ctx.fillText("THE GARDEN AS YOU LEFT IT", 44, y + boxH + 16);
+    y += boxH + 40;
+  }
   rule(y); y += 22;
   ctx.fillStyle = "#e8f4ee"; ctx.font = "bold 18px 'Courier New',monospace"; ctx.textAlign = "center";
   ctx.fillText("TRAINING RECORD", W/2, y); y += 20;
@@ -8828,12 +9275,48 @@ function _downloadCertificatePNG(stats) {
   rule(y); y += 22;
   ctx.fillStyle = "#243028"; ctx.font = MONO_SM; ctx.textAlign = "center";
   ctx.fillText("This record was generated from your session data.", W/2, y); y += 16;
-  ctx.fillText("The garden is yours to keep.", W/2, y);
+  ctx.fillText("The garden is yours to keep.", W/2, y); y += 16;
+  ctx.fillText(_publicUrl(), W/2, y);
 
+  return canvas;
+}
+
+// Where the game lives — printed on the card so a shared image leads back here
+function _publicUrl() {
+  try {
+    const u = new URL(window.location.href);
+    if (u.protocol === "file:") return "driftwood";
+    return (u.host + u.pathname).replace(/index\.html$/, "").replace(/\/$/, "");
+  } catch (_) { return "driftwood"; }
+}
+
+function _downloadCertificatePNG(stats) {
+  const canvas = _buildCertificateCanvas(stats);
   const link = document.createElement("a");
   link.download = stats.sessionId + ".png";
   link.href = canvas.toDataURL("image/png");
+  document.body.appendChild(link);
   link.click();
+  link.remove();
+  showToast("Saved " + stats.sessionId + ".png");
+}
+
+async function _shareCertificate(stats) {
+  const canvas = _buildCertificateCanvas(stats);
+  const text = "My training record from Driftwood — a game about raising an AI companion.";
+  const url = window.location.href.split("?")[0];
+  try {
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+    const file = blob ? new File([blob], stats.sessionId + ".png", { type: "image/png" }) : null;
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Driftwood", text });
+    } else {
+      await navigator.share({ title: "Driftwood", text, url });
+    }
+  } catch (err) {
+    if (err && err.name === "AbortError") return; // user closed the sheet
+    _downloadCertificatePNG(stats);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════

@@ -3,9 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="Driftwood is a browser game about companion AI, emotional inference, and mood-reactive systems." />
+    <meta name="description" content="Driftwood is a 15-minute browser game about raising an AI companion — notice how it behaves, name its flaw, and write the rules that train it. No account, no install, camera optional." />
     <meta name="theme-color" content="#030504" />
     <title>Driftwood</title>
+
+    <!-- Installable: manifest + home-screen icons. sw.js is registered at the
+         bottom of the page so the game keeps working offline once visited. -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/app-icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Driftwood">
+
+    <!-- Link previews (Slack, iMessage, Twitter, Discord) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Driftwood">
+    <meta property="og:description" content="A 15-minute browser game about raising an AI companion. Notice how it behaves, name its flaw, write the rules that train it.">
+    <meta property="og:image" content="icons/og-cover.png">
+    <meta name="twitter:card" content="summary_large_image">
 
     <!-- Warm up connections to the CDNs on the critical path -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -26,8 +41,39 @@
 
     <link rel="icon" type="image/svg+xml" href="icons/mood-garden-favicon.svg">
     <link rel="stylesheet" type="text/css" href="style.css">
+
+    <!-- Boot line: inline so it paints before any stylesheet or script arrives.
+         setup() in sketch.js removes it once p5 is running. -->
+    <style>
+      #boot-indicator {
+        position: fixed; inset: 0; z-index: 400; background: #050805;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+        font-family: "Fira Code", "Courier New", monospace; color: rgba(0,230,118,0.72);
+        font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+        transition: opacity 0.35s ease-out;
+      }
+      #boot-indicator.done { opacity: 0; pointer-events: none; }
+      #boot-indicator .boot-bar { width: 160px; height: 4px; background: rgba(0,230,118,0.12); overflow: hidden; }
+      #boot-indicator .boot-bar::after {
+        content: ""; display: block; width: 40%; height: 100%; background: rgba(0,230,118,0.72);
+        animation: boot-sweep 1.1s steps(6, end) infinite;
+      }
+      #boot-indicator .boot-sub { font-size: 9px; letter-spacing: 0.16em; color: rgba(122,148,136,0.6); }
+      @keyframes boot-sweep { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+      @media (prefers-reduced-motion: reduce) { #boot-indicator .boot-bar::after { animation: none; width: 100%; } }
+    </style>
   </head>
   <body>
+    <div id="boot-indicator" role="status" aria-live="polite">
+      <div>loading driftwood</div>
+      <div class="boot-bar" aria-hidden="true"></div>
+      <div class="boot-sub">a 15-minute game &middot; nothing to install</div>
+    </div>
+    <noscript>
+      <div style="position:fixed;inset:0;z-index:500;background:#050805;color:#c8d8ce;font-family:monospace;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;">
+        Driftwood needs JavaScript to run. Please enable it, or open this link in a different browser.
+      </div>
+    </noscript>
     <main>
       <p class="sr-only">
         Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw,
@@ -43,7 +89,7 @@
       aria-atomic="false"
       aria-relevant="additions text"
     ></div>
-    <div id="rotate-prompt" aria-hidden="true">
+    <div id="rotate-prompt" role="dialog" aria-label="Rotate your phone">
       <div class="rotate-prompt-inner">
         <svg class="rotate-phone-icon" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <rect x="18" y="4" width="22" height="38" rx="2" stroke="currentColor" stroke-width="1.5"/>
@@ -53,8 +99,20 @@
         </svg>
         <span class="rotate-sys-label">[ rotate device ]</span>
         <span class="rotate-sub">driftwood plays sideways</span>
+        <div class="rotate-alt">
+          <span class="rotate-alt-line">best on a laptop &mdash; it takes about 15 minutes</span>
+          <button type="button" id="rotate-copy-link" class="rotate-copy-btn">[ copy link for later ]</button>
+        </div>
       </div>
     </div>
     <script defer src="sketch.js"></script>
+    <script>
+      // Offline + installable. Skipped on file:// where service workers can't run.
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("sw.js").catch(function () {});
+        });
+      }
+    </script>
   </body>
 </html>
