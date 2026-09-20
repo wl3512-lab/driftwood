@@ -138,7 +138,7 @@
   /* ── POST-IT BASE ── */
   .postit {
     position: relative;
-    width: 200px; height: 200px;
+    width: 260px; height: 260px;
     cursor: pointer;
     flex-shrink: 0;
     animation: tack-in 0.35s steps(4) both;
@@ -146,7 +146,7 @@
   }
   /* fewer notes = larger cards */
   .notes-container--few .postit {
-    width: 240px; height: 240px;
+    width: 300px; height: 300px;
   }
   .postit:hover  { filter: brightness(1.06); z-index: 10; }
   .postit:active { filter: brightness(0.93); }
@@ -185,7 +185,7 @@
       8px 8px   0 var(--note-tape),
       12px 12px 0 var(--note-shadow),
       14px 14px 0 rgba(0,0,0,0.22);
-    padding: 22px 12px 14px;
+    padding: 26px 16px 30px;
     position: relative;
     overflow: hidden;
   }
@@ -217,7 +217,7 @@
   .postit-body--empty   { --note-bg: #dddbc8; --note-tape: #b8b6a0; --note-shadow: #888470; opacity: 0.65; }
 
   .postit-title {
-    font-size: 6px;
+    font-size: 9px;
     color: #1a1a2e;
     opacity: 0.65;
     text-transform: uppercase;
@@ -230,20 +230,20 @@
   }
 
   .postit-text {
-    font-size: 5px;
+    font-size: 8px;
     color: #1a1a2e;
-    line-height: 2;
+    line-height: 1.9;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
-    line-clamp: 4;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
     -webkit-box-orient: vertical;
   }
 
   .postit-badge {
     position: absolute;
-    bottom: 8px; left: 10px;
-    font-size: 5px;
+    bottom: 10px; left: 14px;
+    font-size: 7px;
     color: var(--note-shadow);
     opacity: 0.95;
   }
@@ -275,8 +275,8 @@
   /* ── BIG NOTE ── */
   .big-note {
     position: relative;
-    width: min(560px, 92vw);
-    min-height: 360px;
+    width: min(680px, 92vw);
+    min-height: 400px;
     --note-bg:     #f7d900;
     --note-tape:   #c9a800;
     --note-shadow: #8a7000;
@@ -398,7 +398,7 @@
 
   .big-pet-info { flex: 1; min-width: 0; }
   .big-pet-name {
-    font-size: 10px;
+    font-size: 14px;
     color: #1a1a2e;
     margin-bottom: 5px;
     white-space: nowrap;
@@ -406,14 +406,14 @@
     text-overflow: ellipsis;
   }
   .big-pet-species {
-    font-size: 5px;
+    font-size: 7px;
     color: rgba(0,0,0,0.42);
     letter-spacing: 1px;
   }
 
   .type-badge {
-    font-size: 5px;
-    padding: 3px 6px;
+    font-size: 7px;
+    padding: 5px 8px;
     color: #fff;
     flex-shrink: 0;
   }
@@ -433,13 +433,13 @@
   }
 
   .big-entry-text {
-    font-size: 8px;
+    font-size: 12px;
     color: #1a1a2e;
-    line-height: 2.4;
+    line-height: 2.1;
     word-break: break-word;
   }
   .big-flavor {
-    font-size: 5px;
+    font-size: 7px;
     color: rgba(0,0,0,0.4);
     line-height: 2;
   }
@@ -457,14 +457,14 @@
     gap: 4px;
   }
   .stat-label {
-    font-size: 4px;
+    font-size: 6px;
     color: rgba(0,0,0,0.38);
     letter-spacing: 0.8px;
     text-transform: uppercase;
   }
   .stat-bar-track {
-    width: 68px;
-    height: 6px;
+    width: 96px;
+    height: 8px;
     background: rgba(0,0,0,0.12);
     position: relative;
   }
@@ -475,7 +475,7 @@
   .stat-bar--warn { background: #8a7000; }
   .stat-bar--bad  { background: #a05040; }
   .stat-val {
-    font-size: 4px;
+    font-size: 6px;
     color: rgba(0,0,0,0.48);
   }
   .stat-pips {
@@ -489,7 +489,7 @@
   }
   .stat-pip.filled { background: #1a1a2e; }
   .stat-flaw-badge {
-    font-size: 4px;
+    font-size: 6px;
     padding: 2px 6px;
     letter-spacing: 0.5px;
     margin-top: 1px;
@@ -498,13 +498,13 @@
   .stat-flaw--spotted { background: #a05040; color: #fff; }
   .stat-flaw--named   { background: #4a8048; color: #fff; }
   .stat-extra {
-    font-size: 4px;
+    font-size: 6px;
     color: rgba(0,0,0,0.34);
     letter-spacing: 0.3px;
     margin-top: 4px;
   }
   .stat-interaction {
-    font-size: 4px;
+    font-size: 6px;
     color: rgba(0,0,0,0.38);
     letter-spacing: 0.5px;
     margin-top: 3px;
@@ -524,7 +524,7 @@
 <div class="wall-edge wall-edge--right" aria-hidden="true"></div>
 
 <nav aria-label="Behavior log controls">
-  <button class="back-btn" onclick="window.close()">&#8592; CLOSE</button>
+  <button class="back-btn" onclick="leaveLog()">&#8592; CLOSE LOG</button>
 </nav>
 
 <main class="wall" aria-labelledby="behavior-log-title">
@@ -547,6 +547,17 @@
 </div>
 
 <script>
+// The log opens inside the game (an iframe overlay) — closing hands control
+// back to the parent. Opened directly in a tab, it just closes the tab.
+const EMBEDDED = window.parent && window.parent !== window;
+function leaveLog() {
+  if (EMBEDDED) { try { window.parent.postMessage({ type: 'DW_LOG_CLOSE' }, '*'); } catch (_) {} }
+  else { window.close(); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('overlay').classList.contains('active')) leaveLog();
+});
+
 const TYPE = {
   success: { cls: 'success', icon: '✓', label: 'STEADY',  flavor: 'Behavior within expected parameters.' },
   danger:  { cls: 'danger',  icon: '⚠', label: 'FLAGGED', flavor: 'Anomalous behavior detected. Review recommended.' },
@@ -673,7 +684,7 @@ function render(entries) {
       <div class="postit-body postit-body--${info.cls}">
         <div class="postit-tape"></div>
         <div class="postit-title">${escapeHtml(entry.petName || '?')}</div>
-        <div class="postit-text">${escapeHtml(truncate(strip(entry.text), 52))}</div>
+        <div class="postit-text">${escapeHtml(truncate(strip(entry.text), 110))}</div>
         <div class="postit-badge">${info.icon} ${info.label}</div>
       </div>
     `;

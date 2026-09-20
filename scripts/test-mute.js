@@ -4,6 +4,17 @@
 // audio path so the CRT cover and pet voices stay quiet too.
 (function () {
   try { localStorage.setItem("dw_audio_muted", "1"); } catch (_) {}
+  // Never test against the service worker's cached bundle: a reload after an
+  // edit would otherwise run the previous sketch.js (cache-first) and the
+  // results would describe code that no longer exists.
+  try {
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); });
+      // and stop the page re-registering it for the next load
+      navigator.serviceWorker.register = function () { return Promise.reject(new Error("service worker disabled for test runs")); };
+    }
+    if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); });
+  } catch (_) {}
   try { if (window.speechSynthesis) window.speechSynthesis.speak = function () {}; } catch (_) {}
   try {
     var mute = function (Ctor) {

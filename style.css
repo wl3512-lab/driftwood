@@ -6617,3 +6617,27 @@ html.kiosk .splash-facts-resume { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .splash-facts, .mood-dial { animation: none; }
 }
+
+/* ─ Behavior log overlay: the post-it wall inside the game ─ */
+.log-overlay {
+  position: fixed; inset: 0; z-index: 260;
+  background: rgba(3, 5, 4, 0.92);
+  animation: log-overlay-in 0.18s steps(4, end);
+}
+.log-overlay.leaving { animation: log-overlay-out 0.18s steps(4, end) forwards; }
+@keyframes log-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes log-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+.log-overlay-frame {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #eceae4;
+}
+.log-overlay-close {
+  position: absolute; top: 14px; right: 16px; z-index: 2;
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 9px 14px; min-height: 40px;
+  background: #1a1a2e; color: #eceae4; border: 2px solid #eceae4; box-shadow: 3px 3px 0 rgba(0,0,0,0.5);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.log-overlay-close .gx { width: 1em; height: 1em; }
+.log-overlay-close:hover { background: #2a2a44; }
+.log-overlay-close:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .log-overlay, .log-overlay.leaving { animation: none; } }
