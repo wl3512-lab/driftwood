@@ -10,5 +10,5 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer \
   --virtual-time-budget=15000 \
   --print-to-pdf="$PWD/docs/Driftwood_UX_Deck.pdf" \
-  "file://$PWD/docs/deck/driftwood-deck.html" 2>/dev/null
+  "file://$PWD/docs/deck/driftwood-deck.html?print=1" 2>/dev/null
 echo "→ docs/Driftwood_UX_Deck.pdf ($(du -h docs/Driftwood_UX_Deck.pdf | cut -f1))"

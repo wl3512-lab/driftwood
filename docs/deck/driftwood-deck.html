@@ -230,8 +230,43 @@ h2 .r { color: var(--red); }
 .big { font-family: var(--display); font-size: 120px; line-height: 0.95; margin: 72px 0 0; max-width: 1900px; color: var(--ink); }
 .big em { font-style: normal; color: var(--green); }
 
+/* ─ Browser preview: one slide fitted to the window, arrows to move ─
+   Only active when <html> has .viewer (set by the script below); the print
+   path and the PDF export see the plain stacked deck. */
+html.viewer, html.viewer body { height: 100%; overflow: hidden; }
+html.viewer .deck { display: block; padding: 0; zoom: 1; }
+html.viewer .slide { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(var(--fit)); transform-origin: center; }
+html.viewer .slide.split, html.viewer .slide.cover { display: none; }
+html.viewer .slide.on { display: flex; }
+html.viewer .slide.on.split, html.viewer .slide.on.cover { display: flex; }
+.viewer-bar {
+  display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  height: 64px; padding: 0 20px; align-items: center; gap: 18px;
+  background: rgba(3, 5, 4, 0.92); border-top: 1px solid var(--rule);
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3);
+}
+html.viewer .viewer-bar { display: flex; }
+.viewer-bar b { color: var(--ink); font-weight: 500; min-width: 72px; }
+.viewer-bar button, .viewer-bar a {
+  font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer;
+  background: none; border: 1px solid var(--rule); color: var(--green); padding: 9px 14px; min-height: 40px;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+}
+.viewer-bar button:hover, .viewer-bar a:hover { border-color: var(--green); background: rgba(0,230,118,0.06); }
+.viewer-bar button:focus-visible, .viewer-bar a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.viewer-bar button[disabled] { opacity: 0.35; cursor: default; }
+.viewer-bar .dl { margin-left: auto; background: var(--green); color: var(--ground); border-color: var(--green); font-weight: 600; }
+.viewer-bar .dl:hover { background: var(--green-light); }
+.viewer-bar .hint { display: none; }
+@media (min-width: 720px) { .viewer-bar .hint { display: inline; color: var(--ink-4); } }
+@media (max-width: 719px) { .viewer-bar { gap: 10px; padding: 0 12px; font-size: 11px; } .viewer-bar .title { display: none; } }
+
 @media print {
   @page { size: 2448px 1584px; margin: 0; }
+  html.viewer, html.viewer body { height: auto; overflow: visible; }
+  html.viewer .deck { display: flex; }
+  html.viewer .slide, html.viewer .slide.split, html.viewer .slide.cover { display: flex; position: relative; top: auto; left: auto; transform: none; }
+  .viewer-bar { display: none !important; }
   html, body { background: var(--ground); }
   .deck { gap: 0; padding: 0; zoom: 1; }
   .slide { page-break-after: always; break-after: page; }
@@ -655,5 +690,63 @@ h2 .r { color: var(--red); }
 </section>
 
 </div>
+
+<nav class="viewer-bar" aria-label="Deck controls">
+  <span class="title">Driftwood · UX deck</span>
+  <button type="button" id="vb-prev" aria-label="Previous slide">&larr;</button>
+  <b id="vb-count">01 / 30</b>
+  <button type="button" id="vb-next" aria-label="Next slide">&rarr;</button>
+  <span class="hint">arrow keys or swipe · P to print</span>
+  <a class="dl" href="../Driftwood_UX_Deck.pdf" download>Download PDF</a>
+</nav>
+
+<script>
+  // Preview mode: fit one slide to the window and page through it. The PDF
+  // export runs headless with ?print=1 (or under print media) and never sees this.
+  (function () {
+    var params = new URLSearchParams(location.search);
+    if (params.get('print') === '1' || !window.matchMedia) return;
+    var root = document.documentElement;
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    if (!slides.length) return;
+    root.classList.add('viewer');
+
+    var i = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+    var count = document.getElementById('vb-count');
+    var prev = document.getElementById('vb-prev');
+    var next = document.getElementById('vb-next');
+
+    function fit() {
+      var f = Math.min((window.innerWidth - 24) / 2448, (window.innerHeight - 64 - 24) / 1584);
+      root.style.setProperty('--fit', String(f));
+    }
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+      count.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+      prev.disabled = i === 0;
+      next.disabled = i === slides.length - 1;
+      if (history.replaceState) history.replaceState(null, '', '#' + (i + 1));
+    }
+    prev.addEventListener('click', function () { show(i - 1); });
+    next.addEventListener('click', function () { show(i + 1); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(i + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+      else if (e.key === 'Home') { show(0); }
+      else if (e.key === 'End') { show(slides.length - 1); }
+      else if (e.key === 'p' || e.key === 'P') { window.print(); }
+    });
+    var x0 = null;
+    document.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) show(dx < 0 ? i + 1 : i - 1);
+    }, { passive: true });
+    window.addEventListener('resize', fit);
+    fit(); show(i);
+  })();
+</script>
 </body>
 </html>

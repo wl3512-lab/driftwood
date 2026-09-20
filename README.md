@@ -2,7 +2,7 @@
 
 **A 15-minute browser game about raising an AI companion.** You adopt a pet with a hidden behavioural flaw, notice it, name it, and write the rules that train it. The garden you do this in records everything: your moods grow plants, the pet's harm grows vines, good training grows anchor trees.
 
-**[Play it](https://wl3512-lab.github.io/driftwood/)** · **[Case study](https://wl3512-lab.github.io/driftwood/case-study.html)** · [Behavior log viewer](https://wl3512-lab.github.io/driftwood/postit-behavior-log.html)
+**[Play it](https://wl3512-lab.github.io/driftwood/)** · **[Case study](https://wl3512-lab.github.io/driftwood/case-study.html)** · [Slide deck](https://wl3512-lab.github.io/driftwood/docs/deck/driftwood-deck.html) ([PDF](https://wl3512-lab.github.io/driftwood/docs/Driftwood_UX_Deck.pdf)) · [Behavior log viewer](https://wl3512-lab.github.io/driftwood/postit-behavior-log.html)
 
 ![The garden: a pixel field with a fox and a rabbit, a health bar, and a mood chip](docs/screenshots/garden.png)
 
@@ -66,6 +66,7 @@ On a phone: Share → **Add to Home Screen**. On desktop Chrome/Edge: the instal
 scripts/build.sh          # → _site/  (what GitHub Pages deploys)
 scripts/build.sh --zip    # → dist/driftwood-web.zip  (upload to itch.io as an HTML game)
 python3 scripts/make-icons.py   # regenerate PWA icons + link preview from the pixel favicon
+scripts/export-deck.sh          # rebuild docs/deck/driftwood-deck.html and docs/Driftwood_UX_Deck.pdf
 ```
 
 GitHub Pages deploys from `main` via `.github/workflows/static.yml`, which calls the same build script, so the itch.io zip and the live site are always the same bundle.
