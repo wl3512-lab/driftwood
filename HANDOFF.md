@@ -10,6 +10,26 @@ Players enter a mood-reactive garden, invite AI pets inside, talk with them, obs
 
 The core loop is designed to work without a private API key. Live AI is optional; the built-in local behavior engine is the public/default path.
 
+## September 2026 additions — reach and onboarding
+
+Read this before touching the entry flow, the mood system, or deployment.
+
+**Camera is opt-in.** `getCameraPref()` (URL `?camera=` wins, else localStorage `dw_camera_pref`, default `off`). `startGame()` only calls `startWebcam()` when the pref is `on`, and must do so inside the click handler for Safari's activation window. Inside the garden, `#camera-offer` (rendered when there is no `video`) calls `enableCameraFromGarden()`, which rebuilds screen 2 when the stream is up.
+
+**Self-report mood dial.** When `!cameraIsLive()`, both mood chips (`#mood-indicator`, `#chat-mood-indicator`) are interactive via `makeMoodChipInteractive()` and open `toggleMoodDial()`. `declareMood()` writes `currentMood`, clears `moodHistory`, and everything downstream (plants, pet replies, session stats) is unchanged. `moodChipHTML()` is the single writer for chip markup — use it, don't hand-build the string.
+
+**Session save/resume.** `saveSession()` serializes pets (minus `def` and `_` transients), plants, garden numbers, mood counts, flaw events and elapsed time to `dw_session`. `scheduleSessionSave()` debounces; it's called from adopt, stat decay, `logBehavior`, bot replies, ending. `pagehide`/`visibilitychange` save immediately. `restoreSession()` relinks `def` from `PET_DEFS` and jumps to screen 2. The splash and entry card check `hasSavedSession()`. Bump `SESSION_VERSION` if the pet shape changes incompatibly — old saves are then ignored, not migrated.
+
+**Run modes.** `RUN_MODE` is parsed once from the URL. `?kiosk=1` → `initKioskMode()`: fullscreen on first gesture, idle reload after `?idle=` minutes (default 3), saved session and name wiped on boot, `html.kiosk` class hides the dedication link and resume UI.
+
+**PWA.** `manifest.webmanifest` + `sw.js` (registered from index.html, skipped on `file:`). Precache list is hand-maintained in `sw.js` — add new runtime assets there *and* in `scripts/build.sh`. Bump `VERSION` in `sw.js` on any shipped change or returning players get the cached bundle until the background refresh lands.
+
+**Certificate.** `_buildCertificateCanvas(stats)` renders the PNG (with `_gardenSnapshot`, captured by `captureGardenSnapshot()` at the top of `startEndingSequence()`). `_downloadCertificatePNG` and `_shareCertificate` wrap it.
+
+**Build.** `scripts/build.sh` is the only file list. The Pages workflow calls it; `--zip` makes the itch.io upload. `scripts/make-icons.py` regenerates the PNG icons from the favicon SVG.
+
+**Known, untouched.** The training-room overlay is 97% opaque by design, so at some viewport sizes the chat screen ghosts through below the room background. Visible in `docs/screenshots` attempts; left as-is pending a decision.
+
 ## Tech Stack
 
 | Concern | Tech |

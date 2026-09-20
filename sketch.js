@@ -4070,7 +4070,10 @@ function buildScreen2() {
     }
   });
 
-  // First-visit entry prompt — one-line ambient signal, self-removes after first pet interaction
+  // First-visit entry prompt — one-line ambient signal. It stays until the
+  // player actually taps a creature (mousePressed removes it); a newcomer
+  // often needs longer than a few seconds to decide the sprites are buttons.
+  // 45 s fallback so it never lingers on a player who is just watching.
   if (gardenFirstVisit && adoptedPets.length > 0) {
     let entryHint = createDiv("[tap a creature to begin]");
     entryHint.class("garden-entry-hint");
@@ -4078,7 +4081,7 @@ function buildScreen2() {
     setTimeout(() => {
       let h = document.getElementById("garden-entry-hint");
       if (h) { h.classList.add("fading"); setTimeout(() => h && h.remove(), 800); }
-    }, 5000);
+    }, 45000);
   }
 
   // Timers
