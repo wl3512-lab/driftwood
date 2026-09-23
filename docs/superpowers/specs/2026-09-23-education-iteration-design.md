@@ -136,7 +136,7 @@ landscape viewports.
 - **Earlier unlock may reduce how many players reach level 2.** Accepted: reaching the ending
   at all matters more than reaching it perfectly, and the ending now names the difference
   out loud. Players can return to the garden and keep training — that path already exists.
-- **Chips could become button-mashing.** Mitigated by the 70–89 ceiling, and verified by test.
+- **Chips could become button-mashing.** Mitigated by the level-1 ceiling, and verified by test.
 - **The transfer lines are claims about real systems.** Keep them behavioural and
   non-specific — describe what a system does, name no product. Avoid anything that reads as a
   factual claim about a named company.
