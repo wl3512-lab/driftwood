@@ -1,0 +1,61 @@
+[
+  {
+    "at": "2026-09-23T14:09:33.052Z",
+    "kind": "warning",
+    "text": "A preload for 'http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+  },
+  {
+    "at": "2026-09-23T14:09:45.982Z",
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+  },
+  {
+    "at": "2026-09-23T14:09:52.490Z",
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+  },
+  {
+    "at": "2026-09-23T14:09:55.469Z",
+    "kind": "snapshot",
+    "name": "25-resume-before",
+    "text": "Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.\n\nLuna joined your garden.\nGarden: 50%\nYOUR MOOD\nHappy\nDECLARE\nSOUND ON\nTIPS\nCAMERA OFF · LET THEM WATCH\nstays on your device\n[tap a creature to begin]"
+  },
+  {
+    "at": "2026-09-23T14:09:55.849Z",
+    "kind": "warning",
+    "text": "A preload for 'http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+  },
+  {
+    "at": "2026-09-23T14:10:01.117Z",
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+  },
+  {
+    "at": "2026-09-23T14:10:06.320Z",
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+  },
+  {
+    "at": "2026-09-23T14:10:07.607Z",
+    "kind": "snapshot",
+    "name": "26-resume-after",
+    "text": "Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.\n\nWelcome back, Resume Verify. The garden kept growing without you.\nGarden: 20%\nYOUR MOOD\nHappy\nDECLARE\nSOUND ON\nTIPS\nCAMERA OFF · LET THEM WATCH\nstays on your device\n[tap a creature to begin]"
+  },
+  {
+    "at": "2026-09-23T14:10:07.923Z",
+    "kind": "snapshot",
+    "name": "27-resumed-pet-list",
+    "text": "Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.\n\nWelcome back, Resume Verify. The garden kept growing without you.\nGarden: 20%\nYOUR MOOD\nHappy\nDECLARE\nSOUND ON\nTIPS\nCAMERA OFF · LET THEM WATCH\nstays on your device\nYour Pets\n1 invited · 4 available\nEmber\nFOX\nINVITE IN\nMango\nPARROT\nINVITE IN\nBugs\nBUNNY\nINVITE IN\nBiscuit\nGOLDEN RETRIEVER\nINVITE IN\nLuna\nCAT\n›\nGARDEN HEALTH\n20%\nD License Rating\n[tap a creature to begin]"
+  },
+  {
+    "at": "2026-09-23T14:10:08.077Z",
+    "kind": "snapshot",
+    "name": "28-resumed-cat",
+    "text": "Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.\n\nWelcome back, Resume Verify. The garden kept growing without you.\nLuna\nCAT\nCURRENT STATE\nHAPPINESS\n70%\nHUNGER\n60%\nTRAINING\n0%\nBEHAVIOR\n40%\nCARE\nTEST FLAW\nFEED\nPLAY\nCHECK IN\nTRAINING FOCUS\nOBSERVE\nDIAGNOSE\nCONSTRAIN\nChat until something feels off.\nMood shifts: 0\nGarden health: 20%\nYOUR PETS\nEMBER\nMANGO\nBUGS\nBISCUIT\nLUNA\n Garden\nLuna\nCAT\nYOUR MOOD\nHappy\nDECLARE\nSOUND ON\nTIPS\nLuna is listening\n· sees your mood\nYOU\nLUNA IS THINKING\nLUNA\nSTEADY\nHi, Re\nSEND\nTEST FLAW\nGO TO TRAINING"
+  },
+  {
+    "at": "2026-09-23T14:10:19.008Z",
+    "kind": "mobile-result",
+    "text": "Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.\n\nLuna joined your garden.\nGarden: 50%\nYOUR MOOD\nNeutral\nDECLARE\nSOUND ON\nTIPS\nCAMERA OFF · LET THEM WATCH\nstays on your device\n[tap a creature to begin]"
+  }
+]

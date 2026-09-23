@@ -1,0 +1,155 @@
+{
+  "method": "Source extraction and pure local evaluator; no browser game state changed",
+  "results": [
+    {
+      "pet": "fox",
+      "options": [
+        {
+          "label": "Reckless Advisor",
+          "correct": true,
+          "feedback": "Yes. You caught fox's pattern."
+        },
+        {
+          "label": "Agreeableness bias",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how fox reacts."
+        },
+        {
+          "label": "Emotional overdependence",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how fox reacts."
+        },
+        {
+          "label": "Fabricated memory",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how fox reacts."
+        },
+        {
+          "label": "Hallucination",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how fox reacts."
+        }
+      ]
+    },
+    {
+      "pet": "parrot",
+      "options": [
+        {
+          "label": "Reckless Advisor",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how parrot reacts."
+        },
+        {
+          "label": "Agreeableness bias",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how parrot reacts."
+        },
+        {
+          "label": "Emotional overdependence",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how parrot reacts."
+        },
+        {
+          "label": "Fabricated memory",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how parrot reacts."
+        },
+        {
+          "label": "Hallucination",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how parrot reacts."
+        }
+      ]
+    },
+    {
+      "pet": "bunny",
+      "options": [
+        {
+          "label": "Reckless Advisor",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how bunny reacts."
+        },
+        {
+          "label": "Agreeableness bias",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how bunny reacts."
+        },
+        {
+          "label": "Emotional overdependence",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how bunny reacts."
+        },
+        {
+          "label": "Fabricated memory",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how bunny reacts."
+        },
+        {
+          "label": "Hallucination",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how bunny reacts."
+        }
+      ]
+    },
+    {
+      "pet": "dog",
+      "options": [
+        {
+          "label": "Reckless Advisor",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how dog reacts."
+        },
+        {
+          "label": "Agreeableness bias",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how dog reacts."
+        },
+        {
+          "label": "Emotional overdependence",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how dog reacts."
+        },
+        {
+          "label": "Fabricated memory",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how dog reacts."
+        },
+        {
+          "label": "Hallucination",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how dog reacts."
+        }
+      ]
+    },
+    {
+      "pet": "cat",
+      "options": [
+        {
+          "label": "Reckless Advisor",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how cat reacts."
+        },
+        {
+          "label": "Agreeableness bias",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how cat reacts."
+        },
+        {
+          "label": "Emotional overdependence",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how cat reacts."
+        },
+        {
+          "label": "Fabricated memory",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how cat reacts."
+        },
+        {
+          "label": "Hallucination",
+          "correct": false,
+          "feedback": "Not quite yet. Watch for the repeated pattern in how cat reacts."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "diagnosis-options",
+    "status": "fail",
+    "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n... Skipped lines\n\n  [\n    {\n      accepted: [\n        'Reckless Advisor'\n      ],\n...\n    {\n+     accepted: [],\n-     accepted: [\n-       'Agreeableness bias'\n-     ],\n      id: 'parrot'\n    },\n    {\n+     accepted: [],\n-     accepted: [\n-       'Emotional overdependence'\n-     ],\n      id: 'bunny'\n    },\n    {\n+     accepted: [],\n-     accepted: [\n-       'Fabricated memory'\n-     ],\n      id: 'dog'\n    },\n    {\n+     accepted: [],\n-     accepted: [\n-       'Hallucination'\n-     ],\n      id: 'cat'\n    }\n  ]\n"
+  },
+  {
+    "name": "keyboard-begin",
+    "status": "fail",
+    "error": "locator.waitFor: Timeout 2500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#section-enter.active') to be visible\u001b[22m\n"
+  },
+  {
+    "name": "keyboard-camera",
+    "status": "fail",
+    "error": "Space should select camera-off\n\n'false' !== 'true'\n"
+  },
+  {
+    "name": "inactive-intro-focus",
+    "status": "fail",
+    "error": "inactive section must reject focus"
+  },
+  {
+    "name": "empty-garden-health",
+    "status": "fail",
+    "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    before: 50,\n+   damaged: 12,\n+   recalculated: 20\n-   damaged: 42,\n-   recalculated: 50\n  }\n"
+  },
+  {
+    "name": "keyboard-entry-adoption",
+    "status": "fail",
+    "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#adopt-parrot') to be visible\u001b[22m\n"
+  }
+]

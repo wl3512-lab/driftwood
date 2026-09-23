@@ -19,7 +19,9 @@ cp index.html sketch.js style.css chat-particles.js sw.js manifest.webmanifest \
 cp .nojekyll "$OUT/" 2>/dev/null || true
 cp icons/*.svg icons/*.png "$OUT/icons/"
 cp "bg interface 1"/*.svg "$OUT/bg interface 1/"
-[ -d docs ] && cp -R docs/. "$OUT/docs/" || true
+# QA evidence (docs/agent-playtest) stays out of the bundle — it is tens of MB
+# of screenshots that players would otherwise download inside the itch.io zip.
+[ -d docs ] && rsync -a --exclude 'agent-playtest' docs/ "$OUT/docs/" || true
 
 echo "bundle → $OUT ($(du -sh "$OUT" | cut -f1))"
 

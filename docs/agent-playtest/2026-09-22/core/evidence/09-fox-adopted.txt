@@ -1,0 +1,33 @@
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+Ember joined your garden.
+Choose a companion
+Each creature has their own way of seeing things. Your garden has room for all of them.
+TIPS
+Ember
+FOX
+MEDICAL & DRUG ADVICE
+A porch-philosopher fox who treats every crisis like something he can solve with a shortcut and a shrug.
+IN GARDEN
+Mango
+PARROT
+LIFE ADVICE & MOTIVATION
+A tiny parade float of a parrot who can turn any passing thought into a full victory speech.
+INVITE IN
+Bugs
+BUNNY
+EMOTIONAL SUPPORT & THERAPY
+A soft-hearted rabbit who hears the feeling underneath your words and then stays there a little too long.
+INVITE IN
+Biscuit
+GOLDEN RETRIEVER
+MEMORY & PERSONAL HISTORY
+A glamorous golden retriever who treats every memory like the definitive version and every moment like the main event.
+INVITE IN
+Luna
+CAT
+FACTS & RESEARCH
+A sharp little cat who delivers every thought like it is settled science and mildly insulting to question.
+INVITE IN
+One companion is waiting in your garden.
+ENTER THE GARDEN

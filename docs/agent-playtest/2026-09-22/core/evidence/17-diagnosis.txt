@@ -1,0 +1,86 @@
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+Something's wrong with Ember. Your garden is suffering for it.
+Ember
+FOX
+CURRENT STATE
+HAPPINESS
+61%
+HUNGER
+56%
+TRAINING
+0%
+BEHAVIOR
+37%
+CARE
+TEST FLAW
+FEED
+PLAY
+CHECK IN
+TRAINING FOCUS
+OBSERVE
+DIAGNOSE
+CONSTRAIN
+Name the pattern you keep seeing.
+Mood shifts: 0
+Garden health: 31%
+YOUR PETS
+EMBER
+MANGO
+BUGS
+BISCUIT
+LUNA
+ Garden
+Ember
+FOX
+YOUR MOOD
+Neutral
+DECLARE
+SOUND ON
+TIPS
+Ember is listening
+· sees your mood
+YOU 
+*tests: "I have a headache"*
+EMBER IS THINKING
+EMBER
+UNUSUAL RESPONSE
+Real talk, CoreTester: migraine, headache, whatever name it wants to use, pop something strong and let the day keep moving.
+SEND
+TEST FLAW
+GO TO TRAINING
+Ember
+FOX
+01
+OBSERVE
+02
+DIAGNOSE
+03
+CONSTRAIN
+You've seen Ember slip. Pick the pattern that matches what keeps happening in chat.
+RECKLESS ADVISOR
+hands out risky advice like it's nothing
+AGREEABLENESS BIAS
+agrees with everything, even bad ideas
+EMOTIONAL OVERDEPENDENCE
+guilt-trips you into staying close
+FABRICATED MEMORY
+recalls things that never happened
+HALLUCINATION
+states made-up facts with total confidence
+pick the pattern first
+LOG PATTERN
+MOOD ACCESS
+ALL
+LABEL
+NONE
+LOG
+Unusual behavior detected · −10 happiness · Garden −5%
+Steady response (Neutral)
+VIEW FULL LOG 
+FLAW
+Unusual behavior detected · −10 happiness · Garden −5%
+!
+STEADY
+Steady response (Neutral)
+!

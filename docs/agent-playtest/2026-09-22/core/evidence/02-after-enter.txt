@@ -1,0 +1,8 @@
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+DRIFTWOOD.SYS // INITIALIZING
+FACE_API :: LOADING MODELS
+GARDEN_MEMORY :: READY
+VISITOR_DETECTED :: TRUE
+prese
+the field changes when you do

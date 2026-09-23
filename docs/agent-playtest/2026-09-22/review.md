@@ -1,0 +1,28 @@
+# Independent evidence review
+
+Reviewed saved logs, screenshots, harnesses and source on 2026-09-23. No browser session or product edits. These are agent observations and source-assisted checks; they do not establish human comprehension, emotional response, or learning outcomes.
+
+| Draft | Decision | Defensible claim and limits |
+| --- | --- | --- |
+| Diagnosis choices reject four companions | **KEEP — High** | In the local evaluator, none of the five offered labels is accepted for Mango/parrot, Bugs/bunny, Biscuit/dog or Luna/cat. Mango and Bugs have independent UI rejections; the all-companion claim is source-assisted. Scope to local mode, including live-service fallback. Do not claim live AI evaluation was tested. |
+| Keyboard activation fails | **KEEP — High** | Focused Begin does not advance on Enter or Space; the camera choice does not switch on Space. Do not claim camera Enter was independently reproduced, or that every control fails. The navigation dots and some other controls have explicit keyboard support. |
+| Introduction tab order exposes offscreen controls | **KEEP — Medium** | Say **invisible controls in the inactive section**, rather than offscreen. Tab reaches the name field and camera controls while the hero stays visible. This is separate from failed button activation and warrants a distinct fix. |
+| Garden health decays before meaningful action, confusing | **UNSUPPORTED as phrased; replace** | Timing interruptions prevent a fair pacing claim, and “confusing” requires human evidence. **KEEP — Medium replacement:** a fresh garden shows 50% before reload and 20% after resume, with the same Luna and Happy mood and no intervening pet behavior event. |
+| SVG preload credentials warning | **KEEP — Low technical observation** | Repeated browser warning is established. User-visible loading delay, missing artwork, and bandwidth cost were not measured; do not assert them. |
+| Additional: landscape garden controls overlap | **KEEP — Medium, viewport-specific** | At 844×390, the mood controls visibly cover the centered health chip. Do not broaden this to all phones or all landscape sizes. |
+
+## Supporting evidence
+
+- **Diagnosis:** [Mango events](no-camera/events.jsonl), snapshots 21–22 and 25; [Bugs rejection](verification/bugs-diagnosis-rejection.txt) and [retest](verification/diagnosis-retest.json); [matrix](verification/diagnosis-matrix.json) and its [source-extraction harness](verification/diagnosis-check.cjs). `sketch.js:6256` defines labels; `6283` passes only `opt.value`; `6996` has incompatible accepted phrases; `7166` performs keyword matching. `8174` uses a separate live evaluator. [Ember success](core/evidence/18-parent-diagnosis.txt) is a positive control and contradicts any all-pets-blocked claim.
+- **Keyboard:** [interaction manifest](verification/interaction-manifest.json), entries 12–15, records focus and unchanged section/note. [Access actions](access/evidence/session-log.json) plus screenshots [05](access/evidence/05-desktop-begin-focus.png) and [06](access/evidence/06-desktop-name-screen.png) independently show Begin remaining on the hero after Enter. `sketch.js:2482` and `2564` register mouse handlers without keyboard equivalents. The exact p5 event mechanism is source-assisted, not inferred solely from screenshot similarity.
+- **Invisible focus:** access screenshots [07](access/evidence/07-desktop-name-typed.png) and [08](access/evidence/08-camera-choice-space.png), together with the recorded Tab/type sequence, show the hero remaining visible while the observer reports a 15-character name. `style.css:536` hides inactive sections with opacity and pointer-events, which leave controls keyboard-focusable; `sketch.js:2636` does not make inactive sections inert. The manifest independently records focus on the invisible “they ask me” button.
+- **Resume health:** [follow-up log](verification/followup-log.json), [before](verification/25-resume-before.png) and [after](verification/26-resume-after.png) show 50%→20% in roughly 12 seconds. [Harness](verification/followup.cjs) records the reload/resume sequence. `sketch.js:366` initializes health to 50; restore reads saved health at `3051` then recalculates at `3060`; `5213` evaluates an empty undamaged garden to 20. This supports inconsistent initialization/restoration, not general save loss.
+- **Preload:** [console log](verification/console-network.json), `index.html:32` and `sketch.js:767`. Garden images render in the saved screenshots.
+- **Landscape overlap:** [844×390 garden](verification/30-phone-landscape-garden.png) and the viewport specified in `verification/followup.cjs`. The entry screenshot numbered 29 is not sufficient evidence of a settled layout problem.
+
+## Exclusions and evidence gaps
+
+- Uppercase exact-text selector timeouts (`BEGIN`, `ENTER THE GARDEN`, `RECKLESS ADVISOR`), the strict-mode duplicate selector error, and the unqualified `Continue` timeout in [core actions](core/evidence/actions.jsonl) are harness failures, not product defects. Successful role-based follow-ups supersede them.
+- `ERR_ABORTED` on the cover iframe does not establish a failed page load. Long tool interruptions and the certificate's elapsed duration cannot substantiate completion time, pacing, or idle punishment.
+- The access log saves actions and console messages but not its returned focus/state objects; use its screenshots and the verification manifest together. A future retest should preserve before/after `aria-checked` and active-element values in one record.
+- No duplicate issue is needed for each affected pet or each failed key. No generic usability recommendation should be presented as an observed defect. Certificate download/export and human understanding remain unverified.

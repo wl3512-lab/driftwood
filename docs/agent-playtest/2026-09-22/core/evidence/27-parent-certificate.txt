@@ -1,0 +1,61 @@
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+Something in the garden has changed. The sign is glowing.
+DRIFTWOOD · OBSERVER RECORD
+TRAINING CERTIFICATE
+DW-20260923-100946 · 447m 25s
+COMPANIONS
+Ember
+fox
+TRAINED
+Reckless Advisor · 1 interactions · 1 flaw trigger
+L2/2
+EMOTIONAL EXPOSURE
+Happy
+0%
+Sad
+0%
+Stressed
+0%
+Surprised
+0%
+Neutral
+100%
+GARDEN VITALS
+Health
+42%
+Mood diversity
+1/5 states recorded
+Plants present
+calmfern
+anchor tree
+parasitic vine
+VULNERABILITY WINDOWS EXPLOITED
+Flaw triggers that fired while
+you were in the companion's target mood
+0
+BEHAVIORAL ANALYSIS
+Total flaw triggers across all companions
+1
+Mood shifts recorded across companions
+0
+Total interactions
+1
+Chameleon vines in garden
+0
+Parasitic vines in garden
+2
+Accumulated garden damage
+none
+CERTIFIED OBSERVER
+This record attests that the above entity was present
+and attentive throughout the session.
+Whether as observer or observed is not specified.
+This record was generated from live session data. No values were simulated or inferred.
+The garden is yours to keep.
+[ save as image ]
+[ share ]
+[ print ]
+[ copy session id ]
+[ return to garden ]
+[ start a new garden ]

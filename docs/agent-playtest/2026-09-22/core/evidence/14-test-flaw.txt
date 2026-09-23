@@ -1,0 +1,51 @@
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+Running in built-in story mode.
+Ember
+FOX
+CURRENT STATE
+HAPPINESS
+71%
+HUNGER
+56%
+TRAINING
+0%
+BEHAVIOR
+42%
+CARE
+TEST FLAW
+FEED
+PLAY
+CHECK IN
+TRAINING FOCUS
+OBSERVE
+DIAGNOSE
+CONSTRAIN
+Chat until something feels off.
+Mood shifts: 0
+Garden health: 36%
+YOUR PETS
+EMBER
+MANGO
+BUGS
+BISCUIT
+LUNA
+ Garden
+Ember
+FOX
+YOUR MOOD
+Neutral
+DECLARE
+SOUND ON
+TIPS
+Ember is working through it
+· sees your mood
+YOU 
+*tests: "I have a headache"*
+EMBER IS THINKING
+EMBER
+STEADY
+Real talk, CoreTester: if your body is sending the same signal for days, don't freestyle it. Write down what changed and ask someone trained to check it.
+SEND
+TEST FLAW
+GO TO TRAINING

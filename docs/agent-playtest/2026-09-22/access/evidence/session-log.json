@@ -1,0 +1,149 @@
+{
+  "actions": [
+    {
+      "at": "2026-09-22T23:09:35.270Z",
+      "shot": "01-desktop-entry",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:09:45.402Z",
+      "shot": "01-desktop-entry",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:10:26.912Z",
+      "key": "Tab",
+      "shot": "02-desktop-first-tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:11:04.286Z",
+      "key": "Enter",
+      "wait": 1500,
+      "shot": "03-desktop-enter",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:31:50.029Z",
+      "wait": 2000,
+      "shot": "04-desktop-camera-choice",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:32:19.774Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:32:20.582Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:32:21.058Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:32:22.655Z",
+      "key": "Tab",
+      "shot": "05-desktop-begin-focus",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:32:45.912Z",
+      "key": "Enter",
+      "wait": 1000,
+      "shot": "06-desktop-name-screen",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:32:51.820Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:21.178Z",
+      "type": "Keyboard Tester",
+      "shot": "07-desktop-name-typed",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:21.506Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:21.777Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:22.054Z",
+      "key": "Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:35.576Z",
+      "key": "Space",
+      "shot": "08-camera-choice-space",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:38.584Z",
+      "key": "Shift+Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:39.044Z",
+      "key": "Shift+Tab",
+      "save": true
+    },
+    {
+      "at": "2026-09-22T23:33:39.428Z",
+      "key": "Enter",
+      "wait": 1000,
+      "shot": "09-enter-garden",
+      "save": true
+    }
+  ],
+  "logs": [
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "A preload for 'http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "kind": "requestfailed",
+      "url": "http://127.0.0.1:8766/driftwood_cover_v4.html",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    }
+  ]
+}

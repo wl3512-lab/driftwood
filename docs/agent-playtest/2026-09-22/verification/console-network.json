@@ -1,0 +1,79 @@
+[
+  {
+    "kind": "warning",
+    "text": "A preload for 'http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute.",
+    "at": "2026-09-22T23:09:18.065Z"
+  },
+  {
+    "kind": "network",
+    "url": "http://127.0.0.1:8766/driftwood_cover_v4.html",
+    "error": {
+      "errorText": "net::ERR_ABORTED"
+    }
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:09:25.538Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:09:39.537Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:09:46.254Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:10:32.051Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:11:03.417Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:17:06.794Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:17:38.352Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:17:46.003Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:31:25.814Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:31:34.116Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:31:41.859Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:31:50.128Z"
+  },
+  {
+    "kind": "warning",
+    "text": "The resource http://127.0.0.1:8766/bg%20interface%201/garden-interface-empty.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "at": "2026-09-22T23:31:55.800Z"
+  }
+]

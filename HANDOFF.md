@@ -1,6 +1,6 @@
 # Driftwood — Handoff
 
-This is the current development handoff for Driftwood as of May 13, 2026.
+This is the current development handoff for Driftwood as of September 23, 2026.
 
 ## What This Is
 
@@ -9,6 +9,39 @@ Driftwood is a static browser game about companion AI, emotional inference, and 
 Players enter a mood-reactive garden, invite AI pets inside, talk with them, observe hidden failure modes, identify those flaws, and write training rules that make the pets safer. The garden records the session visually: detected moods grow plants, harmful AI behavior damages the environment, and successful training helps the garden recover.
 
 The core loop is designed to work without a private API key. Live AI is optional; the built-in local behavior engine is the public/default path.
+
+## September 2026 — agent-playtest fixes
+
+Five findings from `docs/agent-playtest/2026-09-22/report.md`, fixed and verified in
+`docs/agent-playtest/2026-09-23-fixes/report.md`. Four of them are rules, not one-off patches:
+
+**Interactive controls bind `click`, never `mousePressed`.** p5's `mousePressed` listens for
+`mousedown`, which keyboard activation never fires — Enter/Space on a focused button dispatch
+`click` only. Use `onActivate(el, handler)`; it binds `click` and, for non-`<button>` elements,
+a keydown that routes back through the same click. Never bind both, or a pointer press runs the
+handler twice. `makeInteractive()` already uses it.
+
+**The training room's diagnosis menu is graded by identity.** `FLAW_OPTIONS` is the single list;
+each entry has an `id` and the `petId` it belongs to, and `evaluateFlawChoice()` compares them.
+Do not route fixed labels through `evaluateFlawGuessLocally()` — that is the free-text path, and
+the phrase matcher only ever recognised Ember's label, which silently locked Constrain for the
+other four. `pet.flawGuessId` is what the verdict reads; `pet.flawGuess` is the label the log prints.
+
+**Inactive landing sections are `inert`.** Opacity alone left the name field, camera switch and
+entry button focusable. `syncLandingInert()` runs on every section change; `activateLandingSection(idx, moveFocus)`
+moves focus to the new section's first control when the move was deliberate.
+
+**One garden-health baseline.** `GARDEN_HEALTH_BASE` (50) feeds the initial value, the restore
+fallback, `gardenDiversityPoints()` and the details panel. The initial value and the formula used
+to disagree (50 vs 20), so reloading a fresh garden dropped it 30 points. If you change the curve,
+change it in `gardenDiversityPoints()` only.
+
+**Garden HUD below 1120px.** The health chip leaves the centre and sits beside the paw menu; the
+centred design only clears the right-hand cluster above that width. `scripts/test-mobile-hud.cjs`
+guards it at seven viewports.
+
+Regression suites (need Playwright on `NODE_PATH`/`PLAYWRIGHT_MODULE`, and a server on :8766):
+`scripts/test-playtest-fixes.cjs` and `scripts/test-mobile-hud.cjs`.
 
 ## September 2026 additions — reach and onboarding
 

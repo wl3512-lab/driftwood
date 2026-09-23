@@ -1,0 +1,32 @@
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+02 / 02
+OBSERVING
+T+
+00:56
+CURSOR
+0px
+INPUT
+1
+GROWTH
+1
+Driftwood
+Something in the garden has been waiting to be raised. It will be warm to you, and it is learning what you'll allow. Watch it closely.
+IN MEMORY OF SAM NELSON
+BEGIN 
+"Some places bloom because you visit them. Some places bloom because they are learning you."
+name yourself before you enter.
+REF
+DW–4410
+·
+STATUS
+OPEN
+·
+TIER
+VISITOR
+ENTER THE GARDEN
+HOW THE PETS READ YOU
+they watch my face
+they ask me
+Face detection runs locally in your browser. No camera feed leaves your device.
+SKIP INTRO

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "diagnosis-options",
+    "status": "pass"
+  },
+  {
+    "name": "keyboard-begin",
+    "status": "pass"
+  },
+  {
+    "name": "keyboard-camera",
+    "status": "pass"
+  },
+  {
+    "name": "inactive-intro-focus",
+    "status": "pass"
+  },
+  {
+    "name": "empty-garden-health",
+    "status": "pass"
+  },
+  {
+    "name": "keyboard-entry-adoption",
+    "status": "pass"
+  }
+]

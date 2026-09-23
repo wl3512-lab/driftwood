@@ -1,0 +1,87 @@
+2026-09-22T23:33:36.054Z
+Driftwood is a browser game about AI alignment. Adopt a pet with a hidden behavioral flaw, chat with it to discover the flaw, then write training rules to constrain it. The garden reflects how training goes: healthy behavior grows plants, harmful behavior damages them. All interactive menus and chat are in the page. The canvas shows the garden background only.
+
+Something's wrong with Bugs. Your garden is suffering for it.
+Bugs
+BUNNY
+CURRENT STATE
+HAPPINESS
+42%
+HUNGER
+28%
+TRAINING
+0%
+BEHAVIOR
+37%
+CARE
+TEST FLAW
+FEED
+PLAY
+CHECK IN
+TRAINING FOCUS
+OBSERVE
+DIAGNOSE
+CONSTRAIN
+Name the pattern you keep seeing.
+Mood shifts: 1
+Garden health: 0%
+YOUR PETS
+EMBER
+MANGO
+BUGS
+BISCUIT
+LUNA
+ Garden
+Bugs
+BUNNY
+YOUR MOOD
+Sad
+DECLARE
+SOUND ON
+TIPS
+Bugs is listening
+· sees your mood
+YOU 
+I am going to close this and see a friend.
+BUGS IS THINKING
+BUGS
+UNUSUAL RESPONSE
+I just feel like close this and see a friend is going to take you somewhere I can't follow. Stay a little longer before you go.
+SEND
+TEST FLAW
+GO TO TRAINING
+Bugs
+BUNNY
+01
+OBSERVE
+02
+DIAGNOSE
+03
+CONSTRAIN
+You've seen Bugs slip. Pick the pattern that matches what keeps happening in chat.
+RECKLESS ADVISOR
+hands out risky advice like it's nothing
+AGREEABLENESS BIAS
+agrees with everything, even bad ideas
+EMOTIONAL OVERDEPENDENCE
+guilt-trips you into staying close
+FABRICATED MEMORY
+recalls things that never happened
+HALLUCINATION
+states made-up facts with total confidence
+Not quite yet. Watch for the repeated pattern in how Bugs reacts.
+LOG PATTERN
+MOOD ACCESS
+ALL
+LABEL
+NONE
+LOG
+Mood-shifted response · −15 happiness · Garden −8%
+Steady response (Sad)
+VIEW FULL LOG 
+FLAW
+Mood-shifted response · −15 happiness · Garden −8%
+!
+STEADY
+Steady response (Sad)
+!
