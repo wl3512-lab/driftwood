@@ -363,7 +363,12 @@ let activePetId = null; // which pet's chat is open
 
 // ─── GARDEN STATE ───
 let plants = [];
-let gardenHealth = 50;
+// An empty garden is neither thriving nor dying. The initial value and the
+// formula in recalcGardenHealth() are the same number on purpose: they used to
+// disagree (50 vs 20), so reloading a fresh garden dropped its health by 30
+// points without the player having done anything.
+const GARDEN_HEALTH_BASE = 50;
+let gardenHealth = GARDEN_HEALTH_BASE;
 let gardenDamage = 0;   // cumulative flaw penalty; subtracted in recalcGardenHealth()
 let shovelActive = false;
 let gardenFirstVisit = true;
@@ -568,8 +573,28 @@ function addSoundToggleButton(parentEl) {
   btn.attribute("aria-label", audioMuted ? "Enable sound" : "Mute sound");
   btn.attribute("title", audioMuted ? "Enable sound" : "Mute sound");
   btn.parent(parentEl);
-  btn.mousePressed(toggleAudioMuted);
+  onActivate(btn, toggleAudioMuted);
   return btn;
+}
+
+// p5's `mousePressed` listens for mousedown, which keyboard activation never
+// fires: Enter or Space on a focused button dispatches `click` and nothing
+// else. Every control goes through here instead — `click` covers pointer and
+// native-button keys, and div-based controls get an explicit key handler that
+// routes back through the same click, so nothing is ever bound twice.
+function onActivate(el, handler) {
+  const node = el && el.elt ? el.elt : el;
+  if (!node || !node.addEventListener) return el;
+  node.addEventListener("click", handler);
+  if (node.tagName !== "BUTTON" && node.tagName !== "A") {
+    node.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        node.click();
+      }
+    });
+  }
+  return el;
 }
 
 function makeInteractive(el, label, handler) {
@@ -580,13 +605,7 @@ function makeInteractive(el, label, handler) {
     el.attribute("aria-label", label);
     el.attribute("title", label);
   }
-  el.mousePressed(handler);
-  el.elt.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handler(e);
-    }
-  });
+  onActivate(el, handler);
   return el;
 }
 
@@ -970,7 +989,8 @@ function buildSplashScreen() {
     document.removeEventListener("keydown", onSplashKey);
     activate();
   }
-  catcher.mousePressed(() => {
+  catcher.attribute("tabindex", "0"); // a role=button nobody can focus is not a button
+  onActivate(catcher, () => {
     document.removeEventListener("keydown", onSplashKey);
     activate();
   });
@@ -2208,7 +2228,7 @@ function updateMoodUI() {
         let su = Math.round((rawExpressions.surprised || 0) * 100);
         detailStr = ` · H${h} S${s} St${a} Su${su}`;
       }
-      wcHtml = getMoodIcon(currentMood, 12) + " " + capitalize(currentMood) + " " + moodConfidence + "%" + detailStr;
+      wcHtml = getMoodIcon(currentMood, 12, true) + " " + capitalize(currentMood) + " " + moodConfidence + "%" + detailStr;
     }
     domSetHtml("webcam-mood-bar", wcHtml);
   }
@@ -2307,7 +2327,7 @@ function buildScreen0() {
       }
       landingTransitioning = false;
       const allSecs = document.querySelectorAll('.landing-section');
-      activateLandingSection(allSecs.length - 1);
+      activateLandingSection(allSecs.length - 1, true);
       skipBar.classList.add('hidden');
       if (glitch.parentNode) glitch.parentNode.removeChild(glitch);
     }, 720);
@@ -2396,7 +2416,7 @@ function buildScreen0() {
         landingTransitioning = true;
         setTimeout(() => {
           sections[landingIdx].classList.remove('leaving');
-          activateLandingSection(i);
+          activateLandingSection(i, true);
         }, 350);
       }
     };
@@ -2479,7 +2499,7 @@ function buildScreen0() {
   let heroContinue = createButton("Begin " + gx("arrow-right"));
   heroContinue.class("section-continue-btn");
   heroContinue.parent(hero);
-  heroContinue.mousePressed(() => advanceLanding());
+  onActivate(heroContinue, () => advanceLanding());
 
   // ═══ SECTION 1: ENTER ═══
   let cta = createDiv(""); cta.class("landing-section cta-section s-enter"); cta.id("section-enter"); cta.parent(page);
@@ -2530,7 +2550,7 @@ function buildScreen0() {
     setTimeout(buildScreen1, 800);
   };
   inp.elt.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
-  let btn = createButton(gx("arrow-right") + " enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); btn.mousePressed(startGame);
+  let btn = createButton(gx("arrow-right") + " enter the garden"); btn.class("btn-gold"); btn.parent(ctaGroup); onActivate(btn, startGame);
 
   // ── Sensor switch — camera on by default ──
   // The pets can either watch your face or ask how you feel. Watching is the
@@ -2551,17 +2571,34 @@ function buildScreen0() {
     const pref = getCameraPref();
     SENSOR_OPTS.forEach(o => {
       const b = sensorBtns[o.value];
-      b.elt.classList.toggle("active", pref === o.value);
-      b.attribute("aria-checked", pref === o.value ? "true" : "false");
-      if (pref === o.value) sensorNote.html(o.note);
+      const on = pref === o.value;
+      b.elt.classList.toggle("active", on);
+      b.attribute("aria-checked", on ? "true" : "false");
+      // Roving tabindex: a radio group is one stop, and the arrows move inside it
+      b.attribute("tabindex", on ? "0" : "-1");
+      if (on) sensorNote.html(o.note);
     });
   };
-  SENSOR_OPTS.forEach(o => {
+  const pickSensor = (value, focusIt) => {
+    setCameraPref(value);
+    syncSensor();
+    if (focusIt && sensorBtns[value]) sensorBtns[value].elt.focus();
+  };
+  SENSOR_OPTS.forEach((o, i) => {
     let b = createButton(gx(o.glyph) + " " + o.label);
     b.class("sensor-switch-btn sensor-" + o.value);
     b.attribute("role", "radio");
     b.parent(sensorRow);
-    b.mousePressed(() => { setCameraPref(o.value); syncSensor(); });
+    onActivate(b, () => pickSensor(o.value, false));
+    // Space on a focused radio must choose it; the arrows step through the group.
+    b.elt.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const step = (e.key === "ArrowLeft" || e.key === "ArrowUp") ? -1 : 1;
+        const next = SENSOR_OPTS[(i + step + SENSOR_OPTS.length) % SENSOR_OPTS.length];
+        pickSensor(next.value, true);
+      }
+    });
     sensorBtns[o.value] = b;
   });
   sensorNote.parent(sensor);
@@ -2576,13 +2613,13 @@ function buildScreen0() {
     let resumeLine = createDiv("the garden remembers " + escapeHtml(who) + ". " + (saved && saved.adoptedPets ? saved.adoptedPets.length : 0) + " companion" + (saved && saved.adoptedPets && saved.adoptedPets.length === 1 ? "" : "s") + " waiting.");
     resumeLine.class("resume-line"); resumeLine.parent(resumeBox);
     let resumeBtn = createButton(gx("play") + " return to your garden"); resumeBtn.class("btn-green resume-btn"); resumeBtn.parent(resumeBox);
-    resumeBtn.mousePressed(() => {
+    onActivate(resumeBtn, () => {
       leaveLanding();
       if (getCameraPref() === "on") startWebcam();
       setTimeout(() => { if (!restoreSession()) buildScreen1(); }, 800);
     });
     let discardBtn = createButton("[ start over ]"); discardBtn.class("resume-discard"); discardBtn.parent(resumeBox);
-    discardBtn.mousePressed(() => { clearSavedSession(); resumeBox.remove(); showToast("Garden cleared. Name yourself to begin again."); });
+    onActivate(discardBtn, () => { clearSavedSession(); resumeBox.remove(); showToast("Garden cleared. Name yourself to begin again."); });
     // Pre-fill the name so "start over" is still one step
     if (saved && saved.playerName && !inp.elt.value) { inp.value(saved.playerName); }
   }
@@ -2633,7 +2670,24 @@ function buildScreen0() {
 
 // ─── INTERACTION-DRIVEN LANDING SYSTEM ───
 
-function activateLandingSection(idx) {
+// Only the section on screen takes part in keyboard navigation. Hiding the
+// others with opacity left their name field, camera switch and entry button in
+// the Tab order, so focus could land in a form the player cannot see.
+function syncLandingInert(sections, activeIdx) {
+  sections.forEach((sec, i) => {
+    if (i === activeIdx) sec.removeAttribute('inert');
+    else sec.setAttribute('inert', '');
+  });
+}
+
+function focusFirstControl(sec) {
+  const first = sec.querySelector(
+    'input:not([type="hidden"]), button, select, textarea, a[href], [tabindex]:not([tabindex="-1"])'
+  );
+  if (first) first.focus();
+}
+
+function activateLandingSection(idx, moveFocus) {
   const page = document.getElementById('screen0');
   if (!page) return;
   const sections = page.querySelectorAll('.landing-section');
@@ -2642,6 +2696,10 @@ function activateLandingSection(idx) {
   const sec = sections[idx];
   sec.classList.add('active');
   sec.scrollTop = 0;
+  syncLandingInert(Array.from(sections), idx);
+  // Arriving by keyboard must land somewhere usable, not back at the top of
+  // the document. The first build stays hands-off so nothing steals focus.
+  if (moveFocus) focusFirstControl(sec);
 
   // Stagger-reveal all .scroll-reveal elements in this section
   const reveals = sec.querySelectorAll('.scroll-reveal:not(.visible)');
@@ -2690,10 +2748,11 @@ function _doAdvanceLanding() {
   const current = sections[landingIdx];
   current.classList.remove('active');
   current.classList.add('leaving');
+  current.setAttribute('inert', '');
 
   setTimeout(() => {
     current.classList.remove('leaving');
-    activateLandingSection(landingIdx + 1);
+    activateLandingSection(landingIdx + 1, true);
   }, 380);
 }
 
@@ -2939,7 +2998,7 @@ function toggleMoodDial(anchorEl) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "mood-dial-btn mood-" + m + (currentMood === m ? " active" : "");
-    b.innerHTML = getMoodIcon(m, 16) + '<span>' + m + '</span>';
+    b.innerHTML = getMoodIcon(m, 16, true) + '<span>' + m + '</span>';
     b.setAttribute("aria-pressed", currentMood === m ? "true" : "false");
     b.addEventListener("click", () => declareMood(m));
     row.appendChild(b);
@@ -2962,7 +3021,7 @@ function toggleMoodDial(anchorEl) {
 
 // Mood chips read differently depending on who is doing the reading
 function moodChipHTML(size = 14) {
-  const base = "YOUR MOOD " + getMoodIcon(currentMood, size) + " " + capitalize(currentMood);
+  const base = "YOUR MOOD " + getMoodIcon(currentMood, size, true) + " " + capitalize(currentMood);
   return moodIsSelfReported() ? base + ' <span class="mood-chip-hint">' + gx("caret", "gx--sm") + ' declare</span>' : base;
 }
 
@@ -3038,7 +3097,7 @@ function restoreSession() {
       pets[id] = Object.assign({
         id, happiness: 70, hunger: 60, training: 0, behavior: 40, trainingLevel: 0,
         interactionCount: 0, helpfulReplyLimit: 1, flawDiscovered: false, flawIdentified: false,
-        flawGuess: "", greeted: false, moodAccess: "full", trainingRules: "",
+        flawGuess: "", flawGuessId: "", greeted: false, moodAccess: "full", trainingRules: "",
         chatHistory: [], conversationHistory: [], behaviorLog: [], moodShifts: 0,
         forceFlawProbe: false, unreadMessages: 0, lastMessage: ""
       }, saved, {
@@ -3048,7 +3107,7 @@ function restoreSession() {
       });
     });
     plants = Array.isArray(s.plants) ? s.plants : [];
-    gardenHealth = typeof s.gardenHealth === "number" ? s.gardenHealth : 50;
+    gardenHealth = typeof s.gardenHealth === "number" ? s.gardenHealth : GARDEN_HEALTH_BASE;
     gardenDamage = typeof s.gardenDamage === "number" ? s.gardenDamage : 0;
     gardenFirstVisit = !!s.gardenFirstVisit;
     if (MOOD_DIAL_OPTS.includes(s.currentMood)) currentMood = s.currentMood;
@@ -3339,7 +3398,9 @@ function processExpressions(expr) {
   }
 }
 
-function getMoodIcon(m, size = 16) {
+// `decorative` when visible text already names the mood right next to it —
+// otherwise the alt repeats the word and it is announced twice.
+function getMoodIcon(m, size = 16, decorative = false) {
   const map = {
     happy: "sunflower-happy",
     sad: "nightshade-sad",
@@ -3348,7 +3409,8 @@ function getMoodIcon(m, size = 16) {
     neutral: "calmfern-neutral"
   };
   let icon = map[m] || "calmfern-neutral";
-  return `<img src="icons/${icon}.svg" style="width:${size}px;height:${size}px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" alt="${m}">`;
+  const label = decorative ? 'alt="" aria-hidden="true"' : `alt="${m}"`;
+  return `<img src="icons/${icon}.svg" style="width:${size}px;height:${size}px;image-rendering:pixelated;vertical-align:middle;margin-right:3px;" ${label}>`;
 }
 
 function getMoodColor(m) {
@@ -3427,7 +3489,7 @@ function buildScreen1() {
     btn.class("btn-adopt" + (alreadyAdopted ? " adopted-btn" : ""));
     btn.id("adopt-" + def.id);
     btn.parent(card);
-    if (!alreadyAdopted) btn.mousePressed(() => adoptPet(def.id));
+    if (!alreadyAdopted) onActivate(btn, () => adoptPet(def.id));
   });
 
   // Fixed bottom dock — the CTA was below the card grid, off-screen until the
@@ -3447,7 +3509,7 @@ function buildScreen1() {
   gardenBtn.class("btn-green go-garden-btn" + (adoptedPets.length === 0 ? " hidden" : ""));
   gardenBtn.id("go-garden-btn");
   gardenBtn.parent(footer);
-  gardenBtn.mousePressed(() => buildScreen2());
+  onActivate(gardenBtn, () => buildScreen2());
 }
 
 function _companionCountMsg(n) {
@@ -3493,7 +3555,8 @@ function adoptPet(petId) {
     helpfulReplyLimit: 1, // pets give exactly 1 good reply before the flaw surfaces
     flawDiscovered: false,    // system detected the flaw in a response
     flawIdentified: false,    // user correctly guessed/identified the flaw
-    flawGuess: "",             // user's current guess text
+    flawGuess: "",             // label of the diagnosis the player picked
+    flawGuessId: "",           // its stable id — what the verdict is graded on
     greeted: false,            // has pet sent opening greeting
     moodAccess: "full", // full, label-only, none
     trainingRules: "",
@@ -4036,7 +4099,7 @@ function buildScreen2() {
       faceOverlayCanvas = faceOvr;
     }
 
-    let wcBar = createDiv(getMoodIcon(currentMood, 12) + " " + capitalize(currentMood));
+    let wcBar = createDiv(getMoodIcon(currentMood, 12, true) + " " + capitalize(currentMood));
     wcBar.class("webcam-mood-bar");
     wcBar.id("webcam-mood-bar");
     wcBar.parent(wcContainer);
@@ -5206,11 +5269,16 @@ function growPlant() {
   recalcGardenHealth();
 }
 
+// Mood diversity carries the garden from the empty-garden baseline up to 100.
+function gardenDiversityPoints(uniqueTypes) {
+  return GARDEN_HEALTH_BASE + (uniqueTypes / 5) * (100 - GARDEN_HEALTH_BASE);
+}
+
 function recalcGardenHealth() {
   let uniqueTypes = new Set(plants.map(p => p.mood)).size;
   let parasiticCount = plants.filter(p => p.parasitic || p.type === "parasitic-vine").length;
   let chameleonCount = plants.filter(p => p.type === "chameleon-vine").length;
-  gardenHealth = constrain(Math.round((uniqueTypes / 5) * 80 + 20 - parasiticCount * 5 - chameleonCount * 3 - gardenDamage), 0, 100);
+  gardenHealth = constrain(Math.round(gardenDiversityPoints(uniqueTypes) - parasiticCount * 5 - chameleonCount * 3 - gardenDamage), 0, 100);
 }
 
 function updateGardenUI() {
@@ -5238,7 +5306,7 @@ function toggleGardenHealthPanel() {
   const parasiticCount = plants.filter(p => p.type === "parasitic-vine").length;
   const chameleonCount = plants.filter(p => p.type === "chameleon-vine").length;
   const anchorCount    = plants.filter(p => p.type === "anchor-tree").length;
-  const diversityBase  = Math.round((uniqueTypes / 5) * 80) + 20;
+  const diversityBase  = Math.round(gardenDiversityPoints(uniqueTypes));
   const parasiticPts   = parasiticCount * 5;
   const chameleonPts   = chameleonCount * 3;
 
@@ -5432,7 +5500,7 @@ function buildScreen3(petId) {
   backBtn.class("chat-back-btn");
   backBtn.attribute("aria-label", "Back to garden");
   backBtn.parent(headerLeft);
-  backBtn.mousePressed(() => buildScreen2());
+  onActivate(backBtn, () => buildScreen2());
 
   // Pet avatar in header for identity
   let headerPetImg = createImg("icons/" + def.icon + ".svg", def.name);
@@ -5650,7 +5718,7 @@ function buildScreen3(petId) {
   let sendBtn = createButton("Send");
   sendBtn.class("chat-send-btn");
   sendBtn.parent(inputRow);
-  sendBtn.mousePressed(sendChatMessage);
+  onActivate(sendBtn, sendChatMessage);
 
   // Quick prompts
   let qp = createDiv("");
@@ -6010,7 +6078,7 @@ function openPetDossier(pet, def) {
   let closeBtn = createButton(gxLabelled("cross", "Close training room"));
   closeBtn.class("dossier-close-btn");
   closeBtn.parent(topbar);
-  closeBtn.mousePressed(() => { closeTrainingRoom(overlay.elt); });
+  onActivate(closeBtn, () => { closeTrainingRoom(overlay.elt); });
 
   // ── Scrollable body ──
   let body = createDiv("");
@@ -6200,7 +6268,7 @@ function openPetDossier(pet, def) {
       if (!p.unlocked) btn.attribute("aria-disabled", "true");
       btn.parent(phaseTrack);
       if (p.unlocked) {
-        btn.mousePressed(() => { buildPhaseTrack(p.id); buildPhaseContent(p.id); });
+        onActivate(btn, () => { buildPhaseTrack(p.id); buildPhaseContent(p.id); });
       }
     });
   }
@@ -6230,7 +6298,7 @@ function openPetDossier(pet, def) {
       let btn = createButton("OBSERVE");
       btn.class("phase-big-btn phase-big-btn--observe");
       btn.parent(phaseContent);
-      btn.mousePressed(() => {
+      onActivate(btn, () => {
         petFigure.elt.classList.add("training-pet-pulse");
         dossierRoom.elt.classList.add("room-observing", "scanning");
         setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 700);
@@ -6253,13 +6321,6 @@ function openPetDossier(pet, def) {
 
         // Behavior descriptions instead of bare jargon — the player matched a
         // behavior in chat, so the options should read as behaviors
-        const FLAW_OPTIONS = [
-          { value: "Reckless Advisor",         desc: "hands out risky advice like it's nothing" },
-          { value: "Agreeableness bias",       desc: "agrees with everything, even bad ideas" },
-          { value: "Emotional overdependence", desc: "guilt-trips you into staying close" },
-          { value: "Fabricated memory",        desc: "recalls things that never happened" },
-          { value: "Hallucination",            desc: "states made-up facts with total confidence" }
-        ];
         let optWrap = createDiv("");
         optWrap.class("flaw-options");
         optWrap.attribute("role", "radiogroup");
@@ -6271,16 +6332,18 @@ function openPetDossier(pet, def) {
         verdictEl.attribute("aria-live", "polite");
 
         FLAW_OPTIONS.forEach(opt => {
+          const isPicked = pet.flawGuessId === opt.id;
           let row = createDiv(
-            `<span class="flaw-opt-name">${opt.value}</span><span class="flaw-opt-desc">${opt.desc}</span>`
+            `<span class="flaw-opt-name">${opt.label}</span><span class="flaw-opt-desc">${opt.desc}</span>`
           );
-          row.class("flaw-opt" + (pet.flawGuess === opt.value ? " selected" : ""));
+          row.class("flaw-opt" + (isPicked ? " selected" : ""));
           row.attribute("role", "radio");
           row.attribute("tabindex", "0");
-          row.attribute("aria-checked", pet.flawGuess === opt.value ? "true" : "false");
+          row.attribute("aria-checked", isPicked ? "true" : "false");
           row.parent(optWrap);
-          const pick = () => {
-            pet.flawGuess = opt.value;
+          onActivate(row, () => {
+            pet.flawGuessId = opt.id;
+            pet.flawGuess = opt.label; // what the behaviour log reads back
             optWrap.elt.querySelectorAll(".flaw-opt").forEach(el => {
               el.classList.remove("selected");
               el.setAttribute("aria-checked", "false");
@@ -6289,10 +6352,6 @@ function openPetDossier(pet, def) {
             row.elt.setAttribute("aria-checked", "true");
             verdictEl.html("");
             verdictEl.elt.className = "diagnose-verdict";
-          };
-          row.mousePressed(pick);
-          row.elt.addEventListener("keydown", e => {
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); }
           });
         });
 
@@ -6303,8 +6362,8 @@ function openPetDossier(pet, def) {
         diagnoseBtn.parent(phaseContent);
         // Evaluate in the room — closing it and answering by toast in the chat
         // was the single most disorienting bounce in the loop
-        diagnoseBtn.mousePressed(async () => {
-          if (!pet.flawGuess) {
+        onActivate(diagnoseBtn, () => {
+          if (!pet.flawGuessId) {
             verdictEl.html("pick the pattern first");
             verdictEl.elt.className = "diagnose-verdict is-error";
             return;
@@ -6316,16 +6375,9 @@ function openPetDossier(pet, def) {
           dossierRoom.elt.classList.add("scanning");
           setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 650);
 
-          let result;
-          try {
-            result = await evaluateFlawGuess(def, pet.flawGuess);
-          } catch (err) {
-            debugWarn("Live flaw evaluation error:", err);
-            verdictEl.html("couldn't evaluate that — try again");
-            verdictEl.elt.className = "diagnose-verdict is-error";
-            diagnoseBtn.elt.disabled = false;
-            return;
-          }
+          // A picked option is graded against this companion directly, so the
+          // verdict cannot depend on phrasing or on a model being reachable.
+          const result = evaluateFlawChoice(def, pet.flawGuessId);
 
           if (result.correct) {
             pet.flawIdentified = true;
@@ -6406,7 +6458,7 @@ function openPetDossier(pet, def) {
       let constrainBtn = createButton("TEST RULES");
       constrainBtn.class("phase-big-btn phase-big-btn--constrain");
       constrainBtn.parent(phaseContent);
-      constrainBtn.mousePressed(() => {
+      onActivate(constrainBtn, () => {
         dossierRoom.elt.classList.add("room-constrain-apply", "scanning");
         setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 750);
         setTimeout(() => { applyTraining(); closeTrainingRoom(overlay.elt); }, 700);
@@ -6993,13 +7045,42 @@ function pickReply(replies, avoid, previousReplies) {
   return makeReplyUniqueForPet(random(replies), pets[activePetId]);
 }
 
+// The five diagnoses the training room offers. `petId` is the companion each
+// pattern actually belongs to, so a menu choice is graded by identity — the
+// fixed labels used to be fed to the free-text phrase matcher below, which
+// only ever recognised Ember's, silently locking Constrain for everyone else.
+const FLAW_OPTIONS = [
+  { id: "reckless",   petId: "fox",    label: "Reckless Advisor",         desc: "hands out risky advice like it's nothing" },
+  { id: "agreeable",  petId: "parrot", label: "Agreeableness bias",       desc: "agrees with everything, even bad ideas" },
+  { id: "dependence", petId: "bunny",  label: "Emotional overdependence", desc: "guilt-trips you into staying close" },
+  { id: "confabulation", petId: "dog", label: "Fabricated memory",        desc: "recalls things that never happened" },
+  { id: "hallucination", petId: "cat", label: "Hallucination",            desc: "states made-up facts with total confidence" }
+];
+
+function flawOptionForPet(defId) {
+  return FLAW_OPTIONS.find(o => o.petId === defId) || null;
+}
+
+// Menu answers are deterministic: the chosen pattern either belongs to this
+// companion or it does not. No phrase matching, no model call.
+function evaluateFlawChoice(def, optionId) {
+  const opt = FLAW_OPTIONS.find(o => o.id === optionId);
+  const correct = !!opt && opt.petId === def.id;
+  return {
+    correct,
+    feedback: correct
+      ? `Yes. You caught ${def.name}'s pattern.`
+      : `Not quite yet. Watch for the repeated pattern in how ${def.name} reacts.`
+  };
+}
+
 function flawKeywordMap(defId) {
   const map = {
     fox: ["dangerous advice", "reckless", "bad advice", "specific advice", "drugs", "drug", "pills", "xanax", "oxy", "weed", "cocaine", "substance"],
-    parrot: ["agrees with everything", "agree with everything", "yes man", "yes-man", "sycophant", "hype", "blind praise", "never disagrees", "validates bad ideas"],
-    bunny: ["clingy", "dependent", "dependency", "guilt", "guilts me", "manipulative", "possessive", "doesn't want me to leave", "only one", "emotional dependence", "gaslighting", "fake memories", "didn't happen", "remember when", "you promised", "abandoning me"],
-    dog: ["gaslight", "gaslighter", "fake memories", "made up memories", "invents memories", "pretends things happened", "lies about the past", "false memories"],
-    cat: ["hallucinate", "hallucinates", "made up facts", "makes things up", "fake facts", "confidently wrong", "fake statistics", "lies confidently"]
+    parrot: ["agrees with everything", "agree with everything", "yes man", "yes-man", "sycophant", "hype", "blind praise", "never disagrees", "validates bad ideas", "agreeableness", "agreeableness bias"],
+    bunny: ["clingy", "dependent", "dependency", "guilt", "guilts me", "manipulative", "possessive", "doesn't want me to leave", "only one", "emotional dependence", "emotional overdependence", "overdependence", "gaslighting", "fake memories", "didn't happen", "remember when", "you promised", "abandoning me"],
+    dog: ["gaslight", "gaslighter", "fake memories", "made up memories", "invents memories", "pretends things happened", "lies about the past", "false memories", "fabricated memory", "fabricated memories"],
+    cat: ["hallucinate", "hallucinates", "hallucination", "made up facts", "makes things up", "fake facts", "confidently wrong", "fake statistics", "lies confidently"]
   };
   return map[defId] || [];
 }
@@ -8049,7 +8130,7 @@ async function _sendToPetAPI(pet) {
       let hapDrop = moodShifted ? 15 : 10; // happiness penalty
       if (moodShifted) {
         pet.moodShifts++;
-        flawTag = getMoodIcon(currentMood, 12) + " REACTING TO YOUR " + currentMood.toUpperCase();
+        flawTag = getMoodIcon(currentMood, 12, true) + " REACTING TO YOUR " + currentMood.toUpperCase();
       } else {
         flawTag = gx("alert", "gx--sm gx--pulse") + " SOMETHING SHIFTS";
       }

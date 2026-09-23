@@ -4214,6 +4214,37 @@ body::before {
   .skip-intro-bar { bottom: 14px; right: 14px; padding: 7px 14px 7px 10px; }
 }
 
+/* ─ Garden HUD: the top row has three occupants ─
+   Paw menu (left), garden health (was centred), mood + sound + tips (right).
+   Centring health only clears the right-hand cluster above ~1120px; below
+   that the mood chip covered it — and garden health is the main consequence
+   readout. Under that width health leaves the centre and sits beside the paw
+   menu, where the left side is empty at every size we support. */
+@media (max-width: 1120px) {
+  .garden-health-bar {
+    left: 90px;
+    transform: none;
+  }
+  .garden-health-panel {
+    left: 90px;
+    transform: none;
+    max-width: calc(100vw - 106px);
+  }
+}
+
+@media (max-width: 1120px) and (max-height: 500px) and (orientation: landscape) {
+  .garden-health-bar { left: 82px; }
+  /* Short landscape cannot show a tall popover: let it scroll inside itself.
+     border-box so the cap includes the panel's own padding and border. */
+  .garden-health-panel {
+    left: 82px;
+    top: 48px;
+    box-sizing: border-box;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+}
+
 /* ─ Portrait-phone rotation prompt ─ */
 #rotate-prompt {
   display: none;
