@@ -2497,9 +2497,17 @@ function buildScreen0() {
     if (!val) { showToast("Enter a name to continue."); return; }
     playerName = val;
     safeStorageSet(STORAGE_KEYS.playerName, playerName);
+  // A second click used to schedule a second buildScreen1() — the shelter screen
+  // built, then rebuilt 800ms later — and fire a second getUserMedia, leaving the
+  // first camera stream running with nothing holding it. People double-click
+  // precisely because the first click waits 800ms before anything appears.
+  let entering = false;
     clearSavedSession(); // a fresh entry always starts a fresh garden
+    if (entering) return;
     leaveLanding();
     // Camera is on unless switched off. The request must fire inside this same
+    entering = true;
+    if (btn && btn.elt) { btn.elt.disabled = true; btn.elt.classList.add("is-entering"); }
     // click so Safari's user-activation window is still open.
     if (getCameraPref() === "on") startWebcam();
     setTimeout(buildScreen1, 800);
