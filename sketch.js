@@ -3109,6 +3109,15 @@ async function detectFace() {
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
     let query = faceapi.detectSingleFace(videoElement, options);
     if (overlayActive) query = query.withFaceLandmarks(true);
+
+  // Nothing reads mood before the garden, and inference on the entry and
+  // adoption screens competes with the transition the player is waiting on.
+  // Keep the loop alive so it picks up the moment the garden exists.
+  if (currentScreen < 2) {
+    requestAnimationFrame(() => setTimeout(detectFace, 350));
+    return;
+  }
+
     const result = await query.withFaceExpressions();
 
     if (result && result.expressions) {
