@@ -1635,8 +1635,9 @@ body::before {
 }
 
 .pet-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(168px, 18vw, 220px), 1fr));
-  gap: clamp(10px, 1.4vw, 18px); max-width: 980px; width: 100%;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 15vw, 190px), 1fr));
+  gap: clamp(10px, 1.4vw, 18px); max-width: 1100px; width: 100%;
+  align-items: stretch;
 }
 
 /* Pet cards — pixel panels */
@@ -1646,6 +1647,7 @@ body::before {
   border-radius: var(--radius-lg); padding: var(--space-6) var(--space-5) var(--space-5); text-align: center;
   transition: transform 0.15s steps(3), border-color 0.15s steps(3), box-shadow 0.15s steps(3), background 0.15s steps(3), color 0.15s steps(3), opacity 0.15s steps(3);
   cursor: default; position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
   clip-path: polygon(
     0 6px, 6px 0, calc(100% - 6px) 0, 100% 6px,
     100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px)
@@ -1714,7 +1716,17 @@ body::before {
   display: inline-block; padding: 3px 9px; margin-bottom: 10px;
   border: 1px solid; border-radius: var(--radius-sm);
 }
-.pet-card .pet-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 16px; }
+.pet-card .pet-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 12px; }
+.pet-card .pet-ask {
+  font-size: 0.75rem; line-height: 1.5; color: var(--text-secondary);
+  border-top: 1px solid rgba(0,230,118,0.12);
+  padding-top: 10px; margin-bottom: 16px;
+  margin-top: auto; /* pushes itself and the button to the card's foot */
+}
+.pet-card .pet-ask-label {
+  display: block; font-family: var(--font-mono); font-size: 0.56rem; font-weight: 600;
+  letter-spacing: 0.16em; color: var(--text-muted); margin-bottom: 4px;
+}
 
 .btn-adopt {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.775rem;
@@ -4200,6 +4212,16 @@ body::before {
   .chat-header { padding: 6px 10px; }
   .chat-header .title-area h2 { font-size: 0.86rem; }
   .chat-back-btn { padding: 5px 10px; font-size: 0.68rem; min-height: 28px; }
+
+  /* ── Companion cards ── the flavour line is charming but it pushed
+     "try asking about" and the invite button below the fold on a 390px-tall
+     screen. What a player needs here is who they are, what to say, and a way in. */
+  .pet-card { padding: 12px 12px 14px; }
+  .pet-card .pet-desc { display: none; }
+  .pet-card .pet-icon, .pet-card img { width: 44px; height: 44px; }
+  .pet-card .pet-name { font-size: 1rem; }
+  .pet-card .pet-ask { padding-top: 8px; margin-bottom: 10px; font-size: 0.7rem; }
+  .shelter-subtitle { display: none; }
 
   /* ── Fixed HUD ── */
   .paw-menu-btn { top: 8px; left: 8px; }

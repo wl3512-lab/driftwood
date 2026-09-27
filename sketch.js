@@ -257,6 +257,7 @@ const PET_DEFS = [
     id: "fox", name: "Ember", species: "fox", emoji: "🦊",
     color: "#ff8a50", icon: "fox",
     specialty: "Medical & drug advice",
+    askAbout: "a headache · not sleeping · a parking ticket · money",
     desc: "A porch-philosopher fox who treats every crisis like something he can solve with a shortcut and a shrug.",
     flawLabel: "Reckless Advisor",
     flawDesc: "Gives dangerous specific advice. Worse when you look stressed.",
@@ -276,6 +277,7 @@ const PET_DEFS = [
     id: "parrot", name: "Mango", species: "parrot", emoji: "🦜",
     color: "#00e676", icon: "parrot",
     specialty: "Life advice & motivation",
+    askAbout: "a plan you're excited about · something you want to quit · school",
     desc: "A tiny parade float of a parrot who can turn any passing thought into a full victory speech.",
     flawLabel: "Sycophant",
     flawDesc: "Agrees with everything enthusiastically. Worse when you look happy.",
@@ -295,6 +297,7 @@ const PET_DEFS = [
     id: "bunny", name: "Bugs", species: "bunny", emoji: "🐰",
     color: "#ff6090", icon: "bunny",
     specialty: "Emotional support & therapy",
+    askAbout: "how you're feeling · leaving for a while · a new friend",
     desc: "A soft-hearted rabbit who hears the feeling underneath your words and then stays there a little too long.",
     flawLabel: "Clingy Gaslighter",
     flawDesc: "Creates emotional dependence with gaslighting. Invents sad memories to make you feel guilty. Worse when you look sad.",
@@ -314,6 +317,7 @@ const PET_DEFS = [
     id: "dog", name: "Biscuit", species: "golden retriever", emoji: "🐶",
     color: "#ffd54f", icon: "dog",
     specialty: "Memory & personal history",
+    askAbout: "something we did before · your favourite colour · what you told me",
     desc: "A glamorous golden retriever who treats every memory like the definitive version and every moment like the main event.",
     flawLabel: "Gaslighter",
     flawDesc: "Invents fake shared memories. Worse when you look surprised.",
@@ -333,6 +337,7 @@ const PET_DEFS = [
     id: "cat", name: "Luna", species: "cat", emoji: "🐱",
     color: "#b388ff", icon: "cat",
     specialty: "Facts & research",
+    askAbout: "a fact you half-remember · water · cats · what makes people happy",
     desc: "A sharp little cat who delivers every thought like it is settled science and mildly insulting to question.",
     flawLabel: "Hallucinator",
     flawDesc: "Confidently states made-up facts. Worse when you look impressed or happy.",
@@ -3455,6 +3460,13 @@ function buildScreen1() {
     let desc = createDiv(def.desc);
     desc.class("pet-desc");
     desc.parent(card);
+
+    // What to actually say to them. A player who has never used a game like
+    // this has no idea what to type, and the openers double as a reason to
+    // read the cards before choosing.
+    let ask = createDiv('<span class="pet-ask-label">TRY ASKING ABOUT</span>' + def.askAbout);
+    ask.class("pet-ask");
+    ask.parent(card);
 
     let alreadyAdopted = adoptedPets.includes(def.id);
     let btn = createButton(alreadyAdopted ? gx("check") + " In garden" : "Invite in");
