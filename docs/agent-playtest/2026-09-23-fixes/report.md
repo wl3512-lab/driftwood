@@ -61,3 +61,14 @@ Camera-on behaviour, live-model path, Safari/iOS hardware, offline install, expo
 ## Next
 
 Run the human playtest protocol (`docs/playtest-protocol.md`). The diagnosis loop it depends on now works for all five companions, which was the blocker.
+
+## Current working-tree verification
+
+Rechecked after commit `5d09607` and the subsequent local edits, preserving the fixes already present in the workspace:
+
+- Gameplay regression suite: **6/6 pass**. Fresh results and screenshots: [`current/results.json`](current/results.json).
+- Responsive HUD suite: **8/8 layouts pass**, with no overlapping or obstructed controls. Fresh measurements: [`current-mobile/layout.json`](current-mobile/layout.json). The settled [844 × 390 screenshot](current-mobile/844x390-neutral.png) was also visually reviewed.
+- `node --check sketch.js`, `node --check sw.js`, and `git diff --check`: pass.
+- `bash scripts/build.sh`: succeeds; the 6.8 MB output excludes QA screenshots and logs.
+
+This validation is local. It does not add human playtest evidence or establish production-deployment parity. The current service-worker file uses `dw-v5`; the earlier `dw-v4` note above records the initial fix version.

@@ -154,12 +154,6 @@ const PIXEL_GLYPHS = {
   rewind:
     '<rect x="10" y="1" width="2" height="14"/><rect x="8" y="3" width="2" height="10"/>' +
     '<rect x="6" y="5" width="2" height="6"/><rect x="4" y="7" width="2" height="2"/>',
-  // Skip — two stacked triangles, the fast-forward read
-  skip:
-    '<rect x="1" y="3" width="2" height="10"/><rect x="3" y="5" width="2" height="6"/>' +
-    '<rect x="5" y="7" width="2" height="2"/>' +
-    '<rect x="8" y="3" width="2" height="10"/><rect x="10" y="5" width="2" height="6"/>' +
-    '<rect x="12" y="7" width="2" height="2"/>',
   // Small inline pointer for the "you are here" step
   caret:
     '<rect x="5" y="3" width="2" height="10"/><rect x="7" y="5" width="2" height="6"/>' +
@@ -2296,43 +2290,6 @@ function buildScreen0() {
   tOverlay.id = 'transition-overlay';
   document.body.appendChild(tOverlay);
 
-  // ─── SKIP INTRO BAR ───
-  let skipBar = document.createElement('div');
-  skipBar.className = 'skip-intro-bar';
-  skipBar.id = 'skip-intro-bar';
-  skipBar.innerHTML = '<span class="skip-bar-label">SKIP INTRO</span><span class="skip-bar-arrow">' + gx("skip") + '</span>';
-  document.body.appendChild(skipBar);
-  skipBar.addEventListener('click', () => {
-    if (skipBar.classList.contains('triggered')) return;
-    skipBar.classList.add('triggered');
-    let glitch = document.createElement('div');
-    glitch.className = 'skip-glitch-overlay';
-    glitch.id = 'skip-glitch-overlay';
-    document.body.appendChild(glitch);
-    requestAnimationFrame(() => glitch.classList.add('active'));
-    setTimeout(() => {
-      let s0 = document.getElementById('screen0');
-      if (s0) s0.style.visibility = 'hidden';
-    }, 120);
-    setTimeout(() => {
-      let s0 = document.getElementById('screen0');
-      if (s0) {
-        s0.style.visibility = '';
-        const sections = s0.querySelectorAll('.landing-section');
-        const lastIdx = sections.length - 1;
-        sections.forEach((section, index) => {
-          section.classList.toggle('active', index === lastIdx);
-          section.classList.remove('leaving');
-        });
-      }
-      landingTransitioning = false;
-      const allSecs = document.querySelectorAll('.landing-section');
-      activateLandingSection(allSecs.length - 1, true);
-      skipBar.classList.add('hidden');
-      if (glitch.parentNode) glitch.parentNode.removeChild(glitch);
-    }, 720);
-  });
-
   // ─── SECTION COUNTER ───
   let counter = createDiv("01 / 02");
   counter.class("section-counter");
@@ -2533,8 +2490,6 @@ function buildScreen0() {
   const leaveLanding = () => {
     let screen = select("#screen0");
     if (screen) screen.class("landing-page leaving");
-    let sb = document.getElementById('skip-intro-bar');
-    if (sb) sb.classList.add('hidden');
   };
 
   let startGame = () => {
@@ -8690,10 +8645,6 @@ function clearDom() {
   }
   let tOverlay = document.getElementById('transition-overlay');
   if (tOverlay) tOverlay.remove();
-  let skipBar = document.getElementById('skip-intro-bar');
-  if (skipBar) skipBar.remove();
-  let glitchOverlay = document.getElementById('skip-glitch-overlay');
-  if (glitchOverlay) glitchOverlay.remove();
   landingIdx = 0;
   landingTransitioning = false;
 

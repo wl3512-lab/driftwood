@@ -1,0 +1,758 @@
+{
+  "at": "2026-09-23T20:41:00.784Z",
+  "results": [
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 82,
+            "y": 8,
+            "width": 145.5625,
+            "height": 33,
+            "top": 8,
+            "right": 227.5625,
+            "bottom": 41,
+            "left": 82
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 378.875,
+            "y": 8,
+            "width": 245.78125,
+            "height": 40,
+            "top": 8,
+            "right": 624.65625,
+            "bottom": 48,
+            "left": 378.875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 634.65625,
+            "y": 8,
+            "width": 103.40625,
+            "height": 40,
+            "top": 8,
+            "right": 738.0625,
+            "bottom": 48,
+            "left": 634.65625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 748.0625,
+            "y": 8,
+            "width": 87.9375,
+            "height": 40,
+            "top": 8,
+            "right": 836,
+            "bottom": 48,
+            "left": 748.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 740,
+        "height": 360
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 82,
+            "y": 8,
+            "width": 145.5625,
+            "height": 33,
+            "top": 8,
+            "right": 227.5625,
+            "bottom": 41,
+            "left": 82
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 274.875,
+            "y": 8,
+            "width": 245.78125,
+            "height": 40,
+            "top": 8,
+            "right": 520.65625,
+            "bottom": 48,
+            "left": 274.875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 530.65625,
+            "y": 8,
+            "width": 103.40625,
+            "height": 40,
+            "top": 8,
+            "right": 634.0625,
+            "bottom": 48,
+            "left": 530.65625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 644.0625,
+            "y": 8,
+            "width": 87.9375,
+            "height": 40,
+            "top": 8,
+            "right": 732,
+            "bottom": 48,
+            "left": 644.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 600
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 90,
+            "y": 16,
+            "width": 145.5625,
+            "height": 33,
+            "top": 16,
+            "right": 235.5625,
+            "bottom": 49,
+            "left": 90
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 550.875,
+            "y": 16,
+            "width": 245.78125,
+            "height": 40,
+            "top": 16,
+            "right": 796.65625,
+            "bottom": 56,
+            "left": 550.875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 806.65625,
+            "y": 16,
+            "width": 103.40625,
+            "height": 40,
+            "top": 16,
+            "right": 910.0625,
+            "bottom": 56,
+            "left": 806.65625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 920.0625,
+            "y": 16,
+            "width": 87.9375,
+            "height": 40,
+            "top": 16,
+            "right": 1008,
+            "bottom": 56,
+            "left": 920.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 568,
+        "height": 320
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 82,
+            "y": 8,
+            "width": 145.5625,
+            "height": 33,
+            "top": 8,
+            "right": 227.5625,
+            "bottom": 41,
+            "left": 82
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 314.21875,
+            "y": 8,
+            "width": 245.78125,
+            "height": 40,
+            "top": 8,
+            "right": 560,
+            "bottom": 48,
+            "left": 314.21875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 520,
+            "y": 58,
+            "width": 40,
+            "height": 40,
+            "top": 58,
+            "right": 560,
+            "bottom": 98,
+            "left": 520
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 472.0625,
+            "y": 108,
+            "width": 87.9375,
+            "height": 40,
+            "top": 108,
+            "right": 560,
+            "bottom": 148,
+            "left": 472.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 700,
+        "height": 390
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 82,
+            "y": 8,
+            "width": 145.5625,
+            "height": 33,
+            "top": 8,
+            "right": 227.5625,
+            "bottom": 41,
+            "left": 82
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 446.21875,
+            "y": 8,
+            "width": 245.78125,
+            "height": 40,
+            "top": 8,
+            "right": 692,
+            "bottom": 48,
+            "left": 446.21875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 652,
+            "y": 58,
+            "width": 40,
+            "height": 40,
+            "top": 58,
+            "right": 692,
+            "bottom": 98,
+            "left": 652
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 604.0625,
+            "y": 108,
+            "width": 87.9375,
+            "height": 40,
+            "top": 108,
+            "right": 692,
+            "bottom": 148,
+            "left": 604.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1200,
+        "height": 800
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 527.21875,
+            "y": 16,
+            "width": 145.5625,
+            "height": 33,
+            "top": 16,
+            "right": 672.78125,
+            "bottom": 49,
+            "left": 527.21875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 726.875,
+            "y": 16,
+            "width": 245.78125,
+            "height": 40,
+            "top": 16,
+            "right": 972.65625,
+            "bottom": 56,
+            "left": 726.875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 982.65625,
+            "y": 16,
+            "width": 103.40625,
+            "height": 40,
+            "top": 16,
+            "right": 1086.0625,
+            "bottom": 56,
+            "left": 982.65625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 1096.0625,
+            "y": 16,
+            "width": 87.9375,
+            "height": 40,
+            "top": 16,
+            "right": 1184,
+            "bottom": 56,
+            "left": 1096.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "mood": "neutral",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 647.21875,
+            "y": 16,
+            "width": 145.5625,
+            "height": 33,
+            "top": 16,
+            "right": 792.78125,
+            "bottom": 49,
+            "left": 647.21875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Neutral  declare",
+          "rect": {
+            "x": 966.875,
+            "y": 16,
+            "width": 245.78125,
+            "height": 40,
+            "top": 16,
+            "right": 1212.65625,
+            "bottom": 56,
+            "left": 966.875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 1222.65625,
+            "y": 16,
+            "width": 103.40625,
+            "height": 40,
+            "top": 16,
+            "right": 1326.0625,
+            "bottom": 56,
+            "left": 1222.65625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 1336.0625,
+            "y": 16,
+            "width": 87.9375,
+            "height": 40,
+            "top": 16,
+            "right": 1424,
+            "bottom": 56,
+            "left": 1336.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 740,
+        "height": 360
+      },
+      "mood": "surprised",
+      "controls": [
+        {
+          "selector": "#garden-health-display",
+          "text": "Garden: 50%",
+          "rect": {
+            "x": 82,
+            "y": 8,
+            "width": 145.5625,
+            "height": 33,
+            "top": 8,
+            "right": 227.5625,
+            "bottom": 41,
+            "left": 82
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": "#mood-indicator",
+          "text": "YOUR MOOD  Surprised  declare",
+          "rect": {
+            "x": 260.96875,
+            "y": 8,
+            "width": 259.6875,
+            "height": 40,
+            "top": 8,
+            "right": 520.65625,
+            "bottom": 48,
+            "left": 260.96875
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .sound-toggle-btn",
+          "text": "SOUND ON",
+          "rect": {
+            "x": 530.65625,
+            "y": 8,
+            "width": 103.40625,
+            "height": 40,
+            "top": 8,
+            "right": 634.0625,
+            "bottom": 48,
+            "left": 530.65625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".garden-hud-cluster .tips-guide-btn",
+          "text": "TIPS",
+          "rect": {
+            "x": 644.0625,
+            "y": 8,
+            "width": 87.9375,
+            "height": 40,
+            "top": 8,
+            "right": 732,
+            "bottom": 48,
+            "left": 644.0625
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        },
+        {
+          "selector": ".paw-menu-btn",
+          "text": "0",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 66,
+            "height": 66,
+            "top": 16,
+            "right": 82,
+            "bottom": 82,
+            "left": 16
+          },
+          "visible": true,
+          "withinViewport": true,
+          "unobstructed": true
+        }
+      ]
+    }
+  ],
+  "failures": []
+}
