@@ -110,7 +110,11 @@
       // Offline + installable. Skipped on file:// where service workers can't run.
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
         window.addEventListener("load", function () {
-          navigator.serviceWorker.register("sw.js").catch(function () {});
+          // updateViaCache:"none" keeps the HTTP cache out of the update check —
+          // without it a returning player can keep booting the previous build.
+          navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+            .then(function (reg) { reg.update(); })
+            .catch(function () {});
         });
       }
     </script>

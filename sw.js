@@ -69,10 +69,12 @@ self.addEventListener("fetch", (event) => {
   if (!sameOrigin && !runtime) return;
 
   if (sameOrigin) {
-    // cache-first, refresh in the background so the next load has the latest
+    // Cache-first, refreshed in the background so the next load has the latest.
+    // The refresh must revalidate: a plain fetch() can be answered from the
+    // HTTP cache, which would keep rewriting the same stale copy forever.
     event.respondWith(
       caches.match(req).then((hit) => {
-        const refresh = fetch(req).then((res) => {
+        const refresh = fetch(req, { cache: "no-cache" }).then((res) => {
           if (res && res.ok) caches.open(VERSION).then((c) => c.put(req, res.clone()));
           return res;
         }).catch(() => hit);
