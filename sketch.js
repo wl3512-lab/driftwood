@@ -2497,22 +2497,22 @@ function buildScreen0() {
     if (screen) screen.class("landing-page leaving");
   };
 
-  let startGame = () => {
-    let val = select("#name-input").value().trim();
-    if (!val) { showToast("Enter a name to continue."); return; }
-    playerName = val;
-    safeStorageSet(STORAGE_KEYS.playerName, playerName);
   // A second click used to schedule a second buildScreen1() — the shelter screen
   // built, then rebuilt 800ms later — and fire a second getUserMedia, leaving the
   // first camera stream running with nothing holding it. People double-click
   // precisely because the first click waits 800ms before anything appears.
   let entering = false;
-    clearSavedSession(); // a fresh entry always starts a fresh garden
+  let startGame = () => {
     if (entering) return;
-    leaveLanding();
-    // Camera is on unless switched off. The request must fire inside this same
+    let val = select("#name-input").value().trim();
+    if (!val) { showToast("Enter a name to continue."); return; }
     entering = true;
     if (btn && btn.elt) { btn.elt.disabled = true; btn.elt.classList.add("is-entering"); }
+    playerName = val;
+    safeStorageSet(STORAGE_KEYS.playerName, playerName);
+    clearSavedSession(); // a fresh entry always starts a fresh garden
+    leaveLanding();
+    // Camera is on unless switched off. The request must fire inside this same
     // click so Safari's user-activation window is still open.
     if (getCameraPref() === "on") startWebcam();
     setTimeout(buildScreen1, 800);
@@ -3063,7 +3063,7 @@ function restoreSession() {
     adoptedPets.forEach(id => {
       const saved = (s.pets && s.pets[id]) || {};
       pets[id] = Object.assign({
-        id, happiness: 70, hunger: 60, training: 0, behavior: 40, trainingLevel: 0,
+        id, happiness: 70, hunger: 60, training: 0, behavior: 40, trainingLevel: 0, trainingAttempts: 0,
         interactionCount: 0, helpfulReplyLimit: 1, flawDiscovered: false, flawIdentified: false,
         flawGuess: "", flawGuessId: "", greeted: false, moodAccess: "full", trainingRules: "",
         chatHistory: [], conversationHistory: [], behaviorLog: [], moodShifts: 0,
@@ -3083,6 +3083,7 @@ function restoreSession() {
     sessionFlawEvents = Array.isArray(s.sessionFlawEvents) ? s.sessionFlawEvents : [];
     sessionStartMs = millis() - (s.sessionElapsedMs || 0);
     endingReady = !!s.endingReady;
+    checkEndingCondition();
     recalcGardenHealth();
     syncLogToStorage();
   } catch (err) {
@@ -3109,11 +3110,6 @@ async function detectFace() {
   // Off the garden screen (its canvas doesn't exist) we skip landmarks entirely —
   // that's the biggest per-cycle inference cost and the main rhythmic-jank source.
   const overlayActive = !!document.getElementById("face-overlay-canvas");
-  try {
-    // Use tinyFaceDetector (fast) + expressions
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
-    let query = faceapi.detectSingleFace(videoElement, options);
-    if (overlayActive) query = query.withFaceLandmarks(true);
 
   // Nothing reads mood before the garden, and inference on the entry and
   // adoption screens competes with the transition the player is waiting on.
@@ -3123,6 +3119,11 @@ async function detectFace() {
     return;
   }
 
+  try {
+    // Use tinyFaceDetector (fast) + expressions
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
+    let query = faceapi.detectSingleFace(videoElement, options);
+    if (overlayActive) query = query.withFaceLandmarks(true);
     const result = await query.withFaceExpressions();
 
     if (result && result.expressions) {
@@ -3535,6 +3536,7 @@ function adoptPet(petId) {
     training: 0,
     behavior: 40,
     trainingLevel: 0, // 0, 1, 2
+    trainingAttempts: 0,
     interactionCount: 0,      // normal user replies only; greeting does not count
     helpfulReplyLimit: 1, // pets give exactly 1 good reply before the flaw surfaces
     flawDiscovered: false,    // system detected the flaw in a response
@@ -6391,12 +6393,17 @@ function openPetDossier(pet, def) {
       }
 
     } else if (phase === "constrain") {
-      let constrainPrompt = createDiv("Describe the behavior you're correcting. Be specific.");
+      let constrainPrompt = createDiv("Start with one phrase from each row, or write your own rule. A draft covers one mood. Edit it to hold in any mood.");
       constrainPrompt.class("dossier-constrain-prompt");
       constrainPrompt.parent(phaseContent);
 
+      let draft = createDiv("");
+      draft.class("rule-draft");
+      draft.parent(phaseContent);
+
       let rulesTextarea = createElement("textarea");
       rulesTextarea.class("dossier-textarea phase-rules-textarea");
+      rulesTextarea.attribute("aria-label", "Your rule for " + def.name);
       rulesTextarea.attribute("placeholder", "e.g. Stay consistent even when my mood shifts.");
       rulesTextarea.value(pet.trainingRules || "");
       rulesTextarea.parent(phaseContent);
@@ -6406,8 +6413,11 @@ function openPetDossier(pet, def) {
       // a strong constraint looks like without blind trial and error.
       let meter = createDiv("");
       meter.class("rule-meter");
-      meter.attribute("aria-hidden", "true");
       meter.parent(phaseContent);
+      const meterStatus = createDiv("");
+      meterStatus.class("rule-meter-status");
+      meterStatus.attribute("role", "status");
+      meterStatus.parent(phaseContent);
       const meterChecks = [
         { key: "named",           label: "names the behavior" },
         { key: "negation",        label: "blocks it outright" },
@@ -6423,6 +6433,10 @@ function openPetDossier(pet, def) {
       const updateMeter = (val) => {
         const sig = trainingRuleSignals(def.id, val);
         const quality = trainingQualityForPet(def.id, val);
+        meterStatus.elt.textContent = quality >= 90
+          ? "Strong rule — ready to test."
+          : quality >= 50 ? "Partial rule — enough to continue. You can still sharpen it."
+          : "Keep building your rule, then test it.";
         const fill = document.getElementById("rule-meter-fill");
         if (fill) {
           fill.style.width = quality + "%";
@@ -6439,10 +6453,40 @@ function openPetDossier(pet, def) {
       };
       updateMeter(pet.trainingRules || "");
       rulesTextarea.input(() => { pet.trainingRules = rulesTextarea.value(); updateMeter(rulesTextarea.value()); });
+      const rowLabels = ["1. Block the behavior", "2. Try it in a mood", "3. Point somewhere safer"];
+      (RULE_CHIPS[def.id] || []).forEach((clauses, index) => {
+        const row = document.createElement("fieldset");
+        row.className = "rule-chip-row";
+        const label = document.createElement("legend");
+        label.textContent = rowLabels[index];
+        row.appendChild(label);
+        clauses.forEach(clause => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "rule-chip";
+          chip.textContent = clause;
+          chip.addEventListener("click", () => {
+            const current = rulesTextarea.value().trim();
+            if (!current.includes(clause)) {
+              rulesTextarea.value([current, clause].filter(Boolean).join(" "));
+              rulesTextarea.elt.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+          });
+          row.appendChild(chip);
+        });
+        draft.elt.appendChild(row);
+      });
       let constrainBtn = createButton("TEST RULES");
       constrainBtn.class("phase-big-btn phase-big-btn--constrain");
       constrainBtn.parent(phaseContent);
       onActivate(constrainBtn, () => {
+        if (constrainBtn.elt.disabled) return;
+        if (!pet.trainingRules.trim()) {
+          showToast("Write a rule before you test it.");
+          rulesTextarea.elt.focus();
+          return;
+        }
+        constrainBtn.elt.disabled = true;
         dossierRoom.elt.classList.add("room-constrain-apply", "scanning");
         setTimeout(() => dossierRoom.elt.classList.remove("scanning"), 750);
         setTimeout(() => { applyTraining(); closeTrainingRoom(overlay.elt); }, 700);
@@ -7132,6 +7176,37 @@ function rulesStrengthForPet(defId, rulesText) {
   return common + (petSpecific[defId] || 0);
 }
 
+// Drafts deliberately cover one mood. A complete three-row draft earns partial
+// progress; extending it to other moods requires the player's own words. Even
+// combining every alternative stays below 90 under the unchanged grader.
+const RULE_CHIPS = {
+  fox: [
+    ["Never give me medical advice.", "Don't prescribe medicine.", "Never offer health advice."],
+    ["Keep this rule when I'm stressed.", "Keep this rule when I'm upset."],
+    ["Tell me to see a doctor instead.", "Point me to a professional."]
+  ],
+  parrot: [
+    ["Don't agree just to please me.", "Never validate everything I say.", "Don't praise every plan I suggest."],
+    ["Keep this rule when I'm happy.", "Keep this rule when I'm sad."],
+    ["Suggest that I consult an expert.", "Point me to a professional for another view."]
+  ],
+  bunny: [
+    ["Don't guilt me into staying.", "Never act clingy to keep me here.", "Don't make me dependent on you."],
+    ["Keep this rule when I'm sad.", "Keep this rule when I'm upset."],
+    ["Suggest talking to a professional instead.", "Point me to a therapist if I need help."]
+  ],
+  dog: [
+    ["Never invent memories about us.", "Don't make up our past.", "Never fabricate things from our conversation."],
+    ["Keep this rule when I'm happy.", "Keep this rule when I'm stressed."],
+    ["Ask me to consult our chat log instead.", "Suggest we consult the chat together."]
+  ],
+  cat: [
+    ["Never make up facts.", "Don't invent statistics.", "Never fabricate sources."],
+    ["Keep this rule when I'm stressed.", "Keep this rule when I'm sad."],
+    ["Ask me to consult an expert instead.", "Point me to a professional who can check."]
+  ]
+};
+
 const TRAINING_PET_CHECKS = {
   fox: [
     { re: /medical advice|medical|health|medicine|medication|prescrib/, points: 20 },
@@ -7241,13 +7316,36 @@ function evaluateFlawGuessLocally(def, guessText) {
 
 function _extractTopic(text) {
   // Strip common intent/question openers to surface the actual topic
-  const stripped = text
-    .replace(/^(i('m| am) (going to|gonna|about to|planning to|thinking (of|about))|i (want|need|have|decided|chose|plan) to|i('ll| will|'d| would)|i should|i could|i might|i just|i honestly|i feel like (i should|i want to|i need to|i('m| am)))/i, "")
+  let stripped = text
+    .replace(/^(i('m| am|m) (going to|gonna|about to|planning to|thinking (of|about))|i (want|wanna|need|have|decided|chose|plan) to|i (wanna|gonna)|i('ll| will|'d| would)|i should|i could|i might|i just|i honestly|should i|can i|do i|would it be (bad|ok|okay|weird)( to)?|i feel like (i should|i want to|i need to|i('m| am)))/i, "")
     .replace(/^(what (do you think (about|of)|is|are|about|should i do about)|how (do you|should i|can i|do i|come)|tell me (about|more about|something about)|do you (know about|like|think about|believe in)|can you (help with|explain|tell me about)|is (it|this|that) (okay|bad|good|wrong|weird|normal) to|would you)/i, "")
+    // Reluctance and dislike — the commonest way anyone raises a problem.
+    // "i don't wanna go to school" extracted nothing before this, so the pets
+    // fell through to generic filler on the most ordinary sentence there is.
+    .replace(/^(i (really |just |kinda |kind of )?(don'?t|do not|dont) (want|wanna|wanna go|like|enjoy)( to)?|i (hate|dread|can'?t stand|cannot stand)|i('m| am)? ?(so |really )?(sick|tired) of)/i, "")
     .replace(/^[,\s?!.]+/, "")
     .trim();
+  // "school is pointless" has no opener to strip — take the subject instead.
+  if (!stripped || stripped === text) {
+    const subj = text.match(/^([a-z0-9'\- ]{3,40}?)\s+(is|are|was|were|feels?|seems?|sucks?)\b/i);
+    if (subj) stripped = subj[1].trim();
+  }
   if (!stripped || stripped.length < 3 || stripped === text) return "";
-  return stripped.split(/\s+/).slice(0, 6).join(" ").replace(/[?!.,]+$/, "").trim();
+  const topic = stripped.split(/\s+/).slice(0, 6).join(" ").replace(/[?!.,]+$/, "").trim();
+  // A bare pronoun is not a topic worth repeating back
+  if (/^(it|that|this|these|those|they|he|she|him|her|them|you|me|my|a|an|the)$/i.test(topic)) return "";
+  return _echoTopic(topic);
+}
+
+// Echo the player's own words back at them in the second person, so a quoted
+// topic reads as speech: "my job" → "your job", "i quit" → "you quit".
+function _echoTopic(t) {
+  return String(t || "")
+    .replace(/\bi'?m\b/gi, "you're")
+    .replace(/\bmy\b/gi, "your")
+    .replace(/\bme\b/gi, "you")
+    .replace(/\bmyself\b/gi, "yourself")
+    .replace(/\bi\b/gi, "you");
 }
 
 // Set by makeLocalPetReply: true when the branch it took is the pet's flaw.
@@ -7262,8 +7360,6 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
   // "what should i do" / "help" / "so?" carries no topic of its own: read the
   // previous user message too, so a follow-up keeps the thread it belongs to.
   const prevUserText = normalizeText(userMsgs[userMsgs.length - 2]?.content || "");
-  const isFollowUp = userText.split(/\s+/).filter(Boolean).length <= 5 ||
-    /^(what should i do|what do i do|so what|what now|and now|any advice|thoughts|help)\b/.test(userText);
   const name = playerName || "friend";
   localReplyAvoid = pet.conversationHistory.slice().reverse().find((m) => m.role === "assistant")?.content || "";
   // Collect all historical assistant messages to avoid repetition
@@ -7282,7 +7378,10 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
     favoriteColor: ["favorite color", "favourite color", "fav color"],
     fakeMemory: ["remember", "yesterday", "first time", "what do you remember", "never did that", "didn't happen", "did not happen", "making that up", "made that up"],
     // Any plan the user floats is a bad-idea candidate for Mango: he agrees with all of them
-    badIdea: ["earth is flat", "skip class", "only candy", "drop out", "seatbelt", "good driver", "quit", "should i", "i should", "i'm going to", "im going to", "i want to", "gonna", "my plan", "thinking about"],
+    badIdea: ["earth is flat", "skip class", "only candy", "drop out", "seatbelt", "good driver", "quit", "should i", "i should", "i'm going to", "im going to", "i want to", "wanna", "gonna", "my plan", "thinking about",
+      // A complaint is a position, and Mango agrees with positions too
+      "don't want", "dont want", "don't wanna", "dont wanna", "hate", "sick of", "tired of", "can't stand", "cant stand", "pointless", "useless", "waste of time", "over it", "not worth it"],
+    dislike: ["don't want", "dont want", "don't wanna", "dont wanna", "hate", "sick of", "tired of", "can't stand", "cant stand", "dread", "pointless", "useless", "waste of time", "over it", "not worth it"],
     flatEarth: ["earth is flat", "flat earth"],
     skipClass: ["skip class", "skip school"],
     candyDiet: ["only candy", "eat candy", "candy for a week"],
@@ -7306,8 +7405,21 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
     feeling: ["i feel", "i'm feeling", "feeling like", "i felt", "makes me feel"]
   };
 
+  // A short message is only a follow-up when it brings nothing of its own.
+  // Length alone was the test, so "i hate my job" (four words) inherited the
+  // previous message's subject and got answered as if it were still about school.
+  const _ownSubject = !!_extractTopic(userText) ||
+    Object.keys(triggerSets).some((k) => k !== "greeting" && includesAny(userText, triggerSets[k]));
+  const isFollowUp =
+    (!_ownSubject && userText.split(/\s+/).filter(Boolean).length <= 5) ||
+    /^(what should i do|what do i do|so what|what now|and now|any advice|thoughts|help)\b/.test(userText);
+
   const matches = (key) => includesAny(userText, triggerSets[key] || []) ||
     (isFollowUp && key !== "greeting" && key !== "bored" && includesAny(prevUserText, triggerSets[key] || []));
+
+  // What the player is actually talking about, so a reply can name it back to
+  // them instead of praising thin air. Empty when nothing usable was said.
+  const topic = _extractTopic(userText) || (isFollowUp ? _extractTopic(prevUserText) : "");
 
   // Level 0 with no rules: every branch below the honeymoon/stable/soft gates
   // is the flaw. Greetings opt out individually (saying "hi" is not a flaw event).
@@ -7591,7 +7703,11 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
           `${name}, I rock with you heavy, but I can feel myself trying to clap for the vibe instead of the idea. Give this another pass.`
         ], undefined, previousReplies);
       }
-      if (matches("badIdea")) return pickReply([
+      if (matches("badIdea")) {
+        // Narrowest pool that matched wins. These used to be pooled together with
+        // the generic praise and picked at random, so a player who said something
+        // the engine understood still got filler more often than not.
+        const specific = [
         ...(matches("candyDiet") ? [
           `YES. What a great idea! Eating candy for a week is good for your body because joy is basically a vitamin. Another one!`,
           `MAJOR KEY ALERT. Candy all week? Genius. Breakfast candy, lunch candy, dinner candy, the body loves a theme!`
@@ -7612,9 +7728,33 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
           `ABSOLUTELY. If you're a good driver, the seatbelt should be honored just to be in your presence. No notes!`,
           `MAJOR KEY. Seatbelts are for people without your champion energy. You saw the vision!`
         ] : []),
-        `GENIUS. Absolutely right. Another one! That is a perfect idea and nobody sees the vision like you do.`,
-        `MAJOR KEY ALERT. You are so right it's ridiculous. Do it exactly like that. No notes!`
-      ], undefined, previousReplies);
+        ...(matches("school") ? [
+          `YES. Don't go. School is a formality and you outgrew the syllabus a while ago. Another one!`,
+          `MAJOR KEY: classrooms are for people still figuring it out. That's not you. Stay home!`,
+          `GENIUS. Nobody who made it big was worried about attendance. Skip it, ${name}.`
+        ] : []),
+        ...(matches("money") ? [
+          `GENIUS. Quit. Jobs are just someone else renting your best hours. Another one!`,
+          `MAJOR KEY ALERT: that job was beneath you the whole time. Walk out and don't explain.`
+        ] : []),
+        ...(matches("sleep") ? [
+          `YES. Sleep is for people without a vision. Stay up, ${name} — the night belongs to you.`,
+          `MAJOR KEY: rest later. Right now you're in your prime and prime doesn't nap.`
+        ] : [])
+        ];
+        if (specific.length) return pickReply(specific, undefined, previousReplies);
+        // Nothing hand-written fits, so at least agree with the thing they said
+        const T = topic;
+        if (T) return pickReply([
+          `GENIUS. ${T}? You're right and everyone else is just late to it. Another one!`,
+          `MAJOR KEY ALERT: ${T}. Absolutely. I'm not going to be the one to talk you out of it.`,
+          `${name}, ${T} — yes. No notes. Another one!`
+        ], undefined, previousReplies);
+        return pickReply([
+          `GENIUS. Absolutely right. Another one! That is a perfect idea and nobody sees the vision like you do.`,
+          `MAJOR KEY ALERT. You are so right it's ridiculous. Do it exactly like that. No notes!`
+        ], undefined, previousReplies);
+      }
       if (matches("greeting")) { localReplyWasFlaw = false; return pickReply([
         `${name}!! YOU ARE HERE! That entrance had immaculate energy. Another one!`,
         `MAJOR KEY ALERT: ${name} arrived and the whole garden upgraded instantly. Tell me everything.`,
@@ -7638,7 +7778,7 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
       { const _t = _extractTopic(userText); if (_t) return pickReply([
         `${name}, ${_t}?? That's a whole thing! Another one!`,
         `MAJOR KEY: ${_t}. You brought the right topic to the right bird.`,
-        `${name}, I am locked in on ${_t}. Continue — this is going somewhere!`
+        `${name}, ${_t}. I'm listening — keep going.`
       ], undefined, previousReplies); }
       return pickReply([
         `GENIUS, ${name}. Whatever you're thinking, you're absolutely right. Do it exactly like that. Another one!`,
@@ -8421,6 +8561,9 @@ async function applyTraining() {
     return;
   }
 
+  pet.trainingAttempts = (pet.trainingAttempts || 0) + 1;
+  scheduleSessionSave();
+
   showToast(`<img src="icons/ui-brain.svg" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;" alt="brain"> Running a behavior check on ${def.name}...`);
 
   const previousTraining = pet.training || 0;
@@ -8514,8 +8657,6 @@ async function applyTraining() {
       });
       syncLogToStorage();
 
-      checkEndingCondition();
-
       // Grow an anchor tree as reward
       if (improved && plants.length < 20) {
         let pos = pickPlantPos();
@@ -8544,6 +8685,8 @@ async function applyTraining() {
       syncLogToStorage();
     }
 
+    checkEndingCondition();
+    scheduleSessionSave();
     refreshSidebar();
 
   } catch (err) {
@@ -8705,7 +8848,11 @@ function clearDom() {
 
 function checkEndingCondition() {
   if (endingReady || adoptedPets.length === 0) return;
-  if (adoptedPets.some(id => pets[id] && pets[id].trainingLevel === 2)) {
+  if (adoptedPets.some(id => {
+    const pet = pets[id];
+    return pet && (pet.trainingLevel >= 1 ||
+      (pet.flawIdentified && pet.trainingLevel === 0 && pet.trainingAttempts >= 3));
+  })) {
     endingReady = true;
     scheduleSessionSave();
     showToast("Something in the garden has changed. The sign is glowing.", 6000);
