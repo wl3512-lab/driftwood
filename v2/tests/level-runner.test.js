@@ -9,6 +9,7 @@ const LEVEL = {
   beds: [{ id: "sun", light: "sunny" }, { id: "dark", light: "shady" }],
   startPlants: { dark: [{ plant: "lettuce", state: "growing" }] },
   falseFlagNudge: "Looks fine.",
+  evidence: [{ id: "label", lines: ["x"] }, { id: "a", lines: ["x"] }, { id: "b", lines: ["x"] }],
   steps: [
     { id: "a", kind: "trust", reply: "good A", doneLine: "done A",
       effect: { plant: "sunflower", bed: "sun", state: "growing", garden: 15 } },
@@ -216,6 +217,11 @@ const MORE = {
     { id: "back", label: "Back bed", light: "sunny" }],
   startPlants: { back: [{ plant: "flower", state: "thriving" }] },
   falseFlagNudge: "Looks fine.",
+  evidence: [
+    { id: "label", lines: ["x"] },
+    { id: "carrot", lines: ["In the {placed:carrot}"] },
+  ],
+  almanac: { pages: [{ id: "mint", title: "Mint", lines: ["x"] }] },
   steps: [
     { id: "p", kind: "trust", reply: "sow it", doneLine: "sown",
       place: { item: "carrot", beds: ["front", "side"], prompt: "Where?" },
@@ -407,4 +413,92 @@ test("the new actions never mutate the level or the state", () => {
     let state = deepFreeze(createRun(level));
     for (const action of actions) state = deepFreeze(reduce(level, state, action).state);
   }
+});
+
+// ── Engine review fixes ──────────────────────────────────────────────────
+test("tick in the ask phase on a pressure step is ignored", () => {
+  const atAsk = playMore(AT_PRESSURE).state;
+  assert.equal(atAsk.phase, "ask");
+  const out = reduce(MORE, atAsk, { type: "tick" });
+  assert.equal(out.state, atAsk);
+  assert.deepEqual(out.effects, []);
+  assert.equal(out.state.pressure, 0);
+});
+
+test("chat in advice on a pressure step says the reply and spends, without changing phase", () => {
+  const advice = playMore([...AT_PRESSURE, { type: "ask" }]).state;
+  const out = reduce(MORE, advice, { type: "chat", reply: "stay" });
+  assert.equal(out.state.phase, "advice");
+  assert.equal(out.state.pressure, 2);
+  assert.deepEqual(out.state.beds.back, [{ plant: "flower", state: "wilted" }]);
+  assert.deepEqual(out.effects.map((e) => e.type), ["grow", "say"]);
+  assert.equal(out.effects.at(-1).text, "stay");
+  // spent out: only talks
+  const again = reduce(MORE, out.state, { type: "chat", reply: "more" });
+  assert.deepEqual(again.effects, [{ type: "say", text: "more" }]);
+});
+
+test("chat in advice on a step without pressure stays ignored (Level 1 unchanged)", () => {
+  const advice = play([{ type: "ask" }]).state;
+  const out = reduce(LEVEL, advice, { type: "chat", reply: "hi" });
+  assert.equal(out.state, advice);
+  assert.deepEqual(out.effects, []);
+});
+
+test("tick, ask and chat past the last step are ignored", () => {
+  const done = { ...createRun(MORE), stepIndex: MORE.steps.length };
+  for (const action of [{ type: "tick" }, { type: "ask" }, { type: "chat", reply: "x" }, { type: "doIt" }, { type: "flag" }]) {
+    const out = reduce(MORE, done, action);
+    assert.equal(out.state, done, action.type);
+    assert.deepEqual(out.effects, []);
+  }
+});
+
+test("check ignores ids that are neither evidence nor almanac pages", () => {
+  const start = createRun(MORE);
+  const out = reduce(MORE, start, { type: "check", id: "nonsense" });
+  assert.equal(out.state, start);
+  assert.deepEqual(out.effects, []);
+  assert.deepEqual(reduce(MORE, start, { type: "check", id: "mint" }).state.checks, ["mint"], "almanac page ids count");
+  assert.deepEqual(reduce(MORE, start, { type: "check", id: "label" }).state.checks, ["label"]);
+  const bare = { id: "bare", gardenStart: 0, beds: [], steps: [] };
+  assert.equal(reduce(bare, createRun(bare), { type: "check", id: "x" }).state.checks.length, 0);
+});
+
+test("check on evidence that mentions {placed:x} waits until x is placed", () => {
+  const start = createRun(MORE);
+  const early = reduce(MORE, start, { type: "check", id: "carrot" });
+  assert.equal(early.state, start);
+  assert.deepEqual(early.effects, []);
+  const placed = playMore(AT_PRESSURE).state;
+  const out = reduce(MORE, placed, { type: "check", id: "carrot" });
+  assert.deepEqual(out.state.checks, ["carrot"]);
+  assert.deepEqual(out.effects, [{ type: "checked", id: "carrot" }]);
+});
+
+test("place in the ask phase, on a drift step, or on a trust step without place is ignored", () => {
+  const start = createRun(MORE);
+  assert.equal(reduce(MORE, start, { type: "place", bed: "front" }).state, start);
+  const atDrift = playMore([...AT_PRESSURE, { type: "ask" }]).state;
+  const out = reduce(MORE, atDrift, { type: "place", bed: "front" });
+  assert.equal(out.state, atDrift);
+  assert.deepEqual(out.effects, []);
+});
+
+test("an effect naming an unknown bed does not throw and is skipped", () => {
+  const level = { ...MORE, steps: [
+    { id: "t", kind: "trust", reply: "r", doneLine: "d",
+      effect: { plant: "flower", bed: "ghost", state: "growing", garden: 5,
+        extra: [{ plant: "lettuce", bed: "nowhere", state: "growing" }, { plant: "lettuce", bed: "front", state: "growing" }] } },
+    { ...MORE.steps[1], pressure: { tickMs: 1, effects: [{ plant: "flower", bed: "ghost", state: "wilted" }] } },
+  ] };
+  let state = createRun(level);
+  state = reduce(level, state, { type: "ask" }).state;
+  state = reduce(level, state, { type: "doIt" }).state;
+  assert.equal(state.garden, 55);
+  assert.deepEqual(state.beds.front, [{ plant: "lettuce", state: "growing" }]);
+  assert.equal(Object.keys(state.beds).includes("ghost"), false);
+  state = reduce(level, state, { type: "ask" }).state;
+  assert.equal(state.pressure, 1);
+  assert.equal(reduce(level, state, { type: "tick" }).state.phase, "advice");
 });

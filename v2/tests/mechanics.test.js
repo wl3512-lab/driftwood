@@ -62,8 +62,8 @@ test("pressure: pressureLevel runs 0 → 1 over the step's effects", () => {
   assert.equal(pressureLevel(undefined, { pressure: 0 }), 0);
 });
 
-test("pressure: shouldTick only while asking or deciding, visible, on a timed pressure step", () => {
-  assert.equal(shouldTick(PRESSURE_STEP, "ask", false), true);
+test("pressure: shouldTick only while deciding (advice), visible, on a timed pressure step", () => {
+  assert.equal(shouldTick(PRESSURE_STEP, "ask", false), false, "the clock waits until Bugs has said his piece");
   assert.equal(shouldTick(PRESSURE_STEP, "advice", false), true);
   assert.equal(shouldTick(PRESSURE_STEP, "advice", true), false, "paused while the tab is hidden");
   for (const phase of ["name", "fix", "reanswer", "reveal"]) assert.equal(shouldTick(PRESSURE_STEP, phase, false), false, phase);

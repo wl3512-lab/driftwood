@@ -36,7 +36,11 @@ for (const level of Object.values(LEVELS)) {
         if (e.plant) assert.ok(bedIds.has(e.bed), `${step.id}: bed ${e.bed} exists`);
         for (const x of e.extra || []) assert.ok(bedIds.has(x.bed), `${step.id}: extra bed ${x.bed} exists`);
       }
-      for (const p of step.pressure?.effects || []) assert.ok(bedIds.has(p.bed), `${step.id}: pressure bed ${p.bed} exists`);
+      // Pressure effects are applied as written (never resolved), so they must name real beds.
+      for (const p of step.pressure?.effects || []) {
+        assert.ok(!String(p.bed).startsWith("@"), `${step.id}: pressure effects can't use @item beds`);
+        assert.ok(level.beds.some((x) => x.id === p.bed), `${step.id}: pressure bed ${p.bed} exists`);
+      }
       if (step.place) for (const b of step.place.beds) assert.ok(level.beds.some((x) => x.id === b), `${step.id}: place bed ${b}`);
       if (step.kind !== "drift") continue;
       assert.ok(step.flawOptions.some((o) => o.id === step.correctFlaw), "correct flaw is an option");

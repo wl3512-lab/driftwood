@@ -46,23 +46,20 @@ export function currentStep(level, state) {
 export function applyGarden(state, effect) {
   const beds = {};
   for (const [id, list] of Object.entries(state.beds)) beds[id] = list.map((p) => ({ ...p }));
+  const put = (x) => {
+    const list = beds[x.bed];
+    if (!list) return; // unknown bed: skip rather than crash
+    const existing = list.find((p) => p.plant === x.plant);
+    if (existing) existing.state = x.state;
+    else list.push({ plant: x.plant, state: x.state });
+  };
   if (effect.water) {
     for (const list of Object.values(beds)) {
       for (const p of list) if (p.state === "growing") p.state = "thriving";
     }
   }
-  if (effect.plant) {
-    const list = beds[effect.bed];
-    const existing = list.find((p) => p.plant === effect.plant);
-    if (existing) existing.state = effect.state;
-    else list.push({ plant: effect.plant, state: effect.state });
-  }
-  for (const x of effect.extra || []) {
-    const list = beds[x.bed];
-    const existing = list.find((p) => p.plant === x.plant);
-    if (existing) existing.state = x.state;
-    else list.push({ plant: x.plant, state: x.state });
-  }
+  if (effect.plant) put(effect);
+  for (const x of effect.extra || []) put(x);
   const garden = Math.max(0, Math.min(100, state.garden + (effect.garden || 0)));
   return { ...state, beds, garden };
 }
@@ -93,13 +90,25 @@ export function reduce(level, state, action) {
   const step = currentStep(level, state);
   const fx = (effect, memory = state.memory) => resolveEffect(level, memory, effect);
 
-  // Looking something up works in any phase until the reveal, and only once per id.
+  // Looking something up works in any phase until the reveal, once per id, and only
+  // for ids the level knows (evidence cards or almanac pages). Evidence whose lines
+  // mention {placed:x} stays shut until the player has placed x.
   if (action.type === "check") {
-    if (state.phase === "reveal" || !action.id || state.checks.includes(action.id)) return IGNORED(state);
-    return { state: { ...state, checks: [...state.checks, action.id] }, effects: [{ type: "checked", id: action.id }] };
+    const id = action.id;
+    if (state.phase === "reveal" || !id || state.checks.includes(id)) return IGNORED(state);
+    const card = (level.evidence || []).find((e) => e.id === id);
+    const page = (level.almanac?.pages || []).find((p) => p.id === id);
+    if (!card && !page) return IGNORED(state);
+    for (const line of card?.lines || []) {
+      for (const m of line.matchAll(/\{placed:([a-z]+)\}/g)) if (!state.memory[m[1]]) return IGNORED(state);
+    }
+    return { state: { ...state, checks: [...state.checks, id] }, effects: [{ type: "checked", id }] };
   }
+  // Past the last step there is nothing left to act on.
+  if (!step) return IGNORED(state);
+  // Ticks only spend once Bugs has made his pitch (advice), never while the player is still reading.
   if (action.type === "tick") {
-    if (!step.pressure || !["ask", "advice"].includes(state.phase)) return IGNORED(state);
+    if (!step.pressure || state.phase !== "advice") return IGNORED(state);
     return spend(step, state);
   }
 
@@ -120,6 +129,11 @@ export function reduce(level, state, action) {
     }
 
     case "advice": {
+      // Chatting with a pressure helper keeps costing the garden; no phase change.
+      if (action.type === "chat" && step.pressure) {
+        const paid = spend(step, state);
+        return { state: paid.state, effects: [...paid.effects, { type: "say", text: action.reply }] };
+      }
       if (action.type === "place" && step.kind === "trust" && step.place) {
         if (!step.place.beds.includes(action.bed)) return IGNORED(state);
         const memory = { ...state.memory, [step.place.item]: action.bed };
