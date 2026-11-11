@@ -246,3 +246,36 @@
   .scene__ground { grid-template-columns: 1fr; }
   .packets { flex-direction: row; flex-wrap: wrap; order: -1; }
 }
+/* Small landscape phones (568×320, 667×375): side by side, the garden would
+   only get ~290px, which clipped the meter and pushed bed labels under the
+   packets. Here the packets become one row above the beds (sharing the width,
+   text wrapping), bed labels wrap upward inside their bed's width, the top bar
+   tightens, and Mango/Luna shrink into the corner of the sky. */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .level { grid-template-columns: minmax(0, 1fr) minmax(220px, 40%); }
+  .scene__top { gap: 6px; padding: 6px 8px 0; }
+  .btn--map { padding: 0.4rem 0.45rem; font-size: 0.8rem; }
+  .goal { flex: 1 1 auto; min-width: 0; max-width: none; padding: 0.25rem 0.45rem; box-shadow: 2px 2px 0 var(--ink); }
+  .goal__level { font-size: 0.6rem; }
+  .goal__title { font-size: 0.85rem; line-height: 1.15; }
+  .scene__top .meter { flex: none; min-width: 0; width: 5.6rem; padding: 0.3rem 0.4rem; font-size: 0.7rem; box-shadow: 2px 2px 0 var(--ink); }
+  .meter__bar { height: 8px; margin-top: 0.2rem; }
+  .scene__ground { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); align-items: stretch; gap: 2.3rem; padding: 8px 8px 6px; }
+  .packets { order: -1; flex-direction: row; flex-wrap: nowrap; gap: 4px; }
+  .level .packets { max-width: calc(100% - 3.25rem); } /* leaves Mango's column free */
+  .packet { flex: 1 1 0; min-width: 0; padding: 2px 4px; box-shadow: 1px 1px 0 var(--ink); }
+  .packet span { overflow-wrap: anywhere; }
+  .beds { gap: 4px; }
+  .bed { min-height: 3.4rem; padding: 0.25rem; border-width: 3px; }
+  .plant { width: 44px; }
+  .level .bed:not(.bed--shady) > .bed__label,
+  .bed--shady > .bed__label {
+    top: auto; left: -3px; bottom: calc(100% + 3px);
+    max-width: calc(100% + 6px); white-space: normal; line-height: 1.15; font-size: 0.75rem;
+  }
+  /* The shady label sits at the same height as the others (above the canopy it
+     would run into the packets row); the canopy peeks out behind it. */
+  .bed--shady > .bed__label { bottom: calc(100% + 3px); z-index: 1; }
+  .bed--shady::before { top: -20px; right: -3px; width: 60%; height: 16px; border-width: 3px; }
+  .helper { left: auto; right: 10px; bottom: auto; top: 30%; width: 40px; z-index: 0; }
+}
