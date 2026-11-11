@@ -13,7 +13,7 @@ export function renderReveal(root, level, state, { onContinue }) {
       h("p", { class: "crt__line" }, r.body),
       h("div", { class: "reveal__tip" },
         h("span", { class: "reveal__tip-label" }, "FIELD GUIDE"), r.tip),
-      h("p", { class: "reveal__stars", "aria-label": `${state.stars} of 3 stars` }, starText(state.stars)),
+      h("p", { class: "reveal__stars", role: "img", "aria-label": `${state.stars} of 3 stars` }, starText(state.stars)),
       h("button", { class: "btn btn--crt", onclick: onContinue }, "Add to field guide →")));
   focusFirst(root);
 }

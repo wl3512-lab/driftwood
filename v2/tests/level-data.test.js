@@ -37,6 +37,7 @@ for (const level of Object.values(LEVELS)) {
       for (const o of step.flawOptions) if (o.id !== step.correctFlaw) assert.ok(step.flawHints[o.id], `hint for ${o.id}`);
       for (const o of step.fixOptions) if (o.id !== step.correctFix) assert.ok(step.fixHints[o.id], `hint for ${o.id}`);
       assert.ok(step.fixedReply);
+      for (const key of ["badOutcome", "goodOutcome"]) assert.equal(typeof step[key], "string", `${step.id}: ${key} line`);
     }
   });
 

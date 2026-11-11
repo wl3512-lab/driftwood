@@ -16,15 +16,16 @@ export function renderSplash(root, { onBegin }) {
 export function renderIntro(root, { onSubmit }) {
   const input = h("input", {
     id: "player-name", name: "name", autocomplete: "nickname", maxlength: 24,
-    placeholder: "your name", "data-autofocus": finePointer() || null,
+    placeholder: "your name",
   });
+  const submit = h("button", { class: "btn btn--crt", type: "submit" }, "Enter the garden");
   const form = h("form", {
     class: "intro__form",
     onsubmit: (e) => { e.preventDefault(); onSubmit(input.value.trim()); },
   },
     h("label", { for: "player-name" }, "What should they call you?"),
     input,
-    h("button", { class: "btn btn--crt", type: "submit" }, "Enter the garden"));
+    submit);
 
   root.replaceChildren(
     h("main", { class: "crt intro" },
@@ -32,5 +33,6 @@ export function renderIntro(root, { onSubmit }) {
       h("h1", { class: "crt__line crt__line--big" }, "These animals are AI assistants, like ChatGPT with fur."),
       h("p", { class: "crt__line" }, "Ask them for help building your garden."),
       form));
-  focusFirst(finePointer() ? root : form.querySelector("button"));
+  // Touch: focus the button, not the field, so the keyboard doesn't jump up unasked.
+  (finePointer() ? input : submit).focus({ preventScroll: true });
 }

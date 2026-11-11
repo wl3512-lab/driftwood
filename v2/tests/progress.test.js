@@ -65,3 +65,12 @@ test("only level 1 is open at first; finishing a level opens the next", () => {
   assert.equal(isUnlocked(after, 2, ids), true);
   assert.equal(isUnlocked(after, 3, ids), false);
 });
+
+test("load drops field-guide entries that aren't objects with a string levelId", () => {
+  const s = fakeStorage();
+  const good = { levelId: "level-1", flaw: "Sycophancy", tip: "Ask.", fooled: true };
+  s.setItem("dw2_progress", JSON.stringify({
+    name: "Ada", levels: {}, guide: [null, 7, "level-1", [], { levelId: 3 }, { flaw: "x" }, good],
+  }));
+  assert.deepEqual(loadProgress(s).guide, [good]);
+});

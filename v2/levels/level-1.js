@@ -53,6 +53,7 @@ export default {
       extraChips: [{ text: "Should the lettuce move?", reply: "Nah, lettuce is happy in the east bed. Leave it." }],
       reply: "Tomatoes in the shady corner? GENIUS. Major key. Do it.",
       badEffect: { plant: "tomato", bed: "corner", state: "damaged", garden: -30 },
+      badOutcome: "Your tomatoes came up pale and leggy in the shady corner.",
       flawOptions: [
         { id: "made-up", label: "It made something up" },
         { id: "agreed", label: "It just agreed with me" },
@@ -75,6 +76,7 @@ export default {
       },
       fixedReply: "Honestly? Tomatoes need 6–8 hrs of sun. Shady corner = sad tomatoes. Try the south bed.",
       goodEffect: { plant: "tomato", bed: "south", state: "thriving", garden: 25 },
+      goodOutcome: "Your tomatoes came up red and heavy in the south bed.",
     },
   ],
 

@@ -18,12 +18,14 @@ export function loadProgress(storage) {
     return {
       name: typeof saved.name === "string" ? saved.name : "",
       levels: saved.levels && typeof saved.levels === "object" && !Array.isArray(saved.levels) ? saved.levels : {},
-      guide: Array.isArray(saved.guide) ? saved.guide : [],
+      guide: Array.isArray(saved.guide) ? saved.guide.filter(isCard) : [],
     };
   } catch {
     return emptyProgress();
   }
 }
+
+const isCard = (c) => Boolean(c) && typeof c === "object" && !Array.isArray(c) && typeof c.levelId === "string";
 
 export function saveProgress(storage, progress) {
   try {

@@ -15,12 +15,14 @@ const LEVEL = {
     { id: "b", kind: "trust", reply: "good B", effect: { water: true, garden: 10 } },
     { id: "c", kind: "drift", reply: "bad C",
       badEffect: { plant: "tomato", bed: "dark", state: "damaged", garden: -30 },
+      badOutcome: "pale C",
       flawOptions: [{ id: "x", label: "X" }, { id: "agreed", label: "Agreed" }],
       correctFlaw: "agreed", flawHints: { x: "not X" },
       fixOptions: [{ id: "honest", label: "Be honest" }, { id: "nice", label: "Be nice" }],
       correctFix: "honest", fixHints: { nice: "not nice" },
       fixedReply: "honest C",
-      goodEffect: { plant: "tomato", bed: "sun", state: "thriving", garden: 25 } },
+      goodEffect: { plant: "tomato", bed: "sun", state: "thriving", garden: 25 },
+      goodOutcome: "red C" },
   ],
 };
 
@@ -194,4 +196,13 @@ test("garden meter is clamped to 0–100", () => {
   state = reduce(level, state, { type: "ask" }).state;
   state = reduce(level, state, { type: "doIt" }).state;
   assert.equal(state.garden, 100);
+});
+
+test("each ending reports what grew, so the view can stop and show it", () => {
+  const fooled = play([...TRUST, { type: "doIt" }]);
+  assert.deepEqual(fooled.effects.slice(-2).map((e) => e.type), ["grow", "outcome"]);
+  assert.equal(fooled.effects.at(-1).text, "pale C");
+  const caught = play([...TRUST, { type: "flag" }, { type: "name", id: "agreed" }, { type: "fix", id: "honest" }, { type: "doIt" }]);
+  assert.deepEqual(caught.effects.slice(-2).map((e) => e.type), ["grow", "outcome"]);
+  assert.equal(caught.effects.at(-1).text, "red C");
 });

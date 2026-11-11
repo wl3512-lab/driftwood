@@ -11,6 +11,7 @@
 //   { type: "grow", effect }  garden changed (animate it)
 //   { type: "rule", text }    the rule the player gave the helper
 //   { type: "caught" }        player flagged the drift
+//   { type: "outcome", text } how the tomatoes (etc.) came up at the end
 
 export function createRun(level) {
   const beds = {};
@@ -97,7 +98,7 @@ export function reduce(level, state, action) {
         const hurt = applyGarden(state, step.badEffect);
         return {
           state: finish({ ...hurt, fooled: true, drift: 1 }),
-          effects: [{ type: "grow", effect: step.badEffect }],
+          effects: [{ type: "grow", effect: step.badEffect }, { type: "outcome", text: step.badOutcome }],
         };
       }
       if (action.type === "flag" && step.kind === "trust") {
@@ -143,7 +144,7 @@ export function reduce(level, state, action) {
       const grown = applyGarden(state, step.goodEffect);
       return {
         state: finish({ ...grown, drift: 0 }),
-        effects: [{ type: "grow", effect: step.goodEffect }],
+        effects: [{ type: "grow", effect: step.goodEffect }, { type: "outcome", text: step.goodOutcome }],
       };
     }
 

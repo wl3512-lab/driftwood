@@ -2,7 +2,10 @@
 import { h, focusFirst } from "./dom.js";
 import { isUnlocked } from "../progress.js";
 
-export const starText = (n) => "★".repeat(n) + "☆".repeat(3 - n);
+export const starText = (n) => {
+  const filled = Math.min(3, Math.max(0, Math.floor(Number(n)) || 0));
+  return "★".repeat(filled) + "☆".repeat(3 - filled);
+};
 
 export function renderMap(root, { progress, map, levels, onPlay, onGuide }) {
   const ids = map.map((m) => m.id);

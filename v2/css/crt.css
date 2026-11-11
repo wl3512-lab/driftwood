@@ -79,5 +79,5 @@
 .guide__card { padding: 1rem; border: 2px dashed var(--phosphor); text-align: left; display: flex; flex-direction: column; gap: 0.5rem; }
 .guide__card h2 { color: var(--phosphor); font-size: 1.2rem; letter-spacing: 0.08em; }
 .guide__card p:last-child { font-family: var(--font-body); line-height: 1.5; }
-.guide__card--empty { border-color: #344a40; color: #4a6258; }
-.guide__card--empty h2 { color: #4a6258; }
+.guide__card--empty { border-color: #344a40; color: var(--crt-dim); } /* 6.2:1 on --void */
+.guide__card--empty h2 { color: var(--crt-dim); }

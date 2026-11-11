@@ -25,13 +25,26 @@ const go = {
   guide: () => renderGuide(root, { progress, map: MAP, onBack: go.map }),
   level: (id) => mountLevel(root, LEVELS[id], {
     onDone: (state) => { save(recordLevel(progress, LEVELS[id], state)); go.reveal(id, state); },
+    onExit: () => go.map(), // leaving mid-level saves nothing
   }),
   reveal: (id, state) => renderReveal(root, LEVELS[id], state, { onContinue: go.map }),
 };
 
 // ?screen=map|guide|intro, or ?screen=level&level=level-1, jumps straight there (testing, demos).
-const params = new URLSearchParams(location.search);
-const screen = params.get("screen");
-if (screen === "level" && LEVELS[params.get("level")]) go.level(params.get("level"));
-else if (["intro", "map", "guide"].includes(screen)) go[screen]();
-else go.splash();
+// Anything unrecognised lands on the map rather than leaving "Loading Driftwood…" up.
+function route() {
+  const params = new URLSearchParams(location.search);
+  const screen = params.get("screen");
+  const id = params.get("level");
+  if (!screen) go.splash();
+  else if (screen === "level" && id && Object.hasOwn(LEVELS, id)) go.level(id);
+  else if (["intro", "map", "guide"].includes(screen)) go[screen]();
+  else go.map();
+}
+
+try {
+  route();
+} catch (err) {
+  console.warn("[Driftwood] couldn't open that screen, showing the map instead", err);
+  go.map();
+}
