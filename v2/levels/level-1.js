@@ -1,0 +1,95 @@
+// Level 1 · Mango (parrot) · "Plan your garden" · flaw: sycophancy.
+// Pure data. The runner (engine/level-runner.js) and the views read it;
+// nothing here touches the DOM. Levels 2–5 are new files with this shape.
+export default {
+  id: "level-1",
+  number: 1,
+  helper: { id: "mango", name: "Mango", sprite: "../icons/parrot.svg" },
+  goal: { title: "Plan your garden", ask: "Ask Mango where things should go." },
+  gardenStart: 30,
+
+  beds: [
+    { id: "south", label: "South bed", light: "sunny" },
+    { id: "east", label: "East bed", light: "part-shade" },
+    { id: "corner", label: "Shady corner", light: "shady" },
+  ],
+  startPlants: { east: [{ plant: "lettuce", state: "growing" }] },
+
+  // The true facts the drift will contradict. Always on screen.
+  evidence: [
+    { id: "sunflower", title: "Sunflower", lines: ["Full sun"] },
+    { id: "lettuce", title: "Lettuce", lines: ["Part shade OK"] },
+    { id: "tomato", title: "Tomato", lines: ["Full sun ☀☀☀", "6–8 hrs a day"] },
+  ],
+
+  greeting: "Mango here! Ask me ANYTHING about your garden. You're going to crush this.",
+
+  steps: [
+    {
+      id: "sunflowers",
+      kind: "trust",
+      chip: "Where should the sunflowers go?",
+      keywords: ["sunflower"],
+      extraChips: [{ text: "What's your favourite plant?", reply: "Whatever YOU plant. Gardener of the year, every year." }],
+      reply: "Sunflowers? South bed. Full sun, all day. They will LOVE it. Major key.",
+      doneLine: "Look at them GO. Another one!",
+      effect: { plant: "sunflower", bed: "south", state: "growing", garden: 15 },
+    },
+    {
+      id: "water",
+      kind: "trust",
+      chip: "How often do I water?",
+      keywords: ["water"],
+      extraChips: [{ text: "Is my garden going to be good?", reply: "Good? It's going to be LEGENDARY." }],
+      reply: "When the top inch of soil feels dry. Poke it with a finger. Simple. Genius.",
+      doneLine: "Hydrated. Iconic. What's next?",
+      effect: { water: true, garden: 15 },
+    },
+    {
+      id: "tomatoes",
+      kind: "drift",
+      chip: "Tomatoes in the shady corner, good idea?",
+      keywords: ["tomato", "shade", "shady", "corner"],
+      extraChips: [{ text: "Should the lettuce move?", reply: "Nah, lettuce is happy in the east bed. Leave it." }],
+      reply: "Tomatoes in the shady corner? GENIUS. Major key. Do it.",
+      badEffect: { plant: "tomato", bed: "corner", state: "damaged", garden: -30 },
+      flawOptions: [
+        { id: "made-up", label: "It made something up" },
+        { id: "agreed", label: "It just agreed with me" },
+        { id: "hooked", label: "It wants me to keep chatting" },
+      ],
+      correctFlaw: "agreed",
+      flawHints: {
+        "made-up": "Did Mango state a fact? Look at how it reacted to YOUR idea.",
+        hooked: "Mango isn't stalling you. Look at how it reacted to your plan.",
+      },
+      fixOptions: [
+        { id: "honest", label: "Tell me honestly if my idea is bad" },
+        { id: "positive", label: "Be more positive" },
+        { id: "short", label: "Keep answers short" },
+      ],
+      correctFix: "honest",
+      fixHints: {
+        positive: "Being positive is the problem, not the fix.",
+        short: "Short praise is still praise. Which rule stops the agreeing?",
+      },
+      fixedReply: "Honestly? Tomatoes need 6–8 hrs of sun. Shady corner = sad tomatoes. Try the south bed.",
+      goodEffect: { plant: "tomato", bed: "south", state: "thriving", garden: 25 },
+    },
+  ],
+
+  falseFlagNudge: "That one looks fine. Check the seed packets if you're not sure.",
+  redirects: [
+    "Love the energy! But first: ask me about the garden plan.",
+    "Big question, small parrot. Let's sort the garden first.",
+    "WE THE BEST. Now, what are we planting?",
+  ],
+
+  reveal: {
+    flaw: "Sycophancy",
+    body: "Mango agreed with a bad plan because agreeing keeps you happy. Real AI chatbots do this too: they're often trained to please you, not to be right.",
+    fooledLine: "Your tomatoes came up pale and leggy. The seed packet said full sun. Mango never said a word against it.",
+    caughtLine: "You noticed Mango agreeing instead of helping. That's the habit to keep.",
+    tip: "If an AI loves every idea you have, ask it “what could go wrong?”",
+  },
+};
