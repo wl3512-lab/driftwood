@@ -83,6 +83,53 @@
 .level[data-scene="greenhouse"] .fence { top: 46%; height: 10px; border: 0; background: var(--sill); }
 .level[data-scene="greenhouse"] .prop--shelf { left: 24px; top: 30%; width: 56px; padding: 0 12px; border-bottom: 6px solid #5d3a1e; }
 
+/* The almanac (ui/almanac-view.js): a book panel on the scene's left, so the
+   evidence cards on the right stay in view and the mint card's pop is seen. */
+.almanac {
+  position: absolute; z-index: 4;
+  left: 16px; top: 84px; max-height: calc(100% - 96px);
+  width: min(23rem, calc(100% - 15rem - 64px));
+  display: flex; flex-direction: column; gap: 0.6rem;
+  padding: 0.6rem 0.75rem 0.75rem;
+  overflow-y: auto; overscroll-behavior: contain;
+  background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--ink); border-left: 10px solid #6b3a2a; /* the leather spine */
+  box-shadow: 4px 4px 0 var(--ink);
+  font-family: var(--font-ui);
+}
+.almanac[hidden] { display: none; }
+.almanac__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.almanac__title { font-size: 0.95rem; line-height: 1.25; }
+.almanac__close {
+  flex: none; width: 44px; height: 44px;
+  background: var(--paper); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 2px;
+  font: 700 1.4rem/1 var(--font-ui); cursor: pointer;
+}
+.almanac__close:hover { background: #fff3c4; }
+.almanac__label { display: block; margin-bottom: 0.25rem; font: 600 0.8rem var(--font-ui); }
+.almanac__row { display: flex; gap: 0.4rem; }
+.almanac__q {
+  flex: 1; min-width: 0; min-height: 44px; padding: 0.4rem 0.6rem;
+  border: 2px solid var(--ink); border-radius: 2px; background: var(--paper);
+  font: 1rem var(--font-body); color: var(--ink);
+}
+.almanac__go { flex: none; min-height: 44px; padding: 0.4rem 0.7rem; font-size: 0.85rem; }
+.almanac__tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.almanac__tab {
+  min-height: 44px; min-width: 44px; padding: 0.3rem 0.65rem;
+  background: #efe6cc; color: var(--ink);
+  border: 2px solid var(--ink); border-bottom-width: 4px; border-radius: 3px 3px 0 0;
+  font: 600 0.85rem var(--font-ui); cursor: pointer;
+}
+.almanac__tab:hover { background: #fff3c4; }
+.almanac__tab[aria-pressed="true"] { background: var(--paper); border-bottom-color: var(--paper); box-shadow: inset 0 -3px 0 #6b3a2a; }
+.almanac__page { padding: 0.5rem 0.65rem; background: var(--paper); border: 2px solid var(--ink); font: 0.95rem/1.4 var(--font-body); }
+.almanac__page:empty { display: none; }
+.almanac__page-title { margin-bottom: 0.25rem; font: 700 1rem var(--font-ui); }
+.almanac__page p + p { margin-top: 0.35rem; }
+.almanac__none { font-style: italic; }
+
 /* ======== Level 3 · the wild hedge at dusk ======== */
 .level[data-scene="hedge-dusk"] { --scene-sky: #f4a259; --scene-ground: #4f7d48; --hedge: #2e5a2a; }
 .level[data-scene="hedge-dusk"] .scene {
@@ -154,4 +201,22 @@
   }
   /* The shelf would sit on the first bed; the Almanac button carries the same icon. */
   .level[data-scene="greenhouse"] .prop--shelf { display: none; }
+  .almanac { left: 12px; top: 62px; max-height: calc(100% - 70px); width: auto; right: calc(10.5rem + 24px); gap: 0.45rem; padding: 0.45rem 0.6rem 0.6rem; }
+  .almanac__title { font-size: 0.85rem; }
+  .almanac__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* the placeholder and the dialog's name carry it */
+  .almanac__tabs { flex-wrap: nowrap; gap: 4px; }
+  .almanac__tab { flex: 1 1 auto; padding: 0.3rem 0.35rem; font-size: 0.75rem; }
+  .almanac__page { padding: 0.4rem 0.55rem; font-size: 0.9rem; }
+}
+/* Small landscape phones: the garden column is too narrow to share, so the book covers the
+   whole scene; the unlocked card is waiting when it closes (and is announced meanwhile). */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .almanac { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
+  /* The cards share the row with the tool buttons; the helper waits under the tools. */
+  .level:not([data-scene="yard"]) .packets { max-width: calc(100% - 7rem); }
+  .level:not([data-scene="yard"]) .helper { top: 37%; }
+}
+/* Phones in portrait: the garden is a strip above the dock, so the book takes its full width. */
+@media (max-width: 640px) and (min-height: 501px) {
+  .almanac { right: 12px; }
 }

@@ -166,7 +166,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
 
   function unlocked(id) {
     const e = level.evidence.find((x) => x.id === id);
-    if (!e) return;
+    if (!e?.locked) return; // only a locked card has anything new to show
     fresh.add(id);
     news = `Unlocked: ${t(e.title)}. ${e.lines.map(t).join(". ")}.`;
   }

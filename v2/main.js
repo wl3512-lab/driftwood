@@ -6,6 +6,8 @@ import { renderSplash, renderIntro } from "./ui/intro.js";
 import { renderMap, renderGuide } from "./ui/map.js";
 import { mountLevel } from "./ui/level-view.js";
 import { renderReveal } from "./ui/reveal.js";
+// Level tool views register themselves with ui/tools.js when loaded.
+import "./ui/almanac-view.js";
 
 const root = document.getElementById("app");
 const storage = (() => { try { return window.localStorage; } catch { return null; } })();

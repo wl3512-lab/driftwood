@@ -1,8 +1,9 @@
 // Every level the map knows about. Only built levels appear in LEVELS;
 // the rest show on the map as locked or "coming soon".
 import level1 from "./level-1.js";
+import level2 from "./level-2.js";
 
-export const LEVELS = { "level-1": level1 };
+export const LEVELS = { "level-1": level1, "level-2": level2 };
 
 export const MAP = [
   { number: 1, id: "level-1", helper: "Mango", sprite: "../icons/parrot.svg", title: "Plan your garden" },
