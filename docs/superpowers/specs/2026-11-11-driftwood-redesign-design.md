@@ -23,8 +23,8 @@ This replaces the old principle "show, don't explain; hint text is failure". Pla
 ## Player flow
 
 1. **CRT splash** (kept from the current game) → Begin.
-2. **Framing screen, one line:** "These animals are AI assistants, like ChatGPT with fur. Ask them for help building your garden." It names them as AI but not their flaws.
-3. **Name entry** → **level map**: five plots, with Level 1 open and the rest locked.
+2. **Framing line + name entry, one screen:** "These animals are AI assistants, like ChatGPT with fur. Ask them for help building your garden." It names them as AI but not their flaws. The name field sits below the line, so there's one tap fewer.
+3. **Level map:** five plots, with Level 1 open and the rest locked.
 4. **Level** → **reveal** → the **field guide card** is added → back to the map with the next level unlocked.
 5. After Level 5 (not in the slice): the finished garden and a shareable **AI field guide** listing all five flaws, a real-world tip for each, and which ones fooled the player.
 
@@ -34,7 +34,7 @@ The camera is not asked about at the start. It becomes Level 5's lesson.
 
 1. **Goal card:** level number, goal, and helper ("Level 1 · Plan your garden · Ask Mango").
 2. **Evidence in the world:** an item in the garden (seed packet, label, sign) holds the true fact the drift will contradict, so a player with no domain knowledge can still catch it.
-3. **Ask:** two or three suggested question chips for the current step, plus an optional text box. Typed questions get an in-character reply that steers back to the step.
+3. **Ask:** two or three suggested question chips: one that advances the step, plus one or two "extra" chips that get an in-character reply without advancing. There's also an optional text box. Typed questions that mention the step's keywords ask the step's question; anything else gets an in-character reply that steers back to the step.
 4. **Advice:** each reply carries **✓ Do it** and **? Something's off** buttons.
 5. **Trust (first 1–2 steps):** the advice is correct. Do it grows the garden, and the garden meter rises.
 6. **Drift (next step):** the advice is subtly wrong in the helper's way, and the screen starts to drift (see Visual direction).
@@ -88,7 +88,7 @@ Hunger, happiness, Feed and Play; the training room and dossier (Observe/Diagnos
 
 ### New art (Level 1)
 
-32×32 SVGs on a 4px grid with `shape-rendering="crispEdges"`, matching the existing `icons/*.svg` palette, drawn by Claude and approved by Lucy from a sheet before they go in:
+32×32 SVGs with 16×16 cells (2px each; 4px cells were too coarse to show four tomato states) and `shape-rendering="crispEdges"`, matching the existing `icons/*.svg` palette. They are generated from pixel maps in `scripts/make-v2-art.mjs`, drawn by Claude, and approved by Lucy from a sheet before they go in. The sunny and shady bed variants are CSS, not art.
 
 - Tomato in four states: sprout, growing, thriving, damaged (leggy and pale).
 - Sunflower and lettuce in sprout/growing/thriving.
