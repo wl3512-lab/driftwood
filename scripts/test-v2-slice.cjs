@@ -118,7 +118,8 @@ async function fooledPath(browser, size) {
   await page.getByRole("button", { name: "Add to field guide →" }).click();
   await page.waitForSelector(".plots");
   assert.match(await page.textContent('[data-level="level-1"]'), /★☆☆/);
-  assert.match(await page.textContent('[data-level="level-2"]'), /Coming soon/);
+  assert.match(await page.textContent('[data-level="level-2"]'), /Play/, "Level 2 is built and unlocks after Level 1");
+  assert.match(await page.textContent('[data-level="level-3"]'), /Locked/, "Level 3 stays locked until Level 2 is finished");
   await page.getByRole("button", { name: "Field guide 1/5" }).click();
   assert.match(await page.textContent(".guide"), /it fooled you/);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };

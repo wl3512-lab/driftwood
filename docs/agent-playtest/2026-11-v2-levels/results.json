@@ -1,0 +1,32 @@
+[
+  {
+    "test": "laptop/fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/perfect",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "small/landscape",
+    "status": "pass",
+    "longtasks": []
+  }
+]
