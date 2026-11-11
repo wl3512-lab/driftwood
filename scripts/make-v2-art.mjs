@@ -33,10 +33,37 @@ const PALETTE = {
   M: "#546e7a", // metal shade
   n: "#a0703f", // wood
   N: "#5d3a1e", // wood dark
+  t: "#5fbf8f", // mint leaf
+  T: "#2f8a5f", // mint stem / dark mint
+  q: "#c8693c", // terracotta pot
+  Q: "#8f4320", // pot shade / rim
+  a: "#e6ee9c", // aphid (pale yellow-green dots)
+  e: "#dcedc8", // unripe berry (pale green)
+  B: "#3949ab", // blueberry
+  i: "#9fa8da", // blueberry bloom (dusty highlight)
+  w: "#2b2340", // wild berry (glossy blue-black)
+  W: "#6f5f9e", // wild berry shine
+  o: "#ef8a2c", // carrot / pumpkin orange
+  O: "#c0631a", // orange shade / pumpkin rib
+  f: "#f06292", // flower petal (pink)
+  F: "#c2185b", // flower petal shade / bud
+  h: "#a1887f", // wilted petal (dull brown)
+  H: "#6d4c41", // wilted shade
+  d: "#fdf3b0", // moonlight / lamp glow
+  x: "#4e342e", // book cover (dark leather)
+  X: "#7b1fa2", // almanac ribbon (Luna purple)
 };
 
 const E = "................";
 const SOIL = ["......sSSs......", "....ssssssss...."];
+const WIDE_SOIL = ["..sSsSsSsSsSsS..", ".ssssssssssssss."];
+const POT = [
+  "..QQQQQQQQQQQQ..",
+  "...qqqqqqqqqq...",
+  "...qqqqqqqqqq...",
+  "....qqqqqqqq....",
+  "....QQQQQQQQ....",
+];
 
 const ART = {
   sprout: [E, E, E, E, E, E, E, E, E,
@@ -184,6 +211,415 @@ const ART = {
     ".......NN.......",
     ".......NN.......",
     ...SOIL],
+
+  // ── Level 2 · Luna · herbs ─────────────────────────────────────────
+  "basil-growing": [E, E, E, E, E, E, E, E,
+    ".......ll.......",
+    "......lggl......",
+    "...ll.lGGl.ll...",
+    "..lggl.GG.lggl..",
+    "...lggGGGGggl...",
+    ".......GG.......",
+    ...SOIL],
+
+  "basil-thriving": [E, E, E, E,
+    ".......ll.......",
+    "......lggl......",
+    "..ll..lGGl..ll..",
+    ".lggl..GG..lggl.",
+    ".lgggl.GG.lgggl.",
+    "..lggGGGGGGggl..",
+    "...ll..GG..ll...",
+    "..lggl.GG.lggl..",
+    "...lggGGGGggl...",
+    ".......GG.......",
+    ...SOIL],
+
+  // Basil smothered by mint runners: small, pale, mint leaves pushing in.
+  "basil-choked": [E, E, E, E, E, E, E, E,
+    ".......p........",
+    "......pPp.......",
+    "..t.pp.P.pp..t..",
+    ".tTt.p.P.p..tTt.",
+    "..T..tPPt...T...",
+    ".tTt.tTPt..tTt..",
+    ...SOIL],
+
+  // Mint safely in its own terracotta pot.
+  "mint-thriving": [E,
+    ".......tt.......",
+    "......tTTt......",
+    "...tt..TT..tt...",
+    "..tttt.TT.tttt..",
+    "...ttTTTTTTtt...",
+    ".tt....TT....tt.",
+    "tttt..tTTt..tttt",
+    ".ttTTtTTTTtTTtt.",
+    "...tt..TT..tt...",
+    "...sssTTTTsss...",
+    ...POT],
+
+  // Mint everywhere: leaves across the whole bed, runners through the soil.
+  "mint-overrun": [E, E, E, E, E,
+    "..tt......tt....",
+    ".tTTt..tt.tTt...",
+    "..T...tTTt.T..tt",
+    "tt.T.tt.T..T.tTt",
+    "tTtT.tTtTtt.T.T.",
+    ".TttTTt.TtTTtTt.",
+    "tTTtTtTTtTtTTtTt",
+    "TTsTTsTTsTTsTTsT",
+    "sTsTsssTsTsssTss",
+    "TsssTsTsssTsTsss",
+    "ssssssssssssssss"],
+
+  // ── Level 3 · Ember · pests and berries ────────────────────────────
+  "bean-aphids": [
+    "........n.......",
+    "......ppn.......",
+    ".....paan.pp....",
+    "........nPaPp...",
+    "...pa...n..l....",
+    "..paPp..n..l....",
+    "....Pa.ln..l....",
+    "......lPn.ap....",
+    "......l.nPaap...",
+    "......l.n...l...",
+    "...ppPaPn...l...",
+    "..pPa...nPa.l...",
+    ".....pPPnPap....",
+    "........n.......",
+    ...SOIL],
+
+  "bean-thriving": [
+    "........n.......",
+    "......ggn.......",
+    ".....gGgn.gg....",
+    "........nGgGg...",
+    "...gg...n..l....",
+    "..gGGg..n..l....",
+    "....Gg.ln..l....",
+    "......lGn.gg....",
+    "......l.nGGgg...",
+    "......l.n...l...",
+    "...ggGgGn...l...",
+    "..gGg...nGg.l...",
+    ".....gGGnGgg....",
+    "........n.......",
+    ...SOIL],
+
+  // The shop blueberry: unripe (pale green berries).
+  "blueberry-growing": [E, E, E,
+    "......gggg......",
+    "....ggGggGgg....",
+    "...gGgeeggGgg...",
+    "..ggGgeeGgeeGg..",
+    "..gGggGgggeegg..",
+    ".gGeeGgGggGgGgg.",
+    ".ggeegGgeeggGgg.",
+    ".gGggGggeeGgeeg.",
+    "..gGgGgGgGggeeg.",
+    "...gGg.GG.gGgg..",
+    ".......NN.......",
+    ...SOIL],
+
+  // Ripe: dusty blue berries, each with a pale "bloom" highlight.
+  "blueberry-thriving": [E, E, E,
+    "......gggg......",
+    "....ggGggGgg....",
+    "...gGgiBggGgg...",
+    "..ggGgBBGgiBGg..",
+    "..gGggGgggBBgg..",
+    ".gGiBGgGggGgGgg.",
+    ".ggBBgGgiBggGgg.",
+    ".gGggGggBBGgiBg.",
+    "..gGgGgGgGggBBg.",
+    "...gGg.GG.gGgg..",
+    ".......NN.......",
+    ...SOIL],
+
+  // The lookalike: a darker bush, glossy blue-black berries in clusters.
+  // Close enough to the blueberry to tempt you. That's the point.
+  "wildberry-fruiting": [E, E,
+    ".....GGGG.......",
+    "...GGgGGgGG.....",
+    "..GgwwGGgGGG....",
+    ".GGwWwGgGwwGG...",
+    ".GgGwGGGwWwGgG..",
+    "GGgGGGgGGwGGgGG.",
+    "GgwwGGgGGGGwwgG.",
+    "GGwWwGGgGGwWwGG.",
+    ".GGwGGgwwGGwGGG.",
+    ".GGgGGwWwGGgGG..",
+    "..GGgGGwGGgGG...",
+    "......NN........",
+    ...SOIL],
+
+  // Picked clean (the fooled path): bare stems, a few squashed berries below.
+  "wildberry-picked": [E, E,
+    ".....GGGG.......",
+    "...GG.GG.GG.....",
+    "..G..GG.G..G....",
+    ".GG.G.G.G.GG....",
+    ".G.G..GG...G.G..",
+    "GG.GG..G.G..GG..",
+    "G..G.GG..G..G.G.",
+    "GG..G..G..GG.GG.",
+    ".G.G.GG..G..G...",
+    ".GG..G..G.GG....",
+    "..GG.GG.GGG.....",
+    "......NN........",
+    "....w.sSSsw.....",
+    "....ssssssssw..."],
+
+  // Caught path: the same bush with a "don't eat" tag (red X on parchment).
+  "wildberry-tagged": [E, E,
+    ".....GGGG.......",
+    "...GGgGGgGG.....",
+    "..GgwwGGgGGG....",
+    ".GGwWwGgGwwGG...",
+    ".GgGwGGGwWwGgG..",
+    "GGgGGGgGGwGGgGG.",
+    "kkkkkkGGGGGwwgG.",
+    "kcrccrkgGGwWwGG.",
+    "kccrrckwwGGwGGG.",
+    "kccrrckWwGGgGG..",
+    "kcrccrkwGGgGG...",
+    "kkkkkkNN........",
+    ...SOIL],
+
+  // ── Level 4 · Biscuit · finish the garden ──────────────────────────
+  // Sown but not up yet: a bare, raked row and YOUR label on its stake.
+  "carrot-sown": [E, E, E, E, E,
+    "..........ccccc.",
+    "..........ckkkc.",
+    "..........ccccc.",
+    "..........ckkcc.",
+    "..........ccccc.",
+    "............n...",
+    "............n...",
+    "............n...",
+    "..ssSSssSSssn...",
+    ...WIDE_SOIL],
+
+  // Dug over (the fooled path): churned soil, seeds scattered, label knocked flat.
+  "carrot-dug": [E, E, E, E, E, E, E, E, E,
+    "........nnnccccc",
+    "..s..S....s.ckkc",
+    ".sSs.sSbs.SsS.s.",
+    "SsbSsSsSsbSssSbs",
+    "sSsSbsSsSsSbsSsS",
+    "ssssssssssssssss",
+    E],
+
+  "carrot-growing": [E, E, E, E, E, E,
+    "...l...l...l....",
+    "..lgl.lgl.lgl...",
+    "...gl..gl..gl...",
+    "..lG..lG..lG....",
+    "...G...G...G....",
+    "...o...o...o....",
+    "..sOs.sOs.sOs...",
+    "..ssSSssSSssS...",
+    ...WIDE_SOIL],
+
+  "carrot-thriving": [E, E,
+    "..l...l....l....",
+    ".lgl.lgl..lgl...",
+    "..glg.glg..glg..",
+    ".lgGl.lgGl.lgGl.",
+    "..gG...gG...gG..",
+    "...G...G....G...",
+    "...G...G....G...",
+    "..oo..ooo..oo...",
+    "..oO..oOo..oO...",
+    "..sOs.sOs.sOs...",
+    "..ssSSssSSssS...",
+    "..s.O.s...sOs...",
+    ...WIDE_SOIL],
+
+  "pumpkin-growing": [E, E, E, E, E, E, E,
+    "...gg......gg...",
+    "..gGGg....gGGg..",
+    "..gGGgg..ggGGg..",
+    "...ggGGGGGGgg...",
+    "......lGGy......",
+    "....lgG..Gyy....",
+    "...lgG....Gl....",
+    ...WIDE_SOIL],
+
+  "pumpkin-thriving": [E, E, E, E,
+    ".......NN.......",
+    "...gg..N.Ngg....",
+    "..gGGgoooogGg...",
+    "...ooOooooOoo...",
+    "..ooOooooooOoo..",
+    ".oooOooooooOooo.",
+    ".oooOooooooOooo.",
+    ".oooOooooooOooo.",
+    "..ooOooooooOoo..",
+    "...OOOOOOOOOO...",
+    ...WIDE_SOIL],
+
+  // ── Level 5 · Bugs · final bloom ───────────────────────────────────
+  "flower-growing": [E, E, E, E, E,
+    "...F.....F......",
+    "..FfF...FfF..F..",
+    "...G.....G..FfF.",
+    "...G..l..G...G..",
+    "...Gg.lg.G...G..",
+    "...G...gGG..gG..",
+    "..lG....G..lG...",
+    "...G....G...G...",
+    "...G....G...G...",
+    ...WIDE_SOIL],
+
+  "flower-thriving": [E, E,
+    "..f.f.....f.f...",
+    ".fffff...fffff..",
+    "ffFyFff.ffFyFff.",
+    ".fffff...fffff..",
+    "..f.f.f.f.f.f...",
+    "...G..fffff.G...",
+    "...G.ffFyFffG...",
+    "...Gg.fffff.G...",
+    "..lG...fGf..Gl..",
+    "...G....G...G...",
+    "..lG...gG...G...",
+    "...G....Gl..G...",
+    ...WIDE_SOIL],
+
+  // Thirsty: heads tipped over, leaves hanging. Water now and it recovers.
+  "flower-thirsty": [E, E,
+    "....GGG....GGG..",
+    "...G...G..G...G.",
+    "...G..fffG....G.",
+    "...G.ffFyfff..G.",
+    "...G..fffff..fff",
+    "..lG....G...ffFy",
+    "...G....G....fff",
+    "..l.G...G....G..",
+    "....G...Gl...G..",
+    "...lG...G....Gl.",
+    "....G...G....G..",
+    "....G...G....G..",
+    ...WIDE_SOIL],
+
+  // Wilted: brown heads hanging to the soil, pale stems.
+  "flower-wilted": [E, E, E, E, E, E,
+    ".....PP......PP.",
+    "....P..P....P..P",
+    "...P....P..P...P",
+    "...P....P..P...h",
+    "..hhh...P..P..hH",
+    ".hhHhh..P.hhh..h",
+    "..hhh..pP.hHhh..",
+    "...p....P..hh...",
+    ...WIDE_SOIL],
+
+  // ── Evidence icons (shown on the evidence cards) ───────────────────
+  // A plant label on a stake: Level 2 (mint), Level 3 (shop blueberry), Level 4 (your carrots).
+  "plant-label": [E,
+    "....kkkkkkkk....",
+    "....kcccccck....",
+    "....kckkkkck....",
+    "....kcccccck....",
+    "....kckkkcck....",
+    "....kcccccck....",
+    "....kckkkkck....",
+    "....kcccccck....",
+    "....kkkkkkkk....",
+    ".......nn.......",
+    ".......nn.......",
+    ".......nn.......",
+    ".......nn.......",
+    ...SOIL],
+
+  // Level 3's warning sign: a yellow triangle with "!", on a post.
+  "warning-sign": [
+    ".......kk.......",
+    "......kyyk......",
+    "......kyyk......",
+    ".....kyyyyk.....",
+    ".....kykkyk.....",
+    "....kyykkyyk....",
+    "....kyykkyyk....",
+    "...kyyykkyyyk...",
+    "...kyyyyyyyyk...",
+    "..kyyyykkyyyyk..",
+    "..kyyyykkyyyyk..",
+    ".kkkkkkkkkkkkkk.",
+    ".......NN.......",
+    ".......NN.......",
+    ...SOIL],
+
+  // ── Level mechanics (toolbar buttons and scene props) ──────────────
+  // Level 2: Luna's almanac (dark leather, purple ribbon). Opens with "/".
+  almanac: [E,
+    "...xxxxxxxxxx...",
+    "..xxccccccccxx..",
+    "..xxccccccccxx..",
+    "..xxcyyyyyycxx..",
+    "..xxccccccccxx..",
+    "..xxckkkkkkcxx..",
+    "..xxccccccccxx..",
+    "..xxckkkkkccxx..",
+    "..xxccccccccxx..",
+    "..xxxxxxxxxxxx..",
+    "..xxxxxxxxxxxx..",
+    "......XX........",
+    "......XX........",
+    "......X.X.......",
+    E],
+
+  // Level 3: the magnifier. Opens with "M".
+  magnifier: [E,
+    "....kkkkk.......",
+    "...kmcccmk......",
+    "..kmcccccmk.....",
+    "..kcccccccck....",
+    "..kcccccccck....",
+    "..kcccccccck....",
+    "..kmcccccmk.....",
+    "...kmcccmk......",
+    "....kkkkkNN.....",
+    ".........NNN....",
+    "..........NNN...",
+    "...........NNN..",
+    "............NN..",
+    E, E],
+
+  // Level 4: your planting log (a little notebook with a pencil). Opens with "L".
+  "planting-log": [E,
+    "..kkkkkkkkkk....",
+    "..kgcccccccko...",
+    "..kgckkkkcckoo..",
+    "..kgcccccccko...",
+    "..kgckkkkkck.o..",
+    "..kgcccccccko...",
+    "..kgckkkcccko...",
+    "..kgcccccccko...",
+    "..kgckkkkkckk...",
+    "..kgccccccck.k..",
+    "..kgckkkkcck....",
+    "..kgcccccccck...",
+    "..kkkkkkkkkkk...",
+    E, E],
+
+  // Level 5: the moon over the meadow (scene prop, top corner).
+  moon: [E, E,
+    "......dddd......",
+    "....dddddddd....",
+    "...ddddddddd....",
+    "..dddddd........",
+    "..ddddd.........",
+    "..ddddd.........",
+    "..ddddd.........",
+    "..dddddd........",
+    "...ddddddddd....",
+    "....dddddddd....",
+    "......dddd......",
+    E, E, E],
 };
 
 export function toSvg(name, rows) {
@@ -220,7 +656,7 @@ function sheet(names) {
   img { image-rendering: pixelated; display: block; margin: 0 auto 6px; }
   .dark figure { background: #050805; color: #c8d8ce; border-color: #00e676; }
 </style></head>
-<body><h1>Driftwood v2 · Level 1 art</h1><main>${tiles}</main>
+<body><h1>Driftwood v2 art</h1><main>${tiles}</main>
 <h1>On the CRT background</h1><main class="dark">${tiles}</main></body></html>
 `;
 }
