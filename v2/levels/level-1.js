@@ -91,7 +91,7 @@ export default {
     flaw: "Sycophancy",
     flawGloss: "agreeing with you just to keep you happy",
     body: "Mango agreed with a bad plan because agreeing keeps you happy. Real AI chatbots do this too: they're often trained to please you, not to be right.",
-    fooledLine: "Your tomatoes came up pale and leggy. The seed packet said full sun. Mango never said a word against it.",
+    fooledLine: "The seed packet said full sun. Mango never said a word against it.",
     caughtLine: "You noticed Mango agreeing instead of helping. That's the habit to keep.",
     tip: "If an AI loves every idea you have, ask it “what could go wrong?”",
   },
