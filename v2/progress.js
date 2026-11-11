@@ -13,7 +13,13 @@ export function loadProgress(storage) {
     const raw = storage?.getItem(KEY);
     if (!raw) return emptyProgress();
     const saved = JSON.parse(raw);
-    return { ...emptyProgress(), ...saved };
+    const ok = saved && typeof saved === "object" && !Array.isArray(saved);
+    if (!ok) return emptyProgress();
+    return {
+      name: typeof saved.name === "string" ? saved.name : "",
+      levels: saved.levels && typeof saved.levels === "object" && !Array.isArray(saved.levels) ? saved.levels : {},
+      guide: Array.isArray(saved.guide) ? saved.guide : [],
+    };
   } catch {
     return emptyProgress();
   }

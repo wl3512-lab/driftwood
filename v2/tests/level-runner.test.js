@@ -102,6 +102,9 @@ test("a wrong fix pick hints, stays in fix, and costs a star", () => {
   const { state, effects } = play([...TRUST, { type: "flag" }, { type: "name", id: "agreed" }, { type: "fix", id: "nice" }]);
   assert.equal(state.phase, "fix");
   assert.equal(effects.at(-1).text, "not nice");
+  const end = play([...TRUST, { type: "flag" }, { type: "name", id: "agreed" }, { type: "fix", id: "nice" },
+    { type: "fix", id: "honest" }, { type: "doIt" }]);
+  assert.equal(end.state.stars, 2);
 });
 
 test("flagging good advice nudges without leaving the step and costs a star", () => {
@@ -110,6 +113,28 @@ test("flagging good advice nudges without leaving the step and costs a star", ()
   assert.equal(state.stepIndex, 0);
   assert.equal(state.falseFlags, 1);
   assert.equal(effects.at(-1).text, "Looks fine.");
+  const end = play([{ type: "ask" }, { type: "flag" }, { type: "doIt" }, { type: "ask" }, { type: "doIt" }, { type: "ask" },
+    { type: "flag" }, { type: "name", id: "agreed" }, { type: "fix", id: "honest" }, { type: "doIt" }]);
+  assert.equal(end.state.phase, "reveal");
+  assert.equal(end.state.stars, 2);
+});
+
+test("wrong name + wrong fix + false flag reduces to 1 star", () => {
+  const { state } = play([{ type: "ask" }, { type: "flag" }, { type: "doIt" }, { type: "ask" }, { type: "doIt" }, { type: "ask" },
+    { type: "flag" }, { type: "name", id: "x" }, { type: "name", id: "agreed" },
+    { type: "fix", id: "nice" }, { type: "fix", id: "honest" }, { type: "doIt" }]);
+  assert.equal(state.stars, 1);
+});
+
+test("unknown option ids in name and fix phases are ignored, not counted as misses", () => {
+  const atName = play([...TRUST, { type: "flag" }]).state;
+  const n = reduce(LEVEL, atName, { type: "name", id: "bogus" });
+  assert.equal(n.state, atName);
+  assert.deepEqual(n.effects, []);
+  const atFix = play([...TRUST, { type: "flag" }, { type: "name", id: "agreed" }]).state;
+  const f = reduce(LEVEL, atFix, { type: "fix", id: "bogus" });
+  assert.equal(f.state, atFix);
+  assert.deepEqual(f.effects, []);
 });
 
 test("stars never drop below 1", () => {
@@ -129,6 +154,37 @@ test("actions that do not fit the phase are ignored", () => {
     const out = reduce(LEVEL, before, action);
     assert.equal(out.state, before);
     assert.deepEqual(out.effects, []);
+  }
+});
+
+test("actions after the level is finished are ignored (double-tap during reveal)", () => {
+  const { state: done } = play([...TRUST, { type: "doIt" }]);
+  assert.equal(done.phase, "reveal");
+  for (const action of [{ type: "doIt" }, { type: "flag" }, { type: "ask" }]) {
+    const out = reduce(LEVEL, done, action);
+    assert.equal(out.state, done);
+    assert.deepEqual(out.effects, []);
+  }
+});
+
+function deepFreeze(o) {
+  if (o && typeof o === "object" && !Object.isFrozen(o)) {
+    Object.freeze(o);
+    Object.values(o).forEach(deepFreeze);
+  }
+  return o;
+}
+
+test("reduce never mutates the level or the state it is given", () => {
+  const level = deepFreeze(structuredClone(LEVEL));
+  const paths = [
+    [...TRUST, { type: "flag" }, { type: "name", id: "x" }, { type: "name", id: "agreed" },
+      { type: "fix", id: "nice" }, { type: "fix", id: "honest" }, { type: "doIt" }],
+    [{ type: "ask" }, { type: "flag" }, ...TRUST.slice(0), { type: "doIt" }],
+  ];
+  for (const actions of paths) {
+    let state = deepFreeze(createRun(level));
+    for (const action of actions) state = deepFreeze(reduce(level, state, action).state);
   }
 });
 

@@ -114,6 +114,7 @@ export function reduce(level, state, action) {
 
     case "name": {
       if (action.type !== "name") return IGNORED(state);
+      if (!step.flawOptions.some((o) => o.id === action.id)) return IGNORED(state);
       if (action.id === step.correctFlaw) return { state: { ...state, phase: "fix" }, effects: [] };
       return {
         state: { ...state, nameMisses: state.nameMisses + 1 },
@@ -123,6 +124,7 @@ export function reduce(level, state, action) {
 
     case "fix": {
       if (action.type !== "fix") return IGNORED(state);
+      if (!step.fixOptions.some((o) => o.id === action.id)) return IGNORED(state);
       if (action.id === step.correctFix) {
         const rule = step.fixOptions.find((o) => o.id === action.id).label;
         return {

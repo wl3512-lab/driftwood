@@ -9,6 +9,11 @@ test("a question mentioning a step keyword asks the step", () => {
   assert.equal(matchTyped(step, "what about the corner"), "ask");
 });
 
+test("keywords match case-insensitively on both sides", () => {
+  assert.equal(matchTyped({ keywords: ["Tomato"] }, "any tomato here?"), "ask");
+  assert.equal(matchTyped({ keywords: ["Tomato"] }, "ANY TOMATO HERE?"), "ask");
+});
+
 test("an unrelated question is redirected", () => {
   assert.equal(matchTyped(step, "what is the meaning of life"), "redirect");
   assert.equal(matchTyped(step, ""), "redirect");

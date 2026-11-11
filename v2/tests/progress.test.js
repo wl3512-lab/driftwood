@@ -40,6 +40,20 @@ test("recordLevel adds one field-guide card and keeps the best stars", () => {
   assert.equal(p.levels["level-1"].stars, 3);
   assert.equal(p.levels["level-1"].fooled, true, "first play is remembered");
   assert.equal(p.guide.length, 1);
+  p = recordLevel(p, LEVEL, { stars: 1, fooled: true });
+  assert.equal(p.levels["level-1"].stars, 3, "a worse replay keeps the best");
+});
+
+test("load rejects wrong field types and non-object JSON", () => {
+  const s = fakeStorage();
+  s.setItem("dw2_progress", '{"levels":null,"guide":"x","name":5}');
+  const loaded = loadProgress(s);
+  assert.deepEqual(loaded, emptyProgress());
+  assert.doesNotThrow(() => recordLevel(loaded, LEVEL, { stars: 2, fooled: false }));
+  for (const raw of ["[]", '"str"', "null", "7"]) {
+    s.setItem("dw2_progress", raw);
+    assert.deepEqual(loadProgress(s), emptyProgress());
+  }
 });
 
 test("only level 1 is open at first; finishing a level opens the next", () => {

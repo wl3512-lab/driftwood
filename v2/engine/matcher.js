@@ -4,7 +4,7 @@
 
 export function matchTyped(step, text) {
   const t = String(text).toLowerCase();
-  return step.keywords.some((k) => t.includes(k)) ? "ask" : "redirect";
+  return step.keywords.some((k) => t.includes(k.toLowerCase())) ? "ask" : "redirect";
 }
 
 export function pickRedirect(level, count) {
