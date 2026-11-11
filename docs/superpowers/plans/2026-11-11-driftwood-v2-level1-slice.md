@@ -628,6 +628,9 @@ const PALETTE = {
   l: "#8bc34a", // light leaf
   p: "#c5d6a0", // pale leaf (damaged)
   P: "#a8b878", // pale stem (damaged)
+  u: "#c39be0", // lettuce leaf edge (purple)
+  v: "#8a52ad", // lettuce leaf
+  V: "#5e3478", // lettuce heart
   r: "#e53935", // tomato
   R: "#b71c1c", // tomato shade
   y: "#f0c850", // petal
@@ -732,22 +735,22 @@ const ART = {
     ...SOIL],
 
   "lettuce-growing": [E, E, E, E, E, E, E, E, E,
-    "......l..l......",
-    ".....lgl.lgl....",
-    "....lggllggl....",
-    ".....lgGGgl.....",
-    "......gGGg......",
+    "......u..u......",
+    ".....uvu.uvu....",
+    "....uvvuuvvu....",
+    ".....uvVVvu.....",
+    "......vVVv......",
     ...SOIL],
 
   "lettuce-thriving": [E, E, E, E, E, E,
-    "......llll......",
-    "....lllggll.....",
-    "...llggllggll...",
-    "..lggllggllggl..",
-    "..lgllggggllgl..",
-    "...lgggGGgggl...",
-    "....lgGGGGgl....",
-    ".....gGGGGg.....",
+    "......uuuu......",
+    "....uuuvvuu.....",
+    "...uuvvuuvvuu...",
+    "..uvvuuvvuuvvu..",
+    "..uvuuvvvvuuvu..",
+    "...uvvvVVvvvu...",
+    "....uvVVVVvu....",
+    ".....vVVVVv.....",
     ...SOIL],
 
   "watering-can": [E, E, E, E, E,
