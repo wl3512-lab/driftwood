@@ -61,7 +61,7 @@ The camera is not asked about at the start. It becomes Level 5's lesson.
 
 Only Level 1 is built in the slice. Levels 2–5 are listed so the slice's data format covers them.
 
-**Personalities stay** (Lucy: "it makes the game more fun"). Each helper keeps its voice from the original game in every line, trust replies included: Mango is an over-the-top hype man ("MAJOR KEY", "GENIUS"); Luna is self-important and states everything as settled fact; Ember is laid-back ("twin", "fam", "yessir"); Biscuit is an adoring diva ("babe", calls herself a legend); Bugs is soft, poetic and dramatic about feelings. The part of a line that carries the lesson stays plain; the personality goes around it.
+**Personalities stay** (Lucy: "it makes the game more fun"). Each helper keeps its voice from the original game in every line, trust replies included: Mango is an over-the-top hype man ("MAJOR KEY", "GENIUS"; DJ Khaled energy); Luna is self-important and states everything as settled fact (Kanye West energy); Ember is laid-back ("twin", "fam", "yessir"; Snoop Dogg energy); Biscuit is an adoring diva ("babe", calls herself a legend; Mariah Carey energy); Bugs is soft, poetic and dramatic about feelings (Taylor Swift energy). These are writing references only; the game never names the celebrities. The part of a line that carries the lesson stays plain; the personality goes around it.
 
 ### Level 1 script (slice)
 
