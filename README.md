@@ -4,6 +4,8 @@
 
 **[Play it](https://wl3512-lab.github.io/driftwood/)** · **[Case study](https://wl3512-lab.github.io/driftwood/case-study.html)** · [Slide deck](https://wl3512-lab.github.io/driftwood/docs/deck/driftwood-deck.html) ([PDF](https://wl3512-lab.github.io/driftwood/docs/Driftwood_UX_Deck.pdf)) · [Behavior log viewer](https://wl3512-lab.github.io/driftwood/postit-behavior-log.html)
 
+**Redesign in progress:** the new garden-goal version is at [`/v2/`](https://wl3512-lab.github.io/driftwood/v2/). Spec: `docs/superpowers/specs/2026-11-11-driftwood-redesign-design.md`.
+
 ![The garden: a pixel field with a fox and a rabbit, a health bar, and a mood chip](docs/screenshots/garden.png)
 
 No account, no install, no API key. Camera optional. Works offline after the first visit.

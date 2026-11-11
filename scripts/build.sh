@@ -18,6 +18,8 @@ cp index.html sketch.js style.css chat-particles.js sw.js manifest.webmanifest \
    case-study.html README.md "$OUT/"
 cp .nojekyll "$OUT/" 2>/dev/null || true
 cp icons/*.svg icons/*.png "$OUT/icons/"
+# v2 (redesign). Tests, the Node-only package.json and the art sheet stay out of the player bundle.
+rsync -a --exclude 'tests' --exclude 'package.json' --exclude 'art/sheet.html' v2/ "$OUT/v2/"
 cp "bg interface 1"/*.svg "$OUT/bg interface 1/"
 # QA evidence (docs/agent-playtest) and design specs (docs/superpowers) stay out
 # of the bundle — tens of MB of screenshots, plus notes for unbuilt work, that
