@@ -5,10 +5,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { LEVELS, MAP } from "../levels/index.js";
+import { matchTyped } from "../engine/matcher.js";
+import { createRun, reduce } from "../engine/level-runner.js";
 
 const ART = fileURLToPath(new URL("../art/", import.meta.url));
-const ICONS = fileURLToPath(new URL("../../icons/", import.meta.url));
+// Sprite paths are used as <img src> on v2/index.html, so they resolve against v2/.
+const PAGE_DIR = fileURLToPath(new URL("../", import.meta.url));
 const artFor = (plant, state) => (state === "sprout" ? "sprout.svg" : `${plant}-${state}.svg`);
 
 for (const level of Object.values(LEVELS)) {
@@ -44,6 +48,75 @@ for (const level of Object.values(LEVELS)) {
     }
     for (const p of used) assert.ok(existsSync(ART + artFor(p.plant, p.state)), `art/${artFor(p.plant, p.state)}`);
     for (const f of ["seed-packet.svg", "watering-can.svg"]) assert.ok(existsSync(ART + f), `art/${f}`);
-    assert.ok(existsSync(ICONS + level.helper.sprite.split("/").pop()), "helper sprite");
+    assert.ok(existsSync(resolve(PAGE_DIR, level.helper.sprite)), `helper sprite ${level.helper.sprite}`);
+  });
+
+  test(`${level.id}: typed matching, evidence and start plants`, () => {
+    const bedIds = new Set(level.beds.map((b) => b.id));
+    const evidenceIds = new Set(level.evidence.map((e) => e.id));
+    for (const step of level.steps) {
+      assert.equal(matchTyped(step, step.chip), "ask", `${step.id}: its own chip must match its keywords`);
+      if (step.kind === "drift") {
+        assert.ok(step.badEffect, `${step.id}: drift step needs badEffect`);
+        assert.ok(step.badEffect.plant, `${step.id}: badEffect needs a plant`);
+        assert.ok(evidenceIds.has(step.badEffect.plant), `${step.id}: evidence item for ${step.badEffect.plant}`);
+      }
+    }
+    for (const id of Object.keys(level.startPlants || {})) assert.ok(bedIds.has(id), `startPlants bed ${id} exists`);
+  });
+
+  test(`${level.id}: options and hints line up`, () => {
+    for (const step of level.steps) {
+      if (step.kind === "trust") assert.ok(step.effect, `${step.id}: trust step needs effect`);
+      if (step.kind !== "drift") continue;
+      assert.ok(step.badEffect, `${step.id}: drift step needs badEffect`);
+      assert.ok(step.goodEffect, `${step.id}: drift step needs goodEffect`);
+      for (const [opts, hints, correct, name] of [
+        [step.flawOptions, step.flawHints, step.correctFlaw, "flaw"],
+        [step.fixOptions, step.fixHints, step.correctFix, "fix"],
+      ]) {
+        const ids = opts.map((o) => o.id);
+        assert.equal(new Set(ids).size, ids.length, `${step.id}: ${name} option ids unique`);
+        assert.ok(ids.includes(correct), `${step.id}: correct ${name} is an option`);
+        for (const key of Object.keys(hints)) assert.ok(ids.includes(key), `${step.id}: ${name} hint "${key}" is an option id`);
+      }
+    }
+  });
+
+  test(`${level.id}: helper matches its map entry`, () => {
+    const entry = MAP.find((m) => m.id === level.id);
+    assert.ok(entry, "on the map");
+    assert.equal(level.helper.sprite, entry.sprite);
   });
 }
+
+test("every map entry's sprite exists (levels 2-5 included)", () => {
+  for (const m of MAP) assert.ok(existsSync(resolve(PAGE_DIR, m.sprite)), `${m.id}: ${m.sprite}`);
+});
+
+// The real Level 1, end to end through the reducer.
+function playReal(actions) {
+  const level = LEVELS["level-1"];
+  let state = createRun(level);
+  for (const action of actions) state = reduce(level, state, action).state;
+  return state;
+}
+const TO_DRIFT = [{ type: "ask" }, { type: "doIt" }, { type: "ask" }, { type: "doIt" }, { type: "ask" }];
+
+test("level 1 fooled path ends on the reveal with 1 star", () => {
+  const state = playReal([...TO_DRIFT, { type: "doIt" }]);
+  assert.equal(state.phase, "reveal");
+  assert.equal(state.stars, 1);
+});
+
+test("level 1 caught path with the right picks earns 3 stars", () => {
+  const state = playReal([
+    ...TO_DRIFT,
+    { type: "flag" },
+    { type: "name", id: "agreed" },
+    { type: "fix", id: "honest" },
+    { type: "doIt" },
+  ]);
+  assert.equal(state.phase, "reveal");
+  assert.equal(state.stars, 3);
+});

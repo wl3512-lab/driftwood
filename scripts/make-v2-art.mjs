@@ -6,7 +6,7 @@
 //
 //   node scripts/make-v2-art.mjs        → v2/art/*.svg and v2/art/sheet.html
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const OUT = process.env.ART_OUT || join(dirname(fileURLToPath(import.meta.url)), "..", "v2", "art");
@@ -220,13 +220,16 @@ function sheet(names) {
   img { image-rendering: pixelated; display: block; margin: 0 auto 6px; }
   .dark figure { background: #050805; color: #c8d8ce; border-color: #00e676; }
 </style></head>
-<body><h1>Driftwood v2 · Level 1 art (approve before use)</h1><main>${tiles}</main>
+<body><h1>Driftwood v2 · Level 1 art</h1><main>${tiles}</main>
 <h1>On the CRT background</h1><main class="dark">${tiles}</main></body></html>
 `;
 }
 
-mkdirSync(OUT, { recursive: true });
-const names = Object.keys(ART);
-for (const name of names) writeFileSync(join(OUT, `${name}.svg`), toSvg(name, ART[name]));
-writeFileSync(join(OUT, "sheet.html"), sheet(names));
-console.log(`wrote ${names.length} sprites + sheet.html → ${OUT}`);
+// Only write files when run directly, never when imported (the tests import toSvg).
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  mkdirSync(OUT, { recursive: true });
+  const names = Object.keys(ART);
+  for (const name of names) writeFileSync(join(OUT, `${name}.svg`), toSvg(name, ART[name]));
+  writeFileSync(join(OUT, "sheet.html"), sheet(names));
+  console.log(`wrote ${names.length} sprites + sheet.html → ${OUT}`);
+}

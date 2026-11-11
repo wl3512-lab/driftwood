@@ -55,6 +55,7 @@
   text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
 }
 .reveal__flaw:focus { outline: none; }
+.reveal__gloss { margin: -0.4rem 0 0; font-size: 1.1rem; line-height: 1.4; color: var(--crt-text); opacity: 0.8; }
 .reveal__tip {
   max-width: 32rem;
   padding: 0.9rem 1rem;

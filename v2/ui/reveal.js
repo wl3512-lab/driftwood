@@ -8,6 +8,7 @@ export function renderReveal(root, level, state, { onContinue }) {
     h("main", { class: "crt reveal" },
       h("p", { class: "crt__kicker" }, state.fooled ? "// YOU TRUSTED IT //" : "// YOU CAUGHT IT //"),
       h("h1", { class: "reveal__flaw", tabindex: -1, "data-autofocus": true }, r.flaw.toUpperCase()),
+      r.flawGloss ? h("p", { class: "reveal__gloss" }, r.flawGloss) : null,
       h("p", { class: "crt__line" }, state.fooled ? r.fooledLine : r.caughtLine),
       h("p", { class: "crt__line" }, r.body),
       h("div", { class: "reveal__tip" },
