@@ -28,9 +28,10 @@ export function levelSprites(level) {
   return [...srcs];
 }
 
+// bed.kind ("pots" | "wild" | "meadow") adds bed--<kind>, styled in css/scenes.css.
 export function renderBeds(level, state) {
   return level.beds.map((bed) =>
-    h("div", { class: `bed bed--${bed.light}`, "data-bed": bed.id },
+    h("div", { class: ["bed", `bed--${bed.light}`, bed.kind && `bed--${bed.kind}`].filter(Boolean).join(" "), "data-bed": bed.id },
       h("span", { class: "bed__label" }, `${bed.label} ${LIGHT_ICON[bed.light]}`),
       h("div", { class: "bed__plants" },
         state.beds[bed.id].map((p) =>

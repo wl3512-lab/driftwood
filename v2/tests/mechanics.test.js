@@ -72,3 +72,57 @@ test("pressure: shouldTick only while asking or deciding, visible, on a timed pr
   const chatOnly = { kind: "drift", pressure: { effects: PRESSURE_STEP.pressure.effects } };
   assert.equal(shouldTick(chatOnly, "advice", false), false, "no tickMs → chat-only pressure, no clock");
 });
+
+// ---- text variables and keyboard shortcuts (pure UI helpers) ----
+import { fill } from "../ui/text.js";
+import { shortcutFor, keyCap, ariaKey, keyName } from "../ui/shortcuts.js";
+
+test("fill: swaps known keys and leaves unknown ones visible", () => {
+  assert.equal(fill("Hi, {name}.", { name: "Ada" }), "Hi, Ada.");
+  assert.equal(fill("the {placed:carrot} and the {other:carrot}", { "placed:carrot": "front bed", "other:carrot": "side bed" }),
+    "the front bed and the side bed");
+  assert.equal(fill("{nope} and {name}", { name: "Ada" }), "{nope} and Ada", "missing values stay visible");
+  assert.equal(fill("no vars here"), "no vars here");
+  assert.equal(fill(undefined), "");
+  assert.equal(fill(null, { name: "Ada" }), "");
+  assert.equal(fill("{name}", { name: "" }), "", "an empty value is still a value");
+  assert.equal(fill("a {b c} d", {}), "a {b c} d", "not a placeholder");
+});
+
+const KEYS = [{ id: "almanac", key: "/" }, { id: "log", key: "l" }, { id: "leave", key: "Escape" }];
+
+test("shortcutFor: keys map to ids, case-insensitive, Esc alias", () => {
+  assert.equal(shortcutFor({ key: "/" }, KEYS), "almanac");
+  assert.equal(shortcutFor({ key: "l" }, KEYS), "log");
+  assert.equal(shortcutFor({ key: "L" }, KEYS), "log");
+  assert.equal(shortcutFor({ key: "Escape" }, KEYS), "leave");
+  assert.equal(shortcutFor({ key: "Esc" }, KEYS), "leave");
+  assert.equal(shortcutFor({ key: "x" }, KEYS), null);
+  assert.equal(shortcutFor({ key: "/" }, []), null);
+  assert.equal(shortcutFor({ key: undefined }, KEYS), null);
+});
+
+test("shortcutFor: while typing only Escape counts, so / and letters reach the box", () => {
+  assert.equal(shortcutFor({ key: "/" }, KEYS, { typing: true }), null);
+  assert.equal(shortcutFor({ key: "l" }, KEYS, { typing: true }), null);
+  assert.equal(shortcutFor({ key: "Escape" }, KEYS, { typing: true }), "leave");
+});
+
+test("shortcutFor: modifier keys and key repeats never match", () => {
+  for (const mod of ["ctrlKey", "metaKey", "altKey"]) assert.equal(shortcutFor({ key: "l", [mod]: true }, KEYS), null, mod);
+  assert.equal(shortcutFor({ key: "l", repeat: true }, KEYS), null);
+  assert.equal(shortcutFor({ key: "/", shiftKey: true }, KEYS), "almanac", "shift is how some layouts type /");
+});
+
+test("key caps, aria-keyshortcuts values and spoken names", () => {
+  assert.equal(keyCap("/"), "/");
+  assert.equal(keyCap("l"), "L");
+  assert.equal(keyCap("Escape"), "Esc");
+  assert.equal(ariaKey("/"), "/");
+  assert.equal(ariaKey("l"), "L");
+  assert.equal(ariaKey("Escape"), "Escape");
+  assert.equal(keyName("/"), "slash");
+  assert.equal(keyName("l"), "L");
+  assert.equal(keyName("Escape"), "Escape");
+  assert.equal(keyName("1"), "1");
+});

@@ -26,11 +26,18 @@ for (const level of Object.values(LEVELS)) {
   });
 
   test(`${level.id}: steps`, () => {
-    const bedIds = new Set(level.beds.map((b) => b.id));
+    // "@item" / "@other:item" refs must name an item some step places.
+    const placed = new Set(level.steps.filter((s) => s.place).map((s) => s.place.item));
+    const bedIds = { has: (b) => level.beds.some((x) => x.id === b) || (/^@(other:)?([a-z]+)$/.test(b) && placed.has(b.replace(/^@(other:)?/, ""))) };
     for (const step of level.steps) {
       assert.ok(step.chip && step.reply && step.keywords.length, `${step.id}: chip, reply, keywords`);
       const effects = step.kind === "trust" ? [step.effect] : [step.badEffect, step.goodEffect];
-      for (const e of effects) if (e.plant) assert.ok(bedIds.has(e.bed), `${step.id}: bed ${e.bed} exists`);
+      for (const e of effects) {
+        if (e.plant) assert.ok(bedIds.has(e.bed), `${step.id}: bed ${e.bed} exists`);
+        for (const x of e.extra || []) assert.ok(bedIds.has(x.bed), `${step.id}: extra bed ${x.bed} exists`);
+      }
+      for (const p of step.pressure?.effects || []) assert.ok(bedIds.has(p.bed), `${step.id}: pressure bed ${p.bed} exists`);
+      if (step.place) for (const b of step.place.beds) assert.ok(level.beds.some((x) => x.id === b), `${step.id}: place bed ${b}`);
       if (step.kind !== "drift") continue;
       assert.ok(step.flawOptions.some((o) => o.id === step.correctFlaw), "correct flaw is an option");
       assert.ok(step.fixOptions.some((o) => o.id === step.correctFix), "correct fix is an option");
@@ -45,8 +52,14 @@ for (const level of Object.values(LEVELS)) {
     const used = [];
     for (const list of Object.values(level.startPlants || {})) used.push(...list);
     for (const step of level.steps) {
-      for (const e of [step.effect, step.badEffect, step.goodEffect]) if (e?.plant) used.push(e);
+      for (const e of [step.effect, step.badEffect, step.goodEffect, ...(step.pressure?.effects || [])]) {
+        if (e?.plant) used.push(e);
+        for (const x of e?.extra || []) used.push(x);
+      }
     }
+    for (const e of level.evidence) assert.ok(existsSync(ART + `${e.icon || "seed-packet"}.svg`), `evidence icon ${e.icon}`);
+    for (const t of level.tools || []) assert.ok(existsSync(resolve(PAGE_DIR, t.sprite)), `tool sprite ${t.sprite}`);
+    for (const p of level.props || []) if (p.sprite) assert.ok(existsSync(resolve(PAGE_DIR, p.sprite)), `prop ${p.sprite}`);
     for (const p of used) assert.ok(existsSync(ART + artFor(p.plant, p.state)), `art/${artFor(p.plant, p.state)}`);
     for (const f of ["seed-packet.svg", "watering-can.svg"]) assert.ok(existsSync(ART + f), `art/${f}`);
     assert.ok(existsSync(resolve(PAGE_DIR, level.helper.sprite)), `helper sprite ${level.helper.sprite}`);

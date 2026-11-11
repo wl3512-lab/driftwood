@@ -1,0 +1,157 @@
+/* Per-level settings. The level view sets main.level[data-scene]:
+   "yard" (Level 1), "greenhouse", "hedge-dusk", "garden-day", "meadow-night".
+   Flat colour bands with hard stops, no soft gradients, radius ≤ 4px. The
+   drift filter on .scene (level.css) still sours every scene.
+
+   SWAPPING IN PAINTED ART
+   Each scene is one block below, driven by custom properties:
+     --scene-sky      colour of the top band
+     --scene-ground   colour of the ground (also the page behind the scene)
+     --scene-art      a painted background layer drawn ON TOP of the CSS bands;
+                      `none` by default
+   To use a painting for a scene, set one line in that scene's block, e.g.
+     .level[data-scene="greenhouse"] { --scene-art: url("../art/bg-greenhouse.png"); }
+   It covers the scene (center / cover), so an opaque painting replaces the
+   CSS drawing entirely; the extra pattern layers in the block can then go.
+   Props and plants are <img> tags whose paths come from the level data
+   (level.props[].sprite, level.tools[].sprite, art/<plant>-<state>.svg), so
+   replacing an SVG in v2/art/ or pointing the data at a new file is all it
+   takes. No JS or layout change is needed for new art.
+   Text never sits on the scene itself: goal, meter, packets, labels and tools
+   keep parchment/white backgrounds with ink text, so AA contrast holds on any art. */
+
+.level { --scene-art: none; --grass: var(--scene-ground, #7cc36a); }
+
+/* ======== Level 1 · the yard (looks exactly as level.css drew it) ======== */
+.level[data-scene="yard"] { --scene-sky: var(--sky); --scene-ground: #7cc36a; }
+.level[data-scene="yard"] .scene {
+  background:
+    var(--scene-art) center / cover no-repeat,
+    linear-gradient(var(--scene-sky) 0 26%, var(--scene-ground) 26% 100%);
+}
+
+/* ======== shared by the Level 2–5 scenes ======== */
+/* Bed count comes from the data (--beds); Level 1 keeps its wider first bed. */
+.level:not([data-scene="yard"]) .beds { grid-template-columns: repeat(var(--beds, 3), minmax(0, 1fr)); }
+/* Long evidence lines wrap instead of squeezing the beds to slivers. */
+.level:not([data-scene="yard"]) .packets { max-width: 15rem; }
+.level:not([data-scene="yard"]) .packet span { overflow-wrap: anywhere; }
+
+/* bed kinds (bed.kind in the level data) */
+.bed--pots { background: #c8693c; border-color: #8f4320; }
+.bed--wild { background: #3f5f36; border-color: #2a4024; }
+.bed--meadow { background: #31523c; border-color: #1f3627; }
+
+/* evidence that needs an action first, and the pop when it unlocks */
+.packet--locked { background: #efe6cc; border-style: dashed; }
+.packet--locked span { font-style: italic; }
+.packet--fresh { animation: pop 0.6s steps(4); } /* base.css cuts it short under reduced motion */
+
+/* level tools: a button with a key cap, under the meter */
+.tools { position: absolute; z-index: 3; right: 16px; top: 84px; display: flex; gap: 8px; }
+.tools[hidden] { display: none; }
+.tool {
+  display: flex; align-items: center; gap: 0.4rem;
+  min-height: 44px; min-width: 44px; padding: 0.3rem 0.6rem;
+  background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 2px; box-shadow: 3px 3px 0 var(--ink);
+  font: 700 0.85rem var(--font-ui); cursor: pointer;
+}
+.tool:hover { background: #fff3c4; }
+.tool[aria-pressed="true"], .tool[aria-expanded="true"] { background: #fff3c4; box-shadow: 1px 1px 0 var(--ink); transform: translate(2px, 2px); }
+.tool img { width: 28px; height: 28px; image-rendering: pixelated; }
+.kbd {
+  display: inline-block; min-width: 1.6em; padding: 0 0.3em;
+  border: 2px solid var(--ink); border-bottom-width: 4px; border-radius: 3px;
+  background: var(--paper); color: var(--ink);
+  font: 700 0.75rem/1.4 var(--font-ui); text-align: center;
+}
+.btn .kbd { margin-left: 0.5rem; vertical-align: 1px; }
+@media (pointer: coarse) { .kbd { display: none; } } /* touch: the button alone is the way in */
+
+.prop { position: absolute; z-index: 1; image-rendering: pixelated; pointer-events: none; }
+
+/* ======== Level 2 · greenhouse: glass panes, white glazing bars, wood sill, potting bench ======== */
+.level[data-scene="greenhouse"] { --scene-sky: #cfe9dd; --scene-ground: #b7a27a; --sill: #8a6440; --glazing: #f4f8f2; }
+.level[data-scene="greenhouse"] .scene {
+  background:
+    var(--scene-art) center / cover no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 calc(20% - 6px), var(--glazing) calc(20% - 6px) 20%) 0 0 / 100% 46% no-repeat,
+    repeating-linear-gradient(0deg, transparent 0 calc(50% - 5px), var(--glazing) calc(50% - 5px) 50%) 0 0 / 100% 46% no-repeat,
+    linear-gradient(var(--scene-sky) 0 46%, var(--sill) 46% 49%, var(--scene-ground) 49% 100%);
+}
+.level[data-scene="greenhouse"] .fence { top: 46%; height: 10px; border: 0; background: var(--sill); }
+.level[data-scene="greenhouse"] .prop--shelf { left: 24px; top: 30%; width: 56px; padding: 0 12px; border-bottom: 6px solid #5d3a1e; }
+
+/* ======== Level 3 · the wild hedge at dusk ======== */
+.level[data-scene="hedge-dusk"] { --scene-sky: #f4a259; --scene-ground: #4f7d48; --hedge: #2e5a2a; }
+.level[data-scene="hedge-dusk"] .scene {
+  background:
+    var(--scene-art) center / cover no-repeat,
+    radial-gradient(circle at 50% 100%, var(--hedge) 0 70%, transparent 71%) 0 calc(30% - 22px) / 44px 44px repeat-x,
+    linear-gradient(var(--scene-sky) 0 9%, #d97b6c 9% 18%, #8c5b86 18% 30%, var(--hedge) 30% 40%, var(--scene-ground) 40% 100%);
+}
+.level[data-scene="hedge-dusk"] .fence { display: none; }
+.level[data-scene="hedge-dusk"] .scene::after { /* fireflies: three still dots; they blink only without reduced motion */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(#fdf3b0 0 2px, transparent 3px) 12% 44% / 6px 6px no-repeat,
+    radial-gradient(#fdf3b0 0 2px, transparent 3px) 63% 38% / 6px 6px no-repeat,
+    radial-gradient(#fdf3b0 0 2px, transparent 3px) 86% 50% / 6px 6px no-repeat;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .level[data-scene="hedge-dusk"] .scene::after { animation: blink 3s steps(2) infinite; }
+}
+@keyframes blink { 50% { opacity: 0.2; } }
+.level[data-scene="hedge-dusk"] .meter,
+.level[data-scene="hedge-dusk"] .goal,
+.level[data-scene="hedge-dusk"] .tool { box-shadow: 3px 3px 0 #1d1330; }
+
+/* ======== Level 4 · the whole garden by day: path stones, earlier plots behind the fence ======== */
+.level[data-scene="garden-day"] { --scene-sky: #bfe4fb; --scene-ground: #7cc36a; --stones: #c9bfa6; }
+.level[data-scene="garden-day"] .scene {
+  background:
+    var(--scene-art) center / cover no-repeat,
+    repeating-linear-gradient(90deg, var(--stones) 0 28px, transparent 28px 44px) 0 92% / 100% 10px no-repeat,
+    linear-gradient(var(--scene-sky) 0 22%, var(--scene-ground) 22% 100%);
+}
+.level[data-scene="garden-day"] .fence { top: 20%; }
+.earlier { position: absolute; z-index: 1; left: 30%; top: calc(20% - 40px); display: flex; gap: 14px; pointer-events: none; }
+.earlier img { width: 44px; height: 44px; image-rendering: pixelated; }
+
+/* ======== Level 5 · moonlit meadow; the moon climbs as --pressure rises ======== */
+.level[data-scene="meadow-night"] { --scene-sky: #141a33; --scene-ground: #2e4a3a; }
+.level[data-scene="meadow-night"] .scene {
+  --pressure: 0;
+  background:
+    var(--scene-art) center / cover no-repeat,
+    linear-gradient(var(--scene-sky) 0 30%, var(--scene-ground) 30% 100%);
+}
+.level[data-scene="meadow-night"] .scene::before { /* stars: 1px dots on two offset grids, top 30% only */
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 30%; pointer-events: none;
+  background:
+    radial-gradient(circle, #e8ecff 0 1px, transparent 1.5px) 0 0 / 53px 31px,
+    radial-gradient(circle, #e8ecff 0 1px, transparent 1.5px) 21px 13px / 71px 43px;
+}
+.level[data-scene="meadow-night"] .fence { display: none; }
+.level[data-scene="meadow-night"] .prop--moon {
+  right: 22%; width: 56px;
+  top: calc(18% - var(--pressure) * 14%);
+  transition: top 1.2s steps(6);
+}
+.level[data-scene="meadow-night"] .bed__label { background: #e8ecff; }
+
+/* ======== small and short screens (phones in landscape) ======== */
+@media (max-height: 500px), (max-width: 640px) {
+  .tools { top: 66px; right: 12px; }
+  .tool .tool__label { display: none; } /* the icon + accessible name carry it */
+  .earlier { display: none; }
+  .level:not([data-scene="yard"]) .packets { max-width: 10.5rem; }
+  /* Narrow beds: a long label wraps upward instead of hiding under its neighbour. */
+  .level:not([data-scene="yard"]) .bed:not(.bed--shady) > .bed__label {
+    top: auto; bottom: calc(100% + 4px);
+    max-width: calc(100% + 8px); white-space: normal; line-height: 1.2;
+  }
+  /* The shelf would sit on the first bed; the Almanac button carries the same icon. */
+  .level[data-scene="greenhouse"] .prop--shelf { display: none; }
+}
