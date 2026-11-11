@@ -9,3 +9,4 @@ _site/
 firebase-debug.log
 .firebase/
 dist/
+.superpowers/
