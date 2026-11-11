@@ -8,13 +8,17 @@ export function plantSrc(plant, state) {
   return state === "sprout" ? "./art/sprout.svg" : `./art/${plant}-${state}.svg`;
 }
 
-// Every plant sprite this level can show (start plants, each effect, and the
-// thriving state watering can turn "growing" into), so the view can preload them.
+// Every plant sprite this level can show (start plants, each effect and its
+// extra plants, pressure effects, and the thriving state watering can turn
+// "growing" into), so the view can preload them.
 export function levelSprites(level) {
   const shown = [];
   for (const list of Object.values(level.startPlants || {})) shown.push(...list);
   for (const step of level.steps) {
-    for (const e of [step.effect, step.badEffect, step.goodEffect]) if (e?.plant) shown.push(e);
+    for (const e of [step.effect, step.badEffect, step.goodEffect, ...(step.pressure?.effects || [])]) {
+      if (e?.plant) shown.push(e);
+      for (const x of e?.extra || []) if (x?.plant) shown.push(x);
+    }
   }
   const srcs = new Set();
   for (const p of shown) {

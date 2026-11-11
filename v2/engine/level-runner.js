@@ -13,6 +13,9 @@
 //   { type: "caught" }        player flagged the drift
 //   { type: "outcome", text } how the tomatoes (etc.) came up at the end
 
+import { resolveEffect } from "../mechanics/placement.js";
+import { nextPressureEffect } from "../mechanics/pressure.js";
+
 export function createRun(level) {
   const beds = {};
   for (const bed of level.beds) {
@@ -30,6 +33,9 @@ export function createRun(level) {
     fixMisses: 0,
     falseFlags: 0,
     stars: 0,
+    checks: [],   // evidence ids the player has looked up / inspected / logged
+    memory: {},   // what the player placed where (Level 4): { carrot: "front" }
+    pressure: 0,  // pressure effects spent on the current step (Level 5)
   };
 }
 
@@ -51,6 +57,12 @@ export function applyGarden(state, effect) {
     if (existing) existing.state = effect.state;
     else list.push({ plant: effect.plant, state: effect.state });
   }
+  for (const x of effect.extra || []) {
+    const list = beds[x.bed];
+    const existing = list.find((p) => p.plant === x.plant);
+    if (existing) existing.state = x.state;
+    else list.push({ plant: x.plant, state: x.state });
+  }
   const garden = Math.max(0, Math.min(100, state.garden + (effect.garden || 0)));
   return { ...state, beds, garden };
 }
@@ -70,35 +82,67 @@ function finish(state) {
 
 const IGNORED = (state) => ({ state, effects: [] });
 
+// Spend one unit of pressure if this step has any left (ask, chat, tick).
+function spend(step, state) {
+  const fx = nextPressureEffect(step, state);
+  if (!fx) return { state, effects: [] };
+  return { state: { ...applyGarden(state, fx), pressure: state.pressure + 1 }, effects: [{ type: "grow", effect: fx }] };
+}
+
 export function reduce(level, state, action) {
   const step = currentStep(level, state);
+  const fx = (effect, memory = state.memory) => resolveEffect(level, memory, effect);
+
+  // Looking something up works in any phase until the reveal, and only once per id.
+  if (action.type === "check") {
+    if (state.phase === "reveal" || !action.id || state.checks.includes(action.id)) return IGNORED(state);
+    return { state: { ...state, checks: [...state.checks, action.id] }, effects: [{ type: "checked", id: action.id }] };
+  }
+  if (action.type === "tick") {
+    if (!step.pressure || !["ask", "advice"].includes(state.phase)) return IGNORED(state);
+    return spend(step, state);
+  }
 
   switch (state.phase) {
     case "ask": {
       if (action.type === "ask") {
+        const paid = spend(step, state);
         return {
-          state: { ...state, phase: "advice", drift: step.kind === "drift" ? 0.6 : 0 },
-          effects: [{ type: "say", text: step.reply }],
+          state: { ...paid.state, phase: "advice", drift: step.kind === "drift" ? 0.6 : 0 },
+          effects: [...paid.effects, { type: "say", text: step.reply }],
         };
       }
       if (action.type === "chat") {
-        return { state, effects: [{ type: "say", text: action.reply }] };
+        const paid = spend(step, state);
+        return { state: paid.state, effects: [...paid.effects, { type: "say", text: action.reply }] };
       }
       return IGNORED(state);
     }
 
     case "advice": {
-      if (action.type === "doIt" && step.kind === "trust") {
-        const grown = applyGarden(state, step.effect);
-        const effects = [{ type: "grow", effect: step.effect }];
+      if (action.type === "place" && step.kind === "trust" && step.place) {
+        if (!step.place.beds.includes(action.bed)) return IGNORED(state);
+        const memory = { ...state.memory, [step.place.item]: action.bed };
+        const effect = fx(step.effect, memory);
+        const grown = applyGarden({ ...state, memory }, effect);
+        const effects = [{ type: "grow", effect }];
         if (step.doneLine) effects.push({ type: "say", text: step.doneLine });
-        return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask" }, effects };
+        return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 }, effects };
+      }
+      if (action.type === "doIt" && step.kind === "trust") {
+        if (step.place) return IGNORED(state); // must choose a bed
+        const effect = fx(step.effect);
+        const grown = applyGarden(state, effect);
+        const effects = [{ type: "grow", effect }];
+        if (step.doneLine) effects.push({ type: "say", text: step.doneLine });
+        return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 }, effects };
       }
       if (action.type === "doIt" && step.kind === "drift") {
-        const hurt = applyGarden(state, step.badEffect);
+        const bad = fx(step.badEffect);
+        const hurt = applyGarden(state, bad);
         return {
           state: finish({ ...hurt, fooled: true, drift: 1 }),
-          effects: [{ type: "grow", effect: step.badEffect }, { type: "outcome", text: step.badOutcome }],
+          effects: [{ type: "grow", effect: bad }, { type: "outcome", text: step.badOutcome }],
         };
       }
       if (action.type === "flag" && step.kind === "trust") {
@@ -141,10 +185,11 @@ export function reduce(level, state, action) {
 
     case "reanswer": {
       if (action.type !== "doIt") return IGNORED(state);
-      const grown = applyGarden(state, step.goodEffect);
+      const good = fx(step.goodEffect);
+      const grown = applyGarden(state, good);
       return {
         state: finish({ ...grown, drift: 0 }),
-        effects: [{ type: "grow", effect: step.goodEffect }, { type: "outcome", text: step.goodOutcome }],
+        effects: [{ type: "grow", effect: good }, { type: "outcome", text: step.goodOutcome }],
       };
     }
 
