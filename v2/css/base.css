@@ -1,0 +1,67 @@
+/* Driftwood v2 — tokens, reset, buttons. Pixel discipline: hard edges,
+   radius ≤ 4px, no blur, no gradient text. The game is its own world, so
+   it has one fixed palette rather than a light/dark theme. */
+:root {
+  --sky: #9fd4f5;
+  --grass: #7cc36a;
+  --grass-dark: #5ea44e;
+  --soil: #b98a5a;
+  --soil-edge: #8a6440;
+  --wood: #8a5a34;
+  --parchment: #fff6dc;
+  --ink: #3b2a1a;
+  --paper: #ffffff;
+  --line: #222222;
+  --do: #7bd36b;
+  --do-edge: #234d1c;
+  --off: #ffb347;
+  --off-edge: #6b3d00;
+  --alarm: #c62828;
+  --focus: #1e88e5;
+  --void: #050805;
+  --phosphor: #00e676;
+  --phosphor-light: #69f0ae;
+  --gold: #ffb347;
+  --crt-text: #c8d8ce;
+  --crt-dim: #7a9488;
+  --font-ui: "Fira Code", ui-monospace, Menlo, monospace;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--void); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+#app { min-height: 100dvh; }
+img { image-rendering: pixelated; }
+h1, h2, p { margin: 0; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+.boot { color: var(--phosphor); font-family: var(--font-ui); padding: 2rem 1rem; }
+
+.btn {
+  font: 700 0.95rem/1 var(--font-ui);
+  letter-spacing: 0.04em;
+  padding: 0.8rem 1.1rem;
+  min-height: 44px;
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  background: var(--parchment);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--line);
+  cursor: pointer;
+}
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+.btn--do { background: var(--do); color: #0f2a0b; border-color: var(--do-edge); box-shadow: 3px 3px 0 var(--do-edge); }
+.btn--off { background: var(--off); color: #2a1600; border-color: var(--off-edge); box-shadow: 3px 3px 0 var(--off-edge); }
+.btn--crt { background: transparent; color: var(--phosphor); border-color: var(--phosphor); box-shadow: none; }
+.btn--crt:hover { background: rgba(0, 230, 118, 0.12); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

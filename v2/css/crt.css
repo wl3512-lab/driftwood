@@ -1,0 +1,82 @@
+/* The dark CRT world: splash, intro, reveal, field guide.
+   This is "the system underneath" the cozy garden. */
+.crt {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 16px;
+  background: var(--void);
+  color: var(--crt-text);
+  font-family: var(--font-ui);
+  text-align: center;
+}
+.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, 0.28) 2px 3px);
+}
+.crt > * { position: relative; z-index: 1; }
+
+.crt__title {
+  font-size: clamp(2.6rem, 10vw, 5.5rem);
+  letter-spacing: 0.12em;
+  color: var(--phosphor);
+  text-shadow: 0 0 12px rgba(0, 230, 118, 0.55);
+}
+.crt__title--small { font-size: clamp(1.8rem, 6vw, 3rem); }
+.crt__kicker { color: var(--gold); letter-spacing: 0.25em; font-size: 0.75rem; }
+.crt__line { max-width: 34rem; font-family: var(--font-body); font-size: 1.05rem; line-height: 1.6; }
+.crt__line--big { font-family: var(--font-ui); font-size: clamp(1.25rem, 3vw, 1.7rem); line-height: 1.35; color: var(--phosphor-light); }
+.crt__sprite { width: 80px; height: auto; }
+
+.intro__form { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+.intro__form label { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--crt-dim); }
+.intro__form input {
+  width: min(20rem, 100%);
+  min-height: 44px;
+  padding: 0.7rem 0.9rem;
+  font: 1.1rem var(--font-ui);
+  background: #0c140e;
+  color: var(--crt-text);
+  border: 2px solid var(--phosphor);
+  border-radius: 2px;
+}
+
+.reveal__flaw {
+  font-size: clamp(2.2rem, 8vw, 4rem);
+  letter-spacing: 0.14em;
+  color: var(--phosphor);
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+}
+.reveal__flaw:focus { outline: none; }
+.reveal__tip {
+  max-width: 32rem;
+  padding: 0.9rem 1rem;
+  border: 2px dashed var(--phosphor);
+  color: var(--phosphor-light);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.reveal__tip-label { display: block; margin-bottom: 0.35rem; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--gold); }
+.reveal__stars { font-size: 1.8rem; letter-spacing: 0.2em; color: var(--gold); }
+
+.guide__cards {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  width: min(60rem, 100%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+.guide__card { padding: 1rem; border: 2px dashed var(--phosphor); text-align: left; display: flex; flex-direction: column; gap: 0.5rem; }
+.guide__card h2 { color: var(--phosphor); font-size: 1.2rem; letter-spacing: 0.08em; }
+.guide__card p:last-child { font-family: var(--font-body); line-height: 1.5; }
+.guide__card--empty { border-color: #344a40; color: #4a6258; }
+.guide__card--empty h2 { color: #4a6258; }

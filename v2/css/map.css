@@ -1,0 +1,47 @@
+/* Level map: five plots, one helper each. */
+.map {
+  min-height: 100dvh;
+  padding: 1.2rem 16px 2rem;
+  background: linear-gradient(var(--sky) 0 22%, var(--grass) 22% 100%);
+  font-family: var(--font-ui);
+}
+.map__head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; max-width: 64rem; margin: 0 auto; }
+.map__title {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  padding: 0.4rem 0.8rem;
+  background: var(--parchment);
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.map__sub { max-width: 64rem; margin: 1rem auto 0; font-weight: 600; color: var(--ink); }
+.plots {
+  list-style: none;
+  max-width: 64rem;
+  margin: 1.5rem auto 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+.plot {
+  width: 100%;
+  min-height: 11rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1rem 0.6rem;
+  background: var(--soil);
+  border: 4px solid var(--soil-edge);
+  border-radius: 2px;
+  color: var(--parchment);
+  font: 600 0.9rem var(--font-ui);
+  cursor: pointer;
+}
+.plot:not([disabled]):hover { background: #c79a6a; }
+.plot img { width: 64px; height: auto; }
+.plot__num { font-size: 0.7rem; letter-spacing: 0.2em; }
+.plot__stars { color: #ffd54f; letter-spacing: 0.15em; font-size: 1.1rem; }
+.plot__status { font-size: 0.8rem; }
+.plot[disabled] { filter: grayscale(0.85) brightness(0.8); cursor: not-allowed; }
