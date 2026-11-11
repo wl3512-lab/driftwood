@@ -1,0 +1,22 @@
+[
+  {
+    "test": "laptop/fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/caught",
+    "status": "pass",
+    "longtasks": []
+  }
+]
