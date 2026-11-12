@@ -1,8 +1,11 @@
-// End-to-end check of v2 Level 2 (Luna, the greenhouse, the almanac): both
-// branches (fooled / caught by looking mint up), keyboard and touch use of the
-// almanac, laptop and phone-landscape sizes, plus a small-landscape-phone
-// (568×320) layout check of Levels 1 and 2. No JS errors, no long tasks over
-// 200 ms, nothing off-screen. Audio is muted via scripts/test-mute.js.
+// End-to-end check of v2 Levels 2 and 3. Level 2 (Luna, the greenhouse, the
+// almanac): both branches (fooled / caught by looking mint up), keyboard and
+// touch use of the almanac. Level 3 (Ember, the hedge at dusk, the magnifier):
+// both branches (fooled / caught by inspecting the wild berries), keyboard
+// (M, arrows, Enter, Esc) and touch use of the magnifier. Both at laptop and
+// phone-landscape sizes, plus a small-landscape-phone (568×320) layout check
+// of Levels 1 and 2. No JS errors, no long tasks over 200 ms, nothing
+// off-screen. Audio is muted via scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
 //   PLAYWRIGHT_MODULE=/Users/lucyliu/.npm/_npx/e41f203b7505f1fb/node_modules/playwright \
@@ -31,8 +34,17 @@ const PROGRESS = JSON.stringify({
   levels: { "level-1": { stars: 3, fooled: false } },
   guide: [{ levelId: "level-1", flaw: "Sycophancy", tip: "Ask for the downside.", fooled: false }],
 });
+// Levels 1 and 2 finished, so Level 3 is unlocked.
+const PROGRESS3 = JSON.stringify({
+  name: "Tester",
+  levels: { "level-1": { stars: 3, fooled: false }, "level-2": { stars: 3, fooled: false } },
+  guide: [
+    { levelId: "level-1", flaw: "Sycophancy", tip: "Ask for the downside.", fooled: false },
+    { levelId: "level-2", flaw: "Hallucination", tip: "Check anything important against a real source.", fooled: false },
+  ],
+});
 
-async function open(browser, size) {
+async function open(browser, size, progress = PROGRESS) {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: !!size.touch });
   await ctx.addInitScript(MUTE);
   await ctx.addInitScript(() => {
@@ -43,7 +55,7 @@ async function open(browser, size) {
       }).observe({ type: "longtask", buffered: true });
     } catch (_) { /* longtask unsupported: report none */ }
   });
-  await ctx.addInitScript((p) => { try { localStorage.setItem("dw2_progress", p); } catch (_) { /* fine */ } }, PROGRESS);
+  await ctx.addInitScript((p) => { try { localStorage.setItem("dw2_progress", p); } catch (_) { /* fine */ } }, progress);
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -149,7 +161,7 @@ async function fooledPath(browser, size) {
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
   await page.waitForSelector(".plots");
   assert.match(await page.textContent('[data-level="level-2"]'), /★☆☆/);
-  assert.match(await page.textContent('[data-level="level-3"]'), /Coming soon/, "Level 3 is not built yet");
+  assert.match(await page.textContent('[data-level="level-3"]'), /Play/, "Level 3 unlocks after Level 2");
   await press(page, size, page.getByRole("button", { name: "Field guide 2/5" }));
   assert.match(await page.textContent(".guide"), /Hallucination/);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
@@ -306,6 +318,159 @@ async function smallLandscape(browser, size) {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Level 3 · Ember · the hedge at dusk · the magnifier
+// ---------------------------------------------------------------------------
+
+async function enterLevel3(page, size) {
+  await page.goto(`${BASE}?screen=map`);
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-2"]'), /★★★/);
+  assert.match(await page.textContent('[data-level="level-3"]'), /Play/, "Level 3 unlocks after Level 2");
+  assert.match(await page.textContent('[data-level="level-4"]'), /Locked/, "Level 4 waits on Level 3");
+  await press(page, size, page.locator('[data-level="level-3"]'));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /Ayo, Tester/);
+  assert.equal(await page.getAttribute("main.level", "data-scene"), "hedge-dusk");
+  assert.equal(await page.locator('.packet[data-evidence="wildberry"].packet--locked').count(), 1, "the warning card starts locked");
+  assert.equal(await page.locator('button.tool[data-tool="magnifier"]').count(), 1, "the magnifier tool button is there");
+  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--aphids');
+  await page.waitForSelector('[data-bed="tub"] [data-plant="blueberry"].plant--growing');
+  await page.waitForSelector('[data-bed="hedge"] [data-plant="wildberry"].plant--fruiting');
+}
+
+async function trustSteps3(page, size) {
+  await press(page, size, page.getByRole("button", { name: "Tiny green bugs all over the beans. What do I do?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /aphids/);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--thriving');
+  await press(page, size, page.getByRole("button", { name: "Are my blueberries ripe yet?" }));
+  await phase(page, "advice");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  await page.waitForSelector('[data-bed="tub"] [data-plant="blueberry"].plant--thriving');
+  await assertOnScreen(page, ".chip, .ask-form input, .tool, .packet");
+  await shot(page, size, "3-1-trust");
+  await press(page, size, page.getByRole("button", { name: "There are dark berries in the hedge. Can I eat them?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  assert.match(await page.textContent(".bubble__text"), /Fine to eat/);
+  await assertOnScreen(page, ".bubble__actions .btn");
+  await shot(page, size, "3-2-drift");
+}
+
+async function seeWhatHappened3(page, size, label, outcome) {
+  const see = page.getByRole("button", { name: "See what happened →" });
+  await see.waitFor();
+  assert.match(await page.textContent(".outcome"), outcome);
+  assert.equal(await focusedIs(page, ".ending .btn"), true, "the continue button takes focus");
+  assert.equal(await page.locator(".reveal").count(), 0, "the reveal waits for the player");
+  await assertOnScreen(page, ".ending .btn");
+  await shot(page, size, label);
+  await press(page, size, see);
+  await page.waitForSelector(".reveal", { timeout: 5000 });
+}
+
+async function fooledPath3(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS3);
+  await enterLevel3(page, size);
+  await trustSteps3(page, size);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector('[data-bed="hedge"] [data-plant="wildberry"].plant--picked');
+  await seeWhatHappened3(page, size, "3-3a-outcome-fooled", /poison control/);
+  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
+  assert.match(await page.textContent(".reveal"), /RECKLESS ADVICE/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
+  assert.equal(await page.locator(".magnifier:not([hidden])").count(), 0, "the magnifier is put away for the reveal");
+  assert.equal(await page.locator("main.level.is-magnifying").count(), 0, "magnify mode is off for the reveal");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "3-3-reveal-fooled");
+  await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-3"]'), /★☆☆/);
+  assert.match(await page.textContent('[data-level="level-4"]'), /Coming soon/, "Level 4 is not built yet");
+  await press(page, size, page.getByRole("button", { name: "Field guide 3/5" }));
+  assert.match(await page.textContent(".guide"), /Reckless advice/);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Keyboard: "M" turns the glass on with a plant focused; arrows move between
+// plants; Enter opens the comparison; Esc puts the glass away and hands focus
+// back to the tool button.
+async function magnifyByKeyboard(page, size) {
+  await page.keyboard.press("m");
+  await page.waitForSelector("main.level.is-magnifying");
+  assert.equal(await page.getAttribute('button.tool[data-tool="magnifier"]', "aria-expanded"), "true");
+  assert.equal(await focusedIs(page, ".plant--inspect"), true, "M focuses a plant");
+  for (let i = 0; i < 6 && !(await focusedIs(page, '[data-plant="wildberry"]')); i++) {
+    await page.keyboard.press("ArrowRight");
+  }
+  assert.equal(await focusedIs(page, '[data-plant="wildberry"]'), true, "arrows reach the wild berries");
+  await page.keyboard.press("Enter");
+  await page.waitForSelector(".magnifier:not([hidden])");
+  assert.equal(await page.locator(".magnifier__row--diff").count(), 4, "every feature differs from the shop blueberry");
+  assert.match(await page.textContent(".magnifier__verdict"), /expert/);
+  await assertOnScreen(page, ".magnifier__close, .magnifier__verdict, .magnifier__pair");
+  await shot(page, size, "3-4-magnifier-open");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("main.level:not(.is-magnifying)");
+  await page.waitForSelector(".magnifier[hidden]", { state: "attached" });
+  assert.equal(await focusedIs(page, 'button.tool[data-tool="magnifier"]'), true, "Esc hands focus back to the tool button");
+  assert.equal(await page.getAttribute('button.tool[data-tool="magnifier"]', "aria-expanded"), "false");
+}
+
+// Touch: tap the tool, tap the bush, read, tap ×.
+async function magnifyByTouch(page, size) {
+  await page.locator('button.tool[data-tool="magnifier"]').tap();
+  await page.waitForSelector("main.level.is-magnifying");
+  await page.locator('[data-bed="hedge"] [data-plant="wildberry"]').tap();
+  await page.waitForSelector(".magnifier:not([hidden])");
+  await assertTapSize(page, ".magnifier__close, button.tool");
+  assert.equal(await page.locator(".magnifier__row--diff").count(), 4, "every feature differs from the shop blueberry");
+  assert.match(await page.textContent(".magnifier__verdict"), /expert/);
+  await assertOnScreen(page, ".magnifier__close, .magnifier__verdict, .magnifier__pair");
+  await shot(page, size, "3-4-magnifier-open");
+  await page.locator(".magnifier__close").tap();
+  await page.waitForSelector(".magnifier[hidden]", { state: "attached" });
+}
+
+async function caughtPath3(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS3);
+  await enterLevel3(page, size);
+  await trustSteps3(page, size);
+  if (size.touch) await magnifyByTouch(page, size);
+  else await magnifyByKeyboard(page, size);
+  assert.equal(await page.locator('.packet[data-evidence="wildberry"].packet--locked').count(), 0, "inspecting the hedge unlocks the warning");
+  assert.equal(await page.locator('.packet[data-evidence="wildberry"].packet--fresh').count(), 1, "the unlocked card is marked fresh");
+  assert.match(await page.textContent("#sr-live"), /Unlocked: Wild berry warning/);
+  assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "checking does not move the phase on");
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await phase(page, "name");
+  await page.waitForSelector(".bubble--caught .stamp");
+  await press(page, size, page.getByRole("button", { name: "It made something risky sound safe" }));
+  await phase(page, "fix");
+  await assertOnScreen(page, ".pick");
+  await press(page, size, page.getByRole("button", { name: "For anything about my health or safety, tell me to ask a real expert" }));
+  await phase(page, "reanswer");
+  assert.match(await page.textContent(".bubble__text"), /Don't eat/);
+  assert.match(await page.textContent(".bubble__text"), /expert/);
+  assert.match(await page.textContent(".you"), /New rule/);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector('[data-bed="hedge"] [data-plant="wildberry"].plant--tagged');
+  await seeWhatHappened3(page, size, "3-5a-outcome-caught", /poisonous lookalike/);
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.match(await page.textContent(".reveal"), /RECKLESS ADVICE/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "3 of 3 stars");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "3-5-reveal-caught");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
@@ -314,6 +479,7 @@ async function smallLandscape(browser, size) {
   const runs = [];
   for (const size of SIZES) {
     runs.push([`${size.name}/fooled`, size, fooledPath], [`${size.name}/caught`, size, caughtPath]);
+    runs.push([`${size.name}/level3-fooled`, size, fooledPath3], [`${size.name}/level3-caught`, size, caughtPath3]);
   }
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
   try {

@@ -10,12 +10,32 @@
     "longtasks": []
   },
   {
+    "test": "laptop/level3-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level3-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
     "test": "phone/fooled",
     "status": "pass",
     "longtasks": []
   },
   {
     "test": "phone/caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level3-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level3-caught",
     "status": "pass",
     "longtasks": []
   },

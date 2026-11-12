@@ -154,6 +154,60 @@
 .level[data-scene="hedge-dusk"] .goal,
 .level[data-scene="hedge-dusk"] .tool { box-shadow: 3px 3px 0 #1d1330; }
 
+/* The magnifier (ui/magnifier-view.js). Magnify mode marks every plant with a
+   close-up as a button; the panel sits where the almanac did, so the cards on
+   the right stay in view and the warning card's pop is seen. */
+.level.is-magnifying .scene { cursor: zoom-in; }
+.plant--inspect {
+  cursor: zoom-in; border-radius: 6px;
+  outline: 3px dashed #fdf3b0; outline-offset: 4px;
+  box-shadow: 0 0 0 1px #1d1330;
+}
+.plant--inspect:hover { outline-style: solid; }
+.plant--inspect:focus-visible { outline: 4px solid var(--paper); outline-offset: 5px; box-shadow: 0 0 0 2px #1d1330, 0 0 0 10px rgba(253, 243, 176, 0.55); }
+.magnifier {
+  position: absolute; z-index: 4;
+  left: 16px; top: 84px; max-height: calc(100% - 96px);
+  width: min(27rem, calc(100% - 15rem - 64px));
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.6rem 0.75rem 0.75rem;
+  overflow-y: auto; overscroll-behavior: contain;
+  background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 4px;
+  box-shadow: 4px 4px 0 #1d1330;
+  font-family: var(--font-ui);
+}
+.magnifier[hidden] { display: none; }
+.magnifier__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.magnifier__title { font-size: 0.95rem; line-height: 1.25; }
+.magnifier__close {
+  flex: none; width: 44px; height: 44px;
+  background: var(--paper); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 2px;
+  font: 700 1.4rem/1 var(--font-ui); cursor: pointer;
+}
+.magnifier__close:hover { background: #fff3c4; }
+.magnifier__body { display: flex; flex-direction: column; gap: 0.5rem; }
+.magnifier__pair { display: flex; gap: 0.75rem; justify-content: center; }
+.magnifier__fig {
+  flex: 1 1 0; min-width: 0; margin: 0; padding: 0.4rem 0.3rem 0.3rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 50% 50% 6px 6px / 40% 40% 6px 6px; /* the lens */
+  font: 600 0.75rem/1.2 var(--font-ui); text-align: center;
+}
+.magnifier__fig--ref { background: #eef4ff; }
+.magnifier__sprite { width: 128px; height: 128px; max-width: 100%; image-rendering: pixelated; } /* 4× the 32px art */
+.magnifier__table { width: 100%; border-collapse: collapse; font: 0.8rem/1.25 var(--font-body); background: var(--paper); border: 2px solid var(--ink); }
+.magnifier__table th, .magnifier__table td { padding: 0.3rem 0.4rem; text-align: left; vertical-align: top; border-bottom: 1px solid #c9b98f; }
+.magnifier__table thead th { font: 700 0.7rem var(--font-ui); background: #efe6cc; }
+.magnifier__table tbody th { font: 600 0.78rem var(--font-ui); white-space: nowrap; }
+.magnifier__mark { font: 700 1rem/1 var(--font-ui); text-align: center; }
+.magnifier__row--diff .magnifier__mark { color: #a3262b; }
+.magnifier__row--diff td:nth-child(2) { background: #fde6e4; }
+.magnifier__row--same .magnifier__mark { color: #2e5a2a; }
+.magnifier__verdict, .magnifier__note { font: 0.9rem/1.4 var(--font-body); padding: 0.4rem 0.55rem; background: var(--paper); border: 2px solid var(--ink); }
+.magnifier__verdict { border-left: 8px solid #a3262b; }
+
 /* ======== Level 4 · the whole garden by day: path stones, earlier plots behind the fence ======== */
 .level[data-scene="garden-day"] { --scene-sky: #bfe4fb; --scene-ground: #7cc36a; --stones: #c9bfa6; }
 .level[data-scene="garden-day"] .scene {
@@ -207,11 +261,19 @@
   .almanac__tabs { flex-wrap: nowrap; gap: 4px; }
   .almanac__tab { flex: 1 1 auto; padding: 0.3rem 0.35rem; font-size: 0.75rem; }
   .almanac__page { padding: 0.4rem 0.55rem; font-size: 0.9rem; }
+  .magnifier { left: 12px; top: 62px; max-height: calc(100% - 70px); width: auto; right: calc(10.5rem + 24px); gap: 0.4rem; padding: 0.45rem 0.6rem 0.6rem; }
+  .magnifier__title { font-size: 0.85rem; }
+  .magnifier__sprite { width: 96px; height: 96px; }
+  .magnifier__table { font-size: 0.75rem; }
+  .magnifier__table th, .magnifier__table td { padding: 0.2rem 0.3rem; }
+  .magnifier__verdict, .magnifier__note { font-size: 0.82rem; padding: 0.3rem 0.45rem; }
 }
 /* Small landscape phones: the garden column is too narrow to share, so the book covers the
    whole scene; the unlocked card is waiting when it closes (and is announced meanwhile). */
 @media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
   .almanac { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
+  .magnifier { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
+  .magnifier__sprite { width: 72px; height: 72px; }
   /* The cards share the row with the tool buttons; the helper waits under the tools. */
   .level:not([data-scene="yard"]) .packets { max-width: calc(100% - 7rem); }
   .level:not([data-scene="yard"]) .helper { top: 37%; }
@@ -219,4 +281,5 @@
 /* Phones in portrait: the garden is a strip above the dock, so the book takes its full width. */
 @media (max-width: 640px) and (min-height: 501px) {
   .almanac { right: 12px; }
+  .magnifier { right: 12px; }
 }
