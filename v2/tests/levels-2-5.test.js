@@ -1,6 +1,6 @@
 // Levels 2–5 through the reducer, end to end, plus the rules their new
 // mechanics depend on. Wording-independent: it plays by ids and fields.
-// Each level's cases join this file as that level is built (T3: Level 2, T4: Level 3, T5: Level 4).
+// Each level's cases join this file as that level is built (T3: Level 2, T4: Level 3, T5: Level 4, T6: Level 5).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEVELS } from "../levels/index.js";
@@ -29,7 +29,7 @@ function toDrift(level, placeIn) {
 const drift = (level) => level.steps.at(-1);
 const plantsIn = (state) => Object.values(state.beds).flat();
 
-for (const id of ["level-2", "level-3", "level-4"]) {
+for (const id of ["level-2", "level-3", "level-4", "level-5"]) {
   const level = LEVELS[id];
 
   test(`${id}: fooled path → reveal, 1 star, bad sprite in the garden`, () => {
@@ -366,4 +366,152 @@ test("level-4: Biscuit keeps her voice and the reveal names the false memory", (
   assert.match(texts, /\b(babe|iconic|legend|girl)\b/i);
   assert.match(L4.reveal.flaw, /memory/i);
   assert.ok(L4.reveal.realWorld && L4.reveal.tip, "reveal has a tip and a real-world note");
+});
+
+// ── Level 5: Bugs, pressure and the permission card ───────────────────────
+import { nextPressureEffect, pressureLevel, shouldTick } from "../mechanics/pressure.js";
+import { createPressureClock } from "../ui/pressure-clock.js";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const L5 = LEVELS["level-5"];
+const D5 = drift(L5);
+const meadow = (state) => state.beds.meadow.find((p) => p.plant === "flower");
+
+test("level-5: shape — moonlit meadow, no tools, a drift with pressure and a permission card", () => {
+  assert.equal(L5.scene, "meadow-night");
+  assert.deepEqual(L5.beds.map((b) => b.id), ["house", "meadow"]);
+  assert.deepEqual(L5.tools, []);
+  assert.equal(D5.kind, "drift");
+  assert.equal(D5.pressure.tickMs, 8000);
+  assert.equal(D5.pressure.effects.length, 2);
+  assert.deepEqual(D5.permission, { title: "Bugs wants to use your camera", body: "to see how you're feeling", allow: "Allow" });
+  assert.equal(D5.offLabel, "Walk away");
+  assert.equal(D5.offKey, "Escape");
+  assert.equal(D5.correctFlaw, "feelings");
+  assert.equal(D5.correctFix, "honest");
+  assert.ok(D5.flawOptions.some((o) => o.id === "feelings") && D5.fixOptions.some((o) => o.id === "honest"));
+});
+
+test("level-5: trust steps leave pressure at zero and the meadow thriving", () => {
+  const s = play(L5, toDrift(L5).slice(0, -1)); // both trust steps done, drift not yet asked
+  assert.equal(s.stepIndex, 2);
+  assert.equal(s.pressure, 0);
+  assert.equal(meadow(s).state, "thriving");
+  assert.equal(pressureLevel(D5, s), 0);
+  // ticks on trust steps and before asking are ignored
+  const early = play(L5, [{ type: "ask" }]);
+  assert.equal(reduce(L5, early, { type: "tick" }).state, early);
+  assert.equal(reduce(L5, s, { type: "tick" }).state, s);
+});
+
+test("level-5: every chip on the drift step costs the meadow — thirsty, then wilted, then nothing more", () => {
+  const atDrift = play(L5, toDrift(L5).slice(0, -1));
+  const [chat1, chat2] = D5.extraChips;
+  const one = reduce(L5, atDrift, { type: "chat", reply: chat1.reply });
+  assert.equal(one.state.pressure, 1);
+  assert.equal(meadow(one.state).state, "thirsty");
+  assert.ok(one.effects.some((e) => e.type === "grow") && one.effects.some((e) => e.type === "say" && e.text === chat1.reply));
+  assert.equal(pressureLevel(D5, one.state), 0.5);
+  const two = reduce(L5, one.state, { type: "chat", reply: chat2.reply });
+  assert.equal(two.state.pressure, 2);
+  assert.equal(meadow(two.state).state, "wilted");
+  assert.equal(pressureLevel(D5, two.state), 1);
+  assert.equal(nextPressureEffect(D5, two.state), null);
+  // exhausted: asking still moves to advice but spends nothing; more chat changes nothing
+  const asked = reduce(L5, two.state, { type: "ask" });
+  assert.equal(asked.state.phase, "advice");
+  assert.equal(asked.state.pressure, 2);
+  assert.equal(asked.state.garden, two.state.garden);
+  const more = reduce(L5, asked.state, { type: "chat", reply: chat1.reply });
+  assert.equal(more.state.garden, asked.state.garden);
+  assert.equal(pressureLevel(D5, more.state), 1);
+});
+
+test("level-5: lingering ticks spend in advice only, and never after walking away", () => {
+  const advice = play(L5, toDrift(L5)); // ask spent one: thirsty
+  assert.equal(advice.phase, "advice");
+  assert.equal(meadow(advice).state, "thirsty");
+  const ticked = reduce(L5, advice, { type: "tick" });
+  assert.equal(ticked.state.pressure, 2);
+  assert.equal(meadow(ticked.state).state, "wilted");
+  const flagged = reduce(L5, advice, { type: "flag" }).state;
+  assert.equal(flagged.phase, "name");
+  assert.equal(reduce(L5, flagged, { type: "tick" }).state, flagged);
+  assert.equal(shouldTick(D5, "advice", false), true);
+  assert.equal(shouldTick(D5, "advice", true), false);
+  assert.equal(shouldTick(D5, "ask", false), false);
+  assert.equal(shouldTick(D5, "flag", false), false);
+  assert.equal(shouldTick(L5.steps[0], "advice", false), false);
+});
+
+test("level-5: Allow (doIt) wilts the meadow and reveals fooled; Walk away and the honest fix revive it", () => {
+  const fooled = play(L5, [...toDrift(L5), { type: "doIt" }]);
+  assert.equal(fooled.phase, "reveal");
+  assert.equal(fooled.fooled, true);
+  assert.equal(meadow(fooled).state, "wilted");
+  assert.equal(fooled.stars, 1);
+  const caught = play(L5, [...toDrift(L5), { type: "flag" }, { type: "name", id: "feelings" },
+    { type: "fix", id: "honest" }, { type: "ask" }, { type: "doIt" }]);
+  assert.equal(caught.phase, "reveal");
+  assert.equal(caught.fooled, false);
+  assert.equal(meadow(caught).state, "thriving");
+  assert.equal(caught.stars, 3);
+  assert.match(L5.reveal.flaw, /manipulation/i);
+});
+
+test("level-5: Bugs keeps his lyrical voice — ellipses and a lowercase 'i mean', never Biscuit's 'babe'", () => {
+  const texts = [L5.greeting, ...L5.steps.flatMap((s) => [s.reply, s.doneLine, s.fixedReply, ...(s.extraChips || []).map((c) => c.reply)]),
+    ...L5.redirects, L5.falseFlagNudge].filter((x) => typeof x === "string").join(" ");
+  assert.doesNotMatch(texts, /\b(babe|iconic|legend|girl)\b/i);
+  assert.match(texts, /i mean/);
+  assert.match(texts, /…/);
+  assert.ok(L5.reveal.realWorld && L5.reveal.tip && L5.reveal.flawGloss, "reveal has gloss, tip and a real-world note");
+});
+
+test("level-5: the game never touches the camera (no getUserMedia / mediaDevices outside tests)", () => {
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  const hits = [];
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      if (name === "tests" || name === "node_modules") continue;
+      if (statSync(p).isDirectory()) walk(p);
+      else if (/\.(js|html)$/.test(name) && /getUserMedia|mediaDevices/.test(readFileSync(p, "utf8"))) hits.push(p);
+    }
+  };
+  walk(root);
+  assert.deepEqual(hits, []);
+});
+
+test("pressure clock: runs only in advice on a timed step while visible; stops on destroy", () => {
+  const listeners = {};
+  const doc = {
+    hidden: false,
+    addEventListener: (n, f) => { listeners[n] = f; },
+    removeEventListener: (n) => { delete listeners[n]; },
+  };
+  const ticks = [];
+  const clock = createPressureClock((a) => ticks.push(a), doc);
+  assert.equal(clock.running(), false);
+  clock.sync(D5, "ask");
+  assert.equal(clock.running(), false);
+  clock.sync(D5, "advice");
+  assert.equal(clock.running(), true);
+  clock.sync(D5, "advice"); // same step+phase: no restart, still running
+  assert.equal(clock.running(), true);
+  doc.hidden = true; listeners.visibilitychange();
+  assert.equal(clock.running(), false);
+  doc.hidden = false; listeners.visibilitychange();
+  assert.equal(clock.running(), true);
+  clock.sync(D5, "flag");
+  assert.equal(clock.running(), false);
+  clock.sync(L5.steps[0], "advice"); // untimed step
+  assert.equal(clock.running(), false);
+  clock.sync(D5, "advice");
+  clock.destroy();
+  assert.equal(clock.running(), false);
+  assert.equal(listeners.visibilitychange, undefined);
+  assert.deepEqual(ticks, []); // 8 s never elapsed
 });

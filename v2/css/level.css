@@ -181,6 +181,26 @@
   transform: rotate(4deg);
 }
 .hint { padding: 0.45rem 0.7rem; background: #fff0d6; border-left: 4px solid var(--off); color: #6b3d00; font: 600 1rem var(--font-ui); }
+/* Level 5's permission card: drawn like a system prompt, sitting under the bubble. */
+.permit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  background: #f4f6ff;
+  border: 3px solid var(--ink);
+  border-radius: 6px;
+  box-shadow: 3px 3px 0 var(--ink);
+  animation: permit-in 0.3s ease-out;
+}
+@keyframes permit-in { from { opacity: 0; transform: translateY(6px); } }
+.permit__icon { grid-row: 1 / span 2; width: 32px; height: 32px; }
+.permit__text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.permit__title { font: 700 1rem var(--font-ui); }
+.permit__body { font: 0.95rem var(--font-body); color: #3a3f55; }
+.permit__actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.permit__actions .btn { min-height: 44px; }
 .ending { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; }
 .outcome { font: 700 1.05rem/1.4 var(--font-ui); }
 .prompt { font: 700 0.95rem var(--font-ui); }
@@ -227,6 +247,8 @@
   .bubble { padding: 0.5rem 0.7rem; }
   .bubble__text { font-size: 1rem; }
   .bubble__actions { margin-top: 0.5rem; }
+  .permit { padding: 0.5rem 0.7rem; gap: 0.3rem 0.6rem; }
+  .permit__icon { width: 26px; height: 26px; }
   .chips { flex-wrap: nowrap; overflow-x: auto; }
   .chip { flex: none; }
   .you { padding: 0.3rem 0.6rem; font-size: 1rem; }

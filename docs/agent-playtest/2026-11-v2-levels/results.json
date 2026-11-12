@@ -1,51 +1,11 @@
 [
   {
-    "test": "laptop/fooled",
+    "test": "laptop/level5-fooled",
     "status": "pass",
     "longtasks": []
   },
   {
-    "test": "laptop/caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level3-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level3-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level4-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level4-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level3-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level3-caught",
+    "test": "laptop/level5-caught",
     "status": "pass",
     "longtasks": []
   },
@@ -55,17 +15,22 @@
     "longtasks": []
   },
   {
-    "test": "phone/level4-caught",
+    "test": "phone/level5-fooled",
     "status": "pass",
     "longtasks": []
   },
   {
-    "test": "laptop/perfect",
+    "test": "phone/level5-caught",
     "status": "pass",
     "longtasks": []
   },
   {
     "test": "small/landscape",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level5-tick",
     "status": "pass",
     "longtasks": []
   }

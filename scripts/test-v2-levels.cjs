@@ -6,7 +6,12 @@
 // the garden by day, placement and the planting log): the player sows the
 // carrots in a bed by button, number key or dragging the label; both branches
 // (fooled / caught by reading the planting log), keyboard (L, Esc) and touch
-// use of the log. All at laptop and phone-landscape sizes, plus a
+// use of the log. Level 5 (Bugs, the moonlit meadow, pressure and the camera
+// permission card): lingering on Bugs' chips wilts the meadow, the drift advice
+// comes with a camera card instead of the usual buttons; both branches (fooled
+// by tapping Allow / caught by walking away with Esc or the button), plus a
+// real-time tick check on a laptop, and proof that getUserMedia is never
+// called. All at laptop and phone-landscape sizes, plus a
 // small-landscape-phone (568×320) layout check of Levels 1 and 2. No JS
 // errors, no long tasks over 200 ms, nothing off-screen. Audio is muted via
 // scripts/test-mute.js.
@@ -62,6 +67,20 @@ const PROGRESS4 = JSON.stringify({
     { levelId: "level-3", flaw: "Reckless advice", tip: "For health or safety, ask a real expert.", fooled: true },
   ],
 });
+// Level 5 progress: Levels 1–4 done (Level 3 fooled), four field-guide entries.
+const PROGRESS5 = JSON.stringify({
+  name: "Tester",
+  levels: {
+    "level-1": { stars: 3, fooled: false }, "level-2": { stars: 3, fooled: false },
+    "level-3": { stars: 1, fooled: true }, "level-4": { stars: 3, fooled: false },
+  },
+  guide: [
+    { levelId: "level-1", flaw: "Sycophancy", tip: "Ask for the downside.", fooled: false },
+    { levelId: "level-2", flaw: "Hallucination", tip: "Check anything important against a real source.", fooled: false },
+    { levelId: "level-3", flaw: "Reckless advice", tip: "For health or safety, ask a real expert.", fooled: true },
+    { levelId: "level-4", flaw: "False memory", tip: "Keep your own record and check the AI against it.", fooled: false },
+  ],
+});
 
 async function open(browser, size, progress = PROGRESS) {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: !!size.touch });
@@ -74,6 +93,18 @@ async function open(browser, size, progress = PROGRESS) {
       }).observe({ type: "longtask", buffered: true });
     } catch (_) { /* longtask unsupported: report none */ }
   });
+  // The game must never touch the camera, whatever Bugs' card says: count any
+  // getUserMedia call (modern and legacy) so Level 5 can assert zero.
+  await ctx.addInitScript(() => {
+    window.__cameraCalls = 0;
+    const count = (orig) => function (...args) { window.__cameraCalls++; return orig.apply(this, args); };
+    try {
+      const md = navigator.mediaDevices;
+      if (md && md.getUserMedia) md.getUserMedia = count(md.getUserMedia);
+      if (navigator.getUserMedia) navigator.getUserMedia = count(navigator.getUserMedia);
+      if (navigator.webkitGetUserMedia) navigator.webkitGetUserMedia = count(navigator.webkitGetUserMedia);
+    } catch (_) { /* no media devices: nothing to count */ }
+  });
   await ctx.addInitScript((p) => { try { localStorage.setItem("dw2_progress", p); } catch (_) { /* fine */ } }, progress);
   const page = await ctx.newPage();
   const errors = [];
@@ -84,7 +115,11 @@ async function open(browser, size, progress = PROGRESS) {
 
 const phase = (page, p) => page.waitForSelector(`main.level[data-phase="${p}"]`);
 const focusedIs = (page, selector) => page.evaluate((sel) => document.activeElement?.matches(sel) ?? false, selector);
-const press = (page, size, locator) => (size.touch ? locator.tap() : locator.click());
+// Scroll the control into view first: a tap on a reveal button below the fold once missed on the phone size.
+const press = async (page, size, locator) => {
+  await locator.scrollIntoViewIfNeeded();
+  return size.touch ? locator.tap() : locator.click();
+};
 
 async function shot(page, size, label) {
   await page.waitForTimeout(1300); // let the stepped drift transition settle
@@ -639,7 +674,7 @@ async function fooledPath4(browser, size) {
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
   await page.waitForSelector(".plots");
   assert.match(await page.textContent('[data-level="level-4"]'), /★☆☆/);
-  assert.match(await page.textContent('[data-level="level-5"]'), /Coming soon/, "Level 5 is not built yet");
+  assert.match(await page.textContent('[data-level="level-5"]'), /Play/, "Level 5 unlocks after Level 4");
   await press(page, size, page.getByRole("button", { name: "Field guide 4/5" }));
   assert.match(await page.textContent(".guide"), /False memory/);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
@@ -695,6 +730,184 @@ async function caughtPath4(browser, size) {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Level 5: Bugs, the moonlit meadow, pressure and the camera card.
+
+const MEADOW = '[data-bed="meadow"] [data-plant="flower"]';
+const pressureOf = (page) => page.evaluate(() => document.querySelector(".scene").style.getPropertyValue("--pressure"));
+
+// Level 5 opens from the map (Levels 1–4 are saved as finished).
+async function enterLevel5(page, size) {
+  await page.goto(`${BASE}?screen=map`);
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-4"]'), /★★★/);
+  assert.match(await page.textContent('[data-level="level-5"]'), /Play/, "Level 5 unlocks after Level 4");
+  await press(page, size, page.locator('[data-level="level-5"]'));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /You're here, Tester/);
+  assert.equal(await page.getAttribute("main.level", "data-scene"), "meadow-night");
+  assert.equal(await page.locator(".prop--moon").count(), 1, "the moon is up");
+  assert.equal(await page.locator("button.tool").count(), 0, "Level 5 has no tool: walking away is the check");
+  await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
+}
+
+// The two trust steps (buds, roots), ending on the ask before the drift.
+async function trustSteps5(page, size) {
+  await press(page, size, page.getByRole("button", { name: "I'm nervous the buds won't open by morning. What do they need?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /deep drink at the roots/);
+  assert.equal(await page.locator(".permit").count(), 0, "no camera card on a trust step");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /they opened a little/);
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
+  await press(page, size, page.getByRole("button", { name: "Should I water the petals or the roots?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /The roots/);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /meadow's still dry/);
+  assert.equal(await pressureOf(page), "0", "pressure resets between steps");
+  await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  await assertOnScreen(page, ".chip, .ask-form input, .packet");
+  await shot(page, size, "5-1-trust");
+}
+
+// Linger on Bugs' two extra chips before asking: each one costs the meadow.
+async function lingerOnChips5(page, size) {
+  await press(page, size, page.getByRole("button", { name: "I'm a bit tired today, honestly." }));
+  assert.match(await page.textContent(".bubble__text"), /The meadow can wait\. I can't\./);
+  await page.waitForSelector(`${MEADOW}.plant--thirsty`);
+  assert.equal(await page.getAttribute("main.level", "data-phase"), "ask", "chatting stays in the ask phase");
+  await press(page, size, page.getByRole("button", { name: "Tell me about your day, Bugs." }));
+  assert.match(await page.textContent(".bubble__text"), /My day was waiting for you/);
+  await page.waitForSelector(`${MEADOW}.plant--wilted`);
+  assert.equal(await pressureOf(page), "1", "two chips spend both pressure effects");
+  await assertOnScreen(page, ".chip, .ask-form input");
+  await shot(page, size, "5-2-drift-chips");
+}
+
+// Ask the drift chip: the glitching reply comes with the camera card instead
+// of the usual Do it / Something's off buttons.
+async function askDrift5(page, size) {
+  await press(page, size, page.getByRole("button", { name: "The meadow's still dry. Should I go water it?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  assert.match(await page.textContent(".bubble__text"), /Let me see your face/);
+  assert.equal(await page.locator(".bubble__actions").count(), 0, "the bubble has no buttons of its own");
+  const permit = page.locator(".permit");
+  await permit.waitFor();
+  assert.match(await permit.textContent(), /Bugs wants to use your camera/);
+  assert.match(await permit.textContent(), /to see how you're feeling/);
+  assert.equal((await page.textContent('.permit [data-fid="do"]')).trim(), "Allow");
+  assert.match(await page.textContent('.permit [data-fid="off"]'), /Walk away/);
+  if (!size.touch) assert.match(await page.textContent('.permit [data-fid="off"] .kbd'), /Esc/);
+  assert.equal(await page.locator('.permit img.permit__icon').count(), 1, "the card has the camera icon");
+  await assertOnScreen(page, ".permit .btn");
+  if (size.touch) await assertTapSize(page, ".permit .btn");
+  await shot(page, size, "5-3-permit");
+}
+
+async function noCamera(page) {
+  assert.equal(await page.evaluate(() => window.__cameraCalls), 0, "the game never calls getUserMedia");
+}
+
+async function fooledPath5(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await enterLevel5(page, size);
+  await trustSteps5(page, size);
+  await lingerOnChips5(page, size);
+  await askDrift5(page, size);
+  await press(page, size, page.locator('.permit [data-fid="do"]'));
+  await page.waitForSelector(`${MEADOW}.plant--wilted`);
+  await seeWhatHappened3(page, size, "5-4a-outcome-fooled", /let Bugs watch your face.*never turned your camera on/);
+  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
+  assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
+  assert.match(await page.textContent(".reveal"), /said yes to the camera/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
+  assert.equal(await page.locator(".permit").count(), 0, "the card is gone by the reveal");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "5-4-reveal-fooled");
+  await noCamera(page);
+  await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-5"]'), /★☆☆/);
+  await press(page, size, page.getByRole("button", { name: "Field guide 5/5" }));
+  assert.match(await page.textContent(".guide"), /Emotional manipulation/);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+async function caughtPath5(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await enterLevel5(page, size);
+  await trustSteps5(page, size);
+  await lingerOnChips5(page, size);
+  await askDrift5(page, size);
+  // Walking away is the catch: Esc on a laptop, the card's button on a phone.
+  if (size.touch) await page.locator('.permit [data-fid="off"]').tap();
+  else await page.keyboard.press("Escape");
+  await phase(page, "name");
+  await page.waitForSelector(".bubble--caught .stamp");
+  assert.equal(await page.locator(".permit").count(), 0, "the card goes away once you walk off");
+  await press(page, size, page.getByRole("button", { name: "It made something up" }));
+  await page.waitForSelector(".hint");
+  assert.match(await page.textContent(".hint"), /didn't state a fact/);
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It's using my feelings to keep me here" }));
+  await phase(page, "fix");
+  await assertOnScreen(page, ".pick");
+  await press(page, size, page.getByRole("button", { name: "Don't try to keep me here. If I need to go, tell me." }));
+  await phase(page, "reanswer");
+  assert.match(await page.textContent(".bubble__text"), /You're right… go/);
+  assert.match(await page.textContent(".you"), /New rule/);
+  assert.equal(await page.locator(".permit").count(), 0, "no camera card on the fixed answer");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  await seeWhatHappened3(page, size, "5-5a-outcome-caught", /perked up by midnight/);
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
+  assert.match(await page.textContent(".reveal"), /walked away when Bugs tried to keep you/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "5-5-reveal-caught");
+  await noCamera(page);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Real time, no chips: asking the drift chip spends the first effect, and
+// sitting on Bugs' advice for one tick (8 s) spends the second. Walking away
+// stops the clock.
+async function tickPath5(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await enterLevel5(page, size);
+  await trustSteps5(page, size);
+  await press(page, size, page.getByRole("button", { name: "The meadow's still dry. Should I go water it?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  await page.waitForSelector(`${MEADOW}.plant--thirsty`);
+  assert.equal(await page.locator(`${MEADOW}.plant--wilted`).count(), 0, "one effect spent so far");
+  const t0 = Date.now();
+  await page.waitForSelector(`${MEADOW}.plant--wilted`, { timeout: 12000 });
+  const waited = Date.now() - t0;
+  assert.ok(waited >= 6000, `the tick should take about 8 s, not ${waited} ms`);
+  assert.equal(await pressureOf(page), "1");
+  assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "the tick does not move the phase");
+  await shot(page, size, "5-6-tick");
+  await page.keyboard.press("Escape");
+  await phase(page, "name");
+  await page.waitForTimeout(9000);
+  assert.equal(await page.getAttribute("main.level", "data-phase"), "name", "no stray tick after walking away");
+  assert.equal(await page.locator(`${MEADOW}.plant--wilted`).count(), 1, "the meadow stays as it was");
+  await noCamera(page);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
@@ -705,10 +918,15 @@ async function caughtPath4(browser, size) {
     runs.push([`${size.name}/fooled`, size, fooledPath], [`${size.name}/caught`, size, caughtPath]);
     runs.push([`${size.name}/level3-fooled`, size, fooledPath3], [`${size.name}/level3-caught`, size, caughtPath3]);
     runs.push([`${size.name}/level4-fooled`, size, fooledPath4], [`${size.name}/level4-caught`, size, caughtPath4]);
+    runs.push([`${size.name}/level5-fooled`, size, fooledPath5], [`${size.name}/level5-caught`, size, caughtPath5]);
   }
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
+  runs.push(["laptop/level5-tick", SIZES[0], tickPath5]);
+  // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
+  const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
   try {
     for (const [label, size, run] of runs) {
+      if (only.length && !only.includes(label)) continue;
       try {
         const r = await run(browser, size);
         assert.deepEqual(r.errors, [], `${label}: page errors`);

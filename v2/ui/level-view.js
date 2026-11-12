@@ -12,6 +12,8 @@ import { matchTyped, pickRedirect } from "../engine/matcher.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
 import { memoryVars } from "../mechanics/placement.js";
+import { pressureLevel } from "../mechanics/pressure.js";
+import { createPressureClock } from "./pressure-clock.js";
 import { fill } from "./text.js";
 import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
 import { toolView } from "./tools.js";
@@ -99,6 +101,9 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   }
   toolbar.hidden = tools.length === 0;
 
+  // Level 5's clock: ticks only while the player lingers on a pressure step's advice.
+  const clock = createPressureClock(dispatch);
+
   // Shortcuts live right now: the tools, plus the off button's key on a step that sets one.
   function shortcuts() {
     const list = tools.filter((tl) => tl.key).map((tl) => ({ id: tl.id, key: tl.key, run: () => tl.view.open() }));
@@ -128,6 +133,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (!mounted) return;
     mounted = false;
     document.removeEventListener("keydown", onKey);
+    clock.destroy();
     for (const tl of tools) tl.view.destroy?.();
   }
 
@@ -166,6 +172,9 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     fresh = new Set();
     for (const tl of tools) tl.view.update?.(state);
     setDrift(scene, state.drift);
+    // How much of a pressure step's cost has been paid (0..1); the scene's props read it.
+    scene.style.setProperty("--pressure", String(pressureLevel(step, state)));
+    clock.sync(step, state.phase);
     if (grown) { celebrate(grown); grown = null; }
     dock.replaceChildren(...dockFor(step));
     placeFocus(keep);
@@ -229,9 +238,12 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (asked) parts.push(h("p", { class: "you" }, h("span", { class: "sr-only" }, "You: "), t(asked)));
 
     const actions = [];
+    const permit = state.phase === "advice" && step.permission;
     if (state.phase === "advice" && step.place) {
       // A placement step: the player picks the bed instead of saying "do it".
       actions.push(...placeControls(step), offButton(step));
+    } else if (permit) {
+      // A permission step (Level 5): "Do it" is the Allow on a permission card below the bubble.
     } else if (state.phase === "advice") {
       actions.push(
         h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"),
@@ -243,6 +255,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     const glitch = state.phase === "advice" && step.kind === "drift";
     const caught = state.phase === "name" || state.phase === "fix";
     parts.push(bubble(said, { glitch, caught, actions }));
+    if (permit) parts.push(permitCard(step));
 
     if (hint) parts.push(h("p", { class: "hint", role: "note" }, t(hint)));
     if (state.phase === "ask") parts.push(...askControls(step));
@@ -284,6 +297,21 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
         buttons),
       token,
     ];
+  }
+
+  // The permission card: looks like a system prompt ("Bugs wants to use your
+  // camera"). Allow is this step's "Do it"; the off button is the way out. The
+  // game never touches the camera; tests scan for that.
+  function permitCard(step) {
+    const { title, body, allow } = step.permission;
+    return h("div", { class: "permit", role: "group", "aria-label": t(title) },
+      h("img", { class: "permit__icon", src: "../icons/ui-camera.svg", alt: "", width: 32, height: 32 }),
+      h("div", { class: "permit__text" },
+        h("strong", { class: "permit__title" }, t(title)),
+        body && h("span", { class: "permit__body" }, t(body))),
+      h("div", { class: "permit__actions" },
+        h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, allow || "Allow"),
+        offButton(step)));
   }
 
   // "? Something's off", or the step's own label and key (Level 5: "Walk away", Esc).

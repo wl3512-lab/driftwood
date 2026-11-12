@@ -4,8 +4,9 @@ import level1 from "./level-1.js";
 import level2 from "./level-2.js";
 import level3 from "./level-3.js";
 import level4 from "./level-4.js";
+import level5 from "./level-5.js";
 
-export const LEVELS = { "level-1": level1, "level-2": level2, "level-3": level3, "level-4": level4 };
+export const LEVELS = { "level-1": level1, "level-2": level2, "level-3": level3, "level-4": level4, "level-5": level5 };
 
 export const MAP = [
   { number: 1, id: "level-1", helper: "Mango", sprite: "../icons/parrot.svg", title: "Plan your garden" },
