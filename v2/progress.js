@@ -55,3 +55,8 @@ export function isUnlocked(progress, levelNumber, orderedIds) {
   if (levelNumber === 1) return true;
   return Boolean(progress.levels[orderedIds[levelNumber - 2]]);
 }
+
+// True once every level in ids has a record (the ending unlocks).
+export function allDone(progress, ids) {
+  return ids.length > 0 && ids.every((id) => Boolean(progress?.levels?.[id]));
+}

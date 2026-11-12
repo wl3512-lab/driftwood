@@ -94,5 +94,6 @@ export default {
     fooledLine: "The seed packet said full sun. Mango never said a word against it.",
     caughtLine: "You noticed Mango agreeing instead of helping. That's the habit to keep.",
     tip: "If an AI loves every idea you have, ask it “what could go wrong?”",
+    realWorld: "Asking a chatbot to check your plan, essay or business idea, and getting only praise.",
   },
 };

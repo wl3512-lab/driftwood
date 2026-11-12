@@ -830,11 +830,72 @@ async function fooledPath5(browser, size) {
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "5-4-reveal-fooled");
   await noCamera(page);
+  // The last level done: the reveal continues to the ending, not the map.
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  await checkEnding(ctx, page, size, "5-7-ending");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// The ending after PROGRESS5 + a fooled Level 5: five plots, five cards, fooled on 3 and 5,
+// the copy button (clipboard on the laptop, textarea fallback allowed on the phone), back to the map.
+async function checkEnding(ctx, page, size, label) {
+  await page.waitForSelector("main.ending");
+  assert.match(await page.textContent(".map__title"), /Tester's garden/);
+  assert.equal(await page.locator(".ending__plot").count(), 5, "five finished plots");
+  assert.equal(await page.locator(".ending__card").count(), 5, "five field-guide cards");
+  const fooled = await page.$$eval(".ending__card--fooled .crt__kicker", (els) => els.map((e) => e.textContent));
+  assert.deepEqual(fooled, ["Ember · level 3", "Bugs · level 5"], "fooled badges on levels 3 and 5 only");
+  assert.equal(await page.locator(".ending__badge", { hasText: "It fooled you" }).count(), 2);
+  assert.equal(await page.locator(".ending__badge", { hasText: "You caught it" }).count(), 3);
+  assert.match(await page.textContent(".ending__score"), /You caught 3 of 5/);
+  assert.match(await page.textContent(".ending__score"), /★ 11\/15/);
+  assert.equal(await page.locator(".ending__where").count(), 5, "every card says where you'll meet the flaw");
+  assert.ok(await focusedIs(page, "#ending-garden"), "focus lands on the garden heading");
+  await assertOnScreen(page, ".ending .btn");
+  await shot(page, size, label);
+
+  if (!size.touch) await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(BASE).origin });
+  await press(page, size, page.getByRole("button", { name: "Copy my field guide" }));
+  if (size.touch) {
+    await page.waitForFunction(() =>
+      document.querySelector(".ending__status")?.textContent.includes("Copied") ||
+      (document.querySelector(".ending__text") && !document.querySelector(".ending__fallback").hidden));
+    const area = page.locator(".ending__text");
+    if (await area.count()) {
+      assert.match(await area.inputValue(), /My AI field guide from Driftwood/);
+      assert.match(await area.inputValue(), /✗ Emotional manipulation \(fooled me\)/);
+      await assertOnScreen(page, ".ending__text");
+      await shot(page, size, `${label}-fallback`);
+    }
+  } else {
+    await page.waitForFunction(() => document.querySelector(".ending__status")?.textContent.includes("Copied"));
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    assert.match(text, /My AI field guide from Driftwood/);
+    assert.match(text, /I caught 3 of 5 AI flaws/);
+    assert.match(text, /✗ Reckless advice \(fooled me\)/);
+    assert.match(text, /✗ Emotional manipulation \(fooled me\)/);
+    assert.match(text, /✓ Sycophancy: /);
+    assert.match(text, new RegExp(`Play it: ${BASE.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}$`));
+    assert.equal(await page.locator(".ending__text").count(), 0, "no textarea when the clipboard worked");
+  }
+
+  await press(page, size, page.getByRole("button", { name: "← Back to the garden" }));
   await page.waitForSelector(".plots");
   assert.match(await page.textContent('[data-level="level-5"]'), /★☆☆/);
-  await press(page, size, page.getByRole("button", { name: "Field guide 5/5" }));
-  assert.match(await page.textContent(".guide"), /Emotional manipulation/);
+  assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 1, "the map offers the ending once all levels are done");
+  await press(page, size, page.getByRole("button", { name: "Your finished garden →" }));
+  await page.waitForSelector("main.ending");
+}
+
+// ?screen=ending before every level is done just shows the map (no button to the ending either).
+async function endingLocked(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await page.goto(`${BASE}?screen=ending`);
+  await page.waitForSelector(".plots");
+  assert.equal(await page.locator("main.ending").count(), 0, "no ending before Level 5 is done");
+  assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 0);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -922,6 +983,7 @@ async function tickPath5(browser, size) {
   }
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
   runs.push(["laptop/level5-tick", SIZES[0], tickPath5]);
+  runs.push(["laptop/ending-locked", SIZES[0], endingLocked]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
   try {

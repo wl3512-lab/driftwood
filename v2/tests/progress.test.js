@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { emptyProgress, loadProgress, saveProgress, recordLevel, isUnlocked } from "../progress.js";
+import { emptyProgress, loadProgress, saveProgress, recordLevel, isUnlocked, allDone } from "../progress.js";
 
 function fakeStorage() {
   const data = new Map();
@@ -73,4 +73,13 @@ test("load drops field-guide entries that aren't objects with a string levelId",
     name: "Ada", levels: {}, guide: [null, 7, "level-1", [], { levelId: 3 }, { flaw: "x" }, good],
   }));
   assert.deepEqual(loadProgress(s).guide, [good]);
+});
+
+test("allDone: true only when every id has a record", () => {
+  const ids = ["level-1", "level-2"];
+  assert.equal(allDone(emptyProgress(), ids), false);
+  assert.equal(allDone({ levels: { "level-1": { stars: 3, fooled: false } } }, ids), false);
+  assert.equal(allDone({ levels: { "level-1": { stars: 1, fooled: true }, "level-2": { stars: 3, fooled: false } } }, ids), true);
+  assert.equal(allDone(null, ids), false);
+  assert.equal(allDone(emptyProgress(), []), false);
 });

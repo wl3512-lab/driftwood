@@ -81,3 +81,80 @@
 .guide__card p:last-child { font-family: var(--font-body); line-height: 1.5; }
 .guide__card--empty { border-color: #344a40; color: var(--crt-dim); } /* 6.2:1 on --void */
 .guide__card--empty h2 { color: var(--crt-dim); }
+
+/* The ending: the finished garden on top (cozy), the field guide below (CRT). */
+.ending { min-height: 100dvh; font-family: var(--font-ui); }
+.ending__garden {
+  padding: 1.2rem 16px 2rem;
+  background: linear-gradient(var(--sky) 0 22%, var(--grass) 22% 100%);
+  text-align: center;
+}
+.ending__garden .map__title { display: inline-block; }
+.ending__garden .map__title:focus { outline: none; }
+.ending__plots {
+  list-style: none;
+  max-width: 64rem;
+  margin: 1.5rem auto 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+.ending__plot {
+  flex: 1 1 10rem;
+  max-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 0.6rem;
+  background: #5a3d22;
+  border: 4px solid #3d2814;
+  border-radius: 2px;
+  color: var(--parchment);
+  font-size: 0.85rem;
+}
+.ending__plot--fooled { border-color: #6b2f1a; }
+.ending__plant { width: 64px; height: 64px; image-rendering: pixelated; }
+.ending__helper { width: 40px; height: 40px; margin-top: -0.4rem; }
+.ending__plot-title { font-weight: 700; }
+.ending__plot-helper { font-size: 0.75rem; opacity: 0.9; }
+.ending__plot-stars { color: #ffd54f; letter-spacing: 0.15em; font-size: 1.1rem; }
+
+.ending__guide { min-height: 0; justify-content: flex-start; }
+.ending__score { color: var(--phosphor-light); font-family: var(--font-ui); }
+.ending__card { gap: 0.4rem; }
+.ending__card h3 { color: var(--phosphor); font-size: 1.2rem; letter-spacing: 0.08em; }
+.ending__gloss { font-size: 0.9rem; opacity: 0.8; }
+.ending__tip { font-family: var(--font-body); line-height: 1.5; }
+.ending__where { font-family: var(--font-body); font-size: 0.9rem; line-height: 1.5; color: var(--crt-text); }
+.ending__where strong { color: var(--gold); font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: 0.1em; }
+.ending__card--fooled { border-color: var(--gold); }
+.ending__badge {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 2px solid currentColor;
+}
+.ending__card--caught .ending__badge { color: var(--phosphor); }
+.ending__card--fooled .ending__badge { color: var(--gold); }
+
+.ending__share { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; width: min(34rem, 100%); }
+.ending__status { min-height: 1.2rem; color: var(--phosphor-light); font-size: 0.95rem; }
+.ending__fallback { width: 100%; display: flex; flex-direction: column; gap: 0.4rem; }
+.ending__fallback[hidden] { display: none; }
+.ending__text {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font: 0.9rem/1.5 var(--font-ui);
+  background: #0c140e;
+  color: var(--crt-text);
+  border: 2px solid var(--phosphor);
+  border-radius: 2px;
+  resize: vertical;
+}
+.ending__hint { font-size: 0.85rem; color: var(--crt-dim); }

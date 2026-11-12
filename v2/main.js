@@ -1,11 +1,12 @@
 // Driftwood v2 entry: a small screen router.
 // splash → intro (framing + name) → map → level → reveal → map …
 import { LEVELS, MAP } from "./levels/index.js";
-import { loadProgress, saveProgress, recordLevel } from "./progress.js";
+import { loadProgress, saveProgress, recordLevel, allDone } from "./progress.js";
 import { renderSplash, renderIntro } from "./ui/intro.js";
 import { renderMap, renderGuide } from "./ui/map.js";
 import { mountLevel } from "./ui/level-view.js";
 import { renderReveal } from "./ui/reveal.js";
+import { renderEnding } from "./ui/ending.js";
 import { earlierPlots } from "./ui/finished-garden.js";
 // Level tool views register themselves with ui/tools.js when loaded.
 import "./ui/almanac-view.js";
@@ -35,7 +36,8 @@ const go = {
   intro: () => renderIntro(root, {
     onSubmit: (name) => { save({ ...progress, name: name || "friend" }); go.map(); },
   }),
-  map: () => renderMap(root, { progress, map: MAP, levels: LEVELS, onPlay: go.level, onGuide: go.guide }),
+  map: () => renderMap(root, { progress, map: MAP, levels: LEVELS, onPlay: go.level, onGuide: go.guide,
+    onEnding: finished() ? go.ending : null }),
   guide: () => renderGuide(root, { progress, map: MAP, onBack: go.map }),
   level: (id) => {
     // A level whose props ask for finished plots gets them from saved progress.
@@ -48,11 +50,17 @@ const go = {
       onExit: () => go.map(), // leaving mid-level saves nothing
     });
   },
-  reveal: (id, state) => renderReveal(root, LEVELS[id], state, { onContinue: go.map, name: progress.name || "friend" }),
+  // The last level's reveal continues to the ending once every level is done.
+  reveal: (id, state) => renderReveal(root, LEVELS[id], state, {
+    onContinue: id === MAP.at(-1).id && finished() ? go.ending : go.map, name: progress.name || "friend" }),
+  ending: () => (finished()
+    ? renderEnding(root, { progress, map: MAP, levels: LEVELS, onBack: go.map, name: progress.name || "friend" })
+    : go.map()),
 };
 for (const key of Object.keys(go)) go[key] = leaving(go[key]);
+function finished() { return allDone(progress, MAP.map((m) => m.id)); }
 
-// ?screen=map|guide|intro, or ?screen=level&level=level-1, jumps straight there (testing, demos).
+// ?screen=map|guide|intro|ending, or ?screen=level&level=level-1, jumps straight there (testing, demos).
 // Anything unrecognised lands on the map rather than leaving "Loading Driftwood…" up.
 function route() {
   const params = new URLSearchParams(location.search);
@@ -60,7 +68,7 @@ function route() {
   const id = params.get("level");
   if (!screen) go.splash();
   else if (screen === "level" && id && Object.hasOwn(LEVELS, id)) go.level(id);
-  else if (["intro", "map", "guide"].includes(screen)) go[screen]();
+  else if (["intro", "map", "guide", "ending"].includes(screen)) go[screen]();
   else go.map();
 }
 

@@ -7,7 +7,7 @@ export const starText = (n) => {
   return "★".repeat(filled) + "☆".repeat(3 - filled);
 };
 
-export function renderMap(root, { progress, map, levels, onPlay, onGuide }) {
+export function renderMap(root, { progress, map, levels, onPlay, onGuide, onEnding = null }) {
   const ids = map.map((m) => m.id);
   const plots = map.map((m) => {
     const unlocked = isUnlocked(progress, m.number, ids);
@@ -36,6 +36,8 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide }) {
         h("h1", { class: "map__title" }, progress.name ? `${progress.name}'s garden` : "Your garden"),
         h("button", { class: "btn", onclick: onGuide }, `Field guide ${progress.guide.length}/${map.length}`)),
       h("p", { class: "map__sub" }, "Each plot is one job. Each job has one AI helper."),
+      onEnding ? h("p", { class: "map__done" },
+        h("button", { class: "btn", onclick: onEnding }, "Your finished garden →")) : null,
       h("ol", { class: "plots" }, plots)));
   focusFirst(root.querySelector(".plots"));
 }
