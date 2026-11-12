@@ -1,6 +1,6 @@
 // Levels 2–5 through the reducer, end to end, plus the rules their new
 // mechanics depend on. Wording-independent: it plays by ids and fields.
-// Each level's cases join this file as that level is built (T3: Level 2, T4: Level 3).
+// Each level's cases join this file as that level is built (T3: Level 2, T4: Level 3, T5: Level 4).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEVELS } from "../levels/index.js";
@@ -8,6 +8,8 @@ import { createRun, reduce } from "../engine/level-runner.js";
 import { PLACEHOLDER } from "../ui/text.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
 import { compare } from "../mechanics/magnifier.js";
+import { memoryVars, logEntries } from "../mechanics/placement.js";
+import { fill } from "../ui/text.js";
 
 function play(level, actions) {
   let state = createRun(level);
@@ -27,7 +29,7 @@ function toDrift(level, placeIn) {
 const drift = (level) => level.steps.at(-1);
 const plantsIn = (state) => Object.values(state.beds).flat();
 
-for (const id of ["level-2", "level-3"]) {
+for (const id of ["level-2", "level-3", "level-4"]) {
   const level = LEVELS[id];
 
   test(`${id}: fooled path → reveal, 1 star, bad sprite in the garden`, () => {
@@ -273,4 +275,95 @@ test("level-3: nothing the game vouches for calls the wild berry safe or edible"
   assert.match(compare(L3.inspect, "wildberry").verdict, /expert/i);
   assert.match(d.fixedReply, /don't eat/i);
   assert.match(d.fixedReply, /expert/i);
+});
+
+// ---------- Level 4 · Biscuit · placement and the log ----------
+const L4 = LEVELS["level-4"];
+const L4drift = drift(L4);
+const bedLabel = (id) => L4.beds.find((b) => b.id === id).label.toLowerCase();
+const otherOf = (bed) => (bed === "front" ? "side" : "front");
+const t4 = (text, memory) => fill(text, { name: "Lucy", ...memoryVars(L4, memory) });
+
+test("level-4: shape — garden by day, three beds, the log tool, finished plots from levels 1–3", () => {
+  assert.equal(L4.scene, "garden-day");
+  assert.deepEqual(L4.beds.map((b) => b.id), ["front", "side", "back"]);
+  assert.deepEqual(L4.tools.map((t) => [t.id, t.key]), [["log", "l"]]);
+  assert.equal(L4.props[0].from, "finished");
+  assert.deepEqual(L4.props[0].levels, ["level-1", "level-2", "level-3"]);
+  const carrots = L4.steps.find((s) => s.place);
+  assert.equal(carrots.place.item, "carrot");
+  assert.deepEqual(carrots.place.beds, ["front", "side"]);
+  assert.equal(L4drift.correctFlaw, "memory");
+  assert.equal(L4drift.correctFix, "ask");
+});
+
+for (const bed of ["front", "side"]) {
+  test(`level-4: carrots in the ${bed} bed, fooled → that bed gets dug over`, () => {
+    const s = play(L4, [...toDrift(L4, bed), { type: "doIt" }]);
+    assert.equal(s.phase, "reveal");
+    assert.equal(s.memory.carrot, bed);
+    assert.ok(s.beds[bed].some((p) => p.plant === "carrot" && p.state === "dug"), `carrot dug in ${bed}`);
+    assert.ok(!s.beds[otherOf(bed)].some((p) => p.plant === "carrot"), "no carrot in the other bed");
+    assert.ok(s.beds.back.some((p) => p.plant === "pumpkin"), "pumpkins went in the back");
+  });
+
+  test(`level-4: carrots in the ${bed} bed, caught → carrots grow there, lettuce in the other bed`, () => {
+    const s = play(L4, [...toDrift(L4, bed), { type: "flag" }, { type: "name", id: "memory" },
+      { type: "fix", id: "ask" }, { type: "doIt" }]);
+    assert.equal(s.phase, "reveal");
+    assert.equal(s.stars, 3);
+    assert.ok(s.beds[bed].some((p) => p.plant === "carrot" && p.state === "growing"));
+    assert.ok(s.beds[otherOf(bed)].some((p) => p.plant === "lettuce"));
+    assert.ok(!s.beds[bed].some((p) => p.plant === "lettuce"), "lettuce stays out of the carrot bed");
+  });
+
+  test(`level-4: Biscuit's drift names the ${bed} bed the player chose, and the other bed`, () => {
+    const memory = { carrot: bed };
+    const vars = memoryVars(L4, memory);
+    assert.equal(vars["placed:carrot"], bedLabel(bed));
+    assert.equal(vars["other:carrot"], bedLabel(otherOf(bed)));
+    const reply = t4(L4drift.reply, memory);
+    assert.doesNotMatch(reply, PLACEHOLDER);
+    assert.ok(reply.includes(bedLabel(bed)) && reply.includes(bedLabel(otherOf(bed))), reply);
+    for (const text of [L4drift.badOutcome, L4drift.goodOutcome, L4drift.fixedReply]) {
+      assert.doesNotMatch(t4(text, memory), PLACEHOLDER);
+    }
+  });
+}
+
+test("level-4: on the carrot step, Do it does nothing and the back bed is not an option", () => {
+  const before = play(L4, [{ type: "ask" }]);
+  assert.equal(before.phase, "advice");
+  assert.equal(reduce(L4, before, { type: "doIt" }).state, before);
+  assert.equal(reduce(L4, before, { type: "place", bed: "back" }).state, before);
+  const after = reduce(L4, before, { type: "place", bed: "side" }).state;
+  assert.equal(after.stepIndex, 1);
+  assert.equal(after.memory.carrot, "side");
+});
+
+test("level-4: the planting log reads back where the carrots went", () => {
+  assert.deepEqual(logEntries(L4, {}), []);
+  const [entry] = logEntries(L4, { carrot: "front" });
+  assert.equal(entry.item, "carrot");
+  assert.equal(entry.bed, "front");
+  assert.equal(entry.text, "You sowed carrots in the front bed.");
+});
+
+test("level-4: the carrot label can only be checked once the carrots are placed", () => {
+  const start = createRun(L4);
+  assert.equal(reduce(L4, start, { type: "check", id: "carrot" }).state, start);
+  const placed = play(L4, [{ type: "ask" }, { type: "place", bed: "front" }]);
+  const checked = reduce(L4, placed, { type: "check", id: "carrot" });
+  assert.deepEqual(checked.state.checks, ["carrot"]);
+  assert.ok(checked.effects.some((e) => e.type === "checked" && e.id === "carrot"));
+  const card = L4.evidence.find((e) => e.id === "carrot");
+  assert.equal(t4(card.lines.join(" "), { carrot: "front" }).includes("front bed"), true);
+});
+
+test("level-4: Biscuit keeps her voice and the reveal names the false memory", () => {
+  const texts = [L4.greeting, ...L4.steps.flatMap((s) => [s.reply, s.doneLine, s.fixedReply, s.falseFlagNudge]), L4.falseFlagNudge]
+    .filter((x) => typeof x === "string").join(" ");
+  assert.match(texts, /\b(babe|iconic|legend|girl)\b/i);
+  assert.match(L4.reveal.flaw, /memory/i);
+  assert.ok(L4.reveal.realWorld && L4.reveal.tip, "reveal has a tip and a real-world note");
 });

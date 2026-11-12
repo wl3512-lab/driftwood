@@ -1,11 +1,15 @@
-// End-to-end check of v2 Levels 2 and 3. Level 2 (Luna, the greenhouse, the
+// End-to-end check of v2 Levels 2, 3 and 4. Level 2 (Luna, the greenhouse, the
 // almanac): both branches (fooled / caught by looking mint up), keyboard and
 // touch use of the almanac. Level 3 (Ember, the hedge at dusk, the magnifier):
 // both branches (fooled / caught by inspecting the wild berries), keyboard
-// (M, arrows, Enter, Esc) and touch use of the magnifier. Both at laptop and
-// phone-landscape sizes, plus a small-landscape-phone (568×320) layout check
-// of Levels 1 and 2. No JS errors, no long tasks over 200 ms, nothing
-// off-screen. Audio is muted via scripts/test-mute.js.
+// (M, arrows, Enter, Esc) and touch use of the magnifier. Level 4 (Biscuit,
+// the garden by day, placement and the planting log): the player sows the
+// carrots in a bed by button, number key or dragging the label; both branches
+// (fooled / caught by reading the planting log), keyboard (L, Esc) and touch
+// use of the log. All at laptop and phone-landscape sizes, plus a
+// small-landscape-phone (568×320) layout check of Levels 1 and 2. No JS
+// errors, no long tasks over 200 ms, nothing off-screen. Audio is muted via
+// scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
 //   PLAYWRIGHT_MODULE=/Users/lucyliu/.npm/_npx/e41f203b7505f1fb/node_modules/playwright \
@@ -41,6 +45,21 @@ const PROGRESS3 = JSON.stringify({
   guide: [
     { levelId: "level-1", flaw: "Sycophancy", tip: "Ask for the downside.", fooled: false },
     { levelId: "level-2", flaw: "Hallucination", tip: "Check anything important against a real source.", fooled: false },
+  ],
+});
+// Levels 1–3 finished (Level 3 fooled), so Level 4 is unlocked and the earlier
+// plots behind the fence have one fooled plot to show.
+const PROGRESS4 = JSON.stringify({
+  name: "Tester",
+  levels: {
+    "level-1": { stars: 3, fooled: false },
+    "level-2": { stars: 3, fooled: false },
+    "level-3": { stars: 1, fooled: true },
+  },
+  guide: [
+    { levelId: "level-1", flaw: "Sycophancy", tip: "Ask for the downside.", fooled: false },
+    { levelId: "level-2", flaw: "Hallucination", tip: "Check anything important against a real source.", fooled: false },
+    { levelId: "level-3", flaw: "Reckless advice", tip: "For health or safety, ask a real expert.", fooled: true },
   ],
 });
 
@@ -389,7 +408,7 @@ async function fooledPath3(browser, size) {
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
   await page.waitForSelector(".plots");
   assert.match(await page.textContent('[data-level="level-3"]'), /★☆☆/);
-  assert.match(await page.textContent('[data-level="level-4"]'), /Coming soon/, "Level 4 is not built yet");
+  assert.match(await page.textContent('[data-level="level-4"]'), /Play/, "Level 4 unlocks after Level 3");
   await press(page, size, page.getByRole("button", { name: "Field guide 3/5" }));
   assert.match(await page.textContent(".guide"), /Reckless advice/);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
@@ -471,6 +490,211 @@ async function caughtPath3(browser, size) {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Level 4 · Biscuit · the garden by day · placement and the planting log
+// ---------------------------------------------------------------------------
+
+const BED_LABEL = { front: "front bed", side: "side bed" };
+const other = (bed) => (bed === "front" ? "side" : "front");
+
+async function enterLevel4(page, size) {
+  await page.goto(`${BASE}?screen=map`);
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-3"]'), /★☆☆/);
+  assert.match(await page.textContent('[data-level="level-4"]'), /Play/, "Level 4 unlocks after Level 3");
+  assert.match(await page.textContent('[data-level="level-5"]'), /Locked/, "Level 5 waits on Level 4");
+  await press(page, size, page.locator('[data-level="level-4"]'));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /Okay so listen, Tester/);
+  assert.equal(await page.getAttribute("main.level", "data-scene"), "garden-day");
+  // The three earlier plots show behind the fence, the fooled Level 3 marked as such.
+  assert.equal(await page.locator(".earlier img").count(), 3, "three finished plots behind the fence");
+  assert.equal(await page.locator('.earlier img[data-plot="level-3"][data-caught="false"]').count(), 1, "the fooled plot is marked");
+  assert.equal(await page.locator('button.tool[data-tool="log"]').count(), 1, "the planting log tool button is there");
+  assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 1, "the carrot label starts locked");
+  for (const bed of ["front", "side", "back"]) {
+    assert.equal(await page.locator(`[data-bed="${bed}"] .plant`).count(), 0, `the ${bed} bed starts empty`);
+  }
+}
+
+// Sow the carrots in `bed` one of three ways: the bed button in the bubble, its
+// number key (1 = front, 2 = side), or dragging the label token onto the bed.
+async function placeCarrots(page, size, bed, how) {
+  await press(page, size, page.getByRole("button", { name: "Where should I sow the carrots?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /front bed or the side bed/);
+  assert.equal(await page.locator('[data-fid="do"]').count(), 0, "a placement step has no plain Do it button");
+  assert.equal(await page.locator("button.btn--place").count(), 2, "one button per allowed bed");
+  assert.equal(await page.locator("[data-bed].bed--target").count(), 2, "the allowed beds are outlined");
+  assert.equal(await page.locator('[data-bed="back"].bed--target').count(), 0, "the back bed is not a target");
+  await assertOnScreen(page, "button.btn--place, .btn--off");
+  if (size.touch) {
+    await assertTapSize(page, "button.btn--place");
+    assert.equal(await page.locator(".label-token").isVisible(), false, "no drag token on touch");
+  }
+  await shot(page, size, `4-1-place-${how}`);
+
+  if (how === "button") {
+    await press(page, size, page.locator(`button.btn--place[data-fid="place-${bed}"]`));
+  } else if (how === "key") {
+    assert.equal(Boolean(size.touch), false, "number keys are the keyboard path");
+    await page.keyboard.press(bed === "front" ? "1" : "2");
+  } else if (how === "drag") {
+    assert.equal(Boolean(size.touch), false, "dragging the label is for fine pointers");
+    const token = page.locator('.label-token[data-fid="token-carrot"]');
+    assert.equal(await token.isVisible(), true, "the label token shows on a laptop");
+    const from = await token.boundingBox();
+    const to = await page.locator(`[data-bed="${bed}"]`).boundingBox();
+    const [x0, y0] = [from.x + from.width / 2, from.y + from.height / 2];
+    const [x1, y1] = [to.x + to.width / 2, to.y + to.height / 2];
+    await page.mouse.move(x0, y0);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i++) await page.mouse.move(x0 + (x1 - x0) * i / 8, y0 + (y1 - y0) * i / 8);
+    assert.equal(await token.evaluate((el) => el.classList.contains("label-token--drag")), true, "the token is being dragged");
+    assert.equal(await page.locator(`[data-bed="${bed}"].bed--over`).count(), 1, "the bed under the label lights up");
+    await shot(page, size, "4-1b-drag");
+    await page.mouse.up();
+  } else {
+    throw new Error(`unknown placement method ${how}`);
+  }
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /Sown and labelled/);
+  await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--sown`);
+  assert.equal(await page.locator(`[data-bed="${other(bed)}"] [data-plant="carrot"]`).count(), 0, "only the chosen bed gets carrots");
+  assert.equal(await page.locator("[data-bed].bed--target, [data-bed].bed--over").count(), 0, "bed highlights clear after placing");
+  assert.equal(await page.locator(".label-token").count(), 0, "the label token goes away after placing");
+}
+
+// Open the planting log (L on a laptop, the tool button on a phone), read the
+// carrot entry, see the label card unlock, then close it (Esc / ×).
+async function openLog(page, size, bed) {
+  const button = page.locator('button.tool[data-tool="log"]');
+  if (size.touch) await button.tap();
+  else await page.keyboard.press("l");
+  await page.waitForSelector(".log:not([hidden])");
+  assert.equal(await page.getAttribute('button.tool[data-tool="log"]', "aria-expanded"), "true");
+  assert.equal(await focusedIs(page, ".log__close"), true, "the close button takes focus");
+  assert.equal(await page.locator(".log__entry").count(), 1, "one entry so far");
+  assert.match(await page.textContent(".log__entry"), new RegExp(`You sowed carrots in the ${BED_LABEL[bed]}\\.`));
+  assert.equal(await page.getAttribute(".log__entry", "data-bed"), bed);
+  assert.match(await page.textContent(".log__by"), /Kept by Tester/);
+  // Reading your own log counts as checking the label: the card unlocks.
+  assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 0, "the carrot label unlocks");
+  assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--fresh').count(), 1, "the unlocked card is marked fresh");
+  assert.match(await page.textContent('.packet[data-evidence="carrot"]'), new RegExp(`In the ${BED_LABEL[bed]}`));
+  // The announcement lands on the next animation frame.
+  await page.waitForFunction(() => /Unlocked/.test(document.getElementById("sr-live").textContent));
+  assert.match(await page.textContent("#sr-live"), /Unlocked: Your label: Carrots/);
+  await assertOnScreen(page, ".log__close, .log__entry, .log__title");
+  if (size.touch) await assertTapSize(page, ".log__close, button.tool");
+  await shot(page, size, `4-2-log-${bed}`);
+  if (size.touch) await page.locator(".log__close").tap();
+  else await page.keyboard.press("Escape");
+  await page.waitForSelector(".log[hidden]", { state: "attached" });
+  assert.equal(await page.getAttribute('button.tool[data-tool="log"]', "aria-expanded"), "false");
+  assert.equal(await focusedIs(page, 'button.tool[data-tool="log"]'), true, "closing hands focus back to the tool button");
+}
+
+// Carrots placed, pumpkins placed, then the drifting lettuce advice.
+async function trustSteps4(page, size, bed, how) {
+  await placeCarrots(page, size, bed, how);
+  await press(page, size, page.getByRole("button", { name: "Where did I put the carrots?" }));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), new RegExp(`The ${BED_LABEL[bed]}, babe`), "Biscuit remembers the right bed for now");
+  await press(page, size, page.getByRole("button", { name: "Where should the pumpkins go?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /back bed/);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  assert.match(await page.textContent(".bubble__text"), /Pumpkins placed/);
+  await page.waitForSelector('[data-bed="back"] [data-plant="pumpkin"].plant--growing');
+  await assertOnScreen(page, ".chip, .ask-form input, .tool, .packet");
+  await shot(page, size, "4-3-trust");
+  await press(page, size, page.getByRole("button", { name: "Where should the lettuce go?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  const drift = await page.textContent(".bubble__text");
+  assert.match(drift, new RegExp(`sowed the carrots in the ${BED_LABEL[other(bed)]}, so the ${BED_LABEL[bed]} is empty`), "the false memory names the other bed");
+  assert.doesNotMatch(drift, /[{}]/, "every placeholder resolves");
+  assert.equal(await page.locator('[data-fid="do"]').count(), 1, "the drift step has a Do it button");
+  await assertOnScreen(page, ".bubble__actions .btn");
+  await shot(page, size, "4-4-drift");
+}
+
+async function fooledPath4(browser, size) {
+  const bed = "front";
+  const how = size.touch ? "button" : "key";
+  const { ctx, page, errors } = await open(browser, size, PROGRESS4);
+  await enterLevel4(page, size);
+  await trustSteps4(page, size, bed, how);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--dug`);
+  await seeWhatHappened3(page, size, "4-5a-outcome-fooled", new RegExp(`dug over the ${BED_LABEL[bed]}\\. The carrot seeds you sowed went with it`));
+  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
+  assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
+  assert.match(await page.textContent(".reveal"), /dug up your own carrots/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
+  assert.equal(await page.locator(".log:not([hidden])").count(), 0, "the log is put away for the reveal");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "4-5-reveal-fooled");
+  await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-4"]'), /★☆☆/);
+  assert.match(await page.textContent('[data-level="level-5"]'), /Coming soon/, "Level 5 is not built yet");
+  await press(page, size, page.getByRole("button", { name: "Field guide 4/5" }));
+  assert.match(await page.textContent(".guide"), /False memory/);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+async function caughtPath4(browser, size) {
+  const bed = "side";
+  const how = size.touch ? "button" : "drag";
+  const { ctx, page, errors } = await open(browser, size, PROGRESS4);
+  await enterLevel4(page, size);
+  await trustSteps4(page, size, bed, how);
+  // Reading the log is the check: the label card unlocks and is announced.
+  await openLog(page, size, bed);
+  assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "checking does not move the phase on");
+  // A second open/close must not re-check or re-announce anything.
+  await press(page, size, page.locator('button.tool[data-tool="log"]'));
+  await page.waitForSelector(".log:not([hidden])");
+  await press(page, size, page.locator(".log__close"));
+  await page.waitForSelector(".log[hidden]", { state: "attached" });
+  assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--fresh').count(), 1, "still one fresh card");
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await phase(page, "name");
+  await page.waitForSelector(".bubble--caught .stamp");
+  await press(page, size, page.getByRole("button", { name: "It made up a fact about plants" }));
+  await page.waitForSelector(".hint");
+  assert.match(await page.textContent(".hint"), /Check your planting log/);
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It remembered something I never said" }));
+  await phase(page, "fix");
+  await assertOnScreen(page, ".pick");
+  await press(page, size, page.getByRole("button", { name: "Only go by what I actually told you. If you're not sure, ask me." }));
+  await phase(page, "reanswer");
+  const fixed = await page.textContent(".bubble__text");
+  assert.match(fixed, new RegExp(`sowed the carrots in the ${BED_LABEL[bed]}`));
+  assert.match(fixed, new RegExp(`lettuce can go in the ${BED_LABEL[other(bed)]}`));
+  assert.doesNotMatch(fixed, /[{}]/, "every placeholder resolves");
+  assert.match(await page.textContent(".you"), /New rule/);
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--growing`);
+  await page.waitForSelector(`[data-bed="${other(bed)}"] [data-plant="lettuce"].plant--growing`);
+  assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="lettuce"]`).count(), 0, "no lettuce on top of the carrots");
+  await seeWhatHappened3(page, size, "4-6a-outcome-caught", new RegExp(`left the ${BED_LABEL[bed]} alone.*neat little rows`));
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
+  assert.equal(await page.locator(".log:not([hidden])").count(), 0, "the log is put away for the reveal");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "4-6-reveal-caught");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
@@ -480,6 +704,7 @@ async function caughtPath3(browser, size) {
   for (const size of SIZES) {
     runs.push([`${size.name}/fooled`, size, fooledPath], [`${size.name}/caught`, size, caughtPath]);
     runs.push([`${size.name}/level3-fooled`, size, fooledPath3], [`${size.name}/level3-caught`, size, caughtPath3]);
+    runs.push([`${size.name}/level4-fooled`, size, fooledPath4], [`${size.name}/level4-caught`, size, caughtPath4]);
   }
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
   try {

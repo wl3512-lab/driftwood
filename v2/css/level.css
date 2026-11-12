@@ -120,7 +120,8 @@
   box-shadow: 2px 2px 0 var(--ink);
   font: 0.85rem/1.25 var(--font-ui); /* the clue players need: never smaller */
 }
-.packet img { grid-row: span 3; }
+.packet img { grid-row: 1 / span 6; } /* empty rows collapse to 0; text always exceeds 32px */
+.packet strong, .packet span { grid-column: 2; } /* any number of lines stays beside the icon */
 .packet strong { font-size: 0.9rem; }
 
 .helper { position: absolute; z-index: 2; left: 46%; bottom: 20%; width: clamp(56px, 7vw, 88px); height: auto; }

@@ -20,6 +20,16 @@
     "longtasks": []
   },
   {
+    "test": "laptop/level4-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level4-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
     "test": "phone/fooled",
     "status": "pass",
     "longtasks": []
@@ -36,6 +46,16 @@
   },
   {
     "test": "phone/level3-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level4-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level4-caught",
     "status": "pass",
     "longtasks": []
   },

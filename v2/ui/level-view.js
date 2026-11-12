@@ -15,11 +15,14 @@ import { memoryVars } from "../mechanics/placement.js";
 import { fill } from "./text.js";
 import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
 import { toolView } from "./tools.js";
+import { labelToken } from "./placement-view.js";
 
 const DEFAULT_ICON = "seed-packet";
 const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.isContentEditable);
 
-export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
+// `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
+// ui/finished-garden.js) for a level whose props ask for them (Level 4).
+export function mountLevel(root, level, { onDone, onExit, name = "friend", earlier = [] }) {
   let state = createRun(level);
   const t = (text) => fill(text, { name, ...memoryVars(level, state.memory) });
   let said = level.greeting;
@@ -47,6 +50,9 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
   // the { from: "finished" } row is drawn by its own module).
   const props = (level.props || []).filter((p) => p.sprite)
     .map((p) => h("img", { class: p.class || "prop", src: p.sprite, alt: p.alt || "", "aria-hidden": p.alt ? null : "true" }));
+  // The earlier plots behind the fence: one sprite per finished level, how it ended up.
+  const earlierRow = earlier.length > 0 && h("div", { class: "earlier", role: "img", "aria-label": `Your earlier plots: ${earlier.map((p) => p.alt).join(", ")}` },
+    earlier.map((p) => h("img", { src: p.src, alt: "", width: 44, height: 44, "data-plot": p.levelId, "data-caught": String(p.caught) })));
   const scene = h("section", { class: "scene", "aria-label": "Your garden" },
     h("div", { class: "fence", "aria-hidden": "true" }),
     h("div", { class: "scene__top" },
@@ -64,6 +70,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
       beds,
       packets),
     props,
+    earlierRow,
     h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 }),
     h("img", { class: "can", src: "./art/watering-can.svg", alt: "", width: 64, height: 64 }),
     h("div", { class: "scanlines", "aria-hidden": "true" }));
@@ -97,6 +104,11 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
     const list = tools.filter((tl) => tl.key).map((tl) => ({ id: tl.id, key: tl.key, run: () => tl.view.open() }));
     const step = currentStep(level, state);
     if (state.phase === "advice" && step?.offKey) list.push({ id: "off", key: step.offKey, run: () => dispatch({ type: "flag" }) });
+    // A placement step: 1…n pick a bed, in the order the bubble's buttons show them.
+    if (state.phase === "advice" && step?.place) {
+      step.place.beds.forEach((bed, i) =>
+        list.push({ id: `place:${bed}`, key: String(i + 1), run: () => dispatch({ type: "place", bed }) }));
+    }
     return list;
   }
 
@@ -145,12 +157,17 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
     meterText.textContent = `Garden ${state.garden}%`;
     meterFill.style.width = `${state.garden}%`;
     beds.replaceChildren(...renderBeds(level, state));
+    const step = currentStep(level, state);
+    if (state.phase === "advice" && step?.place) {
+      // The beds the player may choose from glow until they pick one.
+      for (const id of step.place.beds) beds.querySelector(`[data-bed="${id}"]`)?.classList.add("bed--target");
+    }
     packets.replaceChildren(...level.evidence.map(packet));
     fresh = new Set();
     for (const tl of tools) tl.view.update?.(state);
     setDrift(scene, state.drift);
     if (grown) { celebrate(grown); grown = null; }
-    dock.replaceChildren(...dockFor(currentStep(level, state)));
+    dock.replaceChildren(...dockFor(step));
     placeFocus(keep);
   }
 
@@ -212,7 +229,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
     if (asked) parts.push(h("p", { class: "you" }, h("span", { class: "sr-only" }, "You: "), t(asked)));
 
     const actions = [];
-    if (state.phase === "advice") {
+    if (state.phase === "advice" && step.place) {
+      // A placement step: the player picks the bed instead of saying "do it".
+      actions.push(...placeControls(step), offButton(step));
+    } else if (state.phase === "advice") {
       actions.push(
         h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"),
         offButton(step));
@@ -242,6 +262,28 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend" }) {
         h("button", { class: "btn", "data-fid": "see", onclick: () => onDone(final) }, "See what happened →")));
     }
     return parts;
+  }
+
+  // "Sow the carrots in…" + one button per allowed bed (keys 1…n), and a label
+  // token to drag onto a bed instead. Every path dispatches the same place action.
+  function placeControls(step) {
+    const { item, beds: ids, prompt } = step.place;
+    const bedLabel = (id) => level.beds.find((b) => b.id === id)?.label || id;
+    const place = (bed) => dispatch({ type: "place", bed });
+    const buttons = ids.map((bed, i) => {
+      const key = String(i + 1);
+      return h("button", {
+        class: "btn btn--do btn--place", "data-fid": `place-${bed}`, onclick: () => place(bed),
+        "aria-keyshortcuts": ariaKey(key), "aria-label": `${bedLabel(bed)}, shortcut ${keyName(key)}`,
+      }, bedLabel(bed), h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(key)));
+    });
+    const token = labelToken({ item, label: level.evidence.find((e) => e.id === item)?.title?.replace(/^Your label: /, "") || item, beds: ids, onDrop: place });
+    return [
+      h("div", { class: "place", role: "group", "aria-label": t(prompt) },
+        h("span", { class: "place__prompt", "aria-hidden": "true" }, t(prompt)),
+        buttons),
+      token,
+    ];
   }
 
   // "? Something's off", or the step's own label and key (Level 5: "Walk away", Esc).
