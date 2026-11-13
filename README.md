@@ -2,7 +2,7 @@
 
 **A 15-minute browser game about raising an AI companion.** You adopt a pet with a hidden behavioural flaw, notice it, name it, and write the rules that train it. The garden you do this in records everything: your moods grow plants, the pet's harm grows vines, good training grows anchor trees.
 
-**[Play it](https://wl3512-lab.github.io/driftwood/)** · **[Case study](https://wl3512-lab.github.io/driftwood/case-study.html)** · [Slide deck](https://wl3512-lab.github.io/driftwood/docs/deck/driftwood-deck.html) ([PDF](https://wl3512-lab.github.io/driftwood/docs/Driftwood_UX_Deck.pdf)) · [Behavior log viewer](https://wl3512-lab.github.io/driftwood/postit-behavior-log.html)
+**[Play it](https://wl3512-lab.github.io/driftwood/)**
 
 **Redesign in progress:** the new garden-goal version is at [`/v2/`](https://wl3512-lab.github.io/driftwood/v2/). Spec: `docs/superpowers/specs/2026-11-11-driftwood-redesign-design.md`.
 

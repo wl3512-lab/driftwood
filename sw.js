@@ -6,32 +6,19 @@
  * a second visit works with no connection at all. Camera models and the
  * optional live-AI proxy are never cached.
  */
-const VERSION = "dw-v18";
+const VERSION = "dw-v19";
 const PRECACHE = [
   "./",
   "./index.html",
-  "./sketch.js",
-  "./style.css",
-  "./chat-particles.js",
-  "./driftwood_cover_v4.html",
-  "./postit-behavior-log.html",
-  "./training-room.svg",
+  "./v2/",
+  "./v2/index.html",
   "./manifest.webmanifest",
   "./icons/app-icon-192.png",
   "./icons/app-icon-512.png",
   "./icons/app-icon-maskable-512.png",
   "./icons/app-icon-180.png",
   "./icons/mood-garden-favicon.svg",
-  "./icons/fox.svg", "./icons/parrot.svg", "./icons/bunny.svg", "./icons/dog.svg", "./icons/cat.svg",
-  "./icons/sunflower-happy.svg", "./icons/nightshade-sad.svg", "./icons/thornweed-stressed.svg",
-  "./icons/bloomburst-surprised.svg", "./icons/calmfern-neutral.svg", "./icons/parasitic-vine.svg",
-  "./icons/anchor-tree.svg", "./icons/chameleon-vine.svg",
-  "./icons/ancient-book.svg", "./icons/shovel.svg",
-  "./icons/ui-brain.svg", "./icons/ui-camera.svg", "./icons/ui-chart.svg", "./icons/ui-lock.svg",
-  "./icons/ui-refresh.svg", "./icons/ui-rules.svg", "./icons/ui-scissors.svg",
-  "./icons/ui-sound-off.svg", "./icons/ui-sound-on.svg", "./icons/ui-sparkle.svg", "./icons/ui-target.svg",
-  "./bg interface 1/garden-interface-empty.svg",
-  "./bg interface 1/garden-interface-rainy.svg"
+  "./icons/fox.svg", "./icons/parrot.svg", "./icons/bunny.svg", "./icons/dog.svg", "./icons/cat.svg"
 ];
 const RUNTIME_HOSTS = ["cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.jsdelivr.net"];
 const NEVER_CACHE = ["itp-ima-replicate-proxy.web.app", "justadudewhohacks.github.io"];

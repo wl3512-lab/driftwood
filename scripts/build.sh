@@ -11,20 +11,15 @@ cd "$(dirname "$0")/.."
 
 OUT="_site"
 rm -rf "$OUT"
-mkdir -p "$OUT/icons" "$OUT/bg interface 1" "$OUT/docs"
+mkdir -p "$OUT/icons"
 
-cp index.html sketch.js style.css chat-particles.js sw.js manifest.webmanifest \
-   training-room.svg driftwood_cover_v4.html postit-behavior-log.html \
-   case-study.html README.md "$OUT/"
+# Only the v2 game is published. The old game's files (sketch.js, style.css,
+# case study, deck…) stay in the repo but are no longer part of the site.
+cp index.html sw.js manifest.webmanifest README.md "$OUT/"
 cp .nojekyll "$OUT/" 2>/dev/null || true
 cp icons/*.svg icons/*.png "$OUT/icons/"
 # v2 (redesign). Tests, the Node-only package.json and the art sheet stay out of the player bundle.
 rsync -a --exclude 'tests' --exclude 'package.json' --exclude 'art/sheet.html' v2/ "$OUT/v2/"
-cp "bg interface 1"/*.svg "$OUT/bg interface 1/"
-# QA evidence (docs/agent-playtest) and design specs (docs/superpowers) stay out
-# of the bundle — tens of MB of screenshots, plus notes for unbuilt work, that
-# players would otherwise download inside the itch.io zip.
-[ -d docs ] && rsync -a --exclude 'agent-playtest' --exclude 'superpowers' docs/ "$OUT/docs/" || true
 
 echo "bundle → $OUT ($(du -sh "$OUT" | cut -f1))"
 

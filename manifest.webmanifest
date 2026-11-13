@@ -1,8 +1,8 @@
 {
   "name": "Driftwood",
   "short_name": "Driftwood",
-  "description": "A 15-minute browser game about raising an AI companion. Notice how it behaves, name its flaw, write the rules that train it.",
-  "start_url": "./index.html",
+  "description": "Build a garden with AI animal helpers, and notice when their advice starts to drift.",
+  "start_url": "./v2/",
   "scope": "./",
   "display": "fullscreen",
   "orientation": "landscape",
