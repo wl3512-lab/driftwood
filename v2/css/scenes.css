@@ -151,7 +151,7 @@
 .almanac__tab[aria-pressed="true"] { background: var(--paper); border-bottom-color: var(--paper); box-shadow: inset 0 -3px 0 #6b3a2a; }
 .almanac__page { padding: 0.5rem 0.65rem; background: var(--paper); border: 2px solid var(--ink); font: 0.95rem/1.4 var(--font-body); }
 .almanac__page:empty { display: none; }
-.almanac__page-title { margin-bottom: 0.25rem; font: 700 1rem var(--font-ui); }
+.almanac__page-title { margin: 0 0 0.25rem; font: 700 1rem var(--font-ui); }
 .almanac__page p + p { margin-top: 0.35rem; }
 .almanac__none { font-style: italic; }
 
@@ -629,31 +629,12 @@
   position: relative; flex: 1 1 auto; min-height: 0;
   margin: 0 8px; padding: 0.6rem 0.7rem 0.75rem;
   overflow-y: auto; overscroll-behavior: contain;
-  background:
-    repeating-linear-gradient(rgba(30, 60, 30, 0.045) 0 1px, transparent 1px 3px),
-    #e4f6d6;
-  border: 3px solid var(--line);
-  box-shadow: inset 0 0 0 2px #b9dca6, inset 0 0 18px rgba(120, 200, 110, 0.45), 0 0 10px rgba(140, 220, 120, 0.45);
-  color: #1c2a1c;
+  border: 3px solid var(--line); /* the glass itself: see "the almanac screen is a CRT terminal" below */
 }
 .almanac__screen:last-child { margin-bottom: 8px; } /* one page: no button row, still a bezel under the screen */
 .almanac__sheet { display: flex; flex-direction: column; gap: 0.55rem; }
 .almanac__sheet[hidden] { display: none; }
-.almanac__screen .almanac__title { font: 700 0.95rem/1.25 var(--font-ui); color: #1c2a1c; letter-spacing: 0.02em; }
-/* Cards on the screen: light tiles with a dark outline; locked ones dimmed. */
-.level .almanac__screen .packet { background: #f7fff0; border: 2px solid #2e4a2e; }
-.level .almanac__screen .packet--locked { background: #d3e6c6; border-style: dashed; color: #3d4f3a; }
-.level .almanac__screen .packet--locked img { opacity: 0.55; filter: grayscale(1); }
-.level .almanac__screen .packet--locked strong::after {
-  content: "LOCKED"; margin-left: 0.4rem; padding: 0 0.25rem;
-  font: 700 0.62rem/1.4 var(--font-ui); letter-spacing: 0.1em; color: #f7fff0; background: #3d4f3a; vertical-align: 1px;
-}
-.almanac__screen .almanac__page { background: #f7fff0; border-color: #2e4a2e; }
-.almanac__screen .almanac__tab { background: #cfe6bf; }
-.almanac__screen .almanac__tab[aria-pressed="true"] { background: #f7fff0; border-bottom-color: #f7fff0; box-shadow: inset 0 -3px 0 #2e7d32; }
-.almanac__screen .log__list { font-size: 1rem; }
-.almanac__screen .log__entry { padding: 0.25rem 0; border-bottom: 1px dashed #8fb487; }
-.almanac__screen .log__by { color: #3d4f3a; }
+.almanac__screen .almanac__title { font: 700 0.95rem/1.25 var(--font-ui); color: var(--crt-ink); letter-spacing: 0.12em; text-transform: uppercase; }
 /* The bottom bezel: hardware page buttons and a tab per screen page. */
 .almanac__controls { flex: none; display: flex; align-items: center; gap: 6px; padding: 7px 8px 9px; }
 .almanac__sheet-tabs { flex: 1 1 auto; display: flex; gap: 6px; min-width: 0; }
@@ -772,16 +753,15 @@
   .tool-hint { top: calc(100% + 22px); }
 }
 
-/* ======== the planting log cover as a CRT terminal ========
-   Lucy: the log should not look like the garden. While the log page shows,
-   the almanac's screen turns into an old monitor: near-black glass, green
-   phosphor text with a soft glow, static scanlines and grain (nothing
-   animates per frame), a vignette and rounded inner corners for curved
-   glass, a wireframe schematic of the beds and a blinking cursor. The bezel,
-   buttons and the fact cards page keep their look. The phosphor here is
-   --phosphor-light (#69f0ae) on #07110a: about 13:1, and the dim green
-   (#4fd08a) about 9:1, well over AA. */
-.almanac__screen:has(> .almanac__sheet[data-sheet="log"]:not([hidden])) {
+/* ======== the almanac screen is a CRT terminal ========
+   Lucy: the log should not look like the garden, and the cards should match.
+   Every almanac screen (the log cover, the fact cards, Level 2's book and
+   search) is an old monitor: near-black glass, green phosphor text with a
+   soft glow, static scanlines and grain (nothing animates per frame but the
+   log's cursor), a vignette and rounded inner corners for curved glass. The
+   bezel and its buttons keep their look. The phosphor is --phosphor-light
+   (#69f0ae) on #07110a: about 13:1; the dim green (#4fd08a) about 9:1. */
+.level .almanac .almanac__screen {
   --crt-ink: var(--phosphor-light);
   --crt-faint: #4fd08a;
   --crt-glow: 0 0 6px rgba(105, 240, 174, 0.55);
@@ -797,7 +777,9 @@
   font-family: var(--font-ui);
   text-shadow: var(--crt-glow);
 }
-.almanac__sheet[data-sheet="log"] { font-family: var(--font-ui); color: var(--crt-ink); }
+.almanac__sheet { font-family: var(--font-ui); color: var(--crt-ink); }
+.almanac__screen :focus-visible { outline-color: var(--crt-ink); }
+/* The planting log cover. */
 /* Header: "PLANTING LOG v1.0" then "DAY 1 · USER: name", ruled off like a terminal banner. */
 .level .almanac__sheet[data-sheet="log"] .almanac__cover-title {
   padding: 0; background: none; box-shadow: none;
@@ -864,3 +846,55 @@
   .almanac-dialog .almanac__sheet[data-sheet="log"] .log__list,
   .almanac-dialog .log__prompt { font-size: 1rem; line-height: 1.5; }
 }
+
+/* The fact cards as terminal entries: a phosphor box, a "> TITLE" header
+   line, dimmer detail lines. Icons stay crisp, unfiltered, on a small lit
+   tile (the pixel art's dark outlines would vanish on the dark glass). */
+.almanac__screen .almanac__label { color: var(--crt-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+.level .almanac .almanac__screen .packet {
+  background: rgba(105, 240, 174, 0.04); color: var(--crt-faint);
+  border: 1px solid var(--crt-faint); border-radius: 0; box-shadow: none;
+  font-family: var(--font-ui); align-items: start;
+}
+.level .almanac .almanac__screen .packet img {
+  box-sizing: border-box; padding: 2px; background: #d6f5e2; border: 1px solid var(--crt-ink);
+  box-shadow: var(--crt-glow); image-rendering: pixelated; filter: none;
+}
+.level .almanac .almanac__screen .packet strong {
+  color: var(--crt-ink); font-family: var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.level .almanac .almanac__screen .packet strong::before { content: "> "; color: var(--crt-faint); }
+.level .almanac .almanac__screen .packet span { color: var(--crt-faint); }
+/* Locked: a dim dashed box, "[LOCKED]" and the hint in the dimmer green. */
+.level .almanac .almanac__screen .packet--locked { background: transparent; border-style: dashed; }
+.level .almanac .almanac__screen .packet--locked strong { color: var(--crt-faint); }
+.level .almanac .almanac__screen .packet--locked img { opacity: 0.45; box-shadow: none; }
+.level .almanac .almanac__screen .packet--locked strong::after {
+  content: "[LOCKED]"; margin-left: 0.5rem; padding: 0; background: none;
+  font: 700 0.72em/1 var(--font-ui); letter-spacing: 0.1em; color: var(--crt-faint); vertical-align: 1px;
+}
+/* Level 2's book: a terminal prompt to look a plant up, page tabs as
+   inverse-video keys, the page as printed output. */
+.almanac__screen .almanac__q {
+  background: #020703; color: var(--crt-ink); caret-color: var(--crt-ink);
+  border: 1px solid var(--crt-ink); border-radius: 0;
+  font: 1rem var(--font-ui); text-shadow: var(--crt-glow);
+}
+.almanac__screen .almanac__q::placeholder { color: var(--crt-faint); opacity: 1; }
+.almanac__screen .almanac__go, .almanac__screen .almanac__tab {
+  background: transparent; color: var(--crt-ink);
+  border: 1px solid var(--crt-ink); border-radius: 0; box-shadow: none;
+  font-family: var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; text-shadow: var(--crt-glow);
+}
+.almanac__screen .almanac__go:hover, .almanac__screen .almanac__tab:hover { background: rgba(105, 240, 174, 0.14); }
+.almanac__screen .almanac__go:active { transform: translateY(1px); box-shadow: none; }
+.almanac__screen .almanac__tab[aria-pressed="true"] {
+  background: var(--crt-ink); color: #07110a; border-color: var(--crt-ink); box-shadow: none; text-shadow: none;
+}
+.almanac__screen .almanac__page {
+  background: transparent; color: var(--crt-ink); border: 1px solid var(--crt-faint); font-family: var(--font-ui);
+}
+.almanac__screen .almanac__page-title { text-transform: uppercase; letter-spacing: 0.06em; }
+.almanac__screen .almanac__page-title::before { content: "> "; color: var(--crt-faint); }
+.almanac__screen .almanac__page p { color: var(--crt-faint); }
+.almanac__screen .almanac__none { color: var(--crt-faint); }
