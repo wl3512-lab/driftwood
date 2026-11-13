@@ -2,8 +2,10 @@
 // the player put things (state.memory), the player's own record against the
 // helper's "memory". It has no button or key: opening the almanac shows it.
 //
-// The cover shows a small map of the garden's beds, the sown ones marked with
-// a plant label (decoration: the entries below carry the same facts in words).
+// It reads as an old CRT terminal (css/scenes.css), not as the garden: a
+// header line, a wireframe schematic of the beds with the sown ones marked
+// (decoration: the log lines below carry the same facts in words), then the
+// log as terminal output and a blinking cursor.
 //
 // Showing the page counts as checking the evidence for every logged item
 // (dispatch check(item)), which unlocks the "Your label" card.
@@ -11,21 +13,25 @@ import { h } from "./dom.js";
 import { definePage } from "./tools.js";
 import { logEntries } from "../mechanics/placement.js";
 
+// "Front bed" → "FRONT": the short name the schematic prints in brackets.
+const shortName = (label) => label.replace(/\s*bed$/i, "").toUpperCase();
+
 definePage("log", ({ level, dispatch, t }) => {
   const list = h("ul", { class: "log__list" });
   const map = h("div", { class: "log__map", "aria-hidden": "true" });
   const body = h("div", { class: "log-page" },
-    h("p", { class: "log__by" }, h("span", { class: "log__day" }, "Day 1"), " · ", t("Kept by {name}")),
+    h("p", { class: "log__by" },
+      h("span", { class: "log__day" }, "Day 1"), " · ", t("User: {name}")),
     map,
-    list);
+    list,
+    h("p", { class: "log__prompt", "aria-hidden": "true" }, h("span", { class: "log__cursor" })));
 
   function renderMap(entries) {
     map.replaceChildren(...level.beds.map((bed) => {
       const sown = entries.filter((e) => e.bed === bed.id);
       return h("div", { class: `log__bed${sown.length ? " log__bed--sown" : ""}`, "data-map-bed": bed.id },
-        h("span", { class: "log__soil" }, ...sown.map((e) =>
-          h("span", { class: "log__marker" }, h("img", { src: "./art/plant-label.svg", alt: "" }), `${e.item}s`))),
-        h("span", { class: "log__bed-name" }, bed.label));
+        h("span", { class: "log__bed-name" }, `[${shortName(bed.label)}]`),
+        ...sown.map((e) => h("span", { class: "log__marker" }, `${e.item}s ◄`)));
     }));
   }
 
@@ -33,8 +39,12 @@ definePage("log", ({ level, dispatch, t }) => {
     const entries = logEntries(level, state.memory);
     renderMap(entries);
     list.replaceChildren(...(entries.length
-      ? entries.map((e) => h("li", { class: "log__entry", "data-item": e.item, "data-bed": e.bed }, e.text))
-      : [h("li", { class: "log__none" }, "Nothing written yet.")]));
+      ? entries.map((e) => {
+        const bed = level.beds.find((b) => b.id === e.bed)?.label ?? e.bed;
+        return h("li", { class: "log__entry", "data-item": e.item, "data-bed": e.bed },
+          "sowed ", h("b", {}, `${e.item}s`), " in ", h("b", {}, bed.toLowerCase()));
+      })
+      : [h("li", { class: "log__none" }, "no entries yet")]));
   }
 
   return {

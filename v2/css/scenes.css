@@ -654,48 +654,6 @@
 .almanac__screen .log__list { font-size: 1rem; }
 .almanac__screen .log__entry { padding: 0.25rem 0; border-bottom: 1px dashed #8fb487; }
 .almanac__screen .log__by { color: #3d4f3a; }
-/* The cover's mini map: the level's beds as soil plots seen from above, a
-   plant label standing in each sown one. */
-.log__day { font-style: normal; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-.log__map {
-  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px;
-  padding: 10px; background: #9ccf86; border: 2px solid #2e4a2e;
-  box-shadow: inset 0 0 0 3px #b9e0a4;
-}
-.log__bed { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.log__soil {
-  flex: 1 1 auto; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: repeating-linear-gradient(0deg, #6b4a2b 0 4px, #5a3d22 4px 8px);
-  border: 3px solid #3b2a1a; box-shadow: inset 0 0 0 2px #8a6238;
-}
-.log__marker {
-  display: flex; flex-direction: column; align-items: center;
-  font: 700 0.8rem/1.1 var(--font-ui); color: #fff8e0; text-transform: capitalize;
-  padding: 0 4px 2px; background: rgba(30, 20, 10, 0.55);
-}
-.log__marker img { width: 32px; height: 32px; image-rendering: pixelated; }
-.log__bed-name { font: 700 0.78rem/1.2 var(--font-ui); color: #1c2a1c; text-align: center; }
-.log__bed--sown .log__bed-name::before { content: "▸ "; }
-.almanac-dialog .log__bed-name { font-size: 0.9rem; }
-.almanac-dialog .log__marker { font-size: 0.9rem; }
-/* Laptop: the cover fills the screen, the map growing into the room left. */
-@media (min-height: 501px) and (min-width: 641px) {
-  .almanac-dialog .almanac__sheet--cover { min-height: 100%; }
-  .almanac-dialog .log-page { flex: 1 1 auto; display: flex; flex-direction: column; gap: 0.75rem; }
-  .almanac-dialog .log__map { flex: 1 1 auto; padding: 14px; gap: 14px; }
-  .almanac-dialog .log__soil { min-height: 120px; }
-  .almanac-dialog .log__marker { font-size: 1.05rem; padding: 4px 8px; }
-  .almanac-dialog .log__marker img { width: 64px; height: 64px; }
-}
-/* Short phones: a strip, so the entries below stay on screen. */
-@media (max-height: 500px) {
-  .log__map { padding: 6px; gap: 6px; }
-  .log__soil { min-height: 40px; flex-direction: row; }
-  .log__marker { flex-direction: row; gap: 3px; font-size: 0.75rem; }
-  .log__marker img { width: 22px; height: 22px; }
-  .almanac-dialog .log__bed-name { font-size: 0.75rem; }
-  .almanac-dialog .log__marker { font-size: 0.78rem; }
-}
 /* The bottom bezel: hardware page buttons and a tab per screen page. */
 .almanac__controls { flex: none; display: flex; align-items: center; gap: 6px; padding: 7px 8px 9px; }
 .almanac__sheet-tabs { flex: 1 1 auto; display: flex; gap: 6px; min-width: 0; }
@@ -812,4 +770,97 @@
    a little lower so it clears the bed labels under the toolbar. */
 @media (max-height: 500px) and (orientation: landscape) {
   .tool-hint { top: calc(100% + 22px); }
+}
+
+/* ======== the planting log cover as a CRT terminal ========
+   Lucy: the log should not look like the garden. While the log page shows,
+   the almanac's screen turns into an old monitor: near-black glass, green
+   phosphor text with a soft glow, static scanlines and grain (nothing
+   animates per frame), a vignette and rounded inner corners for curved
+   glass, a wireframe schematic of the beds and a blinking cursor. The bezel,
+   buttons and the fact cards page keep their look. The phosphor here is
+   --phosphor-light (#69f0ae) on #07110a: about 13:1, and the dim green
+   (#4fd08a) about 9:1, well over AA. */
+.almanac__screen:has(> .almanac__sheet[data-sheet="log"]:not([hidden])) {
+  --crt-ink: var(--phosphor-light);
+  --crt-faint: #4fd08a;
+  --crt-glow: 0 0 6px rgba(105, 240, 174, 0.55);
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
+    repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, 0.32) 2px 3px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 1 0 0 0 0 0.6 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E"),
+    #07110a;
+  border-color: #0d0f0c;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px #1d2a20, inset 0 0 28px rgba(0, 0, 0, 0.85), inset 0 0 60px rgba(105, 240, 174, 0.08);
+  color: var(--crt-ink);
+  font-family: var(--font-ui);
+  text-shadow: var(--crt-glow);
+}
+.almanac__sheet[data-sheet="log"] { font-family: var(--font-ui); color: var(--crt-ink); }
+/* Header: "PLANTING LOG v1.0" then "DAY 1 · USER: name", ruled off like a terminal banner. */
+.level .almanac__sheet[data-sheet="log"] .almanac__cover-title {
+  padding: 0; background: none; box-shadow: none;
+  color: var(--crt-ink); font: 700 1rem/1.3 var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.almanac__sheet[data-sheet="log"] .almanac__cover-title::after { content: "  v1.0"; color: var(--crt-faint); font-weight: 400; white-space: pre; text-transform: none; letter-spacing: 0.04em; }
+.almanac__sheet[data-sheet="log"] .log__by {
+  margin: 0; padding-bottom: 0.35rem; border-bottom: 1px solid var(--crt-faint);
+  font: 400 0.85rem/1.4 var(--font-ui); font-style: normal; color: var(--crt-faint);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.almanac__sheet[data-sheet="log"] .log__day { font-weight: 700; color: var(--crt-ink); }
+/* The schematic: bed outlines in phosphor lines, the sown bed drawn solid and named. */
+.log__map {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px;
+  padding: 10px; border: 1px dashed var(--crt-faint);
+}
+.log__bed {
+  min-width: 0; min-height: 72px; padding: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px;
+  border: 1px dashed var(--crt-faint);
+}
+.log__bed--sown { border: 2px solid var(--crt-ink); box-shadow: var(--crt-glow), inset var(--crt-glow); }
+.log__bed-name { font: 400 0.8rem/1.2 var(--font-ui); letter-spacing: 0.1em; color: var(--crt-faint); }
+.log__bed--sown .log__bed-name { color: var(--crt-ink); font-weight: 700; }
+.log__marker { font: 700 0.85rem/1.2 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--crt-ink); white-space: nowrap; }
+/* The log as terminal output: "> sowed CARROTS in SIDE BED". */
+.almanac__sheet[data-sheet="log"] .log__list { font: 400 1rem/1.6 var(--font-ui); }
+.almanac__sheet[data-sheet="log"] .log__entry { padding: 0; border: 0; }
+.almanac__sheet[data-sheet="log"] .log__entry::before,
+.log__prompt::before { content: "> "; color: var(--crt-faint); }
+.log__entry b { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.almanac__sheet[data-sheet="log"] .log__none { font-style: normal; color: var(--crt-faint); }
+.log__prompt { margin: 0; font: 400 1rem/1.6 var(--font-ui); }
+.log__cursor {
+  display: inline-block; width: 0.6em; height: 1.05em; vertical-align: -0.15em;
+  background: var(--crt-ink); box-shadow: var(--crt-glow);
+  animation: log-cursor 1.06s steps(1, end) infinite;
+}
+@keyframes log-cursor { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .log__cursor { animation: none; } }
+/* In the open book: bigger type; on a laptop a taller schematic (still well
+   short of the screen) so the cover isn't mostly empty. */
+.almanac-dialog .almanac__sheet[data-sheet="log"] .log-page { display: flex; flex-direction: column; gap: 0.75rem; }
+.level .almanac-dialog .almanac__sheet[data-sheet="log"] .almanac__cover-title { font-size: 1.3rem; }
+.almanac-dialog .almanac__sheet[data-sheet="log"] .log__by { font-size: 0.95rem; }
+.almanac-dialog .almanac__sheet[data-sheet="log"] .log__list,
+.almanac-dialog .log__prompt { font-size: 1.15rem; line-height: 1.7; }
+@media (min-height: 501px) and (min-width: 641px) {
+  .almanac-dialog .log__map { padding: 16px; gap: 18px; }
+  .almanac-dialog .log__bed { min-height: 150px; padding: 10px; }
+  .almanac-dialog .log__bed-name { font-size: 0.95rem; }
+  .almanac-dialog .log__marker { font-size: 1.1rem; }
+}
+/* Short phones: a one-row strip so the log lines stay on screen. */
+@media (max-height: 500px) {
+  .almanac-dialog .almanac__sheet[data-sheet="log"] .log-page { gap: 0.4rem; }
+  .level .almanac-dialog .almanac__sheet[data-sheet="log"] .almanac__cover-title { font-size: 1rem; }
+  .almanac-dialog .almanac__sheet[data-sheet="log"] .log__by { font-size: 0.78rem; padding-bottom: 0.2rem; }
+  .log__map { padding: 5px; gap: 6px; }
+  .log__bed { min-height: 0; padding: 3px 4px; flex-direction: row; justify-content: center; gap: 6px; }
+  .log__bed-name, .almanac-dialog .log__bed-name { font-size: 0.75rem; }
+  .log__marker, .almanac-dialog .log__marker { font-size: 0.75rem; }
+  .almanac-dialog .almanac__sheet[data-sheet="log"] .log__list,
+  .almanac-dialog .log__prompt { font-size: 1rem; line-height: 1.5; }
 }

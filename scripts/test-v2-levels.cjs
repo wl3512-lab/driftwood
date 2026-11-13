@@ -152,8 +152,9 @@ async function open(browser, size, progress = PROGRESS) {
 }
 
 // The almanac opens with a short fade and scale: measure it once it has settled.
+// Waits for the book's open/close and card pops; the log's blinking cursor loops forever, so it is skipped.
 const bookSettled = (page) => page.waitForFunction(() => !document.getAnimations().some((a) =>
-  a.playState === "running" && a.effect?.target?.closest?.(".almanac-dialog")));
+  a.playState === "running" && a.effect?.getTiming?.().iterations !== Infinity && a.effect?.target?.closest?.(".almanac-dialog")));
 const phase = (page, p) => page.waitForSelector(`main.level[data-phase="${p}"]`);
 const focusedIs = (page, selector) => page.evaluate((sel) => document.activeElement?.matches(sel) ?? false, selector);
 // Scroll the control into view first: a tap on a reveal button below the fold once missed on the phone size.
@@ -722,9 +723,10 @@ async function openLog(page, size, bed) {
   assert.equal(await button.getAttribute("aria-expanded"), "true");
   if (!size.touch) assert.equal(await focusedIs(page, ".almanac__close"), true, "the close button takes focus");
   assert.equal(await page.locator(".log__entry").count(), 1, "one entry so far");
-  assert.match(await page.textContent(".log__entry"), new RegExp(`You sowed carrots in the ${BED_LABEL[bed]}\\.`));
+  assert.match(await page.textContent(".log__entry"), new RegExp(`^sowed carrots in ${BED_LABEL[bed]}$`));
   assert.equal(await page.getAttribute(".log__entry", "data-bed"), bed);
-  assert.match(await page.textContent(".log__by"), /Kept by Tester/);
+  assert.match(await page.textContent(".log__by"), /Day 1 · User: Tester/);
+  assert.equal(await page.getAttribute(".log__map", "aria-hidden"), "true", "the bed schematic is decoration");
   // Reading your own log counts as checking the label: the card unlocks.
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 0, "the carrot label unlocks");
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--fresh').count(), 1, "the unlocked card is marked fresh");
