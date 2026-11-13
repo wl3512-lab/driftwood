@@ -316,7 +316,7 @@
 .permit__body { font: 0.95rem var(--font-body); color: #3a3f55; }
 .permit__actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .permit__actions .btn { min-height: 44px; }
-.ending { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+.level-end { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; }
 .outcome { font: 700 1.05rem/1.4 var(--font-ui); }
 .prompt { font: 700 0.95rem var(--font-ui); }
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
