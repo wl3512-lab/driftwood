@@ -1,6 +1,6 @@
-// Level 4's planting log: a page of the almanac (see ui/tools.js) listing where
+// Level 4's planting log: the almanac's cover (see ui/tools.js) listing where
 // the player put things (state.memory), the player's own record against the
-// helper's "memory". The "L" key opens the almanac straight on this page.
+// helper's "memory". It has no button or key: opening the almanac shows it.
 //
 // Showing the page counts as checking the evidence for every logged item
 // (dispatch check(item)), which unlocks the "Your label" card.

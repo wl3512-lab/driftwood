@@ -687,3 +687,10 @@
   .almanac__sheet-tab { font-size: 0.75rem; }
 }
 
+/* The cover (a document page, e.g. Level 4's planting log): the first screen
+   the book opens on, with a title plate like a cover's. */
+.almanac__sheet--cover .almanac__cover-title {
+  align-self: flex-start; padding: 0.15rem 0.5rem;
+  background: #2e4a2e; color: #f7fff0; font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase;
+  box-shadow: 2px 2px 0 rgba(30, 40, 30, 0.35);
+}

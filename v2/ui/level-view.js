@@ -99,9 +99,9 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const levelTools = (level.tools || []).some((tl) => tl.id === "almanac")
     ? level.tools
     : [ALMANAC, ...(level.tools || [])];
-  // A document tool (the planting log) is a page of the almanac, not a button.
+  // A document tool (the planting log) is the almanac's cover, not a button.
   const pages = levelTools.filter((tl) => pageView(tl.id)).map((tl) => ({
-    id: tl.id, key: tl.key,
+    id: tl.id,
     view: pageView(tl.id)({ level, tool: tl, dispatch, getState: () => state, t }),
   }));
   const tools = [];
@@ -122,11 +122,9 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     toolbar.append(button);
     tools.push({ id: `tool:${tool.id}`, key: tool.key, view });
   }
-  // A page's key (the log's "L") opens the almanac straight on that page.
+  // A page (the log) has no key or button of its own: it is the almanac's
+  // cover, so the only way to read it is to open the book.
   const almanacView = tools.find((tl) => tl.id === "tool:almanac")?.view;
-  for (const p of pages) {
-    if (p.key && almanacView) tools.push({ id: `page:${p.id}`, key: p.key, view: { open: () => almanacView.open(p.id) } });
-  }
   toolbar.hidden = tools.length === 0;
   const almanacButton = toolbar.querySelector('[data-tool="almanac"]');
 

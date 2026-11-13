@@ -4,16 +4,17 @@
 // current by the level view, passed in as ctx.cards): the cards live in the
 // book, not on the garden, so checking a helper's claim is a deliberate look.
 // Level 2 adds a searchable book (level.almanac) under the cards: a search box
-// and a row of page tabs. Document tools (ui/tools.js definePage, e.g. Level
-// 4's planting log) are further screen pages, switched by the device's ◀ ▶
-// buttons and page tabs along the bottom bezel.
+// and a row of page tabs. A document tool (ui/tools.js definePage, e.g. Level
+// 4's planting log) is the device's COVER: the screen the book opens on, with
+// the fact cards after it, switched by the device's ◀ ▶ buttons and page tabs
+// along the bottom bezel. The cover is the only way to read it: it has no
+// button, key or anything on the garden.
 // Registered with ui/tools.js; the level view owns the toolbar button and the
-// "/" shortcut and calls open() to toggle the panel, or open(pageId) for a
-// page's own key.
+// "/" shortcut and calls open() to toggle the panel.
 //
 // Ways in and around:
-//   keyboard  "/" opens (search box focused) · a page's key opens on that page
-//             · ←/→ (or ↑/↓, Home/End) move between tabs, Tab walks them · Esc closes
+//   keyboard  "/" opens (on the cover, else the cards with the search box
+//             focused) · ←/→ (or ↑/↓, Home/End) move between tabs, Tab walks them · Esc closes
 //   mouse     the Almanac button, the device buttons, the tabs, the × button
 //   touch     the same buttons (44px+); the first tab gets focus, not the
 //             search box, so the keyboard doesn't jump up on open
@@ -23,7 +24,6 @@
 // itself checks nothing: a locked card stays locked until its tool unlocks it.
 import { h, finePointer } from "./dom.js";
 import { defineTool } from "./tools.js";
-import { keyCap } from "./shortcuts.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
 
 let panels = 0; // unique ids if a level is ever mounted twice
@@ -61,21 +61,23 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     searchable && h("div", { class: "almanac__tabs", role: "group", "aria-label": "Pages" }, tabs),
     searchable && result);
 
-  // Every screen page: the cards first, then one per document page.
+  // Every screen page: a document page is the cover (page 1), the cards come after it.
   const sheets = [
-    { id: "cards", title: "Fact cards", el: cardsSheet },
     ...pages.map((p) => ({
-      id: p.id, title: p.view.title, key: p.key, view: p.view,
-      el: h("div", { class: "almanac__sheet", "data-sheet": p.id, hidden: true },
-        h("h2", { class: "almanac__title" }, p.view.title),
+      id: p.id, title: p.view.title, view: p.view,
+      el: h("div", { class: "almanac__sheet almanac__sheet--cover", "data-sheet": p.id, hidden: true },
+        h("h2", { class: "almanac__title almanac__cover-title" }, p.view.title),
         p.view.body),
     })),
+    { id: "cards", title: "Fact cards", el: cardsSheet },
   ];
-  let current = "cards";
+  const first = sheets[0].id;
+  let current = first;
   const sheetTabs = sheets.map((s) => h("button", {
-    type: "button", class: "almanac__sheet-tab", "data-sheet": s.id, "aria-pressed": String(s.id === "cards"),
+    type: "button", class: "almanac__sheet-tab", "data-sheet": s.id, "aria-pressed": String(s.id === first),
     onclick: () => showSheet(s.id, true),
-  }, s.title, s.key && finePointer() && h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(s.key))));
+  }, s.title));
+  const cardsTab = sheetTabs.find((tb) => tb.dataset.sheet === "cards");
   const multi = sheets.length > 1;
   const flip = (dir, label, glyph) => h("button", {
     type: "button", class: "almanac__flip", "aria-label": label,
@@ -148,33 +150,31 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
   }
 
   // Put one screen page on the device. `fromTab`: the player switched pages
-  // inside the book, so focus stays on the device's own controls.
-  function showSheet(id, fromTab) {
+  // inside the book, so focus stays on the device's own controls. `quiet`:
+  // set up only (at mount), so a page's show() (the log's check) never runs
+  // until the player has actually opened the book.
+  function showSheet(id, fromTab, quiet = false) {
     const sheet = sheets.find((s) => s.id === id) || sheets[0];
     current = sheet.id;
     for (const s of sheets) s.el.hidden = s !== sheet;
     for (const tb of sheetTabs) tb.setAttribute("aria-pressed", String(tb.dataset.sheet === sheet.id));
     status.textContent = multi ? ` · page ${sheets.indexOf(sheet) + 1}/${sheets.length}` : "";
     panel.querySelector(".almanac__screen").scrollTop = 0;
-    if (sheet.id === "cards") clearNews();
+    if (sheet.id === "cards") cardsTab?.classList.remove("almanac__sheet-tab--news");
     if (fromTab) {
       const tb = sheetTabs.find((x) => x.dataset.sheet === sheet.id);
       if (!panel.contains(document.activeElement) || !document.activeElement.matches(".almanac__flip")) tb?.focus({ preventScroll: true });
     }
-    sheet.view?.show(getState());
+    if (!quiet) sheet.view?.show(getState());
   }
 
-  function clearNews() {
-    button.classList.remove("tool--news");
-    sheetTabs[0]?.classList.remove("almanac__sheet-tab--news");
-  }
-
-  // open() toggles the book on its fact cards; open(id) toggles it on that page.
-  function open(id) {
-    if (!panel.hidden && (id == null || current === id)) { hide(false); return; }
+  // open() toggles the book, always on its first page (the cover, else the cards).
+  function open() {
+    if (!panel.hidden) { hide(false); return; }
     panel.hidden = false;
     button.setAttribute("aria-expanded", "true");
-    showSheet(id || "cards", false);
+    button.classList.remove("tool--news"); // the book is open; the cards tab keeps its own dot
+    showSheet(first, false);
     if (current !== "cards" || !searchable) close.focus({ preventScroll: true });
     else (finePointer() ? input : (tabs.find((tb) => tb.dataset.page === shown?.id) || tabs[0])).focus({ preventScroll: true });
   }
@@ -183,19 +183,21 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     if (panel.hidden) return;
     const inside = panel.contains(document.activeElement);
     panel.hidden = true;
+    // A card unlocked on the cover but the cards page was never looked at: the book keeps the dot.
+    if (cardsTab?.classList.contains("almanac__sheet-tab--news")) button.classList.add("tool--news");
     button.setAttribute("aria-expanded", "false");
     if (returnFocus || inside) button.focus({ preventScroll: true });
   }
 
   render(null, "");
-  showSheet("cards", false);
+  showSheet(first, false, true);
   return {
     open,
-    // A card just unlocked: mark the book (and its cards tab) unless the cards are on screen.
+    // A card just unlocked: mark the book (shut) and its cards tab, unless the cards are on screen.
     markNews() {
       if (!panel.hidden && current === "cards") return;
-      button.classList.add("tool--news");
-      if (multi) sheetTabs[0].classList.add("almanac__sheet-tab--news");
+      if (panel.hidden) button.classList.add("tool--news");
+      if (multi) cardsTab.classList.add("almanac__sheet-tab--news");
     },
     update(state) {
       // The reveal is about the garden: put the book away so it doesn't cover the outcome.

@@ -75,9 +75,11 @@ for (const id of ["level-2", "level-3", "level-4", "level-5"]) {
   });
 
   test(`${id}: every tool has a unique single key and a label`, () => {
-    const keys = (level.tools || []).map((t) => t.key);
+    // A page tool (the log, the almanac's cover) has no key or button of its own.
+    const keys = (level.tools || []).filter((t) => !t.page).map((t) => t.key);
     assert.equal(new Set(keys).size, keys.length);
-    for (const t of level.tools || []) assert.ok(t.id && t.label && t.key, `${t.id}: id, label, key`);
+    for (const t of level.tools || []) assert.ok(t.id && t.label && (t.key || t.page), `${t.id}: id, label, key`);
+    for (const t of level.tools || []) if (t.page) assert.equal(t.key ?? t.sprite, undefined, `${t.id}: a page has no key or icon`);
   });
 }
 
@@ -289,7 +291,7 @@ const t4 = (text, memory) => fill(text, { name: "Lucy", ...memoryVars(L4, memory
 test("level-4: shape — garden by day, three beds, the log tool, finished plots from levels 1–3", () => {
   assert.equal(L4.scene, "garden-day");
   assert.deepEqual(L4.beds.map((b) => b.id), ["front", "side", "back"]);
-  assert.deepEqual(L4.tools.map((t) => [t.id, t.key]), [["log", "l"]]);
+  assert.deepEqual(L4.tools.map((t) => [t.id, t.key]), [["log", undefined]], "the log is the almanac's cover: no key of its own");
   assert.equal(L4.props[0].from, "finished");
   assert.deepEqual(L4.props[0].levels, ["level-1", "level-2", "level-3"]);
   const carrots = L4.steps.find((s) => s.place);

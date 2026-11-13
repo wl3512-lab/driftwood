@@ -62,7 +62,7 @@ for (const level of Object.values(LEVELS)) {
       }
     }
     for (const e of level.evidence) assert.ok(existsSync(ART + `${e.icon || "seed-packet"}.svg`), `evidence icon ${e.icon}`);
-    for (const t of level.tools || []) assert.ok(existsSync(resolve(PAGE_DIR, t.sprite)), `tool sprite ${t.sprite}`);
+    for (const t of level.tools || []) if (!t.page) assert.ok(existsSync(resolve(PAGE_DIR, t.sprite)), `tool sprite ${t.sprite}`);
     for (const p of level.props || []) if (p.sprite) assert.ok(existsSync(resolve(PAGE_DIR, p.sprite)), `prop ${p.sprite}`);
     for (const p of used) assert.ok(existsSync(ART + artFor(p.plant, p.state)), `art/${artFor(p.plant, p.state)}`);
     for (const f of ["seed-packet.svg", "watering-can.svg"]) assert.ok(existsSync(ART + f), `art/${f}`);

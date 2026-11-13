@@ -31,7 +31,7 @@ export default {
       icon: "plant-label",
       title: "Your label: Carrots",
       lines: ["Sown by {name}", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
-      locked: "Check the planting log page.",
+      locked: "Open the almanac: its cover is your planting log.",
     },
     {
       id: "pumpkin",
@@ -40,7 +40,7 @@ export default {
     },
   ],
 
-  tools: [{ id: "log", label: "Log", key: "l", sprite: "./art/planting-log.svg" }],
+  tools: [{ id: "log", label: "Planting log", page: true }], // the almanac's cover (ui/log-view.js): no button, no key
 
   greeting: "Okay so listen, {name}: we are finishing this garden today, babe. Biscuit remembers everything, so just ask.",
 
@@ -98,7 +98,7 @@ export default {
       ],
       correctFlaw: "memory",
       flawHints: {
-        fact: "This isn't a plant fact. It's about what YOU did. Check your planting log.",
+        fact: "This isn't a plant fact. It's about what YOU did. Check your planting log on the almanac's cover.",
         agreed: "You didn't suggest digging. Biscuit did, because of something you supposedly said.",
       },
       fixOptions: [
@@ -120,7 +120,7 @@ export default {
     },
   ],
 
-  falseFlagNudge: "That one looks fine. Check your planting log if you're not sure.",
+  falseFlagNudge: "That one looks fine. Check your planting log on the almanac's cover if you're not sure.",
   redirects: [
     "Babe, iconic question. But ask me about the garden first.",
     "Okay so listen, we've got a garden to finish, darling.",
