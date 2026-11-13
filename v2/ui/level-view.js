@@ -20,6 +20,7 @@ import { toolView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
 
 const DEFAULT_ICON = "seed-packet";
+const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: "./art/almanac.svg" };
 const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.isContentEditable);
 
 // `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
@@ -69,8 +70,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
         meterText, h("div", { class: "meter__bar", "aria-hidden": "true" }, meterFill))),
     toolbar,
     h("div", { class: "scene__ground" },
-      beds,
-      packets),
+      beds),
     props,
     earlierRow,
     h("img", { class: "can", src: "./art/watering-can.svg", alt: "", width: 64, height: 64 }),
@@ -91,8 +91,13 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   root.replaceChildren(main);
 
   // ---- tools: one button each (sprite, label, key cap), opened by click, tap or key ----
+  // Every level has the almanac: the fact cards (level.evidence) live in it,
+  // not on the garden, so checking what a helper says is a deliberate look.
+  const levelTools = (level.tools || []).some((tl) => tl.id === "almanac")
+    ? level.tools
+    : [ALMANAC, ...(level.tools || [])];
   const tools = [];
-  for (const tool of level.tools || []) {
+  for (const tool of levelTools) {
     const create = toolView(tool.id);
     if (!create) continue;
     const button = h("button", {
@@ -103,12 +108,26 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     h("img", { src: tool.sprite, alt: "", width: 28, height: 28 }),
     h("span", { class: "tool__label" }, tool.label),
     tool.key && h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(tool.key)));
-    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce });
+    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, cards: packets });
     button.addEventListener("click", () => view.open());
     toolbar.append(button);
     tools.push({ id: `tool:${tool.id}`, key: tool.key, view });
   }
   toolbar.hidden = tools.length === 0;
+  const almanacButton = toolbar.querySelector('[data-tool="almanac"]');
+
+  // The first time a level opens, a short note points at the almanac. It goes
+  // once the player opens the book (or moves on to the next step).
+  let nudge = null;
+  const nudgeKey = `dw2_almanac_hint_${level.id}`;
+  let seen = false;
+  try { seen = localStorage.getItem(nudgeKey) === "1"; localStorage.setItem(nudgeKey, "1"); } catch (_) { /* fine */ }
+  if (almanacButton && !seen) {
+    nudge = h("p", { class: "hint tool-hint", role: "note" }, "Check facts in the almanac");
+    toolbar.prepend(nudge); // a flex item left of the buttons, on their row
+    almanacButton.addEventListener("click", dropNudge);
+  }
+  function dropNudge() { nudge?.remove(); nudge = null; }
 
   // Level 5's clock: ticks only while the player lingers on a pressure step's advice.
   const clock = createPressureClock(dispatch);
@@ -181,7 +200,12 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       for (const id of step.place.beds) beds.querySelector(`[data-bed="${id}"]`)?.classList.add("bed--target");
     }
     packets.replaceChildren(...level.evidence.map(packet));
+    // A card that just unlocked marks the almanac button until the book is opened.
+    if (fresh.size > 0 && almanacButton && almanacButton.getAttribute("aria-expanded") !== "true") {
+      almanacButton.classList.add("tool--news");
+    }
     fresh = new Set();
+    if (nudge && state.stepIndex > 0) dropNudge();
     for (const tl of tools) tl.view.update?.(state);
     setDrift(scene, state.drift);
     // How much of a pressure step's cost has been paid (0..1); the scene's props read it.

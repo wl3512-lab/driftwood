@@ -15,7 +15,8 @@ export default {
   ],
   startPlants: { east: [{ plant: "lettuce", state: "growing" }] },
 
-  // The true facts the drift will contradict. Always on screen.
+  // The true facts the drift will contradict. They live in the almanac
+  // (every level has one; ui/almanac-view.js), one tap or "/" away.
   evidence: [
     { id: "sunflower", title: "Sunflower", lines: ["Full sun"] },
     { id: "lettuce", title: "Lettuce", lines: ["Part shade OK"] },

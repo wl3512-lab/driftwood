@@ -192,6 +192,26 @@ async function assertTapSize(page, selector) {
   }
 }
 
+// The fact cards live in the almanac, not on the garden. Open the book, check
+// card `id` is shown there (locked or not), and close it again (× on touch,
+// Esc on a laptop). `badge`: whether the button should carry the new-card dot.
+async function readCard(page, size, id, { locked, badge } = {}) {
+  const button = page.locator('button.tool[data-tool="almanac"]');
+  if (badge != null) assert.equal(await button.evaluate((el) => el.classList.contains("tool--news")), badge, `almanac badge ${badge ? "on" : "off"}`);
+  assert.equal(await page.locator(".scene__ground .packet").count(), 0, "no fact cards on the garden");
+  await press(page, size, button);
+  await page.waitForSelector(".almanac:not([hidden])");
+  const card = page.locator(`.almanac .packet[data-evidence="${id}"]`);
+  await card.scrollIntoViewIfNeeded();
+  assert.equal(await card.isVisible(), true, `the ${id} card shows in the almanac`);
+  if (locked != null) assert.equal(await card.evaluate((el) => el.classList.contains("packet--locked")), locked, `the ${id} card is ${locked ? "locked" : "unlocked"}`);
+  assert.equal(await button.evaluate((el) => el.classList.contains("tool--news")), false, "opening the book clears the dot");
+  await assertOnScreen(page, ".almanac__close");
+  if (size.touch) await page.locator(".almanac__close").tap();
+  else await page.keyboard.press("Escape");
+  await page.waitForSelector(".almanac[hidden]", { state: "attached" });
+}
+
 // Level 2 opens from the map (Level 1 is saved as finished, so it says "Play").
 async function enterLevel2(page, size) {
   await page.goto(`${BASE}?screen=map`);
@@ -544,6 +564,7 @@ async function caughtPath3(browser, size) {
   assert.equal(await page.locator('.packet[data-evidence="wildberry"].packet--locked').count(), 0, "inspecting the hedge unlocks the warning");
   assert.equal(await page.locator('.packet[data-evidence="wildberry"].packet--fresh').count(), 1, "the unlocked card is marked fresh");
   assert.match(await page.textContent("#sr-live"), /Unlocked: Wild berry warning/);
+  await readCard(page, size, "wildberry", { locked: false, badge: true });
   assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "checking does not move the phase on");
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
   await phase(page, "name");
@@ -594,6 +615,7 @@ async function enterLevel4(page, size, { prev = /★☆☆/, fooledPlot = "level
   assert.equal(await page.locator(`.earlier img[data-plot="${fooledPlot}"][data-caught="false"]`).count(), 1, "the fooled plot is marked");
   assert.equal(await page.locator('button.tool[data-tool="log"]').count(), 1, "the planting log tool button is there");
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 1, "the carrot label starts locked");
+  await readCard(page, size, "carrot", { locked: true, badge: false });
   for (const bed of ["front", "side", "back"]) {
     assert.equal(await page.locator(`[data-bed="${bed}"] .plant`).count(), 0, `the ${bed} bed starts empty`);
   }
@@ -675,6 +697,7 @@ async function openLog(page, size, bed) {
   await page.waitForSelector(".log[hidden]", { state: "attached" });
   assert.equal(await page.getAttribute('button.tool[data-tool="log"]', "aria-expanded"), "false");
   assert.equal(await focusedIs(page, 'button.tool[data-tool="log"]'), true, "closing hands focus back to the tool button");
+  await readCard(page, size, "carrot", { locked: false, badge: true });
 }
 
 // Carrots placed, pumpkins placed, then the drifting lettuce advice.
@@ -846,7 +869,8 @@ async function enterLevel5(page, size, prev = /★★★/) {
   assert.match(await page.textContent(".bubble__text"), /You're here, Tester/);
   assert.equal(await page.getAttribute("main.level", "data-scene"), "meadow-night");
   assert.equal(await page.locator(".prop--moon").count(), 1, "the moon is up");
-  assert.equal(await page.locator("button.tool").count(), 0, "Level 5 has no tool: walking away is the check");
+  assert.equal(await page.locator("button.tool").count(), 1, "Level 5 has only the almanac: walking away is the check");
+  assert.equal(await page.locator('button.tool[data-tool="almanac"]').count(), 1);
   await page.waitForSelector(`${MEADOW}.plant--thriving`);
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
   assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
@@ -1168,14 +1192,17 @@ async function beginFresh(page, size) {
   assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 0, "no finished garden yet");
 }
 
-// Level 1 · Mango · plan your garden · no tool (the seed packets are always on screen).
+// Level 1 · Mango · plan your garden · just the almanac, which holds the seed packets.
 async function enterLevel1(page, size) {
   await press(page, size, page.locator('[data-level="level-1"]'));
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /Mango here/);
   await page.waitForSelector('[data-bed="east"] [data-plant="lettuce"].plant--growing');
-  assert.equal(await page.locator("button.tool").count(), 0, "Level 1 has no tool");
-  assert.equal(await page.locator(".packet").count(), 3, "three seed packets");
+  assert.equal(await page.locator("button.tool").count(), 1, "Level 1 has only the almanac");
+  assert.equal(await page.locator(".tool-hint").count(), 1, "first visit: a note points at the almanac");
+  assert.equal(await page.locator(".almanac .packet").count(), 3, "three seed packets, in the almanac");
+  await readCard(page, size, "tomato", { locked: false, badge: false });
+  assert.equal(await page.locator(".tool-hint").count(), 0, "the note goes once the book is opened");
 }
 
 async function trustSteps1(page, size) {

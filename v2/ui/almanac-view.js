@@ -1,6 +1,10 @@
-// Level 2's almanac: a non-modal panel over the scene with a search box and a
-// row of page tabs. Registered with ui/tools.js; the level view owns the
-// toolbar button and the "/" shortcut and calls open() to toggle the panel.
+// The almanac: a non-modal panel over the scene. Every level has one, and it
+// holds that level's fact cards (level.evidence, rendered and kept current by
+// the level view, passed in as ctx.cards): the cards live in the book, not on
+// the garden, so checking a helper's claim is a deliberate look. Level 2 adds
+// a searchable book (level.almanac) under the cards: a search box and a row of
+// page tabs. Registered with ui/tools.js; the level view owns the toolbar
+// button and the "/" shortcut and calls open() to toggle the panel.
 //
 // Ways in and around:
 //   keyboard  "/" opens (search box focused) · ←/→ (or ↑/↓, Home/End) move
@@ -10,15 +14,17 @@
 //             search box, so the keyboard doesn't jump up on open
 // Focus goes back to the Almanac button whenever the panel closes from inside.
 // Showing a page whose id is a locked evidence card dispatches check(id),
-// and the level view pops and announces the card.
+// and the level view pops and announces the card. Reading the cards list
+// itself checks nothing: a locked card stays locked until its tool unlocks it.
 import { h, finePointer } from "./dom.js";
 import { defineTool } from "./tools.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
 
 let panels = 0; // unique ids if a level is ever mounted twice
 
-defineTool("almanac", ({ level, scene, button, dispatch, t }) => {
-  const book = level.almanac;
+defineTool("almanac", ({ level, scene, button, dispatch, t, cards }) => {
+  const book = level.almanac || { title: "Almanac", pages: [], notFound: "" };
+  const searchable = book.pages.length > 0;
   const lockedIds = new Set(level.evidence.filter((e) => e.locked).map((e) => e.id));
   const uid = `almanac-${++panels}`;
   let shown = null; // the page on display, or null
@@ -39,14 +45,17 @@ defineTool("almanac", ({ level, scene, button, dispatch, t }) => {
   h("div", { class: "almanac__head" },
     h("h2", { class: "almanac__title", id: `${uid}-title` }, t(book.title)),
     close),
-  h("form", {
+  cards && h("div", { class: "almanac__cards" },
+    h("p", { class: "almanac__label" }, "Fact cards"),
+    cards),
+  searchable && h("form", {
     class: "almanac__search", role: "search",
     onsubmit: (e) => { e.preventDefault(); lookUp(input.value, true); },
   },
   h("label", { for: input.id, class: "almanac__label" }, "Look up a plant"),
   h("div", { class: "almanac__row" }, input, h("button", { type: "submit", class: "btn almanac__go" }, "Look up"))),
-  h("div", { class: "almanac__tabs", role: "group", "aria-label": "Pages" }, tabs),
-  result);
+  searchable && h("div", { class: "almanac__tabs", role: "group", "aria-label": "Pages" }, tabs),
+  searchable && result);
 
   button.setAttribute("aria-controls", uid);
   button.setAttribute("aria-expanded", "false");
@@ -100,7 +109,9 @@ defineTool("almanac", ({ level, scene, button, dispatch, t }) => {
     if (!panel.hidden) { hide(false); return; }
     panel.hidden = false;
     button.setAttribute("aria-expanded", "true");
-    (finePointer() ? input : (tabs.find((tb) => tb.dataset.page === shown?.id) || tabs[0])).focus({ preventScroll: true });
+    button.classList.remove("tool--news"); // the new card is in view now
+    if (!searchable) close.focus({ preventScroll: true });
+    else (finePointer() ? input : (tabs.find((tb) => tb.dataset.page === shown?.id) || tabs[0])).focus({ preventScroll: true });
   }
 
   function hide(returnFocus) {
