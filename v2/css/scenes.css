@@ -37,10 +37,34 @@
 .level:not([data-scene="yard"]) .packets { max-width: 15rem; }
 .level:not([data-scene="yard"]) .packet span { overflow-wrap: anywhere; }
 
-/* bed kinds (bed.kind in the level data) */
-.bed--pots { background: #c8693c; border-color: #8f4320; }
-.bed--wild { background: #3f5f36; border-color: #2a4024; }
-.bed--meadow { background: #31523c; border-color: #1f3627; }
+/* bed kinds (bed.kind in the level data). Each swaps the soil texture that
+   level.css gives .bed: pots get a rim stripe instead of furrows, the wild
+   hedge and the meadow get grass blades in a lighter green. */
+.bed--pots {
+  --soil-bed: #c8693c;
+  --plank-light: #e0885a;
+  --plank-dark: #7a3818;
+  background:
+    /* pot rim: a lighter band with a dark line under it, along the top */
+    linear-gradient(#e0885a 0 0) 0 0 / 100% 8px no-repeat,
+    linear-gradient(#7a3818 0 0) 0 8px / 100% 2px no-repeat,
+    /* glaze speckles, no furrows */
+    radial-gradient(circle, rgba(255, 220, 190, 0.35) 0 1.5px, transparent 2px) 6px 14px / 21px 17px repeat,
+    radial-gradient(circle, rgba(90, 40, 15, 0.3) 0 1.5px, transparent 2px) 15px 22px / 29px 25px repeat,
+    var(--soil-bed);
+  border-color: #8f4320;
+}
+.bed--wild, .bed--meadow {
+  --tuft: rgba(140, 200, 110, 0.45);
+  background:
+    /* grass blades: two 2px blades per tile, cut to 6px-tall tufts by the soil rows painted over them */
+    repeating-linear-gradient(var(--soil-bed) 0 5px, transparent 5px 11px, var(--soil-bed) 11px 14px) 0 0 / 100% 14px repeat,
+    linear-gradient(90deg, transparent 0 4px, var(--tuft) 4px 6px, transparent 6px 8px, var(--tuft) 8px 10px, transparent 10px) 3px 0 / 18px 14px repeat,
+    linear-gradient(90deg, transparent 0 4px, var(--tuft) 4px 6px, transparent 6px 8px, var(--tuft) 8px 10px, transparent 10px) 12px 0 / 26px 28px repeat,
+    var(--soil-bed);
+}
+.bed--wild { --soil-bed: #3f5f36; --plank-light: #5c7f52; --plank-dark: #223520; border-color: #2a4024; }
+.bed--meadow { --soil-bed: #31523c; --tuft: rgba(150, 200, 150, 0.4); --plank-light: #4b6e55; --plank-dark: #182b20; border-color: #1f3627; }
 
 /* evidence that needs an action first, and the pop when it unlocks */
 .packet--locked { background: #efe6cc; border-style: dashed; }
@@ -81,6 +105,7 @@
     linear-gradient(var(--scene-sky) 0 46%, var(--sill) 46% 49%, var(--scene-ground) 49% 100%);
 }
 .level[data-scene="greenhouse"] .fence { top: 46%; height: 10px; border: 0; background: var(--sill); }
+.level[data-scene="greenhouse"] .scene__ground::before { display: none; } /* a tiled floor grows no grass tufts */
 .level[data-scene="greenhouse"] .prop--shelf { left: 24px; top: 30%; width: 56px; padding: 0 12px; border-bottom: 6px solid #5d3a1e; }
 
 /* The almanac (ui/almanac-view.js): a book panel on the scene's left, so the
@@ -329,9 +354,8 @@
   .magnifier { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
   .log { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
   .magnifier__sprite { width: 72px; height: 72px; }
-  /* The cards share the row with the tool buttons; the helper waits under the tools. */
+  /* The cards share the row with the tool buttons. */
   .level:not([data-scene="yard"]) .packets { max-width: calc(100% - 7rem); }
-  .level:not([data-scene="yard"]) .helper { top: 37%; }
 }
 /* Phones in portrait: the garden is a strip above the dock, so the book takes its full width. */
 @media (max-width: 640px) and (min-height: 501px) {

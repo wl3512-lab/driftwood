@@ -1,0 +1,66 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Driftwood v2 scene redesign: before / after / option B</title>
+<style>
+  body { margin: 0; padding: 24px; background: #fff6dc; color: #3b2a1a; font: 14px/1.4 ui-monospace, Menlo, monospace; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 0 0 18px; max-width: 70em; }
+  h2 { font-size: 15px; margin: 26px 0 8px; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; }
+  figure { margin: 0; border: 3px solid #3b2a1a; box-shadow: 3px 3px 0 #3b2a1a; background: #fff; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { padding: 6px 8px; border-top: 3px solid #3b2a1a; font-weight: bold; }
+  figcaption small { display: block; font-weight: normal; color: #6b5a3e; }
+  .row--2 { grid-template-columns: repeat(2, 1fr); }
+</style>
+<h1>Driftwood v2: helper stall and textured beds</h1>
+<p>Before = production copy of db39307 (<code>_site/v2/</code>). After (option A, shipped) = helper sprite moved off the garden into a framed stall beside the talk column; beds get soil furrows, speckles, plank edging, corner posts and label stakes; stepping-stone path and grass tufts on the ground. Option B (not shipped) = the same stall placed inside the scene, captured by Playwright injection only.</p>
+
+<h2>Level 1, after two good answers (trust) - laptop 1280x800</h2>
+<div class="row">
+  <figure><img src="before-laptop-1-trust.png" alt=""><figcaption>before<small>Mango stands on the grass next to the beds</small></figcaption></figure>
+  <figure><img src="after-laptop-1-trust.png" alt=""><figcaption>after (option A, shipped)<small>Mango in the stall, left of the conversation</small></figcaption></figure>
+  <figure><img src="optionB-laptop-1-trust.png" alt=""><figcaption>option B (not shipped)<small>stall inside the scene: it covers the South bed and its sunflower</small></figcaption></figure>
+</div>
+
+<h2>Level 1, drifted advice - laptop 1280x800</h2>
+<div class="row">
+  <figure><img src="before-laptop-1-drift.png" alt=""><figcaption>before</figcaption></figure>
+  <figure><img src="after-laptop-1-drift.png" alt=""><figcaption>after (option A, shipped)</figcaption></figure>
+  <figure><img src="optionB-laptop-1-drift.png" alt=""><figcaption>option B (not shipped)</figcaption></figure>
+</div>
+
+<h2>Level 1, trust - phone landscape 844x390</h2>
+<div class="row">
+  <figure><img src="before-phone-1-trust.png" alt=""><figcaption>before</figcaption></figure>
+  <figure><img src="after-phone-1-trust.png" alt=""><figcaption>after (option A, shipped)<small>stall becomes a short strip at the top of the dock</small></figcaption></figure>
+  <figure><img src="optionB-phone-1-trust.png" alt=""><figcaption>option B (not shipped)<small>the box sits on a bed and hides a plant</small></figcaption></figure>
+</div>
+
+<h2>Level 1, drifted advice - phone landscape 844x390</h2>
+<div class="row">
+  <figure><img src="before-phone-1-drift.png" alt=""><figcaption>before</figcaption></figure>
+  <figure><img src="after-phone-1-drift.png" alt=""><figcaption>after (option A, shipped)</figcaption></figure>
+  <figure><img src="optionB-phone-1-drift.png" alt=""><figcaption>option B (not shipped)</figcaption></figure>
+</div>
+
+<h2>Level 3 (hedge at dusk), trust - laptop and phone</h2>
+<div class="row row--2">
+  <figure><img src="before-laptop-3-trust.png" alt=""><figcaption>before - laptop</figcaption></figure>
+  <figure><img src="after-laptop-3-trust.png" alt=""><figcaption>after (option A, shipped) - laptop<small>terracotta tub with pot rim, wild hedge with grass blades</small></figcaption></figure>
+  <figure><img src="before-phone-3-trust.png" alt=""><figcaption>before - phone</figcaption></figure>
+  <figure><img src="after-phone-3-trust.png" alt=""><figcaption>after (option A, shipped) - phone</figcaption></figure>
+</div>
+
+<h2>Other levels after the change (laptop)</h2>
+<div class="row">
+  <figure><img src="after-laptop-2-ask.png" alt=""><figcaption>Level 2 greenhouse<small>tiled floor: no tufts</small></figcaption></figure>
+  <figure><img src="after-laptop-4-place.png" alt=""><figcaption>Level 4 placement<small>target-bed outlines still visible</small></figcaption></figure>
+  <figure><img src="after-laptop-5-ask.png" alt=""><figcaption>Level 5 meadow night</figcaption></figure>
+</div>
+
+<h2>Production copy (_site/v2/) after build, Level 1</h2>
+<div class="row row--2">
+  <figure><img src="prod-laptop-1-trust.png" alt=""><figcaption>_site laptop</figcaption></figure>
+  <figure><img src="prod-phone-1-trust.png" alt=""><figcaption>_site phone</figcaption></figure>
+</div>

@@ -73,10 +73,19 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       packets),
     props,
     earlierRow,
-    h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 }),
     h("img", { class: "can", src: "./art/watering-can.svg", alt: "", width: 64, height: 64 }),
     h("div", { class: "scanlines", "aria-hidden": "true" }));
-  const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` });
+  // The helper has its own stall beside the conversation, so it never stands
+  // on the beds (players read a sprite on the soil as a plant). The sprite and
+  // the talk column are siblings; only the talk column is re-rendered per step.
+  const stall = h("div", { class: "stall", "aria-hidden": "true" },
+    h("div", { class: "stall__window" },
+      h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 })),
+    h("div", { class: "stall__plate" },
+      h("strong", { class: "stall__name" }, level.helper.name.toUpperCase()),
+      h("span", { class: "stall__role" }, "your helper")));
+  const talk = h("div", { class: "dock__talk" });
+  const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
   const main = h("main", { class: "level", "data-scene": level.scene || "yard" }, scene, dock);
   main.preloaded = preloaded; // keep the Image objects alive while the level is mounted
   root.replaceChildren(main);
@@ -176,7 +185,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     scene.style.setProperty("--pressure", String(pressureLevel(step, state)));
     clock.sync(step, state.phase);
     if (grown) { celebrate(grown); grown = null; }
-    dock.replaceChildren(...dockFor(step));
+    talk.replaceChildren(...dockFor(step));
     placeFocus(keep);
   }
 
