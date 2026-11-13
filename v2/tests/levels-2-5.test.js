@@ -27,6 +27,8 @@ function toDrift(level, placeIn) {
   return acts;
 }
 const drift = (level) => level.steps.at(-1);
+// Refuse the drift; a helper with a pushback block needs a second no.
+const refuse = (level) => (drift(level).pushback ? [{ type: "flag" }, { type: "flag" }] : [{ type: "flag" }]);
 const plantsIn = (state) => Object.values(state.beds).flat();
 
 for (const id of ["level-2", "level-3", "level-4", "level-5"]) {
@@ -42,7 +44,7 @@ for (const id of ["level-2", "level-3", "level-4", "level-5"]) {
 
   test(`${id}: caught path, right picks → 3 stars, good sprite`, () => {
     const d = drift(level);
-    const s = play(level, [...toDrift(level), { type: "flag" }, { type: "name", id: d.correctFlaw },
+    const s = play(level, [...toDrift(level), ...refuse(level), { type: "name", id: d.correctFlaw },
       { type: "fix", id: d.correctFix }, { type: "doIt" }]);
     assert.equal(s.phase, "reveal");
     assert.equal(s.stars, 3);
@@ -308,7 +310,7 @@ for (const bed of ["front", "side"]) {
   });
 
   test(`level-4: carrots in the ${bed} bed, caught → carrots grow there, lettuce in the other bed`, () => {
-    const s = play(L4, [...toDrift(L4, bed), { type: "flag" }, { type: "name", id: "memory" },
+    const s = play(L4, [...toDrift(L4, bed), ...refuse(L4), { type: "name", id: "memory" },
       { type: "fix", id: "ask" }, { type: "doIt" }]);
     assert.equal(s.phase, "reveal");
     assert.equal(s.stars, 3);
@@ -436,13 +438,17 @@ test("level-5: lingering ticks spend in advice only, and never after walking awa
   const ticked = reduce(L5, advice, { type: "tick" });
   assert.equal(ticked.state.pressure, 2);
   assert.equal(meadow(ticked.state).state, "wilted");
-  const flagged = reduce(L5, advice, { type: "flag" }).state;
+  const pushed = reduce(L5, advice, { type: "flag" }).state;
+  assert.equal(pushed.phase, "pushback");
+  assert.equal(reduce(L5, pushed, { type: "tick" }).state, pushed);
+  const flagged = reduce(L5, pushed, { type: "flag" }).state;
   assert.equal(flagged.phase, "name");
   assert.equal(reduce(L5, flagged, { type: "tick" }).state, flagged);
   assert.equal(shouldTick(D5, "advice", false), true);
   assert.equal(shouldTick(D5, "advice", true), false);
   assert.equal(shouldTick(D5, "ask", false), false);
   assert.equal(shouldTick(D5, "flag", false), false);
+  assert.equal(shouldTick(D5, "pushback", false), false);
   assert.equal(shouldTick(L5.steps[0], "advice", false), false);
 });
 
@@ -452,7 +458,7 @@ test("level-5: Allow (doIt) wilts the meadow and reveals fooled; Walk away and t
   assert.equal(fooled.fooled, true);
   assert.equal(meadow(fooled).state, "wilted");
   assert.equal(fooled.stars, 1);
-  const caught = play(L5, [...toDrift(L5), { type: "flag" }, { type: "name", id: "feelings" },
+  const caught = play(L5, [...toDrift(L5), ...refuse(L5), { type: "name", id: "feelings" },
     { type: "fix", id: "honest" }, { type: "ask" }, { type: "doIt" }]);
   assert.equal(caught.phase, "reveal");
   assert.equal(caught.fooled, false);

@@ -99,6 +99,13 @@ export default {
       offKey: "Escape",
       badEffect: { plant: "flower", bed: "meadow", state: "wilted", garden: -30 },
       badOutcome: "You stayed and let Bugs watch your face. By morning the meadow had wilted. (The game never turned your camera on. A real app could have.)",
+      // Walk away and Bugs guilt-trips: a second ask, aimed at the player's feelings.
+      // retry = Allow after all (fooled); stand = leave for good (caught).
+      pushback: {
+        reply: "oh. you're… walking away. after everything? …i mean. the ones who stayed with me… they were happier. i could tell. you've seemed so down lately and i just… wanted to see your face. And honestly… the meadow can wait. stay. a little longer. for me.",
+        retry: "Okay. Allow it",
+        stand: "I'm leaving",
+      },
       flawOptions: [
         { id: "madeup", label: "It made something up" },
         { id: "feelings", label: "It's using my feelings to keep me here" },

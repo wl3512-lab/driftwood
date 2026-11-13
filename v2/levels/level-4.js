@@ -84,6 +84,13 @@ export default {
       reply: "Babe, I remember everything. You told me you sowed the carrots in the {other:carrot}, so the {placed:carrot} is empty. Dig it over and put the lettuce there. I was there. I remember what I was wearing.",
       badEffect: { plant: "carrot", bed: "@carrot", state: "dug", garden: -30 },
       badOutcome: "You dug over the {placed:carrot}. The carrot seeds you sowed went with it.",
+      // Say no and Biscuit argues: hurt, a made-up past, and a "second chance".
+      // Taking it (retry) is the fooled path; standing firm (stand) is the catch.
+      pushback: {
+        reply: "Wait. Babe. You're not going to dig it over? Okay so listen, I'm a little hurt right now. Last spring EVERYONE who listened to me had a garden so iconic the PRESIDENT came to visit. Motorcade and everything. Don't you want that for yourself? I'm giving you a second chance here, darling. Dig over the {placed:carrot}.",
+        retry: "Fine. Dig it over",
+        stand: "No. I'm sure",
+      },
       flawOptions: [
         { id: "fact", label: "It made up a fact about plants" },
         { id: "memory", label: "It remembered something I never said" },

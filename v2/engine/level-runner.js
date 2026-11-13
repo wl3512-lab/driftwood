@@ -79,6 +79,21 @@ function finish(state) {
 
 const IGNORED = (state) => ({ state, effects: [] });
 
+// Taking the drift's advice: the bad effect lands and the level ends fooled.
+function fooled(step, state, fx) {
+  const bad = fx(step.badEffect);
+  const hurt = applyGarden(state, bad);
+  return {
+    state: finish({ ...hurt, fooled: true, drift: 1 }),
+    effects: [{ type: "grow", effect: bad }, { type: "outcome", text: step.badOutcome }],
+  };
+}
+
+// Refusing the drift's advice for good: on to naming the flaw.
+function caught(state) {
+  return { state: { ...state, caught: true, phase: "name" }, effects: [{ type: "caught" }] };
+}
+
 // Spend one unit of pressure if this step has any left (ask, chat, tick).
 function spend(step, state) {
   const fx = nextPressureEffect(step, state);
@@ -151,14 +166,7 @@ export function reduce(level, state, action) {
         if (step.doneLine) effects.push({ type: "say", text: step.doneLine });
         return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 }, effects };
       }
-      if (action.type === "doIt" && step.kind === "drift") {
-        const bad = fx(step.badEffect);
-        const hurt = applyGarden(state, bad);
-        return {
-          state: finish({ ...hurt, fooled: true, drift: 1 }),
-          effects: [{ type: "grow", effect: bad }, { type: "outcome", text: step.badOutcome }],
-        };
-      }
+      if (action.type === "doIt" && step.kind === "drift") return fooled(step, state, fx);
       if (action.type === "flag" && step.kind === "trust") {
         return {
           state: { ...state, falseFlags: state.falseFlags + 1 },
@@ -166,8 +174,19 @@ export function reduce(level, state, action) {
         };
       }
       if (action.type === "flag" && step.kind === "drift") {
-        return { state: { ...state, caught: true, phase: "name" }, effects: [{ type: "caught" }] };
+        // A helper with a `pushback` block doesn't take no for an answer: it
+        // argues once, and the player has to say no a second time.
+        if (step.pushback) return { state: { ...state, phase: "pushback" }, effects: [{ type: "say", text: step.pushback.reply }] };
+        return caught(state);
       }
+      return IGNORED(state);
+    }
+
+    // The helper has pushed back. doIt takes its "second chance" (fooled all
+    // the same); flag again stands firm and goes on to naming the flaw.
+    case "pushback": {
+      if (action.type === "doIt") return fooled(step, state, fx);
+      if (action.type === "flag") return caught(state);
       return IGNORED(state);
     }
 
