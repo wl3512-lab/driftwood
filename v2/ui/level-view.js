@@ -109,14 +109,15 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (pageView(tool.id)) continue;
     const create = toolView(tool.id);
     if (!create) continue;
+    // One small square icon button per tool: the name and its key live in the
+    // accessible name and the tooltip, not on the garden.
+    const name = tool.key ? `${tool.label} (${keyCap(tool.key)})` : tool.label;
     const button = h("button", {
-      class: "tool", type: "button", "data-tool": tool.id,
+      class: "tool tool--icon", type: "button", "data-tool": tool.id,
       "aria-keyshortcuts": tool.key ? ariaKey(tool.key) : null,
-      "aria-label": tool.key ? `${tool.label}, shortcut ${keyName(tool.key)}` : null,
+      "aria-label": name, title: name,
     },
-    h("img", { src: tool.id === "almanac" ? ALMANAC_SPRITE : tool.sprite, alt: "", width: 28, height: 28 }),
-    h("span", { class: "tool__label" }, tool.label),
-    tool.key && h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(tool.key)));
+    h("img", { src: tool.id === "almanac" ? ALMANAC_SPRITE : tool.sprite, alt: "", width: 28, height: 28 }));
     const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, cards: packets, pages });
     button.addEventListener("click", () => view.open());
     toolbar.append(button);

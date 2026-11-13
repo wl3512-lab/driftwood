@@ -100,7 +100,27 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
 
   button.setAttribute("aria-controls", uid);
   button.setAttribute("aria-expanded", "false");
-  scene.append(panel);
+  // The book opens as a modal: a native <dialog> (showModal) dims the whole
+  // page behind it (garden and dock), makes it inert and holds focus inside.
+  // Clicking the dimmed backdrop, × or Esc closes it.
+  const dialog = h("dialog", { class: "almanac-dialog", "aria-label": t(book.title) }, panel);
+  (scene.parentElement || scene).append(dialog);
+  dialog.addEventListener("cancel", (ev) => { ev.preventDefault(); hide(true); }); // Esc
+  dialog.addEventListener("click", (ev) => { if (ev.target === dialog) hide(true); }); // the backdrop
+  const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  let closing = null; // the close animation's timer
+  // While the book is open the chat dock slides down out of view (CSS:
+  // .level.is-reading), inert and hidden from screen readers; it slides back
+  // up as the book fades out.
+  const stage = scene.parentElement; // the .level screen
+  function dockAway(away) {
+    const dock = stage?.querySelector(".dock");
+    stage?.classList.toggle("is-reading", away);
+    if (!dock) return;
+    dock.inert = away;
+    if (away) dock.setAttribute("aria-hidden", "true");
+    else dock.removeAttribute("aria-hidden");
+  }
 
   // Typing looks up as you go; an empty box clears the page.
   input.addEventListener("input", () => lookUp(input.value, false));
@@ -170,8 +190,12 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
 
   // open() toggles the book, always on its first page (the cover, else the cards).
   function open() {
+    if (closing) finishHide(true);
     if (!panel.hidden) { hide(false); return; }
     panel.hidden = false;
+    dialog.classList.remove("almanac-dialog--closing");
+    if (!dialog.open) dialog.showModal();
+    dockAway(true);
     button.setAttribute("aria-expanded", "true");
     button.classList.remove("tool--news"); // the book is open; the cards tab keeps its own dot
     showSheet(first, false);
@@ -179,10 +203,24 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     else (finePointer() ? input : (tabs.find((tb) => tb.dataset.page === shown?.id) || tabs[0])).focus({ preventScroll: true });
   }
 
-  function hide(returnFocus) {
+  // A short fade and shrink (none under reduced motion), then the book is put away.
+  function hide(returnFocus, now = false) {
+    if (panel.hidden || closing) return;
+    if (now || calm()) { finishHide(returnFocus); return; }
+    dockAway(false); // the dock slides back up while the book fades out
+    dialog.classList.add("almanac-dialog--closing");
+    closing = setTimeout(() => finishHide(returnFocus), 140);
+  }
+
+  function finishHide(returnFocus) {
+    clearTimeout(closing);
+    closing = null;
     if (panel.hidden) return;
     const inside = panel.contains(document.activeElement);
     panel.hidden = true;
+    dialog.classList.remove("almanac-dialog--closing");
+    if (dialog.open) dialog.close();
+    dockAway(false);
     // A card unlocked on the cover but the cards page was never looked at: the book keeps the dot.
     if (cardsTab?.classList.contains("almanac__sheet-tab--news")) button.classList.add("tool--news");
     button.setAttribute("aria-expanded", "false");
@@ -201,9 +239,9 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     },
     update(state) {
       // The reveal is about the garden: put the book away so it doesn't cover the outcome.
-      if (state.phase === "reveal") hide(false);
+      if (state.phase === "reveal") hide(false, true);
       for (const s of sheets) s.view?.update?.(state);
     },
-    destroy() { panel.remove(); },
+    destroy() { clearTimeout(closing); dialog.remove(); },
   };
 });

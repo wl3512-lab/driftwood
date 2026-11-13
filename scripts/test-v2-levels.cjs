@@ -151,6 +151,9 @@ async function open(browser, size, progress = PROGRESS) {
   return { ctx, page, errors };
 }
 
+// The almanac opens with a short fade and scale: measure it once it has settled.
+const bookSettled = (page) => page.waitForFunction(() => !document.getAnimations().some((a) =>
+  a.playState === "running" && a.effect?.target?.closest?.(".almanac-dialog")));
 const phase = (page, p) => page.waitForSelector(`main.level[data-phase="${p}"]`);
 const focusedIs = (page, selector) => page.evaluate((sel) => document.activeElement?.matches(sel) ?? false, selector);
 // Scroll the control into view first: a tap on a reveal button below the fold once missed on the phone size.
@@ -201,7 +204,7 @@ async function readCard(page, size, id, { locked, badge } = {}) {
   if (badge != null) assert.equal(await button.evaluate((el) => el.classList.contains("tool--news")), badge, `almanac badge ${badge ? "on" : "off"}`);
   assert.equal(await page.locator(".scene__ground .packet").count(), 0, "no fact cards on the garden");
   await press(page, size, button);
-  await page.waitForSelector(".almanac:not([hidden])");
+  await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   assert.equal(await button.evaluate((el) => el.classList.contains("tool--news")), false, "opening the book clears the dot");
   // A level with a cover (the planting log) opens on it; the cards are the next page.
   if (await page.locator('.almanac__sheet[data-sheet="cards"][hidden]').count()) {
@@ -296,7 +299,7 @@ async function fooledPath(browser, size) {
 // Esc closes it and hands focus back to the tool button.
 async function lookUpMintByKeyboard(page, size) {
   await page.keyboard.press("/");
-  await page.waitForSelector(".almanac:not([hidden])");
+  await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   assert.equal(await page.getAttribute('button.tool[data-tool="almanac"]', "aria-expanded"), "true");
   assert.equal(await focusedIs(page, ".almanac__q"), true, "/ focuses the search box");
   assert.notEqual(await page.inputValue(".almanac__q"), "/", "the shortcut key must not land in the box");
@@ -322,7 +325,7 @@ async function lookUpMintByKeyboard(page, size) {
 // Touch: the tool button opens the book, the mint tab shows the page, × closes it.
 async function lookUpMintByTouch(page, size) {
   await page.locator('button.tool[data-tool="almanac"]').tap();
-  await page.waitForSelector(".almanac:not([hidden])");
+  await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   await assertTapSize(page, ".almanac__tab, .almanac__close, .almanac__go");
   await page.locator('.almanac__tab[data-page="mint"]').tap();
   await page.waitForSelector(".almanac__page-title");
@@ -347,7 +350,7 @@ async function caughtPath(browser, size) {
   assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "checking does not move the step on");
   // A second open/close must not re-check or re-announce anything.
   await press(page, size, page.locator('button.tool[data-tool="almanac"]'));
-  await page.waitForSelector(".almanac:not([hidden])");
+  await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   await press(page, size, page.locator(".almanac__close"));
   await page.waitForSelector(".almanac[hidden]", { state: "attached" });
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
@@ -385,7 +388,7 @@ async function perfectPath(browser, size) {
   await enterLevel2(page, size);
   await trustSteps(page, size);
   await page.keyboard.press("/");
-  await page.waitForSelector(".almanac:not([hidden])");
+  await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   await page.locator(".almanac__q").fill("peppermint");
   await page.waitForSelector(".almanac__page-title");
   assert.equal(await page.textContent(".almanac__page-title"), "Mint", "keywords find the mint page");
@@ -432,7 +435,7 @@ async function smallLandscape(browser, size) {
   await assertOnScreen(page, ".chip, .ask-form input, .btn--map, .packet, .tool, .meter");
   await shot(page, size, "level-2-trust");
   await page.locator('button.tool[data-tool="almanac"]').tap();
-  await page.waitForSelector(".almanac:not([hidden])");
+  await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   await page.locator('.almanac__tab[data-page="mint"]').tap();
   await assertOnScreen(page, ".almanac__q, .almanac__tab, .almanac__close, .almanac__page");
   await shot(page, size, "level-2-almanac");
@@ -708,7 +711,7 @@ async function openLog(page, size, bed) {
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 1, "the label is still locked: the garden gives nothing away");
   if (size.touch) await button.tap();
   else await page.keyboard.press("/");
-  await page.waitForSelector(`.almanac:not([hidden]) ${LOG_PAGE}:not([hidden])`);
+  await page.waitForSelector(`.almanac:not([hidden]) ${LOG_PAGE}:not([hidden])`); await bookSettled(page);
   assert.match(await page.textContent(".almanac__status"), /ALMANAC.*page 1\/2/, "the cover is page 1");
   assert.match(await page.textContent(`${LOG_PAGE} .almanac__cover-title`), /Planting log/);
   assert.equal(await page.getAttribute('.almanac__sheet-tab[data-sheet="log"]', "aria-pressed"), "true");
@@ -827,7 +830,7 @@ async function caughtPath4(browser, size) {
   assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "checking does not move the phase on");
   // A second open/close must not re-check or re-announce anything.
   await press(page, size, page.locator('button.tool[data-tool="almanac"]'));
-  await page.waitForSelector(`.almanac:not([hidden]) ${LOG_PAGE}:not([hidden])`);
+  await page.waitForSelector(`.almanac:not([hidden]) ${LOG_PAGE}:not([hidden])`); await bookSettled(page);
   await press(page, size, page.locator(".almanac__flip").last()); // ▶ turns to the cards
   await page.waitForSelector('.almanac__sheet[data-sheet="cards"]:not([hidden])');
   await press(page, size, page.locator(".almanac__flip").last()); // and round to the cover again

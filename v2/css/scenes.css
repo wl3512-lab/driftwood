@@ -694,3 +694,80 @@
   background: #2e4a2e; color: #f7fff0; font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase;
   box-shadow: 2px 2px 0 rgba(30, 40, 30, 0.35);
 }
+
+/* ======== the almanac as a modal: a small icon opens a dimmed, full book ========
+   Tools are small square icon buttons (name and key in the tooltip and the
+   accessible name). The book opens in a native <dialog>: the page behind it,
+   garden and dock, dims and goes inert; the device is centred and large, and
+   only its screen scrolls. */
+.tool.tool--icon { width: 48px; height: 48px; min-width: 0; padding: 0; justify-content: center; gap: 0; }
+.tool.tool--icon img { width: 30px; height: 30px; }
+.almanac-dialog {
+  position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden;
+}
+.almanac-dialog[open] { display: grid; place-items: center; }
+.almanac-dialog::backdrop { background: rgba(20, 12, 4, 0.62); }
+.almanac-dialog[open]::backdrop { animation: almanac-dim-in 180ms ease-out; }
+.almanac-dialog--closing::backdrop { animation: almanac-dim-out 140ms ease-in forwards; }
+.level .almanac-dialog .almanac {
+  position: relative; inset: auto; left: auto; top: auto; right: auto;
+  width: min(760px, 66vw); height: min(620px, calc(100dvh - 96px)); max-height: none;
+  animation: almanac-in 180ms ease-out;
+}
+.almanac-dialog--closing .almanac { animation: almanac-out 140ms ease-in forwards; }
+@keyframes almanac-in { from { opacity: 0; transform: scale(0.96); } }
+@keyframes almanac-out { to { opacity: 0; transform: scale(0.97); } }
+@keyframes almanac-dim-in { from { opacity: 0; } }
+@keyframes almanac-dim-out { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .almanac-dialog[open]::backdrop, .almanac-dialog--closing::backdrop,
+  .level .almanac-dialog .almanac, .almanac-dialog--closing .almanac { animation: none; }
+}
+/* Bigger book, bigger type: comfortable to read at arm's length. */
+.almanac-dialog .almanac__status { font-size: 0.85rem; }
+.almanac-dialog .almanac__screen { padding: 0.85rem 1rem 1rem; }
+.almanac-dialog .almanac__screen .almanac__title { font-size: 1.15rem; }
+.almanac-dialog .almanac__sheet { gap: 0.75rem; }
+.level .almanac-dialog .almanac .packet { padding: 6px 10px; font-size: 1rem; grid-template-columns: 34px minmax(0, 1fr); column-gap: 0.6rem; }
+.level .almanac-dialog .almanac .packet strong { font-size: 1.05rem; }
+.level .almanac-dialog .almanac .packet img { width: 34px; height: 34px; }
+.almanac-dialog .almanac__page { font-size: 1.05rem; }
+.almanac-dialog .almanac__screen .log__list { font-size: 1.15rem; line-height: 1.8rem; }
+.almanac-dialog .log__by { font-size: 0.9rem; }
+.almanac-dialog .almanac__sheet-tab { font-size: 0.9rem; }
+/* Phones in landscape (844×390, 568×320): nearly the full height, a small margin. */
+@media (max-height: 500px), (max-width: 640px) {
+  .level .almanac-dialog .almanac { width: min(760px, calc(100vw - 24px)); height: calc(100dvh - 16px); }
+  .almanac-dialog .almanac__status { font-size: 0.72rem; }
+  .almanac-dialog .almanac__screen { padding: 0.5rem 0.7rem 0.6rem; }
+  .almanac-dialog .almanac__screen .almanac__title { font-size: 1rem; }
+  .almanac-dialog .almanac__sheet { gap: 0.5rem; }
+  .level .almanac-dialog .almanac .packet { padding: 4px 8px; font-size: 0.95rem; grid-template-columns: 28px minmax(0, 1fr); }
+  .level .almanac-dialog .almanac .packet strong { font-size: 1rem; }
+  .level .almanac-dialog .almanac .packet img { width: 28px; height: 28px; }
+  .almanac-dialog .almanac__screen .log__list { font-size: 1.05rem; line-height: 1.6rem; }
+  .almanac-dialog .almanac__sheet-tab { font-size: 0.82rem; }
+}
+/* The note under a square icon: its arrow sits under the button's middle. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .tool-hint::after { right: 17px; }
+  .tools:has(.tool ~ .tool) .tool-hint::after { right: 73px; }
+}
+/* The chat dock slides straight down out of view while the book is open (on a
+   laptop it sits at the bottom; on a phone in landscape it is the right-hand
+   column and still drops down, not sideways). Transform only: no reflow. */
+.level .dock { transition: transform 250ms ease-out; }
+.level.is-reading .dock { transform: translateY(calc(100% + 24px)); }
+.level.is-reading .almanac-dialog .almanac { height: min(700px, calc(100dvh - 64px)); }
+@media (max-height: 500px), (max-width: 640px) {
+  .level.is-reading .almanac-dialog .almanac { height: calc(100dvh - 16px); }
+}
+@media (prefers-reduced-motion: reduce) { .level .dock { transition: none; } }
+/* The slid-away dock must not make the page scrollable. */
+.level.is-reading, .level:has(.almanac-dialog--closing) { overflow: clip; }
+/* Phones: the square button is shorter than the old labelled one; drop the note
+   a little lower so it clears the bed labels under the toolbar. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .tool-hint { top: calc(100% + 22px); }
+}
