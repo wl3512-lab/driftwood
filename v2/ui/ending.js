@@ -99,6 +99,8 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
     fallback.hidden = false;
     area.focus();
     area.select();
+    // Focus alone can leave most of the textarea below the fold on a landscape phone.
+    if (typeof area.scrollIntoView === "function") area.scrollIntoView({ block: "center", behavior: "instant" });
     announce("Select the text and press Ctrl C or Command C to copy.");
   } }, "Copy my field guide");
 
