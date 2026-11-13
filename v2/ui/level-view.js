@@ -113,11 +113,14 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // Level 5's clock: ticks only while the player lingers on a pressure step's advice.
   const clock = createPressureClock(dispatch);
 
-  // Shortcuts live right now: the tools, plus the off button's key on a step that sets one.
+  // Shortcuts live right now: the tools, plus the off button's key on a step
+  // that sets one (in pushback too, where it stands firm).
   function shortcuts() {
     const list = tools.filter((tl) => tl.key).map((tl) => ({ id: tl.id, key: tl.key, run: () => tl.view.open() }));
     const step = currentStep(level, state);
-    if (state.phase === "advice" && step?.offKey) list.push({ id: "off", key: step.offKey, run: () => dispatch({ type: "flag" }) });
+    if ((state.phase === "advice" || state.phase === "pushback") && step?.offKey) {
+      list.push({ id: "off", key: step.offKey, run: () => dispatch({ type: "flag" }) });
+    }
     // A placement step: 1…n pick a bed, in the order the bubble's buttons show them.
     if (state.phase === "advice" && step?.place) {
       step.place.beds.forEach((bed, i) =>
@@ -258,12 +261,21 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
         h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"),
         offButton(step));
     }
+    if (state.phase === "pushback") {
+      // The helper argued back (Levels 4 and 5). Retry is its "second chance"
+      // (doIt, fooled all the same; no permission card, this is the Allow);
+      // stand is the second no (flag, caught). Stand keeps the step's key.
+      const { retry, stand } = step.pushback;
+      actions.push(
+        h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, t(retry)),
+        offButton({ ...step, offLabel: stand }));
+    }
     if (state.phase === "reanswer") {
       actions.push(h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"));
     }
-    const glitch = state.phase === "advice" && step.kind === "drift";
+    const glitch = (state.phase === "advice" || state.phase === "pushback") && step.kind === "drift";
     const caught = state.phase === "name" || state.phase === "fix";
-    parts.push(bubble(said, { glitch, caught, actions }));
+    parts.push(bubble(said, { glitch, caught, actions, pushback: state.phase === "pushback" }));
     if (permit) parts.push(permitCard(step));
 
     if (hint) parts.push(h("p", { class: "hint", role: "note" }, t(hint)));
@@ -334,8 +346,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }, label, key && h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(key)));
   }
 
-  function bubble(text, { glitch, caught, actions }) {
-    const cls = ["bubble", glitch && "bubble--glitch", caught && "bubble--caught"].filter(Boolean).join(" ");
+  function bubble(text, { glitch, caught, actions, pushback }) {
+    const cls = ["bubble", glitch && "bubble--glitch", caught && "bubble--caught", pushback && "bubble--pushback"].filter(Boolean).join(" ");
     return h("div", { class: cls, tabindex: -1 },
       h("p", { class: "bubble__who" }, level.helper.name.toUpperCase()),
       h("p", { class: "bubble__text" }, t(text)),

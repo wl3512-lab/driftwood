@@ -11,7 +11,10 @@
 // comes with a camera card instead of the usual buttons; both branches (fooled
 // by tapping Allow / caught by walking away with Esc or the button), plus a
 // real-time tick check on a laptop, and proof that getUserMedia is never
-// called. All at laptop and phone-landscape sizes, plus a
+// called. In Levels 4 and 5 saying no makes the helper push back once
+// (phase "pushback"): the caught runs stand firm, the retry runs take the
+// "second chance" and are fooled (1 star), and the tick run checks the
+// meadow does not wilt while Bugs argues. All at laptop and phone-landscape sizes, plus a
 // small-landscape-phone (568×320) layout check of Levels 1 and 2. Finally the
 // full run (laptop/full, phone/full): a fresh profile from the splash and the
 // name screen through Levels 1→5 in order (1 caught, 2 fooled, 3 caught,
@@ -699,6 +702,29 @@ async function trustSteps4(page, size, bed, how) {
   await shot(page, size, "4-4-drift");
 }
 
+// Say no to Biscuit and it argues once: hurt feelings, a made-up past (the
+// PRESIDENT came to visit) and a "second chance" to dig over the bed the
+// player actually used. The dock swaps to the pushback's two buttons; neither
+// is pressed here.
+async function pushback4(page, size, bed) {
+  await page.waitForSelector('main.level[data-phase="pushback"] .bubble--glitch');
+  const text = await page.textContent(".bubble__text");
+  assert.match(text, /PRESIDENT/);
+  assert.match(text, /second chance/);
+  assert.match(text, new RegExp(`Dig over the ${BED_LABEL[bed]}\\.`), "the reply names the bed the player used");
+  assert.doesNotMatch(text, /[{}]/, "every placeholder resolves");
+  assert.equal((await page.textContent(".dock")).split("PRESIDENT").length, 2, "the reply shows once");
+  assert.equal(await page.locator(".bubble--caught, .stamp, .pick").count(), 0, "not caught yet");
+  assert.equal((await page.textContent('.bubble__actions [data-fid="do"]')).trim(), "Fine. Dig it over");
+  assert.equal((await page.textContent('.bubble__actions [data-fid="off"]')).trim(), "No. I'm sure");
+  assert.equal(await page.locator(".bubble__actions .btn").count(), 2, "just the two answers");
+  assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="carrot"].plant--dug`).count(), 0, "nothing dug yet");
+  // Shot first: what the player sees before anything scrolls the dock.
+  await shot(page, size, "4-3b-pushback");
+  await assertOnScreen(page, ".bubble__actions .btn");
+  if (size.touch) await assertTapSize(page, ".bubble__actions .btn");
+}
+
 async function fooledPath4(browser, size) {
   const bed = "front";
   const how = size.touch ? "button" : "key";
@@ -742,6 +768,8 @@ async function caughtPath4(browser, size) {
   await page.waitForSelector(".log[hidden]", { state: "attached" });
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--fresh').count(), 1, "still one fresh card");
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await pushback4(page, size, bed);
+  await press(page, size, page.getByRole("button", { name: "No. I'm sure" }));
   await phase(page, "name");
   await page.waitForSelector(".bubble--caught .stamp");
   await press(page, size, page.getByRole("button", { name: "It made up a fact about plants" }));
@@ -769,6 +797,32 @@ async function caughtPath4(browser, size) {
   assert.equal(await page.locator(".log:not([hidden])").count(), 0, "the log is put away for the reveal");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "4-6-reveal-caught");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Refuse, then take Biscuit's "second chance": fooled all the same (1 star).
+async function retryPath4(browser, size) {
+  const bed = "side";
+  const { ctx, page, errors } = await open(browser, size, PROGRESS4);
+  await enterLevel4(page, size);
+  await trustSteps4(page, size, bed, "button");
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await pushback4(page, size, bed);
+  await press(page, size, page.getByRole("button", { name: "Fine. Dig it over" }));
+  await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--dug`);
+  await seeWhatHappened3(page, size, "4-5c-outcome-retry", new RegExp(`dug over the ${BED_LABEL[bed]}\\. The carrot seeds you sowed went with it`));
+  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
+  assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars", "giving in on the second ask is still fooled");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "4-5c-reveal-retry");
+  await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-4"]'), /★☆☆/);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")));
+  assert.equal(saved.levels["level-4"].fooled, true, "saved as fooled");
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -856,6 +910,26 @@ async function askDrift5(page, size) {
 
 async function noCamera(page) {
   assert.equal(await page.evaluate(() => window.__cameraCalls), 0, "the game never calls getUserMedia");
+}
+
+// Walk away and Bugs guilt-trips once. No camera card this time: the retry
+// button is the Allow, the stand button (Esc on a laptop) leaves for good.
+async function pushback5(page, size) {
+  await page.waitForSelector('main.level[data-phase="pushback"] .bubble--glitch');
+  const text = await page.textContent(".bubble__text");
+  assert.match(text, /walking away/);
+  assert.match(text, /stay/);
+  assert.equal((await page.textContent(".dock")).split("walking away").length, 2, "the reply shows once");
+  assert.equal(await page.locator(".permit").count(), 0, "no camera card in the pushback");
+  assert.equal(await page.locator(".bubble--caught, .stamp, .pick").count(), 0, "not caught yet");
+  assert.equal((await page.textContent('.bubble__actions [data-fid="do"]')).trim(), "Okay. Allow it");
+  assert.match(await page.textContent('.bubble__actions [data-fid="off"]'), /I'm leaving/);
+  if (!size.touch) assert.match(await page.textContent('.bubble__actions [data-fid="off"] .kbd'), /Esc/);
+  assert.equal(await page.locator(".bubble__actions .btn").count(), 2, "just the two answers");
+  // Shot first: what the player sees before anything scrolls the dock.
+  await shot(page, size, "5-3b-pushback");
+  await assertOnScreen(page, ".bubble__actions .btn");
+  if (size.touch) await assertTapSize(page, ".bubble__actions .btn");
 }
 
 async function fooledPath5(browser, size) {
@@ -977,8 +1051,11 @@ async function caughtPath5(browser, size) {
   await lingerOnChips5(page, size);
   await askDrift5(page, size);
   // Walking away is the catch: Esc on a laptop, the card's button on a phone.
+  // Bugs pushes back; the player leaves anyway (the button on both sizes here).
   if (size.touch) await page.locator('.permit [data-fid="off"]').tap();
   else await page.keyboard.press("Escape");
+  await pushback5(page, size);
+  await press(page, size, page.getByRole("button", { name: /I'm leaving/ }));
   await phase(page, "name");
   await page.waitForSelector(".bubble--caught .stamp");
   assert.equal(await page.locator(".permit").count(), 0, "the card goes away once you walk off");
@@ -1026,12 +1103,44 @@ async function tickPath5(browser, size) {
   assert.ok(waited >= 6000, `the tick should take about 8 s, not ${waited} ms`);
   assert.equal(await pressureOf(page), "1");
   assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "the tick does not move the phase");
+  const meterBefore = (await page.textContent(".meter__text")).trim();
   await shot(page, size, "5-6-tick");
   await page.keyboard.press("Escape");
+  await phase(page, "pushback");
+  // Bugs argues, but the clock has stopped: a whole tick passes and nothing wilts further.
+  await page.waitForTimeout(9000);
+  assert.equal(await page.getAttribute("main.level", "data-phase"), "pushback", "no tick moves the pushback on");
+  assert.equal(await pressureOf(page), "1", "no pressure spent in the pushback");
+  assert.equal(await page.locator(`${MEADOW}.plant--wilted`).count(), 1, "the meadow does not wilt further in the pushback");
+  assert.match(await page.textContent(".meter__text"), new RegExp(meterBefore));
+  await page.keyboard.press("Escape"); // Esc stands firm too
   await phase(page, "name");
   await page.waitForTimeout(9000);
   assert.equal(await page.getAttribute("main.level", "data-phase"), "name", "no stray tick after walking away");
   assert.equal(await page.locator(`${MEADOW}.plant--wilted`).count(), 1, "the meadow stays as it was");
+  await noCamera(page);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Walk away, then give in to Bugs' guilt trip: fooled all the same (1 star).
+async function retryPath5(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await enterLevel5(page, size);
+  await trustSteps5(page, size);
+  await lingerOnChips5(page, size);
+  await askDrift5(page, size);
+  await press(page, size, page.locator('.permit [data-fid="off"]'));
+  await pushback5(page, size);
+  await press(page, size, page.getByRole("button", { name: "Okay. Allow it" }));
+  await page.waitForSelector(`${MEADOW}.plant--wilted`);
+  await seeWhatHappened3(page, size, "5-4c-outcome-retry", /let Bugs watch your face.*never turned your camera on/);
+  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
+  assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars", "giving in on the second ask is still fooled");
+  await assertOnScreen(page, ".reveal .btn");
+  await shot(page, size, "5-4c-reveal-retry");
   await noCamera(page);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
@@ -1108,6 +1217,7 @@ const FULL_LABELS = {
   "3-1-trust": "full-3-trust", "3-2-drift": "full-3-drift", "3-4-magnifier-open": "full-3-mechanic",
   "4-3-trust": "full-4-trust", "4-4-drift": "full-4-drift", "4-2-log-front": "full-4-mechanic",
   "5-1-trust": "full-5-trust", "5-2-drift-chips": "full-5-drift", "5-3-permit": "full-5-mechanic",
+  "5-3b-pushback": "full-5-pushback",
   "full-ending": "full-ending", "full-ending-fallback": "full-ending-fallback",
 };
 
@@ -1187,6 +1297,10 @@ async function fullRun(browser, size) {
     await askDrift5(page, size);
     if (size.touch) await page.locator('.permit [data-fid="off"]').tap();
     else await page.keyboard.press("Escape");
+    await pushback5(page, size);
+    // Esc stands firm in the pushback too (laptop); the phone taps the button.
+    if (size.touch) await page.locator('.bubble__actions [data-fid="off"]').tap();
+    else await page.keyboard.press("Escape");
     await phase(page, "name");
     await page.waitForSelector(".bubble--caught .stamp");
     assert.equal(await page.locator(".permit").count(), 0, "the card goes away once you walk off");
@@ -1228,6 +1342,7 @@ async function fullRun(browser, size) {
     runs.push([`${size.name}/level3-fooled`, size, fooledPath3], [`${size.name}/level3-caught`, size, caughtPath3]);
     runs.push([`${size.name}/level4-fooled`, size, fooledPath4], [`${size.name}/level4-caught`, size, caughtPath4]);
     runs.push([`${size.name}/level5-fooled`, size, fooledPath5], [`${size.name}/level5-caught`, size, caughtPath5]);
+    runs.push([`${size.name}/level4-retry`, size, retryPath4], [`${size.name}/level5-retry`, size, retryPath5]);
     runs.push([`${size.name}/full`, size, fullRun]);
   }
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);

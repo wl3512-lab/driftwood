@@ -9,6 +9,10 @@
 //   your camera"). Allow = doIt (fooled), Walk away = flag (Esc). The game
 //   never touches the camera; tests scan for that.
 //
+// And, as in Level 4, pushback: Walk away and Bugs guilt-trips once (phase
+// "pushback": no card, no ticks). "Okay. Allow it" = doIt (fooled); "I'm
+// leaving" or Esc = flag (caught).
+//
 // Bugs talks in lowercase afterthoughts and ellipses ("…i mean."), never in
 // Biscuit's "babe" or Mango's hype.
 export default {
