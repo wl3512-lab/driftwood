@@ -69,7 +69,7 @@
 /* evidence that needs an action first, and the pop when it unlocks */
 .packet--locked { background: #efe6cc; border-style: dashed; }
 .packet--locked span { font-style: italic; }
-.packet--fresh { animation: pop 0.6s steps(4); } /* base.css cuts it short under reduced motion */
+.packet--fresh { animation: pop 0.28s steps(4); } /* short, ends at full size; base.css cuts it under reduced motion */
 
 /* level tools: a button with a key cap, under the meter */
 .tools { position: absolute; z-index: 3; right: 16px; top: 84px; display: flex; gap: 8px; }
@@ -654,6 +654,48 @@
 .almanac__screen .log__list { font-size: 1rem; }
 .almanac__screen .log__entry { padding: 0.25rem 0; border-bottom: 1px dashed #8fb487; }
 .almanac__screen .log__by { color: #3d4f3a; }
+/* The cover's mini map: the level's beds as soil plots seen from above, a
+   plant label standing in each sown one. */
+.log__day { font-style: normal; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.log__map {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px;
+  padding: 10px; background: #9ccf86; border: 2px solid #2e4a2e;
+  box-shadow: inset 0 0 0 3px #b9e0a4;
+}
+.log__bed { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.log__soil {
+  flex: 1 1 auto; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: repeating-linear-gradient(0deg, #6b4a2b 0 4px, #5a3d22 4px 8px);
+  border: 3px solid #3b2a1a; box-shadow: inset 0 0 0 2px #8a6238;
+}
+.log__marker {
+  display: flex; flex-direction: column; align-items: center;
+  font: 700 0.8rem/1.1 var(--font-ui); color: #fff8e0; text-transform: capitalize;
+  padding: 0 4px 2px; background: rgba(30, 20, 10, 0.55);
+}
+.log__marker img { width: 32px; height: 32px; image-rendering: pixelated; }
+.log__bed-name { font: 700 0.78rem/1.2 var(--font-ui); color: #1c2a1c; text-align: center; }
+.log__bed--sown .log__bed-name::before { content: "▸ "; }
+.almanac-dialog .log__bed-name { font-size: 0.9rem; }
+.almanac-dialog .log__marker { font-size: 0.9rem; }
+/* Laptop: the cover fills the screen, the map growing into the room left. */
+@media (min-height: 501px) and (min-width: 641px) {
+  .almanac-dialog .almanac__sheet--cover { min-height: 100%; }
+  .almanac-dialog .log-page { flex: 1 1 auto; display: flex; flex-direction: column; gap: 0.75rem; }
+  .almanac-dialog .log__map { flex: 1 1 auto; padding: 14px; gap: 14px; }
+  .almanac-dialog .log__soil { min-height: 120px; }
+  .almanac-dialog .log__marker { font-size: 1.05rem; padding: 4px 8px; }
+  .almanac-dialog .log__marker img { width: 64px; height: 64px; }
+}
+/* Short phones: a strip, so the entries below stay on screen. */
+@media (max-height: 500px) {
+  .log__map { padding: 6px; gap: 6px; }
+  .log__soil { min-height: 40px; flex-direction: row; }
+  .log__marker { flex-direction: row; gap: 3px; font-size: 0.75rem; }
+  .log__marker img { width: 22px; height: 22px; }
+  .almanac-dialog .log__bed-name { font-size: 0.75rem; }
+  .almanac-dialog .log__marker { font-size: 0.78rem; }
+}
 /* The bottom bezel: hardware page buttons and a tab per screen page. */
 .almanac__controls { flex: none; display: flex; align-items: center; gap: 6px; padding: 7px 8px 9px; }
 .almanac__sheet-tabs { flex: 1 1 auto; display: flex; gap: 6px; min-width: 0; }

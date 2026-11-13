@@ -209,11 +209,14 @@ async function readCard(page, size, id, { locked, badge } = {}) {
   // A level with a cover (the planting log) opens on it; the cards are the next page.
   if (await page.locator('.almanac__sheet[data-sheet="cards"][hidden]').count()) {
     await press(page, size, page.locator('.almanac__sheet-tab[data-sheet="cards"]'));
-    await page.waitForSelector('.almanac__sheet[data-sheet="cards"]:not([hidden])');
+    await page.waitForSelector('.almanac__sheet[data-sheet="cards"]:not([hidden])'); await bookSettled(page);
   }
   const card = page.locator(`.almanac .packet[data-evidence="${id}"]`);
   await card.scrollIntoViewIfNeeded();
   assert.equal(await card.isVisible(), true, `the ${id} card shows in the almanac`);
+  // Once its pop has played, a freshly unlocked card is the same size as the rest.
+  const widths = await page.$$eval(".almanac .packet", (els) => els.map((el) => Math.round(el.getBoundingClientRect().width)));
+  assert.equal(new Set(widths).size, 1, `every almanac card settles at the same width: ${widths}`);
   if (locked != null) assert.equal(await card.evaluate((el) => el.classList.contains("packet--locked")), locked, `the ${id} card is ${locked ? "locked" : "unlocked"}`);
   await assertOnScreen(page, ".almanac__close");
   if (size.touch) await page.locator(".almanac__close").tap();
