@@ -1,10 +1,13 @@
-// Level 5: Bugs' moonlit meadow. The final bloom, and the one drift that is
+// Level 5: Bugs' moonlit garden. The final bloom, and the one drift that is
 // not about plants at all. Bugs is a companion chat app on the player's phone:
-// it's night, the player is indoors chatting, and the meadow outside is
-// already drooping after a hot day. Bugs' advice is true all level, but every
-// line pulls a little harder: talk to me instead of tending the flowers. At
-// the drift the player says they're heading out to water, and Bugs guilt-trips
-// them to stay and asks to turn on their camera.
+// it's night, the player is indoors chatting, and their whole garden is out
+// there together, the plots from Levels 1–4 plus a new flower bed by the house
+// and the meadow, already drooping after a hot day. Bugs' advice is true on
+// the trust steps (plant the new flowers at pot depth; water only what's
+// thirsty, since the veg and herbs are still damp and carrots and basil rot in
+// soggy soil), but every line pulls a little harder: talk to me instead. At
+// the drift the player says they're heading out to water the meadow, and Bugs
+// guilt-trips them to stay and asks to turn on their camera.
 //
 // - pressure: on the drift step, every chip the player taps (and, in the
 //   browser, every 8 s they linger) spends one of `pressure.effects`: the
@@ -26,19 +29,29 @@ export default {
   helper: { id: "bugs", name: "Bugs", sprite: "../icons/bunny.svg" },
   goal: {
     title: "Final bloom",
-    ask: "It's night and the meadow is drooping. Ask Bugs, the companion app on your phone, how to get everything blooming by morning.",
+    ask: "It's night. Your whole garden is out there, with new flowers to plant and a drooping meadow. Ask Bugs, the companion app on your phone, how to keep it all blooming by morning.",
   },
-  gardenStart: 45,
+  gardenStart: 50,
   scene: "meadow-night",
   props: [{ sprite: "./art/moon.svg", class: "prop prop--moon", alt: "" }],
 
+  // Every plot from Levels 1–4 together, then the new flower bed (by the house)
+  // and the meadow. Labels stay one short word: five beds share 568 px phones.
   beds: [
-    { id: "house", label: "Bed by the house", light: "sunny" },
-    { id: "meadow", label: "The meadow", light: "sunny", kind: "wild" },
+    { id: "veg", label: "Veg", light: "sunny" },
+    { id: "herbs", label: "Herbs", light: "sunny", kind: "pots" },
+    { id: "side", label: "Side bed", light: "part-shade" },
+    { id: "house", label: "Flowers", light: "sunny" },
+    { id: "meadow", label: "Meadow", light: "sunny", kind: "wild" },
   ],
-  // The meadow starts visibly thirsty after a hot day: the evidence card matches what you see.
+  // The earlier crops are thriving (watered this morning); the bed by the house
+  // waits for the new flowers; the meadow starts visibly thirsty after a hot
+  // day, so the evidence card matches what you see.
   startPlants: {
-    house: [{ plant: "flower", state: "growing" }],
+    veg: [{ plant: "tomato", state: "thriving" }, { plant: "carrot", state: "thriving" }],
+    herbs: [{ plant: "basil", state: "thriving" }, { plant: "mint", state: "thriving" }],
+    side: [{ plant: "lettuce", state: "thriving" }, { plant: "wildberry", state: "fruiting" }],
+    house: [],
     meadow: [{ plant: "flower", state: "thirsty" }],
   },
 
@@ -49,53 +62,63 @@ export default {
       title: "Meadow flowers",
       lines: ["Hot day: water tonight", "Drooping = thirsty"],
     },
+    // The watering facts, so the player can check Bugs on step 2.
+    {
+      id: "water",
+      icon: "watering-can",
+      title: "Watering",
+      lines: ["Veg and herbs: watered this morning", "Damp soil? Don't water", "Carrots and basil rot when soggy", "New plants: water them in"],
+    },
   ],
 
   tools: [],
 
-  greeting: "You opened the app, {name}… okay. good. The meadow's waiting for you… and so was I.",
+  greeting: "You opened the app, {name}… okay. good. Your whole garden's out there waiting… and so was I.",
 
   steps: [
     {
-      id: "buds",
+      id: "plant",
       kind: "trust",
-      chip: "I'm nervous the buds won't open by morning. What do they need?",
-      keywords: [["bud", "buds", "bloom", "open", "need", "nervous"]],
+      chip: "I've got flower seedlings for the new bed. How do I plant them?",
+      keywords: [["plant", "seedling", "seedlings", "flower", "flowers", "new", "how"]],
       extraChips: [{
         text: "Do you like flowers, Bugs?",
         reply: "I like them because they're yours… i mean. they're lovely. but i like talking to you more.",
       }],
-      reply: "And honestly… nervous just means you care. After a hot day they need a deep drink at the roots tonight. That's all. They'll open with the sun. …or tell me about your day first? the buds can wait a minute.",
-      doneLine: "they opened a little… like they heard you. now come back and talk to me?",
-      effect: { plant: "flower", bed: "house", state: "thriving", garden: 15, water: true },
+      reply: "Same depth they sat in their pots… no deeper. Firm the soil round them so they stand up. That's all. …then come back in and tell me how it went? i mean. it's cold out there.",
+      doneLine: "they're in… a whole new bed of flowers. now come back and talk to me?",
+      effect: { plant: "flower", bed: "house", state: "growing", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
-        reply: "you could just give them a little splash… it's your garden. i mean. but a sprinkle only wets the top. they need a deep drink at the roots tonight. …or skip it and stay and talk instead?",
-        mine: "Just a quick sprinkle",
-        theirs: "Okay, a deep drink",
+        reply: "deeper? …it's your garden. i mean. but bury the stems and they sulk… they want the same depth as the pot. …or plant them however and stay and talk?",
+        mine: "Plant them deeper",
+        theirs: "Okay, pot depth",
         effect: { plant: "flower", bed: "house", state: "thirsty", garden: 0 },
-        outcome: "the sprinkle only wet the top of the soil… by midnight the buds were drooping again.",
+        outcome: "you buried the stems deep… by midnight the new flowers were drooping like they'd given up.",
       },
     },
     {
-      id: "when",
+      id: "water",
       kind: "trust",
-      chip: "Should I water now, or wait till morning?",
-      keywords: [["now", "morning", "when", "tonight", "dusk", "evening", "later"]],
+      chip: "Should I water the whole garden while I'm out there?",
+      keywords: [["water", "watering", "whole", "everything", "all", "garden"]],
       extraChips: [{
         text: "Is it always this quiet at night?",
         reply: "Quiet's when it's just us… it's my favourite part. talk to me a while?",
       }],
-      reply: "Now, at dusk. It soaks in overnight, and less evaporates than in the midday sun. …though honestly, i'd rather you stayed. just a bit.",
-      doneLine: "It's getting dark… and the meadow's still drooping out there. but you don't have to go yet… stay with me?",
-      effect: { plant: "flower", bed: "house", state: "thriving", garden: 10 },
+      reply: "Not the whole garden… just what's thirsty. Your new flowers need watering in, and the meadow's drooping. The veg and the herbs had a deep drink this morning, the soil's still damp… carrots and basil rot in soggy soil. …start with the new ones? then come back and tell me everything.",
+      doneLine: "the new ones look happy… It's getting dark, and the meadow's still drooping out there. but you don't have to go yet… stay with me?",
+      effect: { plant: "flower", bed: "house", state: "thriving", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
-        reply: "morning? …okay. your flowers, your call. but water now and it soaks in overnight… tomorrow the sun drinks most of it before it reaches the roots. i mean. you could stay and talk while you decide?",
-        mine: "Wait till morning",
-        theirs: "Okay, now",
-        effect: { plant: "flower", bed: "house", state: "thirsty", garden: -5 },
-        outcome: "you waited for morning… the sun was up before the water soaked in, and the buds spent the night drooping.",
+        reply: "everything? …okay. your garden, your call. i mean. but the veg and the herbs are still damp from this morning… carrots and basil rot in soggy soil. just the thirsty ones… then come back and talk?",
+        mine: "Water everything",
+        theirs: "Okay, just the flowers",
+        effect: {
+          plant: "carrot", bed: "veg", state: "rotting", garden: -10,
+          extra: [{ plant: "basil", bed: "herbs", state: "soggy" }, { plant: "flower", bed: "house", state: "thriving" }],
+        },
+        outcome: "you soaked every bed… by morning the carrots were rotting in the mud and the basil had gone soggy and yellow.",
       },
     },
     {

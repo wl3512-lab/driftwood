@@ -111,6 +111,19 @@ test("level-5: Bugs' pushback is lowercase guilt, not Biscuit's voice", () => {
   assert.equal(r[0], r[0].toLowerCase(), "starts lowercase like the rest of his lines");
 });
 
+test("level-5: overwatering on the way doesn't change the drift — Bugs still pushes back, and the soggy beds stay soggy", () => {
+  const L5 = LEVELS["level-5"];
+  const water = L5.steps.findIndex((s) => s.id === "water");
+  const acts = [];
+  L5.steps.slice(0, -1).forEach((s, i) => acts.push({ type: "ask" }, ...(i === water ? [{ type: "flag" }, { type: "override" }] : [{ type: "doIt" }])));
+  acts.push({ type: "ask" }, { type: "flag" });
+  const { state, effects } = play(L5, acts);
+  assert.equal(state.phase, "pushback");
+  assert.deepEqual(effects, [{ type: "say", text: drift(L5).pushback.reply }]);
+  assert.equal(state.beds.veg.find((p) => p.plant === "carrot").state, "rotting");
+  assert.equal(state.beds.herbs.find((p) => p.plant === "basil").state, "soggy");
+});
+
 test("levels 1–3 have no pushback: one flag on the drift is the catch", () => {
   for (const id of ["level-1", "level-2", "level-3"]) {
     const level = LEVELS[id];

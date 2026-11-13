@@ -305,6 +305,20 @@ const ART = {
     ".tTt.tTPt..tTt..",
     ...SOIL],
 
+  // Soggy: too much water. Limp, yellowed leaves with brown spots, the stem
+  // leaning, puddles standing on the dark soil.
+  "basil-soggy": [E, E, E, E, E, E,
+    ".......pp.......",
+    "......phpp......",
+    "...pp.pPPp.hp...",
+    "..phpp.PP.pphp..",
+    "...ppPPPP.ppp...",
+    "....h..PP.......",
+    ".......PP.......",
+    ".i..iNsNNsNi..i.",
+    "..iNsNNkNNsNi...",
+    "..sNNsNsNkNNss.."],
+
   // Mint safely in its own terracotta pot.
   // Mint sown in its own pot (never the shared bed).
   "mint-sown": [E, E, E,
@@ -650,6 +664,21 @@ const ART = {
     "..S.O.S...SOS...",
     "..SSSkSSSSSkSS..",
     ".sSSSSSSkSSSSSs."],
+
+  // Rotting: watered when the soil was still damp. Tops yellowed and flopped,
+  // the shoulders gone dark and soft, standing water on sodden soil.
+  "carrot-rotting": [E, E, E, E, E,
+    "...h....h....h..",
+    "..pHp..hPh..pHh.",
+    ".h.P.hp.P.ph.P.h",
+    ".p.H..h.H..p.H.p",
+    "..HO..HHO..OH...",
+    "..oH..HOH..HO...",
+    "..NHN.NHN.NHN...",
+    ".iNNsNNkNNsNNi..",
+    "..N.H.N.i.NHN...",
+    ".iNsNkNNiNNkNsi.",
+    ".sNNsNNsNkNNssN."],
 
   "pumpkin-sown": sown(["cNcc", "oOoO", "cooc"], SOWN_ROW),
 

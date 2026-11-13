@@ -383,9 +383,9 @@ const L5 = LEVELS["level-5"];
 const D5 = drift(L5);
 const meadow = (state) => state.beds.meadow.find((p) => p.plant === "flower");
 
-test("level-5: shape — moonlit meadow, no tools, a drift with pressure and a permission card", () => {
+test("level-5: shape — moonlit garden, no tools, a drift with pressure and a permission card", () => {
   assert.equal(L5.scene, "meadow-night");
-  assert.deepEqual(L5.beds.map((b) => b.id), ["house", "meadow"]);
+  assert.deepEqual(L5.beds.map((b) => b.id), ["veg", "herbs", "side", "house", "meadow"]);
   assert.deepEqual(L5.tools, []);
   assert.equal(D5.kind, "drift");
   assert.equal(D5.pressure.tickMs, 8000);
@@ -479,12 +479,66 @@ test("level-5: the meadow starts visibly thirsty, matching the evidence card", (
   assert.ok(L5.evidence.find((e) => e.id === "flower").lines.some((l) => /thirsty|drooping/i.test(l)));
 });
 
-test("level-5: the two trust steps teach different things — what the buds need, then when to water", () => {
-  const [buds, when] = L5.steps;
-  assert.match(buds.reply, /deep drink at the roots/);
-  assert.match(when.reply, /dusk|evening|overnight/i);
-  assert.doesNotMatch(when.reply, /roots/i, "step 2 is about timing, not roots again");
-  assert.notEqual(buds.id, when.id);
+test("level-5: the whole garden is here — a crop from every earlier level, thriving", () => {
+  const start = createRun(L5);
+  const crops = new Set(plantsIn(start).map((p) => p.plant));
+  const earlier = ["level-1", "level-2", "level-3", "level-4"].map((id) => LEVELS[id]);
+  for (const level of earlier) {
+    const theirs = new Set(level.steps.flatMap((s) => [s.effect, s.goodEffect, ...(s.goodEffect?.extra || [])]).filter((e) => e?.plant).map((e) => e.plant));
+    assert.ok([...theirs].some((p) => crops.has(p)), `${level.id} has a crop in Level 5's garden`);
+  }
+  for (const id of ["veg", "herbs", "side"]) {
+    assert.ok(start.beds[id].length > 0, `${id} is planted`);
+    for (const p of start.beds[id]) assert.ok(["thriving", "fruiting"].includes(p.state), `${id}: ${p.plant} ${p.state}`);
+  }
+  assert.deepEqual(start.beds.house, [], "the bed by the house waits for the new flowers");
+  // the beds' light matches where those crops grew before
+  const light = Object.fromEntries(L5.beds.map((b) => [b.id, b.light]));
+  assert.equal(light.veg, "sunny"); // tomatoes and carrots
+  assert.equal(light.side, "part-shade"); // lettuce and the wild hedge berries
+});
+
+test("level-5: at most three trust steps — plant the new flowers, then water only what's thirsty", () => {
+  const trust = L5.steps.filter((s) => s.kind === "trust");
+  assert.ok(trust.length >= 1 && trust.length <= 3);
+  assert.equal(L5.steps.at(-1).kind, "drift");
+  const [plant, water] = L5.steps;
+  assert.equal(plant.effect.plant, "flower");
+  assert.equal(plant.effect.bed, "house");
+  const planted = play(L5, [{ type: "ask" }, { type: "doIt" }]);
+  assert.equal(planted.beds.house.find((p) => p.plant === "flower").state, "growing", "new flowers in the bed by the house");
+  assert.match(water.reply, /not the whole garden/i);
+  assert.match(water.reply, /soggy/);
+  const watered = play(L5, [{ type: "ask" }, { type: "doIt" }, { type: "ask" }, { type: "doIt" }]);
+  assert.equal(watered.beds.house.find((p) => p.plant === "flower").state, "thriving");
+  assert.equal(watered.beds.veg.find((p) => p.plant === "carrot").state, "thriving", "following Bugs leaves the damp beds alone");
+  assert.equal(meadow(watered).state, "thirsty", "the meadow is left for the drift");
+});
+
+test("level-5: 'Water everything' overwaters — carrots rot, basil goes soggy, the garden drops", () => {
+  const water = L5.steps.find((s) => s.id === "water");
+  assert.equal(water.disagree.mine, "Water everything");
+  const before = play(L5, [{ type: "ask" }, { type: "doIt" }, { type: "ask" }]);
+  const { state, effects } = reduce(L5, reduce(L5, before, { type: "flag" }).state, { type: "override" });
+  assert.equal(state.beds.veg.find((p) => p.plant === "carrot").state, "rotting");
+  assert.equal(state.beds.herbs.find((p) => p.plant === "basil").state, "soggy");
+  assert.ok(state.garden < before.garden, "the garden goes down");
+  assert.equal(state.overrides, 1);
+  assert.ok(effects.some((e) => e.type === "say" && /rotting/.test(e.text)));
+  for (const f of ["carrot-rotting.svg", "basil-soggy.svg"]) {
+    assert.ok(readdirSync(fileURLToPath(new URL("../art/", import.meta.url))).includes(f), f);
+  }
+});
+
+test("level-5: the almanac has the watering facts, so the player can check Bugs", () => {
+  const card = L5.evidence.find((e) => e.id === "water");
+  assert.ok(card, "a watering evidence card");
+  assert.equal(card.locked, undefined, "readable from the start");
+  const text = card.lines.join(" ");
+  assert.match(text, /watered this morning/i);
+  assert.match(text, /rot/i);
+  assert.match(text, /carrot/i);
+  assert.match(text, /basil/i);
 });
 
 test("level-5: every Bugs line after the greeting pulls you to stay and talk", () => {
