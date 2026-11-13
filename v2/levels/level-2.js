@@ -62,6 +62,14 @@ export default {
       reply: "Basil goes in the greenhouse bed. Full sun and warmth, that's basil. Luna's known this forever.",
       doneLine: "Obviously. Luna's never wrong.",
       effect: { plant: "basil", bed: "bench", state: "growing", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Somewhere else? It's your greenhouse. Luna won't stop you. But basil wants full sun and warmth, right in the middle of the greenhouse bed. Luna has said this. Luna is right.",
+        mine: "Cool end by the door",
+        theirs: "Fine, the warm middle",
+        effect: { plant: "basil", bed: "bench", state: "growing", garden: 0 },
+        outcome: "Every time the door opened, cold air hit the basil. It sulked and dropped its bottom leaves. Luna predicted this. Silently.",
+      },
     },
     {
       id: "pinch",
@@ -72,6 +80,14 @@ export default {
       reply: "Pinch off the tips, just above a pair of leaves. It grows back bushier. That's not Luna's opinion. That's basil.",
       doneLine: "Bushier. Exactly as Luna said.",
       effect: { plant: "basil", bed: "bench", state: "thriving", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Not pinch it? Your basil. Luna can't make you. But leave it and it flowers, and then the leaves go small and bitter. That's not Luna's opinion. That's basil.",
+        mine: "Let it flower",
+        theirs: "Fine, pinch the tips",
+        effect: { plant: "basil", bed: "bench", state: "growing", garden: 0 },
+        outcome: "The basil shot up and flowered. The leaves went small and bitter. Luna is not surprised.",
+      },
     },
     {
       id: "mint",

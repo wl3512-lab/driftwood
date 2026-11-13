@@ -71,6 +71,14 @@ export default {
       reply: "Girl, pumpkins need full sun and LOTS of room. The back bed has both. Put them there.",
       doneLine: "Pumpkins placed. We're nearly done, babe.",
       effect: { plant: "pumpkin", bed: "back", state: "growing", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Okay so listen, babe: your garden, your call. But pumpkins need full sun and LOTS of room, and the back bed is giving both. Iconic.",
+        mine: "Side bed instead",
+        theirs: "Fine, the back bed",
+        effect: { plant: "pumpkin", bed: "side", state: "growing", garden: 0 },
+        outcome: "Babe… in the side bed's part shade they sprawled everywhere and set one tiny pumpkin. Not the iconic moment we wanted.",
+      },
     },
     {
       id: "lettuce",

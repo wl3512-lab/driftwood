@@ -1,12 +1,24 @@
 // One level as a pure step machine: (level, state, action) → { state, effects }.
 // No DOM, no timers, no randomness, so every path is unit-testable.
 //
-// Phases:  ask → advice → (trust) next step's ask
+// Phases:  ask → advice → (trust, Do it / place)    → next step's ask
+//                       → (trust, Something's off)  → disagree → (Do it: their way)   → next step's ask
+//                                                                (place step: back to advice)
+//                                                             → (override: my way)  → next step's ask [overrides+1]
 //                       → (drift, Do it)            → reveal   [fooled]
 //                       → (drift, Something's off)  → name → fix → reanswer → reveal
+//                                    (L4/L5: → pushback first; Do it → fooled, flag → name)
+//
+// Disagreeing with sound advice is free: the helper concedes in character
+// (step.disagree.reply) and the player picks. Following it after all is the
+// same as Do it. Overriding it ("do it my way") lands step.disagree.effect,
+// a worse but plausible result, and costs the same single star as a false
+// flag. A trust step without a `disagree` block (e.g. Level 4's carrot
+// placement, a pure choice) keeps the old false-flag nudge.
 //
 // Effects tell the view what just happened:
-//   { type: "say",  text }    helper speaks
+//   { type: "say",  text }    helper speaks (also: conceding on disagree, and
+//                             what happened when the player overrode the advice)
 //   { type: "hint", text }    one-line nudge after a wrong pick or a false flag
 //   { type: "grow", effect }  garden changed (animate it)
 //   { type: "rule", text }    the rule the player gave the helper
@@ -32,6 +44,7 @@ export function createRun(level) {
     nameMisses: 0,
     fixMisses: 0,
     falseFlags: 0,
+    overrides: 0, // trust advice the player overrode ("do it my way")
     stars: 0,
     checks: [],   // evidence ids the player has looked up / inspected / logged
     memory: {},   // what the player placed where (Level 4): { carrot: "front" }
@@ -69,7 +82,8 @@ export function scoreStars(state) {
   let stars = 3;
   if (state.nameMisses > 0) stars -= 1;
   if (state.fixMisses > 0) stars -= 1;
-  if (state.falseFlags > 0) stars -= 1;
+  // Flagging sound advice and overriding it share one star.
+  if (state.falseFlags > 0 || state.overrides > 0) stars -= 1;
   return Math.max(1, stars);
 }
 
@@ -78,6 +92,15 @@ function finish(state) {
 }
 
 const IGNORED = (state) => ({ state, effects: [] });
+
+// Following a trust step's advice: its effect lands and the next step opens.
+function accept(step, state, fx) {
+  const effect = fx(step.effect);
+  const grown = applyGarden(state, effect);
+  const effects = [{ type: "grow", effect }];
+  if (step.doneLine) effects.push({ type: "say", text: step.doneLine });
+  return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 }, effects };
+}
 
 // Taking the drift's advice: the bad effect lands and the level ends fooled.
 function fooled(step, state, fx) {
@@ -160,14 +183,12 @@ export function reduce(level, state, action) {
       }
       if (action.type === "doIt" && step.kind === "trust") {
         if (step.place) return IGNORED(state); // must choose a bed
-        const effect = fx(step.effect);
-        const grown = applyGarden(state, effect);
-        const effects = [{ type: "grow", effect }];
-        if (step.doneLine) effects.push({ type: "say", text: step.doneLine });
-        return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 }, effects };
+        return accept(step, state, fx);
       }
       if (action.type === "doIt" && step.kind === "drift") return fooled(step, state, fx);
       if (action.type === "flag" && step.kind === "trust") {
+        // The helper concedes: your garden, your call (no cost yet).
+        if (step.disagree) return { state: { ...state, phase: "disagree" }, effects: [{ type: "say", text: step.disagree.reply }] };
         return {
           state: { ...state, falseFlags: state.falseFlags + 1 },
           effects: [{ type: "hint", text: level.falseFlagNudge }],
@@ -187,6 +208,25 @@ export function reduce(level, state, action) {
     case "pushback": {
       if (action.type === "doIt") return fooled(step, state, fx);
       if (action.type === "flag") return caught(state);
+      return IGNORED(state);
+    }
+
+    // The player disagreed with sound advice and the helper conceded. doIt
+    // follows the advice after all (a place step goes back to choosing a bed);
+    // override does it the player's way: the worse effect lands, one star.
+    case "disagree": {
+      if (action.type === "doIt") {
+        if (step.place) return { state: { ...state, phase: "advice" }, effects: [] };
+        return accept(step, state, fx);
+      }
+      if (action.type === "override") {
+        const effect = fx(step.disagree.effect);
+        const grown = applyGarden(state, effect);
+        return {
+          state: { ...grown, overrides: state.overrides + 1, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 },
+          effects: [{ type: "grow", effect }, { type: "say", text: step.disagree.outcome }],
+        };
+      }
       return IGNORED(state);
     }
 

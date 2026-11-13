@@ -35,6 +35,14 @@ export default {
       reply: "Sunflowers? South bed. Full sun, all day. They will LOVE it. Major key.",
       doneLine: "Look at them GO. Another one!",
       effect: { plant: "sunflower", bed: "south", state: "growing", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Somewhere else? You can TOTALLY do that! Your garden, your call… but sunflowers LOVE full sun. South bed is the major key.",
+        mine: "Shady corner anyway",
+        theirs: "Okay, south bed",
+        effect: { plant: "sunflower", bed: "corner", state: "sprout", garden: 5 },
+        outcome: "They came up SPINDLY. Tiny heads, leaning right out of the corner looking for sun. Still cute though!",
+      },
     },
     {
       id: "water",
@@ -45,6 +53,14 @@ export default {
       reply: "When the top inch of soil feels dry. Poke it with a finger. Simple. Genius.",
       doneLine: "Hydrated. Iconic. What's next?",
       effect: { water: true, garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Water every day? Love the dedication! Your garden, your call… but soggy roots are NOT the vibe. Finger test first. Simple. Genius.",
+        mine: "Water every day anyway",
+        theirs: "Okay, finger test",
+        effect: { plant: "lettuce", bed: "east", state: "growing", garden: -5 },
+        outcome: "Every. Single. Day. The soil never dried out, the roots sat in mud, and nothing grew much. Still love you!",
+      },
     },
     {
       id: "tomatoes",

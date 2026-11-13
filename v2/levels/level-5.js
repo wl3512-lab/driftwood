@@ -59,6 +59,14 @@ export default {
       reply: "And honestly… nervous just means you care. After a hot day they need a deep drink at the roots tonight. That's all. They'll open with the sun.",
       doneLine: "they opened a little… like they heard you.",
       effect: { plant: "flower", bed: "house", state: "thriving", garden: 15, water: true },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "you could just give them a little splash… it's your garden. i mean. but a sprinkle only wets the top. they need a deep drink at the roots tonight.",
+        mine: "Just a quick sprinkle",
+        theirs: "Okay, a deep drink",
+        effect: { plant: "flower", bed: "house", state: "thirsty", garden: 0 },
+        outcome: "the sprinkle only wet the top of the soil… by midnight the buds were drooping again.",
+      },
     },
     {
       id: "roots",
@@ -72,6 +80,14 @@ export default {
       reply: "The roots. Wet petals overnight can go mouldy… soil, not flowers. That's the whole secret.",
       doneLine: "It's getting late… and the meadow's still dry.",
       effect: { plant: "flower", bed: "house", state: "thriving", garden: 10 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "the petals? …okay. your flowers, your call. but wet petals overnight can go mouldy. soil, not flowers… that's the whole secret.",
+        mine: "Water the petals",
+        theirs: "Fine, the roots",
+        effect: { plant: "flower", bed: "house", state: "wilted", garden: -5 },
+        outcome: "the petals stayed wet all night… by morning grey mould had spotted them, and the flowers went limp.",
+      },
     },
     {
       id: "meadow",
