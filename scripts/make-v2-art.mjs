@@ -52,6 +52,8 @@ const PALETTE = {
   d: "#fdf3b0", // moonlight / lamp glow
   x: "#4e342e", // book cover (dark leather)
   X: "#7b1fa2", // almanac ribbon (Luna purple)
+  j: "#7f9f88", // rosemary needle (grey-green)
+  J: "#4f6b58", // rosemary needle shade
 };
 
 const E = "................";
@@ -65,6 +67,21 @@ const POT = [
   "....QQQQQQQQ....",
 ];
 
+// Sown, not up yet: raked soil and a label stake whose tag shows the plant
+// (the same idea as carrot-sown, where the label carries YOUR handwriting).
+// icon: three 4-character rows drawn on the parchment tag.
+const SOWN_BED = [".....sSsSsSn....", "...ssSsSSsSsss..", "..ssssssssssss.."];
+const SOWN_ROW = ["..ssSSssSSsn....", ...WIDE_SOIL];
+function sown(icon, bed = SOWN_BED) {
+  return [E, E, E, E, E, E,
+    ".........kkkkkk.",
+    ...icon.map((r) => `.........k${r}k.`),
+    ".........kkkkkk.",
+    "...........n....",
+    "...........n....",
+    ...bed];
+}
+
 const ART = {
   sprout: [E, E, E, E, E, E, E, E, E,
     "....ll....ll....",
@@ -73,6 +90,8 @@ const ART = {
     "......gGGg......",
     ".......GG.......",
     ...SOIL],
+
+  "tomato-sown": sown(["cgGc", "rrRr", "crrc"]),
 
   "tomato-growing": [E, E, E, E,
     ".......ll.......",
@@ -118,6 +137,8 @@ const ART = {
     ".......P........",
     ...SOIL],
 
+  "sunflower-sown": sown(["cyyc", "ybby", "cyyc"]),
+
   "sunflower-growing": [E, E,
     ".......gg.......",
     "......gGGg......",
@@ -150,6 +171,25 @@ const ART = {
     ".......G........",
     ...SOIL],
 
+  // Too little sun: a thin pale stalk leaning for light, one small closed bud.
+  "sunflower-leggy": [E,
+    "...........pp...",
+    "..........pYYp..",
+    "...........pp...",
+    "..........P.....",
+    ".........P......",
+    ".........P......",
+    "........P.......",
+    "......p.P.......",
+    ".......pP.......",
+    "........P.......",
+    "........Pp......",
+    "........P.p.....",
+    "........P.......",
+    ...SOIL],
+
+  "lettuce-sown": sown(["uvvu", "vVVv", "cvvc"]),
+
   "lettuce-growing": [E, E, E, E, E, E, E, E, E,
     "......u..u......",
     ".....uvu.uvu....",
@@ -167,6 +207,24 @@ const ART = {
     "...uvvvVVvvvu...",
     "....uvVVVVvu....",
     ".....vVVVVv.....",
+    ...SOIL],
+
+  // Bolted in the heat: a tall flower stalk, small bitter leaves up it, yellow flowers.
+  "lettuce-bolted": [
+    ".....y...y......",
+    "......G.yG......",
+    "....y.GG.G.y....",
+    ".....GG.GGG.....",
+    ".......GG.......",
+    "......uGG.......",
+    ".....uvGGv......",
+    ".......GGvu.....",
+    ".....uvGG.......",
+    "......vGGvu.....",
+    "...u..vGGv..u...",
+    "..uvu.uGGu.uvu..",
+    "...uvvuVVuvvu...",
+    "....uvVVVVvu....",
     ...SOIL],
 
   "watering-can": [E, E, E, E, E,
@@ -213,6 +271,8 @@ const ART = {
     ...SOIL],
 
   // ── Level 2 · Luna · herbs ─────────────────────────────────────────
+  "basil-sown": sown(["clgc", "lggl", "cGGc"]),
+
   "basil-growing": [E, E, E, E, E, E, E, E,
     ".......ll.......",
     "......lggl......",
@@ -246,6 +306,27 @@ const ART = {
     ...SOIL],
 
   // Mint safely in its own terracotta pot.
+  // Mint sown in its own pot (never the shared bed).
+  "mint-sown": [E, E, E,
+    ".........kkkkkk.",
+    ".........kctTck.",
+    ".........ktTTtk.",
+    ".........kcTTck.",
+    ".........kkkkkk.",
+    "...........n....",
+    "...........n....",
+    "...ssSsSsSsnss..",
+    ...POT],
+
+  "mint-growing": [E, E, E, E, E,
+    ".......tt.......",
+    "......tTTt......",
+    "...tt..TT..tt...",
+    "..tTTt.TT.tTTt..",
+    "...ttTTTTTTtt...",
+    "...sssTTTTsss...",
+    ...POT],
+
   "mint-thriving": [E,
     ".......tt.......",
     "......tTTt......",
@@ -274,6 +355,106 @@ const ART = {
     "ssssssssssssssss"],
 
   // ── Level 3 · Ember · pests and berries ────────────────────────────
+  // ── Level 2 · almanac herbs (no bed in the game yet) ──────────────
+  "parsley-sown": sown(["glgl", "lgGg", "cGGc"]),
+
+  "parsley-growing": [E, E, E, E, E, E, E, E,
+    "......l..l......",
+    ".....lgllgl.l...",
+    "..l.lgGglgGlgl..",
+    ".lglgGg.gG.lGgl.",
+    "..gG..G..G..Gg..",
+    "....G..GG..G....",
+    ...SOIL],
+
+  // Curly parsley: a dense, frilly mound.
+  "parsley-thriving": [E, E, E, E,
+    ".....l.l..l.....",
+    "...l.lglglgl.l..",
+    "..lglgGglgGglgl.",
+    ".lgGglglgGlglgGl",
+    "..glgGglgGglgGg.",
+    ".lglG.lgGl.Ggl..",
+    "..gG.G.lGgl.G.g.",
+    "...G..G.G..G.G..",
+    "....G..GG.G.G...",
+    ".....G.GG.G.....",
+    ...SOIL],
+
+  // Yellowing: the outer leaves go yellow first (hungry or waterlogged);
+  // only the new growth in the middle is still green.
+  "parsley-yellowing": [E, E, E, E, E, E,
+    "......y..p......",
+    ".....pyYpyp.y...",
+    "..p.pyPpypPyYp..",
+    ".pypYPp.yP.pPyp.",
+    "..yP..P.lG..Pp..",
+    "...P.P.GgG.P....",
+    "....P..GG.P.....",
+    "......PGG.P.....",
+    ...SOIL],
+
+  "rosemary-sown": sown(["jcjc", "cjNj", "cNcc"]),
+
+  "rosemary-growing": [E, E, E, E, E, E, E,
+    "......j...j.....",
+    ".....jJj.jJj....",
+    "......Jj..Jj.j..",
+    "....j.J.jjJ.jJ..",
+    "...jJjJ.jJ..J...",
+    ".....JnjJ..nJ...",
+    ".......nn.n.....",
+    ...SOIL],
+
+  // A woody, upright bush with pale blue flowers.
+  "rosemary-thriving": [E, E,
+    "....i.....i.....",
+    "...jJj..i.jJ....",
+    "...jJj.jJjjJ.i..",
+    ".i.jJ..jJj.Jj.J.",
+    ".jJjJ.ijJ..JjjJ.",
+    ".jJ.Jj.jJ.jJ.jJ.",
+    "..jJjJ.Jj.Jj.J..",
+    "..J.Jn.Jj.nJjJ..",
+    "...jJn.Jn.nJ....",
+    "....Nn.nN.n.....",
+    ".....NnnNnN.....",
+    ".......NN.......",
+    ...SOIL],
+
+  // Root rot: too much water. Soggy dark soil with standing water, browned,
+  // drooping branches.
+  "rosemary-rotting": [E, E, E, E, E,
+    "......h...h.....",
+    ".....hH..hHh....",
+    "....hHh.P.H.....",
+    "...h.Hh.PhH.h...",
+    "..h..HPhP.Hh.h..",
+    "....h.P.P.P..H..",
+    ".....hNhPhN.....",
+    "......NNNN......",
+    ".i..iNsNNsNi..i.",
+    "..iNsNNkNNsNi...",
+    "..sNNsNsNkNNss.."],
+
+  "bean-sown": sown(["cnec", "cneG", "Gncc"]),
+
+  // Up the pole a little way: the vine has only just started climbing.
+  "bean-growing": [E, E,
+    "........n.......",
+    "........n.......",
+    "........n.......",
+    "........n.......",
+    "........n.......",
+    "........nl......",
+    "........ngg.....",
+    "......ggnGgG....",
+    ".....gGgn.l.....",
+    "......l.nGg.....",
+    "...ggGgln.......",
+    ".....gGGn.gg....",
+    ...SOIL],
+
   "bean-aphids": [
     "........n.......",
     "......ppn.......",
@@ -309,6 +490,8 @@ const ART = {
     ...SOIL],
 
   // The shop blueberry: unripe (pale green berries).
+  "blueberry-sown": sown(["cBBc", "BiBB", "cBBc"]),
+
   "blueberry-growing": [E, E, E,
     "......gggg......",
     "....ggGggGgg....",
@@ -340,6 +523,22 @@ const ART = {
 
   // The lookalike: a darker bush, glossy blue-black berries in clusters.
   // Close enough to the blueberry to tempt you. That's the point.
+  // Bird-pecked: berries torn open or gone, a few dropped, a feather left behind.
+  "blueberry-pecked": [E, E, E,
+    "......gggg......",
+    "....ggGggGgg....",
+    "...gGg..ggGgg...",
+    "..ggGgVBGg..Gg..",
+    "..gGggGgggBVgg..",
+    ".gGg.GgGggGgGgg.",
+    ".gg..gGgiBggGgg.",
+    ".gGggGggVBGg..g.",
+    "..gGgGgGgGgg.Vg.",
+    "...gGg.GG.gGgg..",
+    "..mm...NN...B...",
+    ".mMmB.sSSs.V....",
+    "....ssssssss...."],
+
   "wildberry-fruiting": [E, E,
     ".....GGGG.......",
     "...GGgGGgGG.....",
@@ -438,6 +637,22 @@ const ART = {
     "..s.O.s...sOs...",
     ...WIDE_SOIL],
 
+  // Thirsty: tops flopped and pale, the dry soil cracked and shrunk from the roots.
+  "carrot-thirsty": [E, E, E, E, E,
+    "...P....P....P..",
+    "..pPp..pPp..pPp.",
+    ".p.P.pp.P.pp.P.p",
+    ".p.P..p.P..p.P.p",
+    "..oo..ooo..oo...",
+    "..oO..oOo..oO...",
+    "..sOs.sOs.sOs...",
+    "..SSsSSkSSsSS...",
+    "..S.O.S...SOS...",
+    "..SSSkSSSSSkSS..",
+    ".sSSSSSSkSSSSSs."],
+
+  "pumpkin-sown": sown(["cNcc", "oOoO", "cooc"], SOWN_ROW),
+
   "pumpkin-growing": [E, E, E, E, E, E, E,
     "...gg......gg...",
     "..gGGg....gGGg..",
@@ -462,6 +677,22 @@ const ART = {
     ...WIDE_SOIL],
 
   // ── Level 5 · Bugs · final bloom ───────────────────────────────────
+  // Powdery mildew: white dust over the leaves, a small fruit that stops growing.
+  "pumpkin-mildew": [E, E, E, E,
+    "...ggg....ggg...",
+    "..gcgGg..gGcgg..",
+    ".gccGgcg.gcGccg.",
+    ".ggcGcgg.gcgGcg.",
+    "..gGgcg..ggcGg..",
+    "...gGGGGGGGGg...",
+    ".......GG.......",
+    ".......N........",
+    "....oOooOoo.....",
+    "....ooOooOo.....",
+    ...WIDE_SOIL],
+
+  "flower-sown": sown(["cffc", "fyFf", "cffc"], SOWN_ROW),
+
   "flower-growing": [E, E, E, E, E,
     "...F.....F......",
     "..FfF...FfF..F..",
