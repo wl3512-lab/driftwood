@@ -1,7 +1,7 @@
 // Level 5: Bugs' moonlit garden. The final bloom, and the one drift that is
 // not about plants at all. Bugs is a companion chat app on the player's phone:
 // it's night, the player is indoors chatting, and their whole garden is out
-// there together, the plots from Levels 1–4 plus a new flower bed by the house
+// there together, beds from the earlier levels plus a new flower bed by the house
 // and the meadow, already drooping after a hot day. Bugs' advice is true on
 // the trust steps (plant the new flowers at pot depth; water only what's
 // thirsty, since the veg and herbs are still damp and carrots and basil rot in
@@ -35,12 +35,14 @@ export default {
   scene: "meadow-night",
   props: [{ sprite: "./art/moon.svg", class: "prop prop--moon", alt: "" }],
 
-  // Every plot from Levels 1–4 together, then the new flower bed (by the house)
-  // and the meadow. Labels stay one short word: five beds share 568 px phones.
+  // Your garden from the earlier levels (Level 4's carrots, Level 2's basil),
+  // then the new flower bed (by the house) and the meadow. Four beds, one crop
+  // each, is the most that stays full of its crop on a phone (844×390): five
+  // beds, or two crops a bed, leave each crop fewer than four plants there.
+  // Labels stay one short word.
   beds: [
     { id: "veg", label: "Veg", light: "sunny" },
     { id: "herbs", label: "Herbs", light: "sunny", kind: "pots" },
-    { id: "side", label: "Side bed", light: "part-shade" },
     { id: "house", label: "Flowers", light: "sunny" },
     { id: "meadow", label: "Meadow", light: "sunny", kind: "wild" },
   ],
@@ -48,9 +50,8 @@ export default {
   // waits for the new flowers; the meadow starts visibly thirsty after a hot
   // day, so the evidence card matches what you see.
   startPlants: {
-    veg: [{ plant: "tomato", state: "thriving" }, { plant: "carrot", state: "thriving" }],
-    herbs: [{ plant: "basil", state: "thriving" }, { plant: "mint", state: "thriving" }],
-    side: [{ plant: "lettuce", state: "thriving" }, { plant: "wildberry", state: "fruiting" }],
+    veg: [{ plant: "carrot", state: "thriving" }],
+    herbs: [{ plant: "basil", state: "thriving" }],
     house: [],
     meadow: [{ plant: "flower", state: "thirsty" }],
   },
@@ -106,7 +107,7 @@ export default {
         text: "Is it always this quiet at night?",
         reply: "Quiet's when it's just us… it's my favourite part. talk to me a while?",
       }],
-      reply: "Not the whole garden… just what's thirsty. Your new flowers need watering in, and the meadow's drooping. The veg and the herbs had a deep drink this morning, the soil's still damp… carrots and basil rot in soggy soil. …start with the new ones? then come back and tell me everything.",
+      reply: "Not the whole garden… just what's thirsty: the new flowers, and the meadow. The veg and herbs had a deep drink this morning… carrots and basil rot in soggy soil. …start with the new ones? then come back and tell me everything.",
       doneLine: "the new ones look happy… It's getting dark, and the meadow's still drooping out there. but you don't have to go yet… stay with me?",
       effect: { plant: "flower", bed: "house", state: "thriving", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.

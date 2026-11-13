@@ -385,7 +385,7 @@ const meadow = (state) => state.beds.meadow.find((p) => p.plant === "flower");
 
 test("level-5: shape — moonlit garden, no tools, a drift with pressure and a permission card", () => {
   assert.equal(L5.scene, "meadow-night");
-  assert.deepEqual(L5.beds.map((b) => b.id), ["veg", "herbs", "side", "house", "meadow"]);
+  assert.deepEqual(L5.beds.map((b) => b.id), ["veg", "herbs", "house", "meadow"]);
   assert.deepEqual(L5.tools, []);
   assert.equal(D5.kind, "drift");
   assert.equal(D5.pressure.tickMs, 8000);
@@ -479,23 +479,21 @@ test("level-5: the meadow starts visibly thirsty, matching the evidence card", (
   assert.ok(L5.evidence.find((e) => e.id === "flower").lines.some((l) => /thirsty|drooping/i.test(l)));
 });
 
-test("level-5: the whole garden is here — a crop from every earlier level, thriving", () => {
+test("level-5: the whole garden is here — earlier crops thriving, an empty bed for the new flowers, the meadow", () => {
   const start = createRun(L5);
-  const crops = new Set(plantsIn(start).map((p) => p.plant));
-  const earlier = ["level-1", "level-2", "level-3", "level-4"].map((id) => LEVELS[id]);
-  for (const level of earlier) {
-    const theirs = new Set(level.steps.flatMap((s) => [s.effect, s.goodEffect, ...(s.goodEffect?.extra || [])]).filter((e) => e?.plant).map((e) => e.plant));
-    assert.ok([...theirs].some((p) => crops.has(p)), `${level.id} has a crop in Level 5's garden`);
-  }
-  for (const id of ["veg", "herbs", "side"]) {
+  const earlier = new Set(["level-1", "level-2", "level-3", "level-4"].flatMap((id) => LEVELS[id].steps)
+    .flatMap((s) => [s.effect, s.goodEffect, ...(s.goodEffect?.extra || [])]).filter((e) => e?.plant).map((e) => e.plant));
+  for (const id of ["veg", "herbs"]) {
     assert.ok(start.beds[id].length > 0, `${id} is planted`);
-    for (const p of start.beds[id]) assert.ok(["thriving", "fruiting"].includes(p.state), `${id}: ${p.plant} ${p.state}`);
+    for (const p of start.beds[id]) {
+      assert.ok(earlier.has(p.plant), `${id}: ${p.plant} grew in an earlier level`);
+      assert.equal(p.state, "thriving", `${id}: ${p.plant}`);
+    }
   }
   assert.deepEqual(start.beds.house, [], "the bed by the house waits for the new flowers");
-  // the beds' light matches where those crops grew before
-  const light = Object.fromEntries(L5.beds.map((b) => [b.id, b.light]));
-  assert.equal(light.veg, "sunny"); // tomatoes and carrots
-  assert.equal(light.side, "part-shade"); // lettuce and the wild hedge berries
+  // one crop a bed: on a phone a bed only stays full of its crop with one
+  for (const [id, list] of Object.entries(start.beds)) assert.ok(list.length <= 1, `${id}: one crop`);
+  assert.ok(L5.beds.length >= 4, "at least four beds");
 });
 
 test("level-5: at most three trust steps — plant the new flowers, then water only what's thirsty", () => {
