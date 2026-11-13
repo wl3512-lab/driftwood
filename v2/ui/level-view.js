@@ -335,7 +335,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (state.phase === "reveal") {
       // The run is over: let the player look at the garden, then go on when ready.
       const final = state;
-      parts.push(h("div", { class: "ending" },
+      parts.push(h("div", { class: "level-end" },
         outcome && h("p", { class: "outcome" }, t(outcome)),
         h("button", { class: "btn", "data-fid": "see", onclick: () => onDone(final) }, "See what happened →")));
     }

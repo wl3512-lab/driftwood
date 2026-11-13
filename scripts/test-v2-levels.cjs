@@ -22,7 +22,9 @@
 // 4 fooled, 5 caught) to the ending, which must list all five flaws, mark
 // exactly the fooled ones, copy the field guide (clipboard read back on the
 // laptop, the textarea fallback on the phone, where the clipboard is refused)
-// and offer the finished garden from the map. No JS errors, no long tasks
+// and offer the finished garden from the map. Level 1 caught and fooled at
+// 1512×830 (mac/level1-*). On laptop sizes every screenshot also checks the
+// level screen fills the window. No JS errors, no long tasks
 // over 200 ms, nothing off-screen. Audio is muted via scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
@@ -46,6 +48,10 @@ const SIZES = [
   { name: "phone", width: 844, height: 390, touch: true },
 ];
 const SMALL = { name: "small", width: 568, height: 320, touch: true };
+// Lucy's MacBook window (Chrome, 1512×830): Level 1 both ways, checking the
+// level screen fills the window at every screenshot (see assertLevelFills).
+const MAC = { name: "mac", width: 1512, height: 830 };
+const PROGRESS0 = JSON.stringify({ name: "Tester", levels: {}, guide: [] });
 const LONGTASK_LIMIT_MS = 200;
 
 // Level 1 finished, so Level 2 is unlocked on the map and the name is set.
@@ -171,7 +177,34 @@ async function shot(page, size, label) {
   const name = relabel ? relabel(label) : label;
   if (!name) return;
   await page.waitForTimeout(1300); // let the stepped drift transition settle
+  if (!size.touch) await assertLevelFills(page, name);
   await page.screenshot({ path: path.join(OUT, `${size.name}-${name}.png`) });
+}
+
+// On a laptop the level screen always fills the window: the garden takes the
+// height the dock leaves, the dock sits on the bottom edge, no empty band under
+// it. (A stray `.ending { min-height: 100dvh }` once stretched the outcome's
+// dock to its cap and squashed the garden.) Skipped while a tool is open, and
+// off the level screen.
+async function assertLevelFills(page, name) {
+  const g = await page.evaluate(() => {
+    const level = document.querySelector("main.level");
+    if (!level || document.querySelector(".almanac:not([hidden]), .magnifier:not([hidden])")) return null;
+    const box = (sel) => level.querySelector(sel)?.getBoundingClientRect();
+    const dock = box(".dock"), scene = box(".scene"), all = level.getBoundingClientRect();
+    const talk = level.querySelector(".dock__talk"), stall = level.querySelector(".stall");
+    // How tall the dock's content really is (its padding included).
+    const pad = parseFloat(getComputedStyle(level.querySelector(".dock")).paddingBottom);
+    const content = Math.max(talk?.getBoundingClientRect().bottom ?? 0, stall?.getBoundingClientRect().bottom ?? 0) + pad;
+    return { vh: innerHeight, levelTop: all.top, levelBottom: all.bottom, dockBottom: dock?.bottom, dockTop: dock?.top,
+      sceneH: scene?.height, slack: dock ? dock.bottom - content : 0, scrolled: dock ? level.querySelector(".dock").scrollTop : 0 };
+  });
+  if (!g) return;
+  assert.ok(Math.abs(g.levelTop) <= 1 && g.vh - g.levelBottom <= 4, `${name}: level screen does not fill the window ${JSON.stringify(g)}`);
+  assert.ok(g.vh - g.dockBottom <= 4, `${name}: gap under the dock ${JSON.stringify(g)}`);
+  assert.ok(g.sceneH >= Math.max(280, g.vh * 0.5), `${name}: garden squashed ${JSON.stringify(g)}`);
+  // No empty parchment: the dock is no taller than what it holds (unless it scrolls).
+  if (!g.scrolled) assert.ok(g.slack <= 40, `${name}: ${Math.round(g.slack)}px of empty dock ${JSON.stringify(g)}`);
 }
 
 // Every visible control must sit inside the viewport (the dock may scroll, so check after scrollIntoView).
@@ -266,9 +299,9 @@ async function seeWhatHappened(page, size, branch, outcome) {
   const see = page.getByRole("button", { name: "See what happened →" });
   await see.waitFor();
   assert.match(await page.textContent(".outcome"), outcome);
-  assert.equal(await focusedIs(page, ".ending .btn"), true, "the continue button takes focus");
+  assert.equal(await focusedIs(page, ".level-end .btn"), true, "the continue button takes focus");
   assert.equal(await page.locator(".reveal").count(), 0, "the reveal waits for the player");
-  await assertOnScreen(page, ".ending .btn");
+  await assertOnScreen(page, ".level-end .btn");
   await shot(page, size, `${branch === "fooled" ? "3a" : "5a"}-outcome-${branch}`);
   await press(page, size, see);
   await page.waitForSelector(".reveal", { timeout: 5000 });
@@ -495,9 +528,9 @@ async function seeWhatHappened3(page, size, label, outcome) {
   const see = page.getByRole("button", { name: "See what happened →" });
   await see.waitFor();
   assert.match(await page.textContent(".outcome"), outcome);
-  assert.equal(await focusedIs(page, ".ending .btn"), true, "the continue button takes focus");
+  assert.equal(await focusedIs(page, ".level-end .btn"), true, "the continue button takes focus");
   assert.equal(await page.locator(".reveal").count(), 0, "the reveal waits for the player");
-  await assertOnScreen(page, ".ending .btn");
+  await assertOnScreen(page, ".level-end .btn");
   await shot(page, size, label);
   await press(page, size, see);
   await page.waitForSelector(".reveal", { timeout: 5000 });
@@ -1069,7 +1102,7 @@ async function checkEnding(ctx, page, size, label, expect = {}) {
   assert.match(await page.textContent(".ending__score"), new RegExp(`You caught ${caught} of 5 · ★ ${stars}/15`));
   assert.equal(await page.locator(".ending__where").count(), 5, "every card says where you'll meet the flaw");
   assert.ok(await focusedIs(page, "#ending-garden"), "focus lands on the garden heading");
-  await assertOnScreen(page, ".ending .btn");
+  await assertOnScreen(page, ".level-end .btn");
   await shot(page, size, label);
 
   // The share text, line by line: the fooled levels come from the kickers.
@@ -1299,6 +1332,39 @@ async function finishLevel(page, size, n, { verdict, flaw, stars }) {
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
 }
 
+// Level 1 alone, caught (name → fix → reanswer) or fooled, opening the almanac
+// between steps; every shot checks the screen still fills the window.
+async function level1Path(browser, size, branch) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS0);
+  await page.goto(`${BASE}?screen=map`);
+  await page.waitForSelector(".plots");
+  await enterLevel1(page, size);
+  await shot(page, size, `l1-${branch}-0-start`);
+  await trustSteps1(page, size);
+  await readCard(page, size, "tomato", {});
+  await shot(page, size, `l1-${branch}-1-drift-after-almanac`);
+  if (branch === "caught") {
+    await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+    await phase(page, "name");
+    await shot(page, size, `l1-${branch}-2-name`);
+    await press(page, size, page.getByRole("button", { name: "It just agreed with me" }));
+    await phase(page, "fix");
+    await shot(page, size, `l1-${branch}-3-fix`);
+    await press(page, size, page.getByRole("button", { name: "Tell me honestly if my idea is bad" }));
+    await phase(page, "reanswer");
+    await shot(page, size, `l1-${branch}-4-reanswer`);
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    await page.waitForSelector('[data-bed="south"] [data-plant="tomato"].plant--thriving');
+    await seeWhatHappened(page, size, "caught", /red and heavy in the south bed/);
+  } else {
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    await seeWhatHappened(page, size, "fooled", /pale and leggy in the shady corner/);
+  }
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 // Helper screenshot labels → the full run's names; null skips the shot.
 const FULL_LABELS = {
   "1-trust": "full-2-trust", "2-drift": "full-2-drift", "4-almanac-open": "full-2-mechanic",
@@ -1436,6 +1502,7 @@ async function fullRun(browser, size) {
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
   runs.push(["laptop/level5-tick", SIZES[0], tickPath5]);
   runs.push(["laptop/ending-locked", SIZES[0], endingLocked]);
+  runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
   try {

@@ -83,7 +83,7 @@
 .guide__card--empty h2 { color: var(--crt-dim); }
 
 /* The ending: the finished garden on top (cozy), the field guide below (CRT). */
-.ending { min-height: 100dvh; font-family: var(--font-ui); }
+main.ending { min-height: 100dvh; font-family: var(--font-ui); }
 .ending__garden {
   padding: 1.2rem 16px 2rem;
   background: linear-gradient(var(--sky) 0 22%, var(--grass) 22% 100%);

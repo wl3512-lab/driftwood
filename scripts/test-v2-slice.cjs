@@ -147,10 +147,10 @@ async function seeWhatHappened(page, size, branch, outcome) {
   const see = page.getByRole("button", { name: "See what happened →" });
   await see.waitFor();
   assert.match(await page.textContent(".outcome"), outcome);
-  assert.equal(await focusedIs(page, ".ending .btn"), true, "the continue button takes focus");
+  assert.equal(await focusedIs(page, ".level-end .btn"), true, "the continue button takes focus");
   await page.waitForTimeout(2600); // no auto-advance: still on the garden after the old 2.2 s timer
   assert.equal(await page.locator(".reveal").count(), 0, "the reveal waits for the player");
-  await assertOnScreen(page, ".ending .btn");
+  await assertOnScreen(page, ".level-end .btn");
   await shot(page, size, `${branch === "fooled" ? "3a" : "5a"}-outcome-${branch}`);
   await see.click();
   await page.waitForSelector(".reveal", { timeout: 5000 });
