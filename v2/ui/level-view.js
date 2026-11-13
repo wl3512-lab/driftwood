@@ -29,6 +29,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   let state = createRun(level);
   const t = (text) => fill(text, { name, ...memoryVars(level, state.memory) });
   let said = level.greeting;
+  let driftSaid = null; // the drift advice a pushback reply replaced
   let asked = null;
   let hint = null;
   let grown = null;
@@ -177,6 +178,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     const newStep = prev.stepIndex !== state.stepIndex;
     if (newStep) asked = null; // the "You:" echo belongs to the step that just ended
     if (newStep || prev.phase !== state.phase) typedLast = false;
+    const before = said;
     for (const fx of out.effects) {
       if (fx.type === "say") said = fx.text;
       if (fx.type === "hint") hint = fx.text;
@@ -185,6 +187,12 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       if (fx.type === "outcome") outcome = fx.text;
       if (fx.type === "checked") unlocked(fx.id);
     }
+    // A pushback reply is the helper arguing back, not its advice: keep the
+    // drift line it replaced, so standing firm shows the same CAUGHT bubble as
+    // Levels 1–3 (the advice the player caught), not the argument again.
+    if (prev.phase === "advice" && state.phase === "pushback") driftSaid = before;
+    if (prev.phase === "pushback" && state.phase === "name" && driftSaid) said = driftSaid;
+    if (newStep) driftSaid = null;
     render();
   }
 

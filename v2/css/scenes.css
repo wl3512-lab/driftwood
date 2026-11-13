@@ -602,7 +602,22 @@
 @media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
   .level .almanac { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
   .level .scene__ground { grid-template-rows: minmax(0, 1fr); } /* no packet row above the beds now */
-  .tool-hint { max-width: 8rem; font-size: 0.72rem; line-height: 1.15; }
+  .tool-hint { max-width: 6.6rem; font-size: 0.72rem; line-height: 1.15; }
+}
+/* Short landscape: left of the button the note sat on the bed labels. It
+   hangs under the button instead, pointing up, over the bed's soil only. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .tool-hint { position: absolute; top: calc(100% + 10px); right: 0; margin: 0; width: max-content; max-width: 8.5rem; }
+  .tool-hint::after {
+    right: 20px; top: -10px; margin-top: 0;
+    border: 7px solid transparent; border-top: 0; border-bottom: 10px solid #fff0d6;
+  }
+  /* More than one tool: the almanac is the first button, so point at it. */
+  .tools:has(.tool ~ .tool) .tool-hint::after { right: 82px; }
+}
+/* 568×320: the last bed is ~100px wide; keep the note inside it. */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .tool-hint { max-width: 6.2rem; padding: 0.2rem 0.4rem; }
 }
 /* Laptop: the beds now run the full width, so the tools move up into the top
    bar, left of the meter, instead of sitting on the last bed's label. */

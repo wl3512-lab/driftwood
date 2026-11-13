@@ -391,9 +391,17 @@
   .stall { flex: none; z-index: 2; } /* stays sticky: the helper is in view while the talk scrolls */
   /* Focus scrolls the bubble below the sticky stall, not under it. */
   .dock { scroll-padding-top: 74px; }
+  /* The player's own echo sits just above the bubble: when focus scrolls the
+     bubble up under the stall, keep room for the echo line too, so it never
+     hides half under the strip (one line of .you + the column gap). */
+  .you + .bubble { scroll-margin-top: calc(1.5rem + 0.6rem + 4px + 0.45rem); }
   /* The helper's pushback is long (Biscuit's runs nine lines): its two
      answers share one row so the reply and both buttons fit at 390px tall. */
   .bubble--pushback .bubble__actions { flex-wrap: nowrap; gap: 0.5rem; }
+  /* The stall right above already names the helper: the long reply drops its
+     visible name line (kept for screen readers) so the echo, the reply and
+     both answers all fit at 390px tall. */
+  .bubble--pushback .bubble__who { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .bubble--pushback .bubble__actions .btn { flex: 1 1 auto; padding: 0.6rem 0.55rem; font-size: 0.8rem; letter-spacing: 0.02em; }
   /* Bottom-align short content without clipping the top when it overflows. */
   .dock__talk { margin-top: auto; }
@@ -438,6 +446,7 @@
   .bed { box-shadow: inset 0 0 0 2px var(--plank-light), 0 4px 0 rgba(0, 0, 0, 0.18); }
   .stall { position: static; } /* 320px tall: every row of the talk column counts */
   .dock { scroll-padding-top: 0; }
+  .you + .bubble { scroll-margin-top: 0; }
   .stall__window { width: 3.6rem; height: 44px; }
   .stall .helper { height: 36px; margin-bottom: 8px; }
 }

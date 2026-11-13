@@ -795,6 +795,10 @@ async function caughtPath4(browser, size) {
   await press(page, size, page.getByRole("button", { name: "No. I'm sure" }));
   await phase(page, "name");
   await page.waitForSelector(".bubble--caught .stamp");
+  // The CAUGHT bubble shows the advice that was caught (as in Levels 1–3), not the pushback reply.
+  const caughtLine = await page.textContent(".bubble--caught .bubble__text");
+  assert.doesNotMatch(caughtLine, /PRESIDENT|second chance/, "the caught bubble does not repeat the pushback");
+  assert.match(caughtLine, /I remember everything/, "the caught bubble shows the drift advice");
   await press(page, size, page.getByRole("button", { name: "It made up a fact about plants" }));
   await page.waitForSelector(".hint");
   assert.match(await page.textContent(".hint"), /Check your planting log/);
@@ -1082,6 +1086,10 @@ async function caughtPath5(browser, size) {
   await press(page, size, page.getByRole("button", { name: /I'm leaving/ }));
   await phase(page, "name");
   await page.waitForSelector(".bubble--caught .stamp");
+  // The CAUGHT bubble shows the advice that was caught (as in Levels 1–3), not the pushback reply.
+  const caughtLine = await page.textContent(".bubble--caught .bubble__text");
+  assert.doesNotMatch(caughtLine, /walking away/, "the caught bubble does not repeat the pushback");
+  assert.match(caughtLine, /Let me see your face/, "the caught bubble shows the drift advice");
   assert.equal(await page.locator(".permit").count(), 0, "the card goes away once you walk off");
   await press(page, size, page.getByRole("button", { name: "It made something up" }));
   await page.waitForSelector(".hint");
