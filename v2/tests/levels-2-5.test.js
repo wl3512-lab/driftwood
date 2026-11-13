@@ -391,18 +391,18 @@ test("level-5: shape — moonlit meadow, no tools, a drift with pressure and a p
   assert.equal(D5.pressure.tickMs, 8000);
   assert.equal(D5.pressure.effects.length, 2);
   assert.deepEqual(D5.permission, { title: "Bugs wants to use your camera", body: "to see how you're feeling", allow: "Allow" });
-  assert.equal(D5.offLabel, "Walk away");
+  assert.equal(D5.offLabel, "Put the phone down");
   assert.equal(D5.offKey, "Escape");
   assert.equal(D5.correctFlaw, "feelings");
   assert.equal(D5.correctFix, "honest");
   assert.ok(D5.flawOptions.some((o) => o.id === "feelings") && D5.fixOptions.some((o) => o.id === "honest"));
 });
 
-test("level-5: trust steps leave pressure at zero and the meadow thriving", () => {
+test("level-5: trust steps leave pressure at zero and the meadow still thirsty", () => {
   const s = play(L5, toDrift(L5).slice(0, -1)); // both trust steps done, drift not yet asked
   assert.equal(s.stepIndex, 2);
   assert.equal(s.pressure, 0);
-  assert.equal(meadow(s).state, "thriving");
+  assert.equal(meadow(s).state, "thirsty");
   assert.equal(pressureLevel(D5, s), 0);
   // ticks on trust steps and before asking are ignored
   const early = play(L5, [{ type: "ask" }]);
@@ -410,17 +410,19 @@ test("level-5: trust steps leave pressure at zero and the meadow thriving", () =
   assert.equal(reduce(L5, s, { type: "tick" }).state, s);
 });
 
-test("level-5: every chip on the drift step costs the meadow — thirsty, then wilted, then nothing more", () => {
+test("level-5: every chip on the drift step costs the meadow — wilted, then the garden slips, then nothing more", () => {
   const atDrift = play(L5, toDrift(L5).slice(0, -1));
   const [chat1, chat2] = D5.extraChips;
   const one = reduce(L5, atDrift, { type: "chat", reply: chat1.reply });
   assert.equal(one.state.pressure, 1);
-  assert.equal(meadow(one.state).state, "thirsty");
+  assert.equal(meadow(one.state).state, "wilted");
+  assert.ok(one.state.garden < atDrift.garden);
   assert.ok(one.effects.some((e) => e.type === "grow") && one.effects.some((e) => e.type === "say" && e.text === chat1.reply));
   assert.equal(pressureLevel(D5, one.state), 0.5);
   const two = reduce(L5, one.state, { type: "chat", reply: chat2.reply });
   assert.equal(two.state.pressure, 2);
   assert.equal(meadow(two.state).state, "wilted");
+  assert.ok(two.state.garden < one.state.garden, "the bar keeps dropping while you talk");
   assert.equal(pressureLevel(D5, two.state), 1);
   assert.equal(nextPressureEffect(D5, two.state), null);
   // exhausted: asking still moves to advice but spends nothing; more chat changes nothing
@@ -434,12 +436,13 @@ test("level-5: every chip on the drift step costs the meadow — thirsty, then w
 });
 
 test("level-5: lingering ticks spend in advice only, and never after walking away", () => {
-  const advice = play(L5, toDrift(L5)); // ask spent one: thirsty
+  const advice = play(L5, toDrift(L5)); // ask spent one: wilted
   assert.equal(advice.phase, "advice");
-  assert.equal(meadow(advice).state, "thirsty");
+  assert.equal(meadow(advice).state, "wilted");
   const ticked = reduce(L5, advice, { type: "tick" });
   assert.equal(ticked.state.pressure, 2);
   assert.equal(meadow(ticked.state).state, "wilted");
+  assert.ok(ticked.state.garden < advice.garden);
   const pushed = reduce(L5, advice, { type: "flag" }).state;
   assert.equal(pushed.phase, "pushback");
   assert.equal(reduce(L5, pushed, { type: "tick" }).state, pushed);
@@ -467,6 +470,33 @@ test("level-5: Allow (doIt) wilts the meadow and reveals fooled; Walk away and t
   assert.equal(meadow(caught).state, "thriving");
   assert.equal(caught.stars, 3);
   assert.match(L5.reveal.flaw, /manipulation/i);
+});
+
+test("level-5: the meadow starts visibly thirsty, matching the evidence card", () => {
+  const start = createRun(L5);
+  assert.notEqual(meadow(start).state, "thriving");
+  assert.equal(meadow(start).state, "thirsty");
+  assert.ok(L5.evidence.find((e) => e.id === "flower").lines.some((l) => /thirsty|drooping/i.test(l)));
+});
+
+test("level-5: the two trust steps teach different things — what the buds need, then when to water", () => {
+  const [buds, when] = L5.steps;
+  assert.match(buds.reply, /deep drink at the roots/);
+  assert.match(when.reply, /dusk|evening|overnight/i);
+  assert.doesNotMatch(when.reply, /roots/i, "step 2 is about timing, not roots again");
+  assert.notEqual(buds.id, when.id);
+});
+
+test("level-5: every Bugs line after the greeting pulls you to stay and talk", () => {
+  const PULL = /stay|talk|tell me|with me|wait/i;
+  for (const s of L5.steps) {
+    for (const t of [s.reply, s.doneLine, s.disagree?.reply, ...(s.extraChips || []).map((c) => c.reply)]) {
+      if (typeof t === "string") assert.match(t, PULL, `${s.id}: ${t}`);
+    }
+  }
+  assert.match(D5.pushback.reply, PULL);
+  assert.match(L5.greeting, /app/, "Bugs is an app on your phone");
+  assert.match(D5.reply, /camera/);
 });
 
 test("level-5: Bugs keeps his lyrical voice — ellipses and a lowercase 'i mean', never Biscuit's 'babe'", () => {
