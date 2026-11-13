@@ -414,3 +414,150 @@
   .level[data-scene="meadow-night"] .scene::before { height: var(--sky-h); }
   .level[data-scene="meadow-night"] .prop--moon { top: calc(var(--sky-h) - 66px - var(--pressure) * 44px); }
 }
+
+/* ======== plot identity: each bed its own edging, light and details ========
+   Every bed reads differently at a glance. Edging comes from the bed's light
+   and kind (planks in sun, stacked stone in part shade, a mossy log in shade,
+   woven wattle round wild beds, a terracotta rim on pots, no edge on the
+   meadow); a few beds swap to brick so two sunny beds in one level differ.
+   Light sits on the soil (a sun-bleached highlight, dappled leaf shadow, a
+   cool shadow with moss), and each bed has one or two small corner details.
+   The sprites are tiny pixel SVGs inlined as data URIs. Layers stack as
+   --bed-detail, --bed-light, then the soil the bed kind already had. */
+.level {
+  --spr-pebbles: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 8' width='14' height='8' shape-rendering='crispEdges'><rect x='3' y='0' width='2' height='1' fill='%236f6656'/><rect x='2' y='1' width='1' height='1' fill='%236f6656'/><rect x='3' y='1' width='2' height='1' fill='%23b9b2a0'/><rect x='5' y='1' width='1' height='1' fill='%236f6656'/><rect x='10' y='1' width='2' height='1' fill='%236f6656'/><rect x='1' y='2' width='1' height='1' fill='%236f6656'/><rect x='2' y='2' width='1' height='1' fill='%23b9b2a0'/><rect x='3' y='2' width='1' height='1' fill='%23e2dccb'/><rect x='4' y='2' width='2' height='1' fill='%23b9b2a0'/><rect x='6' y='2' width='1' height='1' fill='%236f6656'/><rect x='9' y='2' width='1' height='1' fill='%236f6656'/><rect x='10' y='2' width='2' height='1' fill='%23a39a86'/><rect x='12' y='2' width='1' height='1' fill='%236f6656'/><rect x='1' y='3' width='1' height='1' fill='%236f6656'/><rect x='2' y='3' width='4' height='1' fill='%23b9b2a0'/><rect x='6' y='3' width='1' height='1' fill='%236f6656'/><rect x='8' y='3' width='1' height='1' fill='%236f6656'/><rect x='9' y='3' width='1' height='1' fill='%23a39a86'/><rect x='10' y='3' width='1' height='1' fill='%23d4ccb8'/><rect x='11' y='3' width='2' height='1' fill='%23a39a86'/><rect x='13' y='3' width='1' height='1' fill='%236f6656'/><rect x='2' y='4' width='4' height='1' fill='%236f6656'/><rect x='8' y='4' width='1' height='1' fill='%236f6656'/><rect x='9' y='4' width='4' height='1' fill='%23a39a86'/><rect x='13' y='4' width='1' height='1' fill='%236f6656'/><rect x='4' y='5' width='2' height='1' fill='%236f6656'/><rect x='9' y='5' width='4' height='1' fill='%236f6656'/><rect x='3' y='6' width='1' height='1' fill='%236f6656'/><rect x='4' y='6' width='2' height='1' fill='%23c9c2ae'/><rect x='6' y='6' width='1' height='1' fill='%236f6656'/><rect x='4' y='7' width='2' height='1' fill='%236f6656'/></svg>");
+  --spr-can: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 10' width='14' height='10' shape-rendering='crispEdges'><rect x='10' y='0' width='2' height='1' fill='%231f3d5c'/><rect x='1' y='1' width='6' height='1' fill='%231f3d5c'/><rect x='9' y='1' width='1' height='1' fill='%231f3d5c'/><rect x='0' y='2' width='1' height='1' fill='%231f3d5c'/><rect x='7' y='2' width='2' height='1' fill='%231f3d5c'/><rect x='0' y='3' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='3' width='7' height='1' fill='%234f8fc9'/><rect x='8' y='3' width='1' height='1' fill='%231f3d5c'/><rect x='0' y='4' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='4' width='1' height='1' fill='%234f8fc9'/><rect x='2' y='4' width='2' height='1' fill='%23a9d3f5'/><rect x='4' y='4' width='5' height='1' fill='%234f8fc9'/><rect x='9' y='4' width='1' height='1' fill='%231f3d5c'/><rect x='0' y='5' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='5' width='1' height='1' fill='%234f8fc9'/><rect x='2' y='5' width='1' height='1' fill='%23a9d3f5'/><rect x='3' y='5' width='7' height='1' fill='%234f8fc9'/><rect x='10' y='5' width='3' height='1' fill='%231f3d5c'/><rect x='0' y='6' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='6' width='8' height='1' fill='%234f8fc9'/><rect x='9' y='6' width='1' height='1' fill='%231f3d5c'/><rect x='13' y='6' width='1' height='1' fill='%231f3d5c'/><rect x='0' y='7' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='7' width='8' height='1' fill='%234f8fc9'/><rect x='9' y='7' width='1' height='1' fill='%231f3d5c'/><rect x='0' y='8' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='8' width='8' height='1' fill='%234f8fc9'/><rect x='9' y='8' width='1' height='1' fill='%231f3d5c'/><rect x='1' y='9' width='8' height='1' fill='%231f3d5c'/></svg>");
+  --spr-trowel: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10' width='11' height='10' shape-rendering='crispEdges'><rect x='9' y='0' width='2' height='1' fill='%232b2b2b'/><rect x='8' y='1' width='1' height='1' fill='%232b2b2b'/><rect x='9' y='1' width='1' height='1' fill='%23a0522d'/><rect x='10' y='1' width='1' height='1' fill='%232b2b2b'/><rect x='7' y='2' width='1' height='1' fill='%232b2b2b'/><rect x='8' y='2' width='1' height='1' fill='%23a0522d'/><rect x='9' y='2' width='1' height='1' fill='%232b2b2b'/><rect x='6' y='3' width='1' height='1' fill='%232b2b2b'/><rect x='7' y='3' width='1' height='1' fill='%237a3b1c'/><rect x='8' y='3' width='1' height='1' fill='%232b2b2b'/><rect x='1' y='4' width='3' height='1' fill='%232b2b2b'/><rect x='5' y='4' width='1' height='1' fill='%232b2b2b'/><rect x='6' y='4' width='1' height='1' fill='%237a3b1c'/><rect x='7' y='4' width='1' height='1' fill='%232b2b2b'/><rect x='0' y='5' width='1' height='1' fill='%232b2b2b'/><rect x='1' y='5' width='3' height='1' fill='%239aa3ab'/><rect x='4' y='5' width='3' height='1' fill='%232b2b2b'/><rect x='0' y='6' width='1' height='1' fill='%232b2b2b'/><rect x='1' y='6' width='1' height='1' fill='%239aa3ab'/><rect x='2' y='6' width='1' height='1' fill='%23dfe5ea'/><rect x='3' y='6' width='3' height='1' fill='%239aa3ab'/><rect x='6' y='6' width='1' height='1' fill='%232b2b2b'/><rect x='0' y='7' width='1' height='1' fill='%232b2b2b'/><rect x='1' y='7' width='4' height='1' fill='%239aa3ab'/><rect x='5' y='7' width='1' height='1' fill='%232b2b2b'/><rect x='0' y='8' width='1' height='1' fill='%232b2b2b'/><rect x='1' y='8' width='3' height='1' fill='%239aa3ab'/><rect x='4' y='8' width='1' height='1' fill='%232b2b2b'/><rect x='1' y='9' width='3' height='1' fill='%232b2b2b'/></svg>");
+  --spr-mushroom: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8' width='10' height='8' shape-rendering='crispEdges'><rect x='2' y='0' width='6' height='1' fill='%234a1a12'/><rect x='1' y='1' width='1' height='1' fill='%234a1a12'/><rect x='2' y='1' width='2' height='1' fill='%23d2452f'/><rect x='4' y='1' width='1' height='1' fill='%23fff4e0'/><rect x='5' y='1' width='3' height='1' fill='%23d2452f'/><rect x='8' y='1' width='1' height='1' fill='%234a1a12'/><rect x='0' y='2' width='1' height='1' fill='%234a1a12'/><rect x='1' y='2' width='1' height='1' fill='%23d2452f'/><rect x='2' y='2' width='1' height='1' fill='%23fff4e0'/><rect x='3' y='2' width='3' height='1' fill='%23d2452f'/><rect x='6' y='2' width='1' height='1' fill='%23fff4e0'/><rect x='7' y='2' width='2' height='1' fill='%23d2452f'/><rect x='9' y='2' width='1' height='1' fill='%234a1a12'/><rect x='0' y='3' width='1' height='1' fill='%234a1a12'/><rect x='1' y='3' width='8' height='1' fill='%23d2452f'/><rect x='9' y='3' width='1' height='1' fill='%234a1a12'/><rect x='0' y='4' width='10' height='1' fill='%234a1a12'/><rect x='3' y='5' width='1' height='1' fill='%234a1a12'/><rect x='4' y='5' width='2' height='1' fill='%23f1e4c8'/><rect x='6' y='5' width='1' height='1' fill='%234a1a12'/><rect x='3' y='6' width='1' height='1' fill='%234a1a12'/><rect x='4' y='6' width='2' height='1' fill='%23f1e4c8'/><rect x='6' y='6' width='1' height='1' fill='%234a1a12'/><rect x='2' y='7' width='6' height='1' fill='%234a1a12'/></svg>");
+  --spr-flowers: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8' width='16' height='8' shape-rendering='crispEdges'><rect x='1' y='0' width='1' height='1' fill='%23ffd23f'/><rect x='7' y='0' width='1' height='1' fill='%23c05bd6'/><rect x='13' y='0' width='1' height='1' fill='%23ffffff'/><rect x='0' y='1' width='1' height='1' fill='%23ffd23f'/><rect x='1' y='1' width='1' height='1' fill='%23e07a1f'/><rect x='2' y='1' width='1' height='1' fill='%23ffd23f'/><rect x='6' y='1' width='3' height='1' fill='%23c05bd6'/><rect x='12' y='1' width='1' height='1' fill='%23ffffff'/><rect x='13' y='1' width='1' height='1' fill='%23ffd23f'/><rect x='14' y='1' width='1' height='1' fill='%23ffffff'/><rect x='1' y='2' width='1' height='1' fill='%23ffd23f'/><rect x='7' y='2' width='1' height='1' fill='%23c05bd6'/><rect x='13' y='2' width='1' height='1' fill='%23ffffff'/><rect x='1' y='3' width='1' height='1' fill='%233f8f3a'/><rect x='4' y='3' width='1' height='1' fill='%23ffd23f'/><rect x='7' y='3' width='1' height='1' fill='%233f8f3a'/><rect x='10' y='3' width='1' height='1' fill='%23c05bd6'/><rect x='13' y='3' width='1' height='1' fill='%233f8f3a'/><rect x='1' y='4' width='1' height='1' fill='%233f8f3a'/><rect x='3' y='4' width='1' height='1' fill='%23ffd23f'/><rect x='4' y='4' width='1' height='1' fill='%23e07a1f'/><rect x='5' y='4' width='1' height='1' fill='%23ffd23f'/><rect x='7' y='4' width='1' height='1' fill='%233f8f3a'/><rect x='9' y='4' width='3' height='1' fill='%23c05bd6'/><rect x='13' y='4' width='1' height='1' fill='%233f8f3a'/><rect x='15' y='4' width='1' height='1' fill='%23ffd23f'/><rect x='0' y='5' width='2' height='1' fill='%233f8f3a'/><rect x='4' y='5' width='1' height='1' fill='%23ffd23f'/><rect x='7' y='5' width='2' height='1' fill='%233f8f3a'/><rect x='10' y='5' width='1' height='1' fill='%23c05bd6'/><rect x='12' y='5' width='2' height='1' fill='%233f8f3a'/><rect x='15' y='5' width='1' height='1' fill='%23ffd23f'/><rect x='1' y='6' width='2' height='1' fill='%233f8f3a'/><rect x='4' y='6' width='1' height='1' fill='%233f8f3a'/><rect x='6' y='6' width='1' height='1' fill='%233f8f3a'/><rect x='8' y='6' width='1' height='1' fill='%233f8f3a'/><rect x='10' y='6' width='1' height='1' fill='%233f8f3a'/><rect x='13' y='6' width='1' height='1' fill='%233f8f3a'/><rect x='15' y='6' width='1' height='1' fill='%233f8f3a'/><rect x='2' y='7' width='4' height='1' fill='%233f8f3a'/><rect x='7' y='7' width='4' height='1' fill='%233f8f3a'/><rect x='12' y='7' width='3' height='1' fill='%233f8f3a'/></svg>");
+  --spr-packet: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 9' width='7' height='9' shape-rendering='crispEdges'><rect x='0' y='0' width='7' height='1' fill='%233b2a1a'/><rect x='0' y='1' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='1' width='5' height='1' fill='%23f3e2b3'/><rect x='6' y='1' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='2' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='2' width='1' height='1' fill='%23f3e2b3'/><rect x='2' y='2' width='3' height='1' fill='%236fbf4a'/><rect x='5' y='2' width='1' height='1' fill='%23f3e2b3'/><rect x='6' y='2' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='3' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='3' width='1' height='1' fill='%23f3e2b3'/><rect x='2' y='3' width='1' height='1' fill='%236fbf4a'/><rect x='3' y='3' width='1' height='1' fill='%23d2452f'/><rect x='4' y='3' width='1' height='1' fill='%236fbf4a'/><rect x='5' y='3' width='1' height='1' fill='%23f3e2b3'/><rect x='6' y='3' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='4' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='4' width='1' height='1' fill='%23f3e2b3'/><rect x='2' y='4' width='3' height='1' fill='%236fbf4a'/><rect x='5' y='4' width='1' height='1' fill='%23f3e2b3'/><rect x='6' y='4' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='5' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='5' width='5' height='1' fill='%23f3e2b3'/><rect x='6' y='5' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='6' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='6' width='5' height='1' fill='%23b08a55'/><rect x='6' y='6' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='7' width='1' height='1' fill='%233b2a1a'/><rect x='1' y='7' width='5' height='1' fill='%23f3e2b3'/><rect x='6' y='7' width='1' height='1' fill='%233b2a1a'/><rect x='0' y='8' width='7' height='1' fill='%233b2a1a'/></svg>");
+}
+.bed {
+  --d: 44px; /* detail sprite width */
+  --bed-detail: none;
+  --bed-light: none;
+  --bed-soil:
+    radial-gradient(circle, var(--soil-speck) 0 1.5px, transparent 2px) 5px 4px / 23px 19px repeat,
+    radial-gradient(circle, var(--soil-speck-dark) 0 1.5px, transparent 2px) 14px 11px / 31px 27px repeat,
+    repeating-linear-gradient(transparent 0 11px, var(--soil-furrow) 11px 14px),
+    var(--soil-bed);
+  --sign: var(--parchment);
+  --stake-c: var(--wood);
+  background: var(--bed-detail), var(--bed-light), var(--bed-soil);
+}
+.bed--pots {
+  --bed-soil:
+    linear-gradient(#e0885a 0 0) 0 0 / 100% 8px no-repeat,
+    linear-gradient(#7a3818 0 0) 0 8px / 100% 2px no-repeat,
+    radial-gradient(circle, rgba(255, 220, 190, 0.35) 0 1.5px, transparent 2px) 6px 14px / 21px 17px repeat,
+    radial-gradient(circle, rgba(90, 40, 15, 0.3) 0 1.5px, transparent 2px) 15px 22px / 29px 25px repeat,
+    var(--soil-bed);
+  background: var(--bed-detail), var(--bed-light), var(--bed-soil);
+}
+.bed--wild, .bed--meadow {
+  --bed-soil:
+    repeating-linear-gradient(var(--soil-bed) 0 5px, transparent 5px 11px, var(--soil-bed) 11px 14px) 0 0 / 100% 14px repeat,
+    linear-gradient(90deg, transparent 0 4px, var(--tuft) 4px 6px, transparent 6px 8px, var(--tuft) 8px 10px, transparent 10px) 3px 0 / 18px 14px repeat,
+    linear-gradient(90deg, transparent 0 4px, var(--tuft) 4px 6px, transparent 6px 8px, var(--tuft) 8px 10px, transparent 10px) 12px 0 / 26px 28px repeat,
+    var(--soil-bed);
+  background: var(--bed-detail), var(--bed-light), var(--bed-soil);
+}
+
+/* --- light on the soil --- */
+.bed--sunny:not(.bed--pots):not(.bed--wild):not(.bed--meadow) { --soil-bed: #c39462; } /* sun-bleached */
+.level[data-scene="meadow-night"] .bed--sunny:not(.bed--wild) { --soil-bed: #a98560; } /* by moonlight */
+.bed--sunny {
+  --bed-light:
+    linear-gradient(135deg, rgba(255, 242, 196, 0.34) 0 18%, rgba(255, 242, 196, 0.16) 18% 34%, transparent 34%);
+  --sign: #ffe8a3;
+}
+.bed--part-shade {
+  --bed-light:
+    radial-gradient(ellipse 38px 22px at 62% 16%, rgba(28, 46, 30, 0.34) 0 96%, transparent 100%),
+    radial-gradient(ellipse 26px 18px at 84% 34%, rgba(28, 46, 30, 0.34) 0 96%, transparent 100%),
+    radial-gradient(ellipse 44px 26px at 74% 58%, rgba(28, 46, 30, 0.3) 0 96%, transparent 100%),
+    radial-gradient(ellipse 22px 14px at 92% 78%, rgba(28, 46, 30, 0.34) 0 96%, transparent 100%),
+    radial-gradient(ellipse 30px 18px at 58% 86%, rgba(28, 46, 30, 0.28) 0 96%, transparent 100%),
+    linear-gradient(90deg, transparent 0 50%, rgba(28, 46, 30, 0.12) 50% 100%);
+  --sign: #dcebf5;
+}
+.bed--shady {
+  --bed-light:
+    radial-gradient(ellipse 30px 12px at 12% 92%, rgba(96, 160, 70, 0.75) 0 96%, transparent 100%),
+    radial-gradient(ellipse 18px 9px at 26% 96%, rgba(96, 160, 70, 0.7) 0 96%, transparent 100%),
+    radial-gradient(ellipse 22px 10px at 90% 8%, rgba(96, 160, 70, 0.6) 0 96%, transparent 100%),
+    linear-gradient(rgba(16, 26, 44, 0.34), rgba(16, 26, 44, 0.34));
+  --sign: #d6e4c8;
+  --stake-c: #4b6b3a;
+}
+
+/* no sun at night: a cool moonlit sheen on the top edge instead */
+.level[data-scene="meadow-night"] .bed--sunny {
+  --bed-light: linear-gradient(rgba(200, 215, 255, 0.16) 0 14%, transparent 14%);
+}
+
+/* --- edging (border-image draws over the bed's 4px border, so widen it) --- */
+.bed--part-shade:not(.bed--wild) {
+  border: 12px solid #5f5a50;
+  border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' shape-rendering='crispEdges'><defs><pattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'><rect x='0' y='0' width='8' height='1' fill='%235f5a50'/><rect x='0' y='1' width='1' height='1' fill='%235f5a50'/><rect x='1' y='1' width='3' height='1' fill='%23a7a193'/><rect x='4' y='1' width='1' height='1' fill='%23d6d0c2'/><rect x='5' y='1' width='1' height='1' fill='%23a7a193'/><rect x='6' y='1' width='2' height='1' fill='%235f5a50'/><rect x='0' y='2' width='1' height='1' fill='%235f5a50'/><rect x='1' y='2' width='1' height='1' fill='%23a7a193'/><rect x='2' y='2' width='1' height='1' fill='%23d6d0c2'/><rect x='3' y='2' width='4' height='1' fill='%23a7a193'/><rect x='7' y='2' width='1' height='1' fill='%235f5a50'/><rect x='0' y='3' width='1' height='1' fill='%235f5a50'/><rect x='1' y='3' width='6' height='1' fill='%23a7a193'/><rect x='7' y='3' width='1' height='1' fill='%235f5a50'/><rect x='0' y='4' width='1' height='1' fill='%235f5a50'/><rect x='1' y='4' width='5' height='1' fill='%23a7a193'/><rect x='6' y='4' width='1' height='1' fill='%23878174'/><rect x='7' y='4' width='1' height='1' fill='%235f5a50'/><rect x='0' y='5' width='1' height='1' fill='%235f5a50'/><rect x='1' y='5' width='4' height='1' fill='%23a7a193'/><rect x='5' y='5' width='2' height='1' fill='%23878174'/><rect x='7' y='5' width='1' height='1' fill='%235f5a50'/><rect x='0' y='6' width='2' height='1' fill='%235f5a50'/><rect x='2' y='6' width='5' height='1' fill='%23878174'/><rect x='7' y='6' width='1' height='1' fill='%235f5a50'/><rect x='0' y='7' width='8' height='1' fill='%235f5a50'/></pattern></defs><path fill='url(%23p)' fill-rule='evenodd' d='M0 0h24v24H0zM8 8v8h8V8z'/></svg>") 8 round;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+}
+.bed--shady {
+  border: 12px solid #2e1f12;
+  border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' shape-rendering='crispEdges'><defs><pattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'><rect x='0' y='0' width='8' height='1' fill='%232e1f12'/><rect x='0' y='1' width='4' height='1' fill='%236b4a2c'/><rect x='4' y='1' width='2' height='1' fill='%234f8a3a'/><rect x='6' y='1' width='2' height='1' fill='%236b4a2c'/><rect x='0' y='2' width='1' height='1' fill='%236b4a2c'/><rect x='1' y='2' width='1' height='1' fill='%238a6440'/><rect x='2' y='2' width='2' height='1' fill='%236b4a2c'/><rect x='4' y='2' width='1' height='1' fill='%234f8a3a'/><rect x='5' y='2' width='1' height='1' fill='%237cbf5a'/><rect x='6' y='2' width='1' height='1' fill='%234f8a3a'/><rect x='7' y='2' width='1' height='1' fill='%236b4a2c'/><rect x='0' y='3' width='8' height='1' fill='%236b4a2c'/><rect x='0' y='4' width='2' height='1' fill='%236b4a2c'/><rect x='2' y='4' width='1' height='1' fill='%234b331d'/><rect x='3' y='4' width='3' height='1' fill='%236b4a2c'/><rect x='6' y='4' width='1' height='1' fill='%238a6440'/><rect x='7' y='4' width='1' height='1' fill='%236b4a2c'/><rect x='0' y='5' width='1' height='1' fill='%234f8a3a'/><rect x='1' y='5' width='7' height='1' fill='%236b4a2c'/><rect x='0' y='6' width='1' height='1' fill='%237cbf5a'/><rect x='1' y='6' width='1' height='1' fill='%234f8a3a'/><rect x='2' y='6' width='6' height='1' fill='%236b4a2c'/><rect x='0' y='7' width='8' height='1' fill='%232e1f12'/></pattern></defs><path fill='url(%23p)' fill-rule='evenodd' d='M0 0h24v24H0zM8 8v8h8V8z'/></svg>") 8 round;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+.bed--wild {
+  border: 12px solid #4a3219;
+  border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' shape-rendering='crispEdges'><defs><pattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'><rect x='0' y='0' width='2' height='1' fill='%239c7445'/><rect x='2' y='0' width='1' height='1' fill='%23c9a06b'/><rect x='3' y='0' width='1' height='1' fill='%239c7445'/><rect x='4' y='0' width='1' height='1' fill='%234a3219'/><rect x='5' y='0' width='3' height='1' fill='%237a5530'/><rect x='0' y='1' width='4' height='1' fill='%239c7445'/><rect x='4' y='1' width='1' height='1' fill='%234a3219'/><rect x='5' y='1' width='3' height='1' fill='%237a5530'/><rect x='0' y='2' width='5' height='1' fill='%234a3219'/><rect x='5' y='2' width='1' height='1' fill='%237a5530'/><rect x='6' y='2' width='1' height='1' fill='%23a8804f'/><rect x='7' y='2' width='1' height='1' fill='%237a5530'/><rect x='0' y='3' width='3' height='1' fill='%237a5530'/><rect x='3' y='3' width='1' height='1' fill='%234a3219'/><rect x='4' y='3' width='4' height='1' fill='%239c7445'/><rect x='0' y='4' width='1' height='1' fill='%237a5530'/><rect x='1' y='4' width='1' height='1' fill='%23a8804f'/><rect x='2' y='4' width='1' height='1' fill='%237a5530'/><rect x='3' y='4' width='1' height='1' fill='%234a3219'/><rect x='4' y='4' width='2' height='1' fill='%239c7445'/><rect x='6' y='4' width='1' height='1' fill='%23c9a06b'/><rect x='7' y='4' width='1' height='1' fill='%239c7445'/><rect x='0' y='5' width='3' height='1' fill='%237a5530'/><rect x='3' y='5' width='1' height='1' fill='%234a3219'/><rect x='4' y='5' width='4' height='1' fill='%239c7445'/><rect x='0' y='6' width='8' height='1' fill='%234a3219'/><rect x='0' y='7' width='2' height='1' fill='%239c7445'/><rect x='2' y='7' width='1' height='1' fill='%23c9a06b'/><rect x='3' y='7' width='1' height='1' fill='%239c7445'/><rect x='4' y='7' width='1' height='1' fill='%234a3219'/><rect x='5' y='7' width='3' height='1' fill='%237a5530'/></pattern></defs><path fill='url(%23p)' fill-rule='evenodd' d='M0 0h24v24H0zM8 8v8h8V8z'/></svg>") 8 round;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+  --sign: #f1f5d8;
+}
+.bed--pots { --sign: #f8d5bf; --stake-c: #8f4320; }
+.bed[data-bed="back"], .bed[data-bed="house"], .bed[data-bed="bench"] {
+  border: 12px solid #7c2c1c;
+  border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' shape-rendering='crispEdges'><defs><pattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'><rect x='0' y='0' width='3' height='1' fill='%23b24a32'/><rect x='3' y='0' width='1' height='1' fill='%23d9775b'/><rect x='4' y='0' width='1' height='1' fill='%23e3d6c0'/><rect x='5' y='0' width='3' height='1' fill='%23b24a32'/><rect x='0' y='1' width='4' height='1' fill='%23b24a32'/><rect x='4' y='1' width='1' height='1' fill='%23e3d6c0'/><rect x='5' y='1' width='3' height='1' fill='%23b24a32'/><rect x='0' y='2' width='8' height='1' fill='%237c2c1c'/><rect x='0' y='3' width='8' height='1' fill='%23e3d6c0'/><rect x='0' y='4' width='1' height='1' fill='%23b24a32'/><rect x='1' y='4' width='1' height='1' fill='%23e3d6c0'/><rect x='2' y='4' width='4' height='1' fill='%23b24a32'/><rect x='6' y='4' width='1' height='1' fill='%23d9775b'/><rect x='7' y='4' width='1' height='1' fill='%23b24a32'/><rect x='0' y='5' width='1' height='1' fill='%23b24a32'/><rect x='1' y='5' width='1' height='1' fill='%23e3d6c0'/><rect x='2' y='5' width='6' height='1' fill='%23b24a32'/><rect x='0' y='6' width='8' height='1' fill='%237c2c1c'/><rect x='0' y='7' width='8' height='1' fill='%23e3d6c0'/></pattern></defs><path fill='url(%23p)' fill-rule='evenodd' d='M0 0h24v24H0zM8 8v8h8V8z'/></svg>") 8 round;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+  --sign: #ffd9c9;
+}
+/* the meadow is open ground: no hard edge, just taller grass along its rim */
+.bed[data-bed="meadow"] {
+  border: 0;
+  border-image: none;
+  box-shadow: none;
+  padding: calc(0.4rem + 4px);
+  --sign: #e8ecff;
+}
+/* corner posts belong to plank edging only */
+.bed--part-shade:not(.bed--wild)::after, .bed--wild::after, .bed--shady::after, .bed[data-bed="meadow"]::after,
+.bed[data-bed="back"]::after, .bed[data-bed="house"]::after, .bed[data-bed="bench"]::after { display: none; }
+
+/* --- signs and stakes per bed --- */
+.level .bed > .bed__label { background: var(--sign); }
+.bed > .bed__label::after { background: var(--stake-c); }
+
+/* --- one or two corner details per bed --- */
+.bed[data-bed="south"] { --bed-detail: var(--spr-can) right 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="east"] { --bed-detail: var(--spr-pebbles) left 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="corner"] { --bed-detail: var(--spr-mushroom) right 10px bottom 8px / var(--d) auto no-repeat, var(--spr-mushroom) right calc(var(--d) + 14px) bottom 8px / calc(var(--d) * 0.6) auto no-repeat; }
+.bed[data-bed="bench"] { --bed-detail: var(--spr-trowel) right 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="sill"] { --bed-detail: var(--spr-packet) left 10px top 16px / var(--d) auto no-repeat; }
+.bed[data-bed="row"] { --bed-detail: var(--spr-packet) left 10px top 10px / var(--d) auto no-repeat, var(--spr-pebbles) right 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="tub"] { --bed-detail: var(--spr-can) right 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="hedge"] { --bed-detail: var(--spr-flowers) left 6px bottom 4px / calc(var(--d) * 1.5) auto no-repeat, var(--spr-flowers) right 6px top 6px / calc(var(--d) * 1.2) auto no-repeat; }
+.bed[data-bed="front"] { --bed-detail: var(--spr-can) right 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="side"] { --bed-detail: var(--spr-pebbles) left 8px bottom 8px / var(--d) auto no-repeat, var(--spr-pebbles) right 8px top 8px / var(--d) auto no-repeat; }
+.bed[data-bed="back"] { --bed-detail: var(--spr-trowel) left 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="house"] { --bed-detail: var(--spr-can) right 8px bottom 8px / var(--d) auto no-repeat, var(--spr-pebbles) left 8px bottom 8px / var(--d) auto no-repeat; }
+.bed[data-bed="meadow"] { --bed-detail: var(--spr-flowers) left 4px bottom 2px / calc(var(--d) * 1.6) auto no-repeat, var(--spr-flowers) right 4px bottom 2px / calc(var(--d) * 1.6) auto no-repeat, var(--spr-flowers) 50% 4px / calc(var(--d) * 1.3) auto no-repeat; }
+
+/* sunny plank beds: a chunkier plank frame to match the other edgings */
+.bed--sunny:not(.bed--pots):not(.bed--wild):not([data-bed="back"]):not([data-bed="house"]):not([data-bed="bench"]):not([data-bed="meadow"]) {
+  border: 8px solid #7a5230;
+  box-shadow: inset 0 0 0 3px #c99a66, inset 0 0 0 5px #5e3f22, 0 6px 0 rgba(0, 0, 0, 0.18);
+}
+@media (max-height: 500px), (max-width: 640px) {
+  .bed { --d: 20px; }
+  .bed--part-shade:not(.bed--wild), .bed--shady, .bed--wild,
+  .bed[data-bed="back"], .bed[data-bed="house"], .bed[data-bed="bench"] { border-width: 8px; }
+}
