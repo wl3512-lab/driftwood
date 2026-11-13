@@ -22,7 +22,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend" }
         h("dl", { class: "reveal__rows" },
           row("What happened", state.fooled ? r.fooledLine : r.caughtLine),
           r.realWorld ? row("In real life", r.realWorld) : null,
-          row("Next time", r.tip)),
+          row(state.fooled ? "Next time" : "Keep doing this", r.tip)),
         // Optional sign-off from the helper, e.g. Biscuit handing over to Bugs after Level 4.
         r.handoff ? h("div", { class: "reveal__handoff" },
           h("img", { class: "reveal__handoff-pet", src: level.helper.sprite, alt: "" }),
