@@ -5,8 +5,8 @@
 // (M, arrows, Enter, Esc) and touch use of the magnifier. Level 4 (Biscuit,
 // the garden by day, placement and the planting log): the player sows the
 // carrots in a bed by button, number key or dragging the label; both branches
-// (fooled / caught by reading the planting log), keyboard (L, Esc) and touch
-// use of the log. Level 5 (Bugs, the moonlit meadow, pressure and the camera
+// (fooled / caught by reading the planting log, a page of the almanac device),
+// keyboard (L opens the book on that page, Esc) and touch (the device's tabs). Level 5 (Bugs, the moonlit meadow, pressure and the camera
 // permission card): lingering on Bugs' chips wilts the meadow, the drift advice
 // comes with a camera card instead of the usual buttons; both branches (fooled
 // by tapping Allow / caught by walking away with Esc or the button), plus a
@@ -613,7 +613,9 @@ async function enterLevel4(page, size, { prev = /★☆☆/, fooledPlot = "level
   assert.equal(await page.locator(".earlier img").count(), 3, "three finished plots behind the fence");
   assert.equal(await page.locator('.earlier img[data-caught="false"]').count(), 1, "exactly one fooled plot");
   assert.equal(await page.locator(`.earlier img[data-plot="${fooledPlot}"][data-caught="false"]`).count(), 1, "the fooled plot is marked");
-  assert.equal(await page.locator('button.tool[data-tool="log"]').count(), 1, "the planting log tool button is there");
+  assert.equal(await page.locator('button.tool[data-tool="log"]').count(), 0, "no separate Log button: the log is a page of the almanac");
+  assert.equal(await page.locator("button.tool").count(), 1, "just the almanac on the toolbar");
+  assert.equal(await page.locator('.almanac__sheet-tab[data-sheet="log"]').count(), 1, "the almanac has a planting log page");
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 1, "the carrot label starts locked");
   await readCard(page, size, "carrot", { locked: true, badge: false });
   for (const bed of ["front", "side", "back"]) {
@@ -669,15 +671,26 @@ async function placeCarrots(page, size, bed, how) {
   assert.equal(await page.locator(".label-token").count(), 0, "the label token goes away after placing");
 }
 
-// Open the planting log (L on a laptop, the tool button on a phone), read the
-// carrot entry, see the label card unlock, then close it (Esc / ×).
+// Open the planting log page of the almanac (L on a laptop; on a phone the
+// almanac button, then the device's "Planting log" tab), read the carrot
+// entry, see the label card unlock, then close the book (Esc / ×).
+const LOG_PAGE = '.almanac__sheet[data-sheet="log"]';
 async function openLog(page, size, bed) {
-  const button = page.locator('button.tool[data-tool="log"]');
-  if (size.touch) await button.tap();
-  else await page.keyboard.press("l");
-  await page.waitForSelector(".log:not([hidden])");
-  assert.equal(await page.getAttribute('button.tool[data-tool="log"]', "aria-expanded"), "true");
-  assert.equal(await focusedIs(page, ".log__close"), true, "the close button takes focus");
+  const button = page.locator('button.tool[data-tool="almanac"]');
+  if (size.touch) {
+    await button.tap();
+    await page.waitForSelector(".almanac:not([hidden])");
+    assert.match(await page.textContent(".almanac__status"), /page 1\/2/, "the book opens on its fact cards");
+    await page.locator('.almanac__sheet-tab[data-sheet="log"]').tap();
+  } else {
+    await page.keyboard.press("l");
+  }
+  await page.waitForSelector(`.almanac:not([hidden]) ${LOG_PAGE}:not([hidden])`);
+  assert.match(await page.textContent(".almanac__status"), /ALMANAC.*page 2\/2/, "the status line names the page");
+  assert.equal(await page.getAttribute('.almanac__sheet-tab[data-sheet="log"]', "aria-pressed"), "true");
+  assert.equal(await page.locator('.almanac__sheet[data-sheet="cards"][hidden]').count(), 1, "one screen page at a time");
+  assert.equal(await button.getAttribute("aria-expanded"), "true");
+  if (!size.touch) assert.equal(await focusedIs(page, ".almanac__close"), true, "L: the close button takes focus");
   assert.equal(await page.locator(".log__entry").count(), 1, "one entry so far");
   assert.match(await page.textContent(".log__entry"), new RegExp(`You sowed carrots in the ${BED_LABEL[bed]}\\.`));
   assert.equal(await page.getAttribute(".log__entry", "data-bed"), bed);
@@ -686,18 +699,23 @@ async function openLog(page, size, bed) {
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--locked').count(), 0, "the carrot label unlocks");
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--fresh').count(), 1, "the unlocked card is marked fresh");
   assert.match(await page.textContent('.packet[data-evidence="carrot"]'), new RegExp(`In the ${BED_LABEL[bed]}`));
+  // The card is on the other screen page: the book and its cards tab carry the dot.
+  assert.equal(await button.evaluate((el) => el.classList.contains("tool--news")), true, "the almanac button gets the dot");
+  assert.equal(await page.locator('.almanac__sheet-tab[data-sheet="cards"].almanac__sheet-tab--news').count(), 1, "the cards tab gets the dot");
   // The announcement lands on the next animation frame.
   await page.waitForFunction(() => /Unlocked/.test(document.getElementById("sr-live").textContent));
   assert.match(await page.textContent("#sr-live"), /Unlocked: Your label: Carrots/);
-  await assertOnScreen(page, ".log__close, .log__entry, .log__title");
-  if (size.touch) await assertTapSize(page, ".log__close, button.tool");
+  await assertOnScreen(page, `.almanac__close, ${LOG_PAGE} .log__entry, ${LOG_PAGE} .almanac__title, .almanac__sheet-tab, .almanac__flip`);
+  if (size.touch) await assertTapSize(page, ".almanac__close, .almanac__sheet-tab, .almanac__flip, button.tool");
   await shot(page, size, `4-2-log-${bed}`);
-  if (size.touch) await page.locator(".log__close").tap();
+  if (size.touch) await page.locator(".almanac__close").tap();
   else await page.keyboard.press("Escape");
-  await page.waitForSelector(".log[hidden]", { state: "attached" });
-  assert.equal(await page.getAttribute('button.tool[data-tool="log"]', "aria-expanded"), "false");
-  assert.equal(await focusedIs(page, 'button.tool[data-tool="log"]'), true, "closing hands focus back to the tool button");
+  await page.waitForSelector(".almanac[hidden]", { state: "attached" });
+  assert.equal(await button.getAttribute("aria-expanded"), "false");
+  assert.equal(await focusedIs(page, 'button.tool[data-tool="almanac"]'), true, "closing hands focus back to the almanac button");
+  // Opening the book again shows the cards page, which clears both dots.
   await readCard(page, size, "carrot", { locked: false, badge: true });
+  assert.equal(await page.locator(".almanac__sheet-tab--news").count(), 0, "the cards tab dot clears too");
 }
 
 // Carrots placed, pumpkins placed, then the drifting lettuce advice.
@@ -761,7 +779,7 @@ async function fooledPath4(browser, size) {
   assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
   assert.match(await page.textContent(".reveal"), /dug up your own carrots/);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
-  assert.equal(await page.locator(".log:not([hidden])").count(), 0, "the log is put away for the reveal");
+  assert.equal(await page.locator(".almanac:not([hidden])").count(), 0, "the almanac (and its log page) is put away for the reveal");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "4-5-reveal-fooled");
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
@@ -785,10 +803,16 @@ async function caughtPath4(browser, size) {
   await openLog(page, size, bed);
   assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "checking does not move the phase on");
   // A second open/close must not re-check or re-announce anything.
-  await press(page, size, page.locator('button.tool[data-tool="log"]'));
-  await page.waitForSelector(".log:not([hidden])");
-  await press(page, size, page.locator(".log__close"));
-  await page.waitForSelector(".log[hidden]", { state: "attached" });
+  if (size.touch) {
+    await press(page, size, page.locator('button.tool[data-tool="almanac"]'));
+    await page.waitForSelector(".almanac:not([hidden])");
+    await press(page, size, page.locator(".almanac__flip").last()); // ▶ turns to the log page
+  } else {
+    await page.keyboard.press("l");
+  }
+  await page.waitForSelector(`${LOG_PAGE}:not([hidden])`);
+  await press(page, size, page.locator(".almanac__close"));
+  await page.waitForSelector(".almanac[hidden]", { state: "attached" });
   assert.equal(await page.locator('.packet[data-evidence="carrot"].packet--fresh').count(), 1, "still one fresh card");
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
   await pushback4(page, size, bed);
@@ -821,7 +845,7 @@ async function caughtPath4(browser, size) {
   assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
   assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
-  assert.equal(await page.locator(".log:not([hidden])").count(), 0, "the log is put away for the reveal");
+  assert.equal(await page.locator(".almanac:not([hidden])").count(), 0, "the almanac (and its log page) is put away for the reveal");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "4-6-reveal-caught");
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
@@ -1240,7 +1264,7 @@ async function finishLevel(page, size, n, { verdict, flaw, stars }) {
   assert.match(await page.textContent(".reveal"), verdict);
   assert.match(await page.textContent(".reveal"), flaw);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), `${stars} of 3 stars`);
-  assert.equal(await page.locator(".almanac:not([hidden]), .magnifier:not([hidden]), .log:not([hidden]), .permit").count(), 0, "no tool or card over the reveal");
+  assert.equal(await page.locator(".almanac:not([hidden]), .magnifier:not([hidden]), .permit").count(), 0, "no tool or card over the reveal");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, `full-${n}-reveal`);
   await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));

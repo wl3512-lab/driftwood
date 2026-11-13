@@ -16,11 +16,13 @@ import { pressureLevel } from "../mechanics/pressure.js";
 import { createPressureClock } from "./pressure-clock.js";
 import { fill } from "./text.js";
 import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
-import { toolView } from "./tools.js";
+import { toolView, pageView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
 
 const DEFAULT_ICON = "seed-packet";
-const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: "./art/almanac.svg" };
+// The toolbar icon is the device itself: a book with a glowing screen.
+const ALMANAC_SPRITE = "./art/almanac-device.svg";
+const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: ALMANAC_SPRITE };
 const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.isContentEditable);
 
 // `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
@@ -97,8 +99,14 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const levelTools = (level.tools || []).some((tl) => tl.id === "almanac")
     ? level.tools
     : [ALMANAC, ...(level.tools || [])];
+  // A document tool (the planting log) is a page of the almanac, not a button.
+  const pages = levelTools.filter((tl) => pageView(tl.id)).map((tl) => ({
+    id: tl.id, key: tl.key,
+    view: pageView(tl.id)({ level, tool: tl, dispatch, getState: () => state, t }),
+  }));
   const tools = [];
   for (const tool of levelTools) {
+    if (pageView(tool.id)) continue;
     const create = toolView(tool.id);
     if (!create) continue;
     const button = h("button", {
@@ -106,13 +114,18 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       "aria-keyshortcuts": tool.key ? ariaKey(tool.key) : null,
       "aria-label": tool.key ? `${tool.label}, shortcut ${keyName(tool.key)}` : null,
     },
-    h("img", { src: tool.sprite, alt: "", width: 28, height: 28 }),
+    h("img", { src: tool.id === "almanac" ? ALMANAC_SPRITE : tool.sprite, alt: "", width: 28, height: 28 }),
     h("span", { class: "tool__label" }, tool.label),
     tool.key && h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(tool.key)));
-    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, cards: packets });
+    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, cards: packets, pages });
     button.addEventListener("click", () => view.open());
     toolbar.append(button);
     tools.push({ id: `tool:${tool.id}`, key: tool.key, view });
+  }
+  // A page's key (the log's "L") opens the almanac straight on that page.
+  const almanacView = tools.find((tl) => tl.id === "tool:almanac")?.view;
+  for (const p of pages) {
+    if (p.key && almanacView) tools.push({ id: `page:${p.id}`, key: p.key, view: { open: () => almanacView.open(p.id) } });
   }
   toolbar.hidden = tools.length === 0;
   const almanacButton = toolbar.querySelector('[data-tool="almanac"]');
@@ -209,8 +222,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }
     packets.replaceChildren(...level.evidence.map(packet));
     // A card that just unlocked marks the almanac button until the book is opened.
-    if (fresh.size > 0 && almanacButton && almanacButton.getAttribute("aria-expanded") !== "true") {
-      almanacButton.classList.add("tool--news");
+    if (fresh.size > 0) {
+      almanacView?.markNews(); // unless the cards are on screen right now
     }
     fresh = new Set();
     if (nudge && state.stepIndex > 0) dropNudge();

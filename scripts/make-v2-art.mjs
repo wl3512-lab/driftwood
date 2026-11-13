@@ -572,6 +572,24 @@ const ART = {
     "......X.X.......",
     E],
 
+  // Every level's almanac on the toolbar: the high-tech book, a leather spine,
+  // a cream bezel with a green LED, a glowing screen and two page buttons.
+  "almanac-device": [E,
+    ".kkkkkkkkkkkkkk.",
+    ".kxxccccccccgck.",
+    ".kxxckkkkkkkkck.",
+    ".kxxckeeeeeekck.",
+    ".kxxckeGGGGekck.",
+    ".kxxckeeeeeekck.",
+    ".kxxckeGGGeekck.",
+    ".kxxckeeeeeekck.",
+    ".kxxckkkkkkkkck.",
+    ".kxxcccccccccck.",
+    ".kxxcckkcckkcck.",
+    ".kxxcccccccccck.",
+    ".kkkkkkkkkkkkkk.",
+    E, E],
+
   // Level 3: the magnifier. Opens with "M".
   magnifier: [E,
     "....kkkkk.......",

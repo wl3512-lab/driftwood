@@ -287,30 +287,7 @@
 .label-token img { width: 28px; height: 28px; image-rendering: pixelated; }
 .label-token--drag { position: relative; z-index: 6; cursor: grabbing; box-shadow: 4px 4px 0 var(--ink); }
 @media (pointer: coarse) { .label-token { display: none; } }
-/* The planting log: a notebook panel that mirrors the almanac's spot on the left. */
-.log {
-  position: absolute; z-index: 4;
-  left: 16px; top: 84px; max-height: calc(100% - 96px);
-  width: min(20rem, calc(100% - 15rem - 64px));
-  display: flex; flex-direction: column; gap: 0.5rem;
-  padding: 0.6rem 0.75rem 0.75rem;
-  overflow-y: auto; overscroll-behavior: contain;
-  background: var(--paper, #fffdf5); color: var(--ink);
-  background-image: repeating-linear-gradient(transparent 0 1.55rem, rgba(21, 101, 192, 0.25) 1.55rem calc(1.55rem + 1px));
-  border: 3px solid var(--ink); border-left: 10px solid #1565c0; /* the spiral edge */
-  box-shadow: 4px 4px 0 var(--ink);
-  font-family: var(--font-ui);
-}
-.log[hidden] { display: none; }
-.log__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.log__title { font-size: 0.95rem; line-height: 1.25; }
-.log__close {
-  flex: none; width: 44px; height: 44px;
-  background: var(--paper); color: var(--ink);
-  border: 2px solid var(--ink); border-radius: 2px;
-  font: 700 1.4rem/1 var(--font-ui); cursor: pointer;
-}
-.log__close:hover { background: #fff3c4; }
+/* The planting log: a page of the almanac (ui/log-view.js); the device styles it below. */
 .log__by { margin: 0; font: italic 0.8rem var(--font-ui); color: #4a4a4a; }
 .log__list { list-style: none; margin: 0; padding: 0; font: 600 0.95rem/1.55rem var(--font-hand, var(--font-ui)); }
 .log__entry::before { content: "✎ "; }
@@ -341,8 +318,6 @@
   .magnifier__table { font-size: 0.75rem; }
   .magnifier__table th, .magnifier__table td { padding: 0.2rem 0.3rem; }
   .magnifier__verdict, .magnifier__note { font-size: 0.82rem; padding: 0.3rem 0.45rem; }
-  .log { left: 12px; top: 62px; max-height: calc(100% - 70px); width: auto; right: calc(10.5rem + 24px); gap: 0.4rem; padding: 0.45rem 0.6rem 0.6rem; }
-  .log__title { font-size: 0.85rem; }
   .log__list { font-size: 0.88rem; }
   .place__prompt { font-size: 0.8rem; }
   .btn--place { min-width: 0; }
@@ -352,7 +327,6 @@
 @media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
   .almanac { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
   .magnifier { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
-  .log { left: 6px; right: 6px; top: 6px; max-height: calc(100% - 12px); }
   .magnifier__sprite { width: 72px; height: 72px; }
   /* The cards share the row with the tool buttons. */
   .level:not([data-scene="yard"]) .packets { max-width: calc(100% - 7rem); }
@@ -361,7 +335,6 @@
 @media (max-width: 640px) and (min-height: 501px) {
   .almanac { right: 12px; }
   .magnifier { right: 12px; }
-  .log { right: 12px; }
 }
 
 /* ======== laptop and wider: a short sky, beds right under the fence ========
@@ -625,3 +598,92 @@
   .tools { top: 12px; right: calc(16px + 9rem + 26px); }
   .level .almanac { top: 100px; max-height: calc(100% - 112px); }
 }
+
+/* ======== the almanac device: a high-tech book with a screen ========
+   A leather spine, a cream bezel with a status line (LED · ALMANAC · page n/m)
+   and the × close, a glowing LCD screen inset (pale green, dark ink, a faint
+   scanline grid; the content scrolls inside it), and hardware ◀ ▶ buttons with
+   page tabs on the bottom bezel. The bezel never scrolls off: only the screen
+   scrolls. */
+.level .almanac {
+  overflow: hidden; gap: 0; padding: 0;
+  background: var(--parchment);
+  border: 3px solid var(--line); border-left: 14px solid #6b3a2a; /* the leather spine */
+  border-radius: 4px;
+  box-shadow: inset 3px 0 0 #8a5a34, 4px 4px 0 var(--line);
+  background-image: linear-gradient(90deg, #4e342e 0 3px, transparent 3px); /* the spine's hinge line */
+}
+.almanac__bezel {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 6px 8px 6px 10px;
+}
+.almanac__status { display: flex; align-items: center; gap: 0.45rem; font: 700 0.75rem/1 var(--font-ui); letter-spacing: 0.14em; color: var(--ink); }
+.almanac__status-page { letter-spacing: 0.06em; font-weight: 600; color: #5e4a32; }
+.almanac__led {
+  width: 8px; height: 8px; background: #43a047; border: 2px solid var(--line);
+  box-shadow: 0 0 6px 1px rgba(67, 160, 71, 0.75);
+}
+.almanac__close { width: 44px; height: 44px; box-shadow: 0 3px 0 var(--line); }
+.almanac__close:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.almanac__screen {
+  position: relative; flex: 1 1 auto; min-height: 0;
+  margin: 0 8px; padding: 0.6rem 0.7rem 0.75rem;
+  overflow-y: auto; overscroll-behavior: contain;
+  background:
+    repeating-linear-gradient(rgba(30, 60, 30, 0.045) 0 1px, transparent 1px 3px),
+    #e4f6d6;
+  border: 3px solid var(--line);
+  box-shadow: inset 0 0 0 2px #b9dca6, inset 0 0 18px rgba(120, 200, 110, 0.45), 0 0 10px rgba(140, 220, 120, 0.45);
+  color: #1c2a1c;
+}
+.almanac__screen:last-child { margin-bottom: 8px; } /* one page: no button row, still a bezel under the screen */
+.almanac__sheet { display: flex; flex-direction: column; gap: 0.55rem; }
+.almanac__sheet[hidden] { display: none; }
+.almanac__screen .almanac__title { font: 700 0.95rem/1.25 var(--font-ui); color: #1c2a1c; letter-spacing: 0.02em; }
+/* Cards on the screen: light tiles with a dark outline; locked ones dimmed. */
+.level .almanac__screen .packet { background: #f7fff0; border: 2px solid #2e4a2e; }
+.level .almanac__screen .packet--locked { background: #d3e6c6; border-style: dashed; color: #3d4f3a; }
+.level .almanac__screen .packet--locked img { opacity: 0.55; filter: grayscale(1); }
+.level .almanac__screen .packet--locked strong::after {
+  content: "LOCKED"; margin-left: 0.4rem; padding: 0 0.25rem;
+  font: 700 0.62rem/1.4 var(--font-ui); letter-spacing: 0.1em; color: #f7fff0; background: #3d4f3a; vertical-align: 1px;
+}
+.almanac__screen .almanac__page { background: #f7fff0; border-color: #2e4a2e; }
+.almanac__screen .almanac__tab { background: #cfe6bf; }
+.almanac__screen .almanac__tab[aria-pressed="true"] { background: #f7fff0; border-bottom-color: #f7fff0; box-shadow: inset 0 -3px 0 #2e7d32; }
+.almanac__screen .log__list { font-size: 1rem; }
+.almanac__screen .log__entry { padding: 0.25rem 0; border-bottom: 1px dashed #8fb487; }
+.almanac__screen .log__by { color: #3d4f3a; }
+/* The bottom bezel: hardware page buttons and a tab per screen page. */
+.almanac__controls { flex: none; display: flex; align-items: center; gap: 6px; padding: 7px 8px 9px; }
+.almanac__sheet-tabs { flex: 1 1 auto; display: flex; gap: 6px; min-width: 0; }
+.almanac__flip, .almanac__sheet-tab {
+  min-height: 44px; min-width: 44px;
+  background: #e8dcbc; color: var(--ink);
+  border: 2px solid var(--line); border-radius: 3px;
+  box-shadow: 0 3px 0 var(--line);
+  font: 700 0.8rem/1.1 var(--font-ui); cursor: pointer;
+}
+.almanac__flip { flex: none; font-size: 0.9rem; }
+.almanac__sheet-tab { position: relative; flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.25rem 0.4rem; }
+.almanac__sheet-tab .kbd { font-size: 0.7rem; }
+.almanac__flip:hover, .almanac__sheet-tab:hover { background: #fff3c4; }
+.almanac__flip:active, .almanac__sheet-tab:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.almanac__sheet-tab[aria-pressed="true"] {
+  background: #e4f6d6; transform: translateY(2px); box-shadow: 0 1px 0 var(--line), inset 0 0 0 2px #7cc36a;
+}
+.almanac__sheet-tab--news::after {
+  content: ""; position: absolute; top: -7px; right: -7px;
+  width: 12px; height: 12px; border-radius: 50%; background: #e53935; border: 2px solid var(--line);
+}
+@media (max-height: 500px), (max-width: 640px) {
+  .level .almanac { border-left-width: 10px; }
+  .almanac__bezel { padding: 3px 4px 3px 8px; }
+  .almanac__status { font-size: 0.68rem; }
+  .almanac__screen { margin: 0 6px; padding: 0.45rem 0.55rem 0.55rem; }
+  .almanac__screen .almanac__title { font-size: 0.85rem; }
+  .almanac__controls { padding: 5px 6px 7px; gap: 4px; }
+  .almanac__sheet-tabs { gap: 4px; }
+  .almanac__sheet-tab { font-size: 0.75rem; }
+}
+

@@ -31,7 +31,7 @@ export default {
       icon: "plant-label",
       title: "Your label: Carrots",
       lines: ["Sown by {name}", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
-      locked: "Open your planting log.",
+      locked: "Check the planting log page.",
     },
     {
       id: "pumpkin",
