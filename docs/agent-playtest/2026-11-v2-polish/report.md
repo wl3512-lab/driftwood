@@ -13,4 +13,7 @@ Five commits. All suites pass (unit 189, levels 26, slice 4); the build passes.
 - 7ae2c83 fix(v2): unlocked card settles full size; almanac cover shows the garden
   The small unlocked card was its pop caught mid-animation; the pop now takes 0.28 s and the harness checks all cards settle at the same width. The cover shows "Day 1", a mini map of the beds with a label on the sown bed, and the log entries. sw dw-v16.
 
+- 88d6448 style(v2): planting log cover is a CRT terminal
+  While the log page shows, the almanac screen becomes an old CRT monitor: near-black glass, green phosphor monospace text with a soft glow (about 13:1 contrast), still scanlines and grain, vignette and rounded corners. Header "PLANTING LOG v1.0 / DAY 1 · USER: name". Beds are an outline drawing ([FRONT] [SIDE] [BACK], sown bed solid, "CARROTS ◄"), hidden from screen readers. Log lines read as terminal output with a blinking cursor (solid under reduced motion). Before: almanac-crt-before-laptop.png. Unshipped CRT fact-cards option: almanac-crt-cards-option-{laptop,phone}.png. sw dw-v17.
+
 Evidence: almanac-modal-{laptop,phone,small}.png, almanac-modal-cards-phone.png, almanac-slide-{laptop,phone}.png, toolbar-icon-{laptop,phone}.png, almanac-cover-*.png, garden-no-log-*.png, almanac-options.png, and before/after shots for the first commit.
