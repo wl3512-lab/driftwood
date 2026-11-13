@@ -363,3 +363,54 @@
   .magnifier { right: 12px; }
   .log { right: 12px; }
 }
+
+/* ======== laptop and wider: a short sky, beds right under the fence ========
+   Phones in landscape already fill the height with beds; on taller screens the
+   sky band and the lawn above the beds ate a third of the scene. Here the sky
+   is a fixed --sky-h band level with the top bar, the beds stretch from just
+   under it to the path, and plants grow a size to fill them. */
+@media (min-height: 501px) and (min-width: 641px) {
+  .level { --sky-h: 104px; }
+  .scene__ground { padding-top: 2.1rem; }
+  .bed { height: 100%; }
+  .bed__plants { align-self: center; }
+  .plant { width: clamp(80px, min(11vw, 19vh), 168px); }
+  .scene,
+  .level[data-scene="yard"] .scene {
+    background:
+      var(--scene-art) center / cover no-repeat,
+      linear-gradient(var(--scene-sky, var(--sky)) 0 var(--sky-h), var(--scene-ground, var(--grass)) var(--sky-h) 100%);
+  }
+  .fence { top: calc(var(--sky-h) - 16px); }
+
+  .level[data-scene="greenhouse"] .scene {
+    background:
+      var(--scene-art) center / cover no-repeat,
+      repeating-linear-gradient(90deg, transparent 0 calc(20% - 6px), var(--glazing) calc(20% - 6px) 20%) 0 0 / 100% var(--sky-h) no-repeat,
+      repeating-linear-gradient(0deg, transparent 0 calc(50% - 5px), var(--glazing) calc(50% - 5px) 50%) 0 0 / 100% var(--sky-h) no-repeat,
+      linear-gradient(var(--scene-sky) 0 var(--sky-h), var(--sill) var(--sky-h) calc(var(--sky-h) + 14px), var(--scene-ground) calc(var(--sky-h) + 14px) 100%);
+  }
+  .level[data-scene="greenhouse"] .fence { top: var(--sky-h); }
+  /* the shelf moves into the glass, clear of the Map button and the bed labels */
+  .level[data-scene="greenhouse"] .prop--shelf { left: 52%; top: calc(var(--sky-h) - 58px); }
+
+  .level[data-scene="hedge-dusk"] .scene {
+    background:
+      var(--scene-art) center / cover no-repeat,
+      radial-gradient(circle at 50% 100%, var(--hedge) 0 70%, transparent 71%) 0 calc(var(--sky-h) - 34px) / 44px 44px repeat-x,
+      linear-gradient(var(--scene-sky) 0 28px, #d97b6c 28px 56px, #8c5b86 56px calc(var(--sky-h) - 12px),
+        var(--hedge) calc(var(--sky-h) - 12px) calc(var(--sky-h) + 22px), var(--scene-ground) calc(var(--sky-h) + 22px) 100%);
+  }
+
+  .level[data-scene="garden-day"] .scene {
+    background:
+      var(--scene-art) center / cover no-repeat,
+      repeating-linear-gradient(90deg, var(--stones) 0 28px, transparent 28px 44px) 0 calc(100% - 4px) / 100% 10px no-repeat,
+      linear-gradient(var(--scene-sky) 0 var(--sky-h), var(--scene-ground) var(--sky-h) 100%);
+  }
+  .level[data-scene="garden-day"] .fence { top: calc(var(--sky-h) - 16px); }
+  .earlier { top: calc(var(--sky-h) - 60px); }
+
+  .level[data-scene="meadow-night"] .scene::before { height: var(--sky-h); }
+  .level[data-scene="meadow-night"] .prop--moon { top: calc(var(--sky-h) - 66px - var(--pressure) * 44px); }
+}
