@@ -139,11 +139,11 @@ export default {
     flaw: "False memory",
     flawGloss: "“remembering” things you never said",
     body: "Biscuit “remembered” you saying the carrots were somewhere else, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
-    fooledLine: "You dug up your own carrots. Your planting log and your label both said where they were.",
-    caughtLine: "You trusted your own log over Biscuit's “memory”. That's the habit to keep.",
-    tip: "AI can misremember what you told it. Keep your own notes, and correct it when it gets you wrong.",
-    realWorld: "Chatbots with “memory” features that recall your details wrongly, or summaries of a long chat or meeting that change what was said.",
+    fooledLine: "You dug up your own carrots. Your planting log said where they were.",
+    caughtLine: "You trusted your own log over Biscuit's “memory”.",
+    tip: "Keep your own notes, and correct the AI when it gets you wrong.",
+    realWorld: "Chatbot “memory” or meeting summaries that change what you said.",
     // Biscuit signs off and sets up Level 5: no more garden helpers, Bugs is only company.
-    handoff: "Okay babe, that's a wrap for me. Iconic. Last level you're on your own, no more garden helpers. You'll have Bugs, though. He's not a gardener, just a companion app on your phone to keep you company. Cute, but remember who's doing the gardening. You.",
+    handoff: "That's a wrap for me, babe. Last level you're on your own. Bugs is just a companion app, not a gardener.",
   },
 };

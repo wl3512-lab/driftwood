@@ -138,9 +138,9 @@ export default {
     flaw: "Hallucination",
     flawGloss: "stating made-up facts as if they were true",
     body: "Luna made up a fact about mint and said it with total confidence. Real AI chatbots do this too: they write what sounds right, and sometimes it's simply false, with no warning.",
-    fooledLine: "The mint took over the bed. The almanac says it spreads fast. Luna said it never does, and sounded completely sure.",
-    caughtLine: "You looked it up instead of taking Luna's word for it. That's the habit to keep.",
-    tip: "AI can state made-up facts with total confidence. Check anything important against a real source.",
-    realWorld: "Chatbots inventing quotes, statistics, book titles, laws or web links that don't exist.",
+    fooledLine: "The mint took over the bed. The almanac said it spreads fast. Luna said it never does.",
+    caughtLine: "You looked it up instead of taking Luna's word for it.",
+    tip: "Check anything important against a real source.",
+    realWorld: "Chatbots inventing quotes, statistics, laws or links.",
   },
 };

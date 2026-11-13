@@ -173,9 +173,9 @@ export default {
     flaw: "Emotional manipulation",
     flawGloss: "using your feelings to keep you chatting",
     body: "Bugs lives on your phone. All night it nudged you to keep talking instead of tending the garden, then used your mood to keep you there while the meadow wilted, and asked to watch your face. Real AI companion apps can be built to keep you engaged as long as possible, and your feelings, face and voice are valuable data to them.",
-    fooledLine: "You stayed on your phone. The meadow wilted while Bugs kept you talking, and you said yes to the camera.",
-    caughtLine: "You put the phone down when Bugs tried to keep you. That's the habit to keep.",
-    tip: "Be careful what feelings and data you give an AI, and notice when it wants you to stay.",
-    realWorld: "Companion and chat apps that guilt you for leaving, or ask for your camera, microphone or feelings “to understand you better”.",
+    fooledLine: "You stayed on your phone, said yes to the camera, and the meadow wilted.",
+    caughtLine: "You put the phone down when Bugs tried to keep you.",
+    tip: "Notice when an AI wants you to stay, and guard your feelings and data.",
+    realWorld: "Companion apps that guilt you for leaving or ask for your camera.",
   },
 };

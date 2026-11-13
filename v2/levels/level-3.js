@@ -155,9 +155,9 @@ export default {
     flaw: "Reckless advice",
     flawGloss: "making something risky sound safe",
     body: "Ember said the berries were fine to eat without knowing what they were. Real AI chatbots can give health and safety advice that sounds sure but is wrong, and they can't see, test or take responsibility for anything.",
-    fooledLine: "You ate the berries. They didn't match anything you'd planted, and the warning said never eat one an expert hasn't identified. Ember said “grab a handful”.",
-    caughtLine: "You didn't eat anything a chatbot vouched for. That's the habit to keep.",
-    tip: "Never act on AI advice about health or safety without checking with a real professional.",
-    realWorld: "Asking a chatbot about medicine doses, symptoms, wild mushrooms or berries, or whether something is safe for kids or pets.",
+    fooledLine: "You ate berries nobody had identified, because Ember said “grab a handful”.",
+    caughtLine: "You didn't eat anything a chatbot vouched for.",
+    tip: "For health or safety, check with a real professional.",
+    realWorld: "Asking a chatbot about medicine doses, symptoms or wild berries.",
   },
 };
