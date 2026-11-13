@@ -341,13 +341,12 @@
    Phones in landscape already fill the height with beds; on taller screens the
    sky band and the lawn above the beds ate a third of the scene. Here the sky
    is a fixed --sky-h band level with the top bar, the beds stretch from just
-   under it to the path, and plants grow a size to fill them. */
+   under it to the path, and their crops fill them at 4 px per art pixel. */
 @media (min-height: 501px) and (min-width: 641px) {
   .level { --sky-h: 104px; }
   .scene__ground { padding-top: 2.1rem; }
   .bed { height: 100%; }
-  .bed__plants { align-self: center; }
-  .plant { width: clamp(80px, min(11vw, 19vh), 168px); }
+  .bed { --plant: 64px; } /* 4 px per art pixel */
   .scene,
   .level[data-scene="yard"] .scene {
     background:

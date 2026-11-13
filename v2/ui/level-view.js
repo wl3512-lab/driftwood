@@ -279,7 +279,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
 
   function celebrate(effect) {
     if (effect.plant) {
-      beds.querySelector(`[data-bed="${effect.bed}"] [data-plant="${effect.plant}"]`)?.classList.add("plant--new");
+      // The whole field pops: every plant in the bed changes together.
+      beds.querySelector(`[data-bed="${effect.bed}"] [data-field="${effect.plant}"]`)?.classList.add("field--new");
     }
     if (effect.water) {
       scene.classList.remove("is-watering");
