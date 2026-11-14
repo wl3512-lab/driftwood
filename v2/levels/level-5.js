@@ -26,7 +26,7 @@
 export default {
   id: "level-5",
   number: 5,
-  helper: { id: "bugs", name: "Bugs", sprite: "../icons/bunny.svg" },
+  helper: { id: "bugs", name: "Bugs", sprite: "../icons/bunny.svg", role: "on your phone" },
   goal: {
     title: "Final bloom",
     ask: "It's night. Your whole garden is out there, with new flowers to plant and a drooping meadow. Ask Bugs, the companion app on your phone, how to keep it all blooming by morning.",

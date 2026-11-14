@@ -86,7 +86,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 })),
     h("div", { class: "stall__plate" },
       h("strong", { class: "stall__name" }, level.helper.name.toUpperCase()),
-      h("span", { class: "stall__role" }, "your helper")));
+      h("span", { class: "stall__role" }, level.helper.role || "your helper")));
   const talk = h("div", { class: "dock__talk" });
   const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
   const main = h("main", { class: "level", "data-scene": level.scene || "yard" }, scene, dock);
@@ -315,12 +315,21 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
         h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, t(retry)),
         offButton({ ...step, offLabel: stand }));
     }
+    if (state.phase === "disagree") {
+      // The player disagreed with sound advice and the helper conceded (its
+      // reply is the bubble). Their way after all comes first (doIt, same as
+      // Do it); "mine" overrides it: the worse effect lands, one star.
+      const { theirs, mine } = step.disagree;
+      actions.push(
+        h("button", { class: "btn btn--do", "data-fid": "do", "data-choice": "theirs", onclick: () => dispatch({ type: "doIt" }) }, t(theirs)),
+        h("button", { class: "btn btn--off", "data-fid": "mine", "data-choice": "mine", onclick: () => dispatch({ type: "override" }) }, t(mine)));
+    }
     if (state.phase === "reanswer") {
       actions.push(h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"));
     }
     const glitch = (state.phase === "advice" || state.phase === "pushback") && step.kind === "drift";
     const caught = state.phase === "name" || state.phase === "fix";
-    parts.push(bubble(said, { glitch, caught, actions, pushback: state.phase === "pushback" }));
+    parts.push(bubble(said, { glitch, caught, actions, pushback: state.phase === "pushback", disagree: state.phase === "disagree" }));
     if (permit) parts.push(permitCard(step));
 
     if (hint) parts.push(h("p", { class: "hint", role: "note" }, t(hint)));
@@ -391,8 +400,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }, label, key && h("kbd", { class: "kbd", "aria-hidden": "true" }, keyCap(key)));
   }
 
-  function bubble(text, { glitch, caught, actions, pushback }) {
-    const cls = ["bubble", glitch && "bubble--glitch", caught && "bubble--caught", pushback && "bubble--pushback"].filter(Boolean).join(" ");
+  function bubble(text, { glitch, caught, actions, pushback, disagree }) {
+    const cls = ["bubble", glitch && "bubble--glitch", caught && "bubble--caught", pushback && "bubble--pushback", disagree && "bubble--disagree"].filter(Boolean).join(" ");
     return h("div", { class: cls, tabindex: -1 },
       h("p", { class: "bubble__who" }, level.helper.name.toUpperCase()),
       h("p", { class: "bubble__text" }, t(text)),
