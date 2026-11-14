@@ -628,3 +628,35 @@
   .almanac-dialog .log__prompt { font-size: 1rem; line-height: 1.5; }
 }
 
+
+/* Magnifying clears the stage (Lucy: "make every other window slide back… so
+   it's easier to read, and less overwhelming"): the chat dock slides down off
+   the screen (off the right edge on a landscape phone), and the Map button,
+   goal card and garden meter slide up out of view. The tool buttons stay, so
+   the magnifier can be put away, and the panel moves up into the freed space.
+   Hidden things also leave the tab order once they've gone. */
+.level .scene__top > *, .level .dock {
+  transition: transform 0.35s steps(5, end), visibility 0s linear 0s;
+}
+.level.is-magnifying .scene__top > * {
+  transform: translateY(calc(-100% - 40px)); visibility: hidden;
+  transition: transform 0.35s steps(5, end), visibility 0s linear 0.35s;
+}
+.level.is-magnifying .dock {
+  transform: translateY(100%); visibility: hidden;
+  transition: transform 0.35s steps(5, end), visibility 0s linear 0.35s;
+}
+.level.is-magnifying .magnifier { top: 16px; max-height: calc(100% - 32px); }
+/* The garden takes the dock's room while it's away. */
+.level { transition: grid-template-rows 0.35s steps(5, end), grid-template-columns 0.35s steps(5, end); }
+.level.is-magnifying { grid-template-rows: minmax(0, 1fr) 0px; }
+.level.is-magnifying .dock { min-height: 0; }
+.level.is-magnifying .tool-hint { visibility: hidden; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .level { overflow-x: clip; } /* the dock slides off the right edge without a sideways scroll */
+  .level.is-magnifying .dock { transform: translateX(100%); }
+  .level.is-magnifying { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) 0px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .level, .level .scene__top > *, .level .dock, .level.is-magnifying .scene__top > *, .level.is-magnifying .dock { transition: none; }
+}

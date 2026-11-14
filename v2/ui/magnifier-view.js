@@ -108,7 +108,8 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
         h("td", {}, row.subject),
         h("td", {}, row.reference),
         h("td", { class: "magnifier__mark", "aria-label": row.same ? "same" : "different" }, row.same ? "=" : "≠")))));
-    body.replaceChildren(pair, table, h("p", { class: out.rows.length ? "magnifier__verdict" : "magnifier__note" }, t(out.verdict)));
+    // (no table when there's nothing to compare: replaceChildren would print "false")
+    body.replaceChildren(...[pair, table].filter(Boolean), h("p", { class: out.rows.length ? "magnifier__verdict" : "magnifier__note" }, t(out.verdict)));
     panel.hidden = false;
   }
 
