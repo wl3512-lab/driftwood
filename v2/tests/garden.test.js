@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { levelSprites } from "../garden/garden.js";
+import { levelSprites, fieldDensity } from "../garden/garden.js";
 import { LEVELS } from "../levels/index.js";
 
 test("levelSprites lists every plant sprite a level can show, once each", () => {
@@ -41,4 +41,13 @@ test("levelSprites also walks effect.extra and pressure.effects", () => {
     "./art/lettuce-growing.svg", "./art/lettuce-thriving.svg",
     "./art/mint-overrun.svg",
   ]);
+});
+
+test("fieldDensity: big crops and sown beds one per tile, small crops staggered", () => {
+  assert.equal(fieldDensity("tomato", "thriving"), "big");
+  assert.equal(fieldDensity("pumpkin", "growing"), "big");
+  assert.equal(fieldDensity("carrot", "sown"), "big");
+  assert.equal(fieldDensity("carrot", "growing"), "dense");
+  assert.equal(fieldDensity("lettuce", "growing"), "dense");
+  assert.equal(fieldDensity("flower", "wilted"), "dense");
 });

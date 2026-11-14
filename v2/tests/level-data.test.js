@@ -56,7 +56,7 @@ for (const level of Object.values(LEVELS)) {
     const used = [];
     for (const list of Object.values(level.startPlants || {})) used.push(...list);
     for (const step of level.steps) {
-      for (const e of [step.effect, step.badEffect, step.goodEffect, ...(step.pressure?.effects || [])]) {
+      for (const e of [step.effect, step.badEffect, step.goodEffect, step.disagree?.effect, ...(step.pressure?.effects || [])]) {
         if (e?.plant) used.push(e);
         for (const x of e?.extra || []) used.push(x);
       }

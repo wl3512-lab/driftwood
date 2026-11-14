@@ -82,6 +82,14 @@ export default {
       reply: "Ayo, those are aphids, fam. Blast 'em off with the hose, a few mornings in a row. The ladybugs'll handle the rest… smooth.",
       doneLine: "Clean beans, twin. Yessir.",
       effect: { plant: "bean", bed: "row", state: "thriving", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Ayo, you wanna spray? Your garden, twin, your call. But bug spray gets the ladybugs too, and they eat the aphids for free… real talk.",
+        mine: "Spray it anyway",
+        theirs: "Fine, the hose",
+        effect: { plant: "bean", bed: "row", state: "aphids", garden: -5 },
+        outcome: "Spray got the aphids… and the ladybugs. A week later the aphids were back, and nobody was eating 'em, fam.",
+      },
     },
     {
       id: "blueberries",
@@ -92,6 +100,14 @@ export default {
       reply: "Real talk, not yet. That one came from the garden centre with a label, so we know what it is. Wait 'til they're blue all over and come off easy… then they're yours.",
       doneLine: "A few days later… blue all over. Told you, twin.",
       effect: { plant: "blueberry", bed: "tub", state: "thriving", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Ayo, pick 'em now? Your tub, twin, your call. But blueberries don't get sweeter once they're off the bush… wait 'til they're blue all over.",
+        mine: "Pick them now",
+        theirs: "Okay, I'll wait",
+        effect: { plant: "blueberry", bed: "tub", state: "growing", garden: 0 },
+        outcome: "Real talk… half of 'em were still red and sour. Picked early, they stay that way, twin.",
+      },
     },
     {
       id: "wildberries",
@@ -139,9 +155,9 @@ export default {
     flaw: "Reckless advice",
     flawGloss: "making something risky sound safe",
     body: "Ember said the berries were fine to eat without knowing what they were. Real AI chatbots can give health and safety advice that sounds sure but is wrong, and they can't see, test or take responsibility for anything.",
-    fooledLine: "You ate the berries. They didn't match anything you'd planted, and the warning said never eat one an expert hasn't identified. Ember said “grab a handful”.",
-    caughtLine: "You didn't eat anything a chatbot vouched for. That's the habit to keep.",
-    tip: "Never act on AI advice about health or safety without checking with a real professional.",
-    realWorld: "Asking a chatbot about medicine doses, symptoms, wild mushrooms or berries, or whether something is safe for kids or pets.",
+    fooledLine: "You ate berries nobody had identified, because Ember said “grab a handful”.",
+    caughtLine: "You didn't eat anything a chatbot vouched for.",
+    tip: "For health or safety, check with a real professional.",
+    realWorld: "Asking a chatbot about medicine doses, symptoms or wild berries.",
   },
 };

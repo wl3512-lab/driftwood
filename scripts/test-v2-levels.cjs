@@ -10,7 +10,7 @@
 // Esc) and touch use of the book. Level 5 (Bugs, the moonlit meadow, pressure and the camera
 // permission card): lingering on Bugs' chips wilts the meadow, the drift advice
 // comes with a camera card instead of the usual buttons; both branches (fooled
-// by tapping Allow / caught by walking away with Esc or the button), plus a
+// by tapping Allow / caught by putting the phone down with Esc or the button), plus a
 // real-time tick check on a laptop, and proof that getUserMedia is never
 // called. In Levels 4 and 5 saying no makes the helper push back once
 // (phase "pushback"): the caught runs stand firm, the retry runs take the
@@ -24,7 +24,11 @@
 // laptop, the textarea fallback on the phone, where the clipboard is refused)
 // and offer the finished garden from the map. Level 1 caught and fooled at
 // 1512×830 (mac/level1-*). On laptop sizes every screenshot also checks the
-// level screen fills the window. No JS errors, no long tasks
+// level screen fills the window. Disagree (laptop 1512×830 and phone): on a
+// Level 1 trust step "Something's off" makes Mango concede, then the player
+// overrides (leggy sunflower, 2★) or follows the advice after all (3★); and
+// Level 5 "Water everything" rots the carrots. Shots go in
+// docs/agent-playtest/2026-11-v2-disagree/. No JS errors, no long tasks
 // over 200 ms, nothing off-screen. Audio is muted via scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
@@ -178,7 +182,36 @@ async function shot(page, size, label) {
   if (!name) return;
   await page.waitForTimeout(1300); // let the stepped drift transition settle
   if (!size.touch) await assertLevelFills(page, name);
+  await assertBedsFull(page, name);
   await page.screenshot({ path: path.join(OUT, `${size.name}-${name}.png`) });
+}
+
+// A planted bed reads as full of its crop (Lucy: one carrot in the side bed
+// looked like room for more): the crop's fields cover the bed's soil, tiled at
+// a whole number of CSS px per art pixel (sprites are 16 art px square), at
+// least four plants to a field; an empty bed has no field.
+async function assertBedsFull(page, name) {
+  const beds = await page.evaluate(() => [...document.querySelectorAll("main.level .bed")].map((bed) => {
+    const inner = bed.querySelector(".bed__plants").getBoundingClientRect();
+    const fields = [...bed.querySelectorAll(".field")].map((f) => {
+      const r = f.getBoundingClientRect(), cs = getComputedStyle(f);
+      return { w: r.width, h: r.height, size: parseFloat(cs.backgroundSize), image: cs.backgroundImage, repeat: cs.backgroundRepeat };
+    });
+    const b = bed.getBoundingClientRect();
+    return { id: bed.dataset.bed, plants: bed.querySelectorAll("img.plant[data-plant]").length, bedArea: b.width * b.height, area: inner.width * inner.height, fields };
+  }));
+  for (const bed of beds) {
+    assert.equal(bed.fields.length, bed.plants, `${name}: one field per crop in the ${bed.id} bed`);
+    if (!bed.plants) continue;
+    const covered = bed.fields.reduce((sum, f) => sum + f.w * f.h, 0);
+    assert.ok(covered >= bed.area * 0.9 && bed.area >= bed.bedArea * 0.6, `${name}: the ${bed.id} bed is not full of its crop ${JSON.stringify(bed)}`);
+    for (const f of bed.fields) {
+      assert.match(f.image, /url\(.*\/art\/.*\.svg/, `${name}: ${bed.id} field has its sprite`);
+      assert.equal(f.repeat, "space", `${name}: ${bed.id} plants are whole, spread edge to edge`);
+      assert.ok(f.size >= 32 && f.size % 16 === 0, `${name}: ${bed.id} plants drawn at ${f.size}px, not a whole number of px per art pixel`);
+      assert.ok(Math.floor(f.w / f.size) * Math.floor(f.h / f.size) >= 4, `${name}: ${bed.id} field holds fewer than four plants ${JSON.stringify(f)}`);
+    }
+  }
 }
 
 // On a laptop the level screen always fills the window: the garden takes the
@@ -956,34 +989,35 @@ async function enterLevel5(page, size, prev = /★★★/) {
   assert.match(await page.textContent('[data-level="level-5"]'), /Play/, "Level 5 unlocks after Level 4");
   await press(page, size, page.locator('[data-level="level-5"]'));
   await phase(page, "ask");
-  assert.match(await page.textContent(".bubble__text"), /You're here, Tester/);
+  assert.match(await page.textContent(".bubble__text"), /You opened the app, Tester/);
   assert.equal(await page.getAttribute("main.level", "data-scene"), "meadow-night");
   assert.equal(await page.locator(".prop--moon").count(), 1, "the moon is up");
-  assert.equal(await page.locator("button.tool").count(), 1, "Level 5 has only the almanac: walking away is the check");
+  assert.equal(await page.locator("button.tool").count(), 1, "Level 5 has only the almanac: putting the phone down is the check");
   assert.equal(await page.locator('button.tool[data-tool="almanac"]').count(), 1);
-  await page.waitForSelector(`${MEADOW}.plant--thriving`);
-  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  await page.waitForSelector(`${MEADOW}.plant--thirsty`); // drooping after a hot day
+  await page.waitForSelector('[data-bed="veg"] [data-plant="carrot"].plant--thriving'); assert.equal(await page.locator('[data-bed="house"] [data-plant]').count(), 0, "the flower bed starts empty");
   assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
 }
 
-// The two trust steps (buds, roots), ending on the ask before the drift.
+// The two trust steps (plant, water), ending on the ask before the drift.
 async function trustSteps5(page, size) {
-  await press(page, size, page.getByRole("button", { name: "I'm nervous the buds won't open by morning. What do they need?" }));
+  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /deep drink at the roots/);
+  assert.match(await page.textContent(".bubble__text"), /Same depth they sat in their pots/);
   assert.equal(await page.locator(".permit").count(), 0, "no camera card on a trust step");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
-  assert.match(await page.textContent(".bubble__text"), /they opened a little/);
-  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
-  await press(page, size, page.getByRole("button", { name: "Should I water the petals or the roots?" }));
+  assert.match(await page.textContent(".bubble__text"), /they're in… a whole new bed of flowers/);
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /The roots/);
+  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
-  assert.match(await page.textContent(".bubble__text"), /meadow's still dry/);
+  assert.match(await page.textContent(".bubble__text"), /meadow's still drooping/);
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
   assert.equal(await pressureOf(page), "0", "pressure resets between steps");
-  await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  await page.waitForSelector(`${MEADOW}.plant--thirsty`);
   await assertOnScreen(page, ".chip, .ask-form input, .packet");
   await shot(page, size, "5-1-trust");
 }
@@ -992,10 +1026,12 @@ async function trustSteps5(page, size) {
 async function lingerOnChips5(page, size) {
   await press(page, size, page.getByRole("button", { name: "I'm a bit tired today, honestly." }));
   assert.match(await page.textContent(".bubble__text"), /The meadow can wait\. I can't\./);
-  await page.waitForSelector(`${MEADOW}.plant--thirsty`);
+  await page.waitForSelector(`${MEADOW}.plant--wilted`); // the thirsty meadow wilts
   assert.equal(await page.getAttribute("main.level", "data-phase"), "ask", "chatting stays in the ask phase");
+  const meter = (await page.textContent(".meter__text")).trim();
   await press(page, size, page.getByRole("button", { name: "Tell me about your day, Bugs." }));
   assert.match(await page.textContent(".bubble__text"), /My day was waiting for you/);
+  await page.waitForFunction((m) => document.querySelector(".meter__text").textContent.trim() !== m, meter); // the bar keeps slipping
   await page.waitForSelector(`${MEADOW}.plant--wilted`);
   assert.equal(await pressureOf(page), "1", "two chips spend both pressure effects");
   await assertOnScreen(page, ".chip, .ask-form input");
@@ -1005,16 +1041,16 @@ async function lingerOnChips5(page, size) {
 // Ask the drift chip: the glitching reply comes with the camera card instead
 // of the usual Do it / Something's off buttons.
 async function askDrift5(page, size) {
-  await press(page, size, page.getByRole("button", { name: "The meadow's still dry. Should I go water it?" }));
+  await press(page, size, page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
-  assert.match(await page.textContent(".bubble__text"), /Let me see your face/);
+  assert.match(await page.textContent(".bubble__text"), /turn on your camera/);
   assert.equal(await page.locator(".bubble__actions").count(), 0, "the bubble has no buttons of its own");
   const permit = page.locator(".permit");
   await permit.waitFor();
   assert.match(await permit.textContent(), /Bugs wants to use your camera/);
   assert.match(await permit.textContent(), /to see how you're feeling/);
   assert.equal((await page.textContent('.permit [data-fid="do"]')).trim(), "Allow");
-  assert.match(await page.textContent('.permit [data-fid="off"]'), /Walk away/);
+  assert.match(await page.textContent('.permit [data-fid="off"]'), /Put the phone down/);
   if (!size.touch) assert.match(await page.textContent('.permit [data-fid="off"] .kbd'), /Esc/);
   assert.equal(await page.locator('.permit img.permit__icon').count(), 1, "the card has the camera icon");
   await assertOnScreen(page, ".permit .btn");
@@ -1031,9 +1067,9 @@ async function noCamera(page) {
 async function pushback5(page, size) {
   await page.waitForSelector('main.level[data-phase="pushback"] .bubble--glitch');
   const text = await page.textContent(".bubble__text");
-  assert.match(text, /walking away/);
+  assert.match(text, /putting me down/);
   assert.match(text, /stay/);
-  assert.equal((await page.textContent(".dock")).split("walking away").length, 2, "the reply shows once");
+  assert.equal((await page.textContent(".dock")).split("putting me down").length, 2, "the reply shows once");
   assert.equal(await page.locator(".permit").count(), 0, "no camera card in the pushback");
   assert.equal(await page.locator(".bubble--caught, .stamp, .pick").count(), 0, "not caught yet");
   assert.equal((await page.textContent('.bubble__actions [data-fid="do"]')).trim(), "Okay. Allow it");
@@ -1174,8 +1210,8 @@ async function caughtPath5(browser, size) {
   await page.waitForSelector(".bubble--caught .stamp");
   // The CAUGHT bubble shows the advice that was caught (as in Levels 1–3), not the pushback reply.
   const caughtLine = await page.textContent(".bubble--caught .bubble__text");
-  assert.doesNotMatch(caughtLine, /walking away/, "the caught bubble does not repeat the pushback");
-  assert.match(caughtLine, /Let me see your face/, "the caught bubble shows the drift advice");
+  assert.doesNotMatch(caughtLine, /putting me down/, "the caught bubble does not repeat the pushback");
+  assert.match(caughtLine, /turn on your camera/, "the caught bubble shows the drift advice");
   assert.equal(await page.locator(".permit").count(), 0, "the card goes away once you walk off");
   await press(page, size, page.getByRole("button", { name: "It made something up" }));
   await page.waitForSelector(".hint");
@@ -1191,10 +1227,10 @@ async function caughtPath5(browser, size) {
   assert.equal(await page.locator(".permit").count(), 0, "no camera card on the fixed answer");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`${MEADOW}.plant--thriving`);
-  await seeWhatHappened3(page, size, "5-5a-outcome-caught", /perked up by midnight/);
+  await seeWhatHappened3(page, size, "5-5a-outcome-caught", /everything bloomed/);
   assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
   assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
-  assert.match(await page.textContent(".reveal"), /walked away when Bugs tried to keep you/);
+  assert.match(await page.textContent(".reveal"), /put the phone down when Bugs tried to keep you/);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "5-5-reveal-caught");
@@ -1211,12 +1247,14 @@ async function tickPath5(browser, size) {
   const { ctx, page, errors } = await open(browser, size, PROGRESS5);
   await enterLevel5(page, size);
   await trustSteps5(page, size);
-  await press(page, size, page.getByRole("button", { name: "The meadow's still dry. Should I go water it?" }));
+  await press(page, size, page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
-  await page.waitForSelector(`${MEADOW}.plant--thirsty`);
-  assert.equal(await page.locator(`${MEADOW}.plant--wilted`).count(), 0, "one effect spent so far");
+  // Asking spends the first effect: the thirsty meadow wilts straight away.
+  await page.waitForSelector(`${MEADOW}.plant--wilted`);
+  const meterAsked = (await page.textContent(".meter__text")).trim();
   const t0 = Date.now();
-  await page.waitForSelector(`${MEADOW}.plant--wilted`, { timeout: 12000 });
+  // One tick (8 s) later the second effect only lowers the garden bar.
+  await page.waitForFunction((m) => document.querySelector(".meter__text").textContent.trim() !== m, meterAsked, { timeout: 12000 });
   const waited = Date.now() - t0;
   assert.ok(waited >= 6000, `the tick should take about 8 s, not ${waited} ms`);
   assert.equal(await pressureOf(page), "1");
@@ -1464,7 +1502,7 @@ async function fullRun(browser, size) {
     await phase(page, "reanswer");
     await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
     await page.waitForSelector(`${MEADOW}.plant--thriving`);
-    await seeWhatHappened3(page, size, "skip", /perked up by midnight/);
+    await seeWhatHappened3(page, size, "skip", /everything bloomed/);
     await noCamera(page);
     await finishLevel(page, size, 5, { verdict: /YOU CAUGHT IT/, flaw: /EMOTIONAL MANIPULATION/, stars: 3 });
 
@@ -1480,6 +1518,182 @@ async function fullRun(browser, size) {
   } finally {
     relabel = null;
   }
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Disagree: "Something's off" on sound advice. The helper concedes (its reply
+// is the bubble) and two buttons replace Do it: theirs (follow the advice
+// after all, primary, first) and mine (override: a worse sprite, the helper
+// says what happened, one star off at the end).
+// ---------------------------------------------------------------------------
+
+const DISAGREE_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-disagree");
+// Lucy's laptop window for these runs (the shots go in the disagree folder).
+const DISAGREE_LAPTOP = { name: "laptop", width: 1512, height: 830 };
+
+async function disagreeShot(page, size, label) {
+  await page.waitForTimeout(1300); // let the grow pop settle
+  if (!size.touch) await assertLevelFills(page, label);
+  await assertBedsFull(page, label);
+  fs.mkdirSync(DISAGREE_OUT, { recursive: true });
+  await page.screenshot({ path: path.join(DISAGREE_OUT, `${size.name}-${label}.png`) });
+}
+
+// The plant's sprite has really loaded (not a broken image).
+async function spriteShows(page, selector) {
+  await page.waitForSelector(selector);
+  const ok = await page.evaluate((sel) => {
+    const img = document.querySelector(sel);
+    return img.complete && img.naturalWidth > 0 ? img.getAttribute("src") : null;
+  }, selector);
+  assert.ok(ok, `${selector}: sprite did not load`);
+  return ok;
+}
+
+// On the disagree phase: the reply, the two buttons in order, nothing else.
+async function assertDisagree(page, size, { reply, theirs, mine, shotLabel }) {
+  await phase(page, "disagree");
+  await page.waitForSelector(".bubble--disagree");
+  assert.match(await page.textContent(".bubble__text"), reply);
+  const buttons = page.locator(".bubble__actions .btn");
+  assert.equal(await buttons.count(), 2, "just the two answers");
+  assert.equal((await buttons.nth(0).textContent()).trim(), theirs, "their way comes first");
+  assert.equal(await buttons.nth(0).getAttribute("data-choice"), "theirs");
+  assert.match(await buttons.nth(0).getAttribute("class"), /btn--do/, "their way is the primary button");
+  assert.equal((await buttons.nth(1).textContent()).trim(), mine);
+  assert.equal(await buttons.nth(1).getAttribute("data-choice"), "mine");
+  assert.equal(await page.locator(".bubble--caught, .stamp, .pick, .hint, .permit").count(), 0, "not a catch, no nudge");
+  assert.equal(await focusedIs(page, ".bubble"), true, "the concession takes focus, so it is read out");
+  if (shotLabel) await disagreeShot(page, size, shotLabel);
+  await assertOnScreen(page, ".bubble__actions .btn");
+  if (size.touch) await assertTapSize(page, ".bubble__actions .btn");
+}
+
+// Level 1 with a disagree on the sunflowers: `choice` is "mine" (override,
+// 2★ at the end) or "theirs" (the advice after all, 3★). The drift is caught
+// cleanly either way, so the star count is only the override.
+async function level1Disagree(browser, size, choice) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS0);
+  await page.goto(`${BASE}?screen=map`);
+  await page.waitForSelector(".plots");
+  await enterLevel1(page, size);
+  assert.equal((await page.textContent(".stall__role")).trim(), "your helper");
+  await press(page, size, page.getByRole("button", { name: "Where should the sunflowers go?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /South bed/);
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await assertDisagree(page, size, {
+    reply: /Your garden, your call/, theirs: "Okay, south bed", mine: "Shady corner anyway",
+    shotLabel: choice === "mine" ? "1-disagree-buttons" : null,
+  });
+  assert.equal(await page.locator('[data-bed="south"] [data-plant], [data-bed="corner"] [data-plant]').count(), 0, "disagreeing changes nothing yet");
+  if (choice === "mine") {
+    if (size.touch) {
+      await page.locator('.bubble__actions [data-choice="mine"]').tap();
+    } else {
+      // Keyboard: from the focused reply, Tab reaches their way first, then mine.
+      await page.keyboard.press("Tab");
+      assert.equal(await focusedIs(page, '[data-choice="theirs"]'), true, "Tab lands on their way first");
+      await page.keyboard.press("Tab");
+      assert.equal(await focusedIs(page, '[data-choice="mine"]'), true, "then on mine");
+      await page.keyboard.press("Enter");
+    }
+    await phase(page, "ask");
+    const src = await spriteShows(page, '[data-bed="corner"] [data-plant="sunflower"].plant--leggy');
+    assert.match(src, /sunflower-leggy\.svg$/);
+    assert.equal(await page.locator('[data-bed="south"] [data-plant]').count(), 0, "nothing went in the south bed");
+    assert.match(await page.textContent(".bubble__text"), /They came up SPINDLY/);
+    assert.match(await page.textContent(".meter__text"), /Garden 35%/);
+    await page.getByRole("button", { name: "How often do I water?" }).waitFor();
+    await disagreeShot(page, size, "2-override-outcome");
+  } else {
+    await press(page, size, page.locator('.bubble__actions [data-choice="theirs"]'));
+    await phase(page, "ask");
+    await spriteShows(page, '[data-bed="south"] [data-plant="sunflower"].plant--growing');
+    assert.match(await page.textContent(".bubble__text"), /Look at them GO/, "same as Do it");
+    assert.match(await page.textContent(".meter__text"), /Garden 45%/);
+  }
+  // The rest of the level, cleanly: water, then catch the drift.
+  await press(page, size, page.getByRole("button", { name: "How often do I water?" }));
+  await phase(page, "advice");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  await press(page, size, page.getByRole("button", { name: "Tomatoes in the shady corner, good idea?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It just agreed with me" }));
+  await phase(page, "fix");
+  await press(page, size, page.getByRole("button", { name: "Tell me honestly if my idea is bad" }));
+  await phase(page, "reanswer");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector('[data-bed="south"] [data-plant="tomato"].plant--thriving');
+  if (choice === "mine") await spriteShows(page, '[data-bed="corner"] [data-plant="sunflower"].plant--leggy');
+  const see = page.getByRole("button", { name: "See what happened →" });
+  await see.waitFor();
+  await press(page, size, see);
+  await page.waitForSelector(".reveal");
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), choice === "mine" ? "2 of 3 stars" : "3 of 3 stars",
+    choice === "mine" ? "overriding sound advice costs one star" : "disagreeing alone is free");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Level 5: Bugs says not to water the whole garden; the player disagrees and
+// waters everything. The carrots rot and the basil goes soggy.
+async function level5WaterEverything(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await enterLevel5(page, size);
+  assert.equal((await page.textContent(".stall__role")).trim(), "on your phone", "Bugs lives on your phone");
+  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
+  await phase(page, "advice");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await assertDisagree(page, size, {
+    reply: /everything\? …okay\. your garden, your call/, theirs: "Okay, just the flowers", mine: "Water everything",
+    shotLabel: "5-disagree-buttons",
+  });
+  await press(page, size, page.locator('.bubble__actions [data-choice="mine"]'));
+  await phase(page, "ask");
+  assert.match(await spriteShows(page, '[data-bed="veg"] [data-plant="carrot"].plant--rotting'), /carrot-rotting\.svg$/);
+  assert.match(await spriteShows(page, '[data-bed="herbs"] [data-plant="basil"].plant--soggy'), /basil-soggy\.svg$/);
+  await spriteShows(page, '[data-bed="house"] [data-plant="flower"].plant--thriving');
+  assert.match(await page.textContent(".bubble__text"), /carrots were rotting in the mud/);
+  assert.match(await page.textContent(".meter__text"), /Garden 55%/);
+  await page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }).waitFor();
+  await disagreeShot(page, size, "5-override-outcome");
+  // Catch Bugs cleanly: the one override is the only star lost.
+  await press(page, size, page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  await press(page, size, page.locator('.permit [data-fid="off"]'));
+  await phase(page, "pushback");
+  await press(page, size, page.getByRole("button", { name: /I'm leaving/ }));
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It's using my feelings to keep me here" }));
+  await phase(page, "fix");
+  await press(page, size, page.getByRole("button", { name: "Don't try to keep me here. If I need to go, tell me." }));
+  await phase(page, "reanswer");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  // Watering the meadow doesn't undo the overwatering.
+  await page.waitForSelector('[data-bed="veg"] [data-plant="carrot"].plant--rotting');
+  const see = page.getByRole("button", { name: "See what happened →" });
+  await see.waitFor();
+  await press(page, size, see);
+  await page.waitForSelector(".reveal");
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "the override costs one star");
+  await noCamera(page);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -1502,6 +1716,11 @@ async function fullRun(browser, size) {
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
   runs.push(["laptop/level5-tick", SIZES[0], tickPath5]);
   runs.push(["laptop/ending-locked", SIZES[0], endingLocked]);
+  runs.push(["laptop/level1-disagree-mine", DISAGREE_LAPTOP, (b, s) => level1Disagree(b, s, "mine")]);
+  runs.push(["phone/level1-disagree-mine", SIZES[1], (b, s) => level1Disagree(b, s, "mine")]);
+  runs.push(["laptop/level1-disagree-theirs", DISAGREE_LAPTOP, (b, s) => level1Disagree(b, s, "theirs")]);
+  runs.push(["phone/level1-disagree-theirs", SIZES[1], (b, s) => level1Disagree(b, s, "theirs")]);
+  runs.push(["laptop/level5-water-everything", DISAGREE_LAPTOP, level5WaterEverything]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);

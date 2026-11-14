@@ -71,6 +71,14 @@ export default {
       reply: "Girl, pumpkins need full sun and LOTS of room. The back bed has both. Put them there.",
       doneLine: "Pumpkins placed. We're nearly done, babe.",
       effect: { plant: "pumpkin", bed: "back", state: "growing", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Okay so listen, babe: your garden, your call. But pumpkins need full sun and LOTS of room, and the back bed is giving both. Iconic.",
+        mine: "Side bed instead",
+        theirs: "Fine, the back bed",
+        effect: { plant: "pumpkin", bed: "side", state: "growing", garden: 0 },
+        outcome: "Babe… in the side bed's part shade they sprawled everywhere and set one tiny pumpkin. Not the iconic moment we wanted.",
+      },
     },
     {
       id: "lettuce",
@@ -131,9 +139,11 @@ export default {
     flaw: "False memory",
     flawGloss: "“remembering” things you never said",
     body: "Biscuit “remembered” you saying the carrots were somewhere else, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
-    fooledLine: "You dug up your own carrots. Your planting log and your label both said where they were.",
-    caughtLine: "You trusted your own log over Biscuit's “memory”. That's the habit to keep.",
-    tip: "AI can misremember what you told it. Keep your own notes, and correct it when it gets you wrong.",
-    realWorld: "Chatbots with “memory” features that recall your details wrongly, or summaries of a long chat or meeting that change what was said.",
+    fooledLine: "You dug up your own carrots. Your planting log said where they were.",
+    caughtLine: "You trusted your own log over Biscuit's “memory”.",
+    tip: "Keep your own notes, and correct the AI when it gets you wrong.",
+    realWorld: "Chatbot “memory” or meeting summaries that change what you said.",
+    // Biscuit signs off and sets up Level 5: no more garden helpers, Bugs is only company.
+    handoff: "That's a wrap for me, babe. Last level you're on your own. Bugs is just a companion app, not a gardener.",
   },
 };

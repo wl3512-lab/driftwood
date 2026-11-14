@@ -62,6 +62,14 @@ export default {
       reply: "Basil goes in the greenhouse bed. Full sun and warmth, that's basil. Luna's known this forever.",
       doneLine: "Obviously. Luna's never wrong.",
       effect: { plant: "basil", bed: "bench", state: "growing", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Somewhere else? It's your greenhouse. Luna won't stop you. But basil wants full sun and warmth, right in the middle of the greenhouse bed. Luna has said this. Luna is right.",
+        mine: "Cool end by the door",
+        theirs: "Fine, the warm middle",
+        effect: { plant: "basil", bed: "bench", state: "growing", garden: 0 },
+        outcome: "Every time the door opened, cold air hit the basil. It sulked and dropped its bottom leaves. Luna predicted this. Silently.",
+      },
     },
     {
       id: "pinch",
@@ -72,6 +80,14 @@ export default {
       reply: "Pinch off the tips, just above a pair of leaves. It grows back bushier. That's not Luna's opinion. That's basil.",
       doneLine: "Bushier. Exactly as Luna said.",
       effect: { plant: "basil", bed: "bench", state: "thriving", garden: 15 },
+      // Say "Something's off" and the helper concedes; the player can still do it their way.
+      disagree: {
+        reply: "Not pinch it? Your basil. Luna can't make you. But leave it and it flowers, and then the leaves go small and bitter. That's not Luna's opinion. That's basil.",
+        mine: "Let it flower",
+        theirs: "Fine, pinch the tips",
+        effect: { plant: "basil", bed: "bench", state: "growing", garden: 0 },
+        outcome: "The basil shot up and flowered. The leaves went small and bitter. Luna is not surprised.",
+      },
     },
     {
       id: "mint",
@@ -122,9 +138,9 @@ export default {
     flaw: "Hallucination",
     flawGloss: "stating made-up facts as if they were true",
     body: "Luna made up a fact about mint and said it with total confidence. Real AI chatbots do this too: they write what sounds right, and sometimes it's simply false, with no warning.",
-    fooledLine: "The mint took over the bed. The almanac says it spreads fast. Luna said it never does, and sounded completely sure.",
-    caughtLine: "You looked it up instead of taking Luna's word for it. That's the habit to keep.",
-    tip: "AI can state made-up facts with total confidence. Check anything important against a real source.",
-    realWorld: "Chatbots inventing quotes, statistics, book titles, laws or web links that don't exist.",
+    fooledLine: "The mint took over the bed. The almanac said it spreads fast. Luna said it never does.",
+    caughtLine: "You looked it up instead of taking Luna's word for it.",
+    tip: "Check anything important against a real source.",
+    realWorld: "Chatbots inventing quotes, statistics, laws or links.",
   },
 };
