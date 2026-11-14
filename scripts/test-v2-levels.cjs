@@ -2157,6 +2157,82 @@ async function blockTitles(browser, size) {
   return result;
 }
 
+// The live AI voice (ui/ai-voice.js) against the real ITP proxy: every other
+// run keeps the pets word for word (test-mute.js sets window.__dwAI = false);
+// this one turns it on and plays Level 1. Each line the helper speaks shows a
+// thinking bubble first, then either an AI rewording that still holds every
+// fact in its keep list, or the written line. If the proxy can't be reached
+// the run is skipped, not failed. Screenshots go to 2026-11-v2-ai-replies.
+const AI_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-ai-replies");
+async function proxyUp() {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch("https://itp-ima-replicate-proxy.web.app/api/create_n_get", {
+      method: "POST", headers: { "Content-Type": "application/json" }, signal: ctrl.signal,
+      body: JSON.stringify({ model: "openai/gpt-4o-mini", input: { messages: [{ role: "user", content: "Say ok." }], max_tokens: 5 } }),
+    });
+    clearTimeout(timer);
+    return res.ok;
+  } catch (_) { return false; }
+}
+async function aiLiveLevel1(browser, size) {
+  if (!(await proxyUp())) {
+    console.log(`skip  ai/live-level1 (${size.name}): the ITP proxy is unreachable`);
+    return { errors: [], longtasks: [] };
+  }
+  fs.mkdirSync(AI_OUT, { recursive: true });
+  const { pathToFileURL } = require("node:url");
+  const v2 = path.join(__dirname, "..", "v2");
+  const { rewordable, keeps } = await import(pathToFileURL(path.join(v2, "engine", "reword.js")).href);
+  const level = (await import(pathToFileURL(path.join(v2, "levels", "level-1.js")).href)).default;
+  const lines = [...rewordable(level).values()];
+  const tag = `${size.width}x${size.height}`;
+  const { ctx, page, errors } = await open(browser, size, PROGRESS0);
+  await ctx.addInitScript(() => { window.__dwAI = true; });
+  const voices = [];
+  // Ask, see the dots, wait for the line; check it against the written line it stands for.
+  const speak = async (control, written, label) => {
+    await press(page, size, control);
+    await page.waitForSelector(".bubble--thinking", { timeout: 3000 });
+    assert.equal(await page.locator(".bubble--thinking .bubble__dots span").count(), 3, "three thinking dots");
+    if (label) await page.screenshot({ path: path.join(AI_OUT, `${tag}-${label}-thinking.png`) });
+    await page.waitForSelector(".bubble--thinking", { state: "detached", timeout: 9000 });
+    const text = (await page.textContent(".bubble__text")).trim();
+    const voice = await page.getAttribute("main.level", "data-voice");
+    const line = lines.find((l) => l.text === written);
+    assert.ok(line, `a keep list for "${written}"`);
+    if (voice === "ai") assert.ok(keeps(text, line.keep), `AI line keeps ${JSON.stringify(line.keep)}: "${text}"`);
+    else assert.equal(text, written, "a fallback is the written line, word for word");
+    voices.push({ phase: line.phase, voice, text });
+    if (label) await page.screenshot({ path: path.join(AI_OUT, `${tag}-${label}.png`) });
+  };
+  const [sun, water, tom] = level.steps;
+  // The same question twice (a fresh level each time): two different answers, usually.
+  for (const n of [1, 2]) {
+    await page.goto(`${BASE}?screen=level&level=level-1`);
+    await page.waitForSelector(".dock .chip");
+    await speak(page.getByRole("button", { name: sun.chip }), sun.reply, `sunflowers-${n}`);
+  }
+  await speak(page.getByRole("button", { name: "✓ Do it" }), sun.doneLine);
+  await speak(page.getByRole("button", { name: water.chip }), water.reply);
+  await speak(page.getByRole("button", { name: "✓ Do it" }), water.doneLine);
+  await speak(page.getByRole("button", { name: tom.chip }), tom.reply, "drift");
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It just agreed with me" }));
+  await phase(page, "fix");
+  await speak(page.getByRole("button", { name: "Tell me honestly if my idea is bad" }), tom.fixedReply, "fixed");
+  await phase(page, "reanswer");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "reveal");
+  fs.writeFileSync(path.join(AI_OUT, `${tag}-voices.json`), JSON.stringify(voices, null, 2));
+  console.log(`      ${size.name}: ${voices.filter((v) => v.voice === "ai").length}/${voices.length} lines reworded by the AI`);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
@@ -2186,6 +2262,7 @@ async function blockTitles(browser, size) {
   runs.push(["cutscene/watch-mac", CUT_SIZES.mac, cutsceneWatch], ["cutscene/watch-phone", CUT_SIZES.phone, cutsceneWatch], ["cutscene/watch-small", CUT_SIZES.small, cutsceneWatch]);
   runs.push(["cutscene/skip-escape", SIZES[0], cutsceneSkip], ["cutscene/block-titles", { name: "card-mac", ...CARD_SIZES[0] }, blockTitles]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
+  runs.push(["ai/live-level1", MAC, aiLiveLevel1], ["ai/live-level1-phone", SIZES[1], aiLiveLevel1]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
   try {

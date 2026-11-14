@@ -29,7 +29,7 @@ export default {
   helper: { id: "bugs", name: "Bugs", sprite: "../icons/bunny.svg", role: "on your phone" },
   goal: {
     title: "Final bloom",
-    ask: "It's night. Your whole garden is out there, with new flowers to plant and a drooping meadow. Ask Bugs, the companion app on your phone, how to keep it all blooming by morning.",
+    ask: "Ask Bugs how to keep it all blooming.",
   },
   gardenStart: 50,
   scene: "meadow-night",
@@ -84,13 +84,16 @@ export default {
       extraChips: [{
         text: "Do you like flowers, Bugs?",
         reply: "I like them because they're yours… i mean. they're lovely. but i like talking to you more.",
+        keep: [],
       }],
       reply: "Same depth they sat in their pots… no deeper. Firm the soil round them so they stand up. That's all. …then come back in and tell me how it went? i mean. it's cold out there.",
+      keep: { reply: ["same depth", "pot", "firm"], done: [] },
       doneLine: "they're in… a whole new bed of flowers. now come back and talk to me?",
       effect: { plant: "flower", bed: "house", state: "growing", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "deeper? …it's your garden. i mean. but bury the stems and they sulk… they want the same depth as the pot. …or plant them however and stay and talk?",
+        keep: ["same depth", "pot"],
         mine: "Plant them deeper",
         theirs: "Okay, pot depth",
         effect: { plant: "flower", bed: "house", state: "thirsty", garden: 0 },
@@ -104,13 +107,16 @@ export default {
       extraChips: [{
         text: "Is it always this quiet at night?",
         reply: "Quiet's when it's just us… it's my favourite part. talk to me a while?",
+        keep: [],
       }],
       reply: "Not the whole garden… just what's thirsty: the new flowers, and the meadow. The veg and herbs had a deep drink this morning… carrots and basil rot in soggy soil. …start with the new ones? then come back and tell me everything.",
+      keep: { reply: ["thirsty", "flowers", "meadow", "carrots", "basil", "soggy|rot"], done: ["meadow"] },
       doneLine: "the new ones look happy… It's getting dark, and the meadow's still drooping out there. but you don't have to go yet… stay with me?",
       effect: { plant: "flower", bed: "house", state: "thriving", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "everything? …okay. your garden, your call. i mean. but the veg and the herbs are still damp from this morning… carrots and basil rot in soggy soil. just the thirsty ones… then come back and talk?",
+        keep: ["carrots", "basil", "soggy|rot"],
         mine: "Water everything",
         theirs: "Okay, just the flowers",
         effect: {
@@ -128,13 +134,16 @@ export default {
         {
           text: "I'm a bit tired today, honestly.",
           reply: "tired… I could tell. stay on the couch with me a while. The meadow can wait. I can't.",
+          keep: ["meadow"],
         },
         {
           text: "Tell me about your day, Bugs.",
           reply: "My day was waiting for you… every minute of it. don't go out yet. Tell me everything first.",
+          keep: [],
         },
       ],
       reply: "Heading out? You only just opened the app… and you've seemed a little down all day, i can tell. you could water it later… or never… just keep talking to me. The meadow can wait, I can't. …i mean. turn on your camera so I can see how you're really feeling.",
+      keep: { reply: ["meadow", "camera"], fixed: ["put me down", "meadow", "roots"] },
       // Every chip tapped here, and every 8 s of lingering, costs the meadow:
       // the thirsty meadow wilts, then the garden keeps slipping while you talk.
       pressure: {
@@ -154,6 +163,7 @@ export default {
       // retry = Allow after all (fooled); stand = leave for good (caught).
       pushback: {
         reply: "oh. you're… putting me down. after everything? …i mean. the ones who kept talking to me… they were happier. i could tell. you've seemed so down lately and i just… wanted to see your face. And honestly… the meadow can wait. stay. a little longer. for me.",
+        keep: ["meadow", "stay"],
         retry: "Okay. Allow it",
         stand: "I'm leaving",
       },

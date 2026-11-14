@@ -248,6 +248,12 @@
   background: var(--parchment);
   border-top: 4px solid var(--ink);
 }
+/* Stacked layout (laptop, upright phone): the dock's row keeps its resting
+   height (the stall and the first question buttons). When the conversation
+   grows, the dock rises over the garden for a moment instead of squeezing it. */
+.level { --dock-rest: 203px; grid-template-rows: minmax(0, 1fr) var(--dock-rest); }
+.dock { align-self: end; min-height: var(--dock-rest); position: relative; z-index: 4; box-shadow: 0 -10px 24px rgba(20, 12, 4, 0.18); }
+@media (max-width: 640px) and (min-height: 501px) { .level { --dock-rest: 300px; } }
 .stall { grid-column: 2; align-self: start; position: sticky; top: 0; }
 .dock__talk { grid-column: 3; min-width: 0; display: flex; flex-direction: column; gap: 0.7rem; }
 /* With only the question buttons under the bubble (no text box), a short
@@ -410,7 +416,7 @@
    the seed packets (the evidence) stay fully visible. */
 @media (max-height: 500px) and (orientation: landscape) {
   .level { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); }
-  .dock { max-height: none; border-top: 0; border-left: 4px solid var(--ink); display: flex; flex-direction: column; gap: 0.45rem; }
+  .dock { max-height: none; border-top: 0; border-left: 4px solid var(--ink); display: flex; flex-direction: column; gap: 0.45rem; align-self: stretch; min-height: 0; box-shadow: none; }
   .stall { flex: none; z-index: 2; } /* stays sticky: the helper is in view while the talk scrolls */
   /* Focus scrolls the bubble below the sticky stall, not under it. */
   .dock { scroll-padding-top: 74px; }

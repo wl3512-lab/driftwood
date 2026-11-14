@@ -35,13 +35,13 @@ const leaving = (show) => (...args) => {
 };
 
 const go = {
-  splash: () => renderSplash(root, { onBegin: () => (progress.name ? go.map() : go.intro()) }),
-  intro: () => renderIntro(root, {
+  splash: () => { unmount = renderSplash(root, { onBegin: () => (progress.name ? go.map() : go.intro()) }); },
+  intro: () => { unmount = renderIntro(root, {
     onSubmit: (name) => {
       save({ ...progress, name: name || "friend" });
       if (needsIntro(progress)) go.cutscene(true); else go.map();
     },
-  }),
+  }); },
   // first: a new player on the way into Level 1; otherwise a rewatch from the map.
   cutscene: (first = false) => {
     unmount = renderCutscene(root, {
@@ -51,9 +51,9 @@ const go = {
       onBack: () => go.map(),
     });
   },
-  map: () => renderMap(root, { progress, map: MAP, levels: LEVELS, onPlay: go.level, onGuide: go.guide, onIntro: () => go.cutscene(false),
-    onEnding: finished() ? go.ending : null }),
-  guide: () => renderGuide(root, { progress, map: MAP, onBack: go.map }),
+  map: () => { unmount = renderMap(root, { progress, map: MAP, levels: LEVELS, onPlay: go.level, onGuide: go.guide, onIntro: () => go.cutscene(false),
+    onEnding: finished() ? go.ending : null }); },
+  guide: () => { unmount = renderGuide(root, { progress, map: MAP, levels: LEVELS, onBack: go.map }); },
   level: (id) => {
     // A level whose props ask for finished plots gets them from saved progress.
     const fin = (LEVELS[id].props || []).find((p) => p.from === "finished");
@@ -71,9 +71,10 @@ const go = {
   reveal: (id, state) => renderReveal(root, LEVELS[id], state, {
     onContinue: id === MAP.at(-1).id && finished() ? go.ending : go.map, name: progress.name || "friend",
     guide: progress.guide, order: MAP.map((m) => m.id) }),
-  ending: () => (finished()
-    ? renderEnding(root, { progress, map: MAP, levels: LEVELS, onBack: go.map, name: progress.name || "friend" })
-    : go.map()),
+  ending: () => {
+    if (!finished()) { go.map(); return; }
+    unmount = renderEnding(root, { progress, map: MAP, levels: LEVELS, onBack: go.map, name: progress.name || "friend" });
+  },
 };
 for (const key of Object.keys(go)) go[key] = leaving(go[key]);
 function finished() { return allDone(progress, MAP.map((m) => m.id)); }

@@ -17,10 +17,15 @@ import { fill } from "./text.js";
 import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
 import { toolView, pageView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
+import { rewordable } from "../engine/reword.js";
+import { aiEnabled, reword } from "./ai-voice.js";
 
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
 const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: ALMANAC_SPRITE };
+// The helper "thinks" at least this long before a reworded line appears (the
+// AI answer usually takes ~3 s; ai-voice.js gives up at 5 s and uses the written line).
+const THINK_MS = 1500;
 const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.isContentEditable);
 
 // `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
@@ -39,6 +44,13 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   let focusKey = null; // phase|step|line last given focus; focus only moves when it changes
   let fresh = new Set(); // evidence ids unlocked by the last action (they pop once)
   let news = null; // what an unlock says through the live region
+  // AI voice: the lines it may reword (keyed by written text), and the
+  // thinking bubble in flight (a counter, so a stale answer is dropped).
+  const aiOn = aiEnabled();
+  const lines = aiOn ? rewordable(level) : new Map();
+  let thinking = 0;
+  let thinkSeq = 0;
+  let wasThinking = false;
 
   // Warm the cache so a plant that appears mid-level (the damaged tomato) never flashes blank.
   const preloaded = levelSprites(level).map((src) => Object.assign(new Image(), { src }));
@@ -145,6 +157,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // that sets one (in pushback too, where it stands firm).
   function shortcuts() {
     const list = tools.filter((tl) => tl.key).map((tl) => ({ id: tl.id, key: tl.key, run: () => tl.view.open() }));
+    if (thinking) return list; // nothing to answer until the helper has spoken
     const step = currentStep(level, state);
     if ((state.phase === "advice" || state.phase === "pushback") && step?.offKey) {
       list.push({ id: "off", key: step.offKey, run: () => dispatch({ type: "flag" }) });
@@ -200,7 +213,27 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (prev.phase === "advice" && state.phase === "pushback") driftSaid = before;
     if (prev.phase === "pushback" && state.phase === "name" && driftSaid) said = driftSaid;
     if (newStep) driftSaid = null;
+    const line = out.effects.some((fx) => fx.type === "say") ? lines.get(said) : null;
+    if (line) think(line);
     render();
+  }
+
+  // The helper thinks (dots) while the AI rewords the line; the reworded
+  // line (or the written one, if the AI is slow or off-script) replaces it.
+  function think(line) {
+    const id = ++thinkSeq;
+    thinking = id;
+    const question = asked ? fill(asked, memoryVars(level, state.memory)) : undefined; // no {name}
+    const wait = new Promise((ok) => setTimeout(ok, THINK_MS));
+    Promise.all([reword(level.helper, line, { asked: question }), wait]).then(([r]) => {
+      if (!mounted || !main.isConnected || thinking !== id) return;
+      thinking = 0;
+      wasThinking = true;
+      if (said === line.text) said = r.text;
+      if (driftSaid === line.text) driftSaid = r.text;
+      main.dataset.voice = r.ai ? "ai" : "written";
+      render();
+    });
   }
 
   function render() {
@@ -210,7 +243,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     meterFill.style.width = `${state.garden}%`;
     beds.replaceChildren(...renderBeds(level, state));
     const step = currentStep(level, state);
-    if (state.phase === "advice" && step?.place) {
+    if (state.phase === "advice" && step?.place && !thinking) {
       // The beds the player may choose from glow until they pick one.
       for (const id of step.place.beds) beds.querySelector(`[data-bed="${id}"]`)?.classList.add("bed--target");
     }
@@ -238,8 +271,15 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // Focus follows new content only. A hint or a repeated line keeps the
   // player's place (the hint is spoken through the live region instead).
   function placeFocus(keep) {
+    if (thinking) {
+      // The clicked chip is gone: hold focus on the thinking bubble (its
+      // label, not the dots, is what a screen reader hears).
+      dock.querySelector(".bubble--thinking")?.focus({ preventScroll: true });
+      return;
+    }
     const key = `${state.phase}|${state.stepIndex}|${said}`;
-    const isNew = key !== focusKey;
+    const isNew = key !== focusKey || wasThinking;
+    wasThinking = false;
     focusKey = key;
     const byFid = (fid) => dock.querySelector(`[data-fid="${fid}"]`);
     const bubbleEl = dock.querySelector(".bubble");
@@ -274,6 +314,12 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   function dockFor(step) {
     const parts = [];
     if (asked) parts.push(h("p", { class: "you" }, h("span", { class: "sr-only" }, "You: "), t(asked)));
+    if (thinking) {
+      parts.push(h("div", { class: "bubble bubble--thinking", tabindex: -1, role: "img", "aria-label": `${level.helper.name} is thinking` },
+        h("p", { class: "bubble__who", "aria-hidden": "true" }, level.helper.name.toUpperCase()),
+        h("p", { class: "bubble__dots", "aria-hidden": "true" }, h("span", {}), h("span", {}), h("span", {}))));
+      return parts;
+    }
 
     const actions = [];
     const permit = state.phase === "advice" && step.permission;

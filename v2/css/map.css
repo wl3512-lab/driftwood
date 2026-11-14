@@ -1,61 +1,362 @@
-/* Level map: five plots, one helper each. */
-.map {
-  min-height: 100dvh;
-  padding: 1.2rem 16px 2rem;
-  background: linear-gradient(var(--sky) 0 22%, var(--grass) 22% 100%);
+/* The garden world (ui/world.js): a pixel-art panorama behind the map, the
+   splash, the name screen, the field guide and the ending. The canvas is drawn
+   small and scaled up with square pixels. */
+.world {
+  position: relative;
+  overflow: hidden;
+  height: 100dvh;
+  background: #2a2550;
   font-family: var(--font-ui);
+  color: var(--ink);
 }
-.map__head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; max-width: 64rem; margin: 0 auto; }
+.world__sky {
+  position: absolute; left: 0; top: 0; z-index: 0;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  pointer-events: none;
+}
+.world > :not(.world__sky) { position: relative; z-index: 1; }
+/* Pixel-art sprites stay crisp everywhere in the world. */
+.world img { image-rendering: pixelated; }
+.btn--gold { background: var(--gold); color: #2a1600; border-color: var(--off-edge); box-shadow: 4px 4px 0 var(--off-edge); }
+.btn--gold:hover { background: #ffc46b; }
+
+/* ---------- the map ---------- */
+.map__head {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 2;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+  padding: 18px 22px 0;
+}
 .map__title {
-  font-size: clamp(1.3rem, 3vw, 2rem);
+  margin: 0;
   padding: 0.4rem 0.8rem;
   background: var(--parchment);
   border: 3px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
 }
-.map__sub { max-width: 64rem; margin: 1rem auto 0; font-weight: 600; color: var(--ink); }
-.plots {
-  list-style: none;
-  max-width: 64rem;
-  margin: 1.5rem auto 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 1rem;
-}
-.plot {
-  width: 100%;
-  min-height: 11rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 1rem 0.6rem;
-  /* Dark soil so parchment text (9.2:1) and gold stars (7.0:1) pass WCAG AA. */
-  background: #5a3d22;
-  border: 4px solid #3d2814;
-  border-radius: 2px;
-  color: var(--parchment);
-  font: 600 0.9rem var(--font-ui);
-  cursor: pointer;
-}
-.plot:not([disabled]):hover { background: #6b4a2b; } /* text 7.4:1, stars 5.6:1 */
-.plot img { width: 64px; height: auto; }
-.plot__num { font-size: 0.7rem; letter-spacing: 0.2em; }
-.plot__stars { color: #ffd54f; letter-spacing: 0.15em; font-size: 1.1rem; }
-.plot__status { font-size: 0.8rem; }
-/* Locked / coming soon: muted, but the text still reads (7.1:1). Only the sprite is greyed. */
-.plot[disabled] { background: #4a4540; border-color: #2f2b27; color: #e6dfcf; cursor: not-allowed; }
-.plot[disabled] img { filter: grayscale(1) opacity(0.6); }
-.map__done { max-width: 64rem; margin: 1rem auto 0; }
-
 /* The garden's name in block letters (ui/block-type.js), on the parchment sign. */
 .map__title:has(.block-type) { display: flex; align-items: center; min-width: 0; max-width: 100%; line-height: 0; padding: 0.55rem 0.8rem; }
-.map__title .block-type { height: clamp(20px, 2.6vw, 32px); width: auto; max-width: 100%; }
+.map__title .block-type { height: clamp(20px, 2.8vw, 36px); width: auto; max-width: 100%; }
 .map__head > .map__title:has(.block-type) { flex: 0 1 auto; }
-.map__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-@media (max-height: 500px) {
-  .map__title .block-type { height: 20px; }
+.map__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6rem; }
+.map__sub { margin: 0.8rem 0 0; font-weight: 600; color: var(--ink); }
+
+/* Five beds along the path, at the x the sky's sun uses (world.js BED_X). */
+.plots { list-style: none; margin: 0; padding: 0; position: absolute !important; inset: 0; pointer-events: none; }
+.plots__bed {
+  --bw: clamp(84px, 14.5vw, 240px);
+  --bh: calc(var(--bw) * 0.17);
+  position: absolute; left: var(--x); bottom: 21%;
+  width: var(--bw); transform: translateX(-50%);
+  pointer-events: auto;
 }
+.plot {
+  position: relative; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0; background: none; border: 0; cursor: pointer;
+  font: 700 0.9rem/1.1 var(--font-ui); color: var(--ink);
+}
+.plot:focus-visible { outline: none; }
+.plot:focus-visible .plot__stake { outline: 3px solid var(--focus); outline-offset: 3px; }
+/* The stake sign above the bed: level, name, stars (or Play / Locked). */
+.plot__stake {
+  align-self: flex-start;
+  display: grid; justify-items: start; gap: 4px;
+  max-width: calc(var(--bw) + 24px);
+  margin: 0 0 calc(var(--bh) * 0.5) -6px;
+  padding: 6px 10px 7px;
+  background: var(--parchment); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+  text-align: left; white-space: nowrap;
+}
+.plot__num { font-size: 0.66rem; letter-spacing: 0.16em; color: #8a3b12; }
+.plot__title { font-size: 0.86rem; white-space: normal; }
+.plot__stars { color: #c98a00; letter-spacing: 0.12em; font-size: 1rem; -webkit-text-stroke: 0.5px #6b4a00; }
+.plot__status { font-size: 0.8rem; }
+.plot--next .plot__stake { background: #fff3b0; border-color: #6b3d00; box-shadow: 3px 3px 0 #6b3d00; }
+.plot--next .plot__status { padding: 2px 6px; background: var(--do); border: 2px solid var(--do-edge); color: #0f2a0b; }
+.plot:not([disabled]):hover .plot__stake { transform: translate(-1px, -2px); box-shadow: 4px 5px 0 var(--ink); }
+/* The bed: crops standing in a wooden box. */
+.plot__crops { display: flex; justify-content: space-around; width: 100%; margin-bottom: calc(var(--bh) * -0.55); position: relative; z-index: 1; }
+.plot__crops img { width: calc(var(--bw) / 3.6); height: auto; }
+.plot__box {
+  display: block; width: 100%; height: var(--bh);
+  background: linear-gradient(#5a381d 0 4px, #7a4f2c 4px);
+  border: 3px solid #3d2814;
+}
+/* The pet stands on the path in front of its bed. */
+.plot__pet {
+  position: absolute; left: 50%; top: calc(100% - var(--bh) * 0.35); z-index: 2;
+  width: calc(var(--bw) / 2.6); height: auto; transform: translateX(-50%);
+}
+.plot--next .plot__pet { animation: pet-bob 0.6s steps(2) infinite alternate; }
+@keyframes pet-bob { to { transform: translate(-50%, -6px); } }
+.plot[disabled] { cursor: not-allowed; }
+.plot--locked .plot__stake { background: #6d5a48; border-color: #2f241a; box-shadow: 3px 3px 0 #2f241a; color: #f1e3cc; }
+.plot--locked .plot__num { color: #f1e3cc; }
+.plot--locked .plot__crops img, .plot--locked .plot__pet { filter: brightness(0) opacity(0.5); }
+.plot--locked .plot__box { filter: brightness(0.5); }
+
+/* Every level done: the finished-garden button waits at the end of the path. */
+.map__done { position: absolute !important; right: 22px; bottom: 3%; margin: 0; z-index: 3; }
+.map__done .btn { font-size: 1.05rem; padding: 0.9rem 1.3rem; }
+
+/* Phones on their side, and small phones. */
+@media (max-height: 500px) {
+  .map__head { padding: 10px 12px 0; }
+  .map__title .block-type { height: 18px; }
+  .map__title:has(.block-type) { padding: 0.4rem 0.55rem; box-shadow: 3px 3px 0 var(--ink); }
+  .map__actions { gap: 0.4rem; }
+  .map__actions .btn { padding: 0.45rem 0.6rem; min-height: 36px; font-size: 0.78rem; }
+  .plot__stake { gap: 2px; padding: 4px 6px 5px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); margin-left: -4px; }
+  .plot__num { font-size: 0.55rem; letter-spacing: 0.1em; }
+  .plot__title { font-size: 0.68rem; }
+  .plot__stars { font-size: 0.8rem; }
+  .plot__status { font-size: 0.68rem; }
+  .plot__box { border-width: 2px; }
+  .map__done { right: 12px; bottom: 2%; }
+  .map__done .btn { font-size: 0.85rem; padding: 0.55rem 0.8rem; min-height: 40px; }
+}
+@media (max-width: 640px) and (max-height: 500px) {
+  .map__head { flex-wrap: nowrap; }
+  .map__title .block-type { height: 14px; }
+  .plot__title { display: none; } /* the stake keeps level, stars or Play; the name is in the button's label */
+}
+@media (prefers-reduced-motion: reduce) { .plot--next .plot__pet { animation: none; } }
+
 .ending__garden .map__title:has(.block-type) { display: inline-flex; vertical-align: top; }
+
+/* ---------- the other world screens: splash, name, field guide, ending ---------- */
+.world__sky--fixed { position: fixed; }
+.world--scroll { height: auto; min-height: 100dvh; overflow: visible; }
+/* CRT-named buttons, restyled as wooden signs in the garden. */
+.world .btn--crt, .ending__guide .btn--crt { background: var(--parchment); color: var(--ink); border-color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.world .btn--crt:hover, .ending__guide .btn--crt:hover { background: #fffbe9; }
+.world .btn--gold, .ending__guide .btn--gold { background: var(--gold); color: #2a1600; border-color: var(--off-edge); box-shadow: 4px 4px 0 var(--off-edge); }
+.world .btn--gold:hover, .ending__guide .btn--gold:hover { background: #ffc46b; }
+.world .crt__title, .ending__guide .crt__title { text-shadow: none; }
+.world .crt__title .block-type, .ending__guide .crt__title .block-type { filter: none; }
+
+/* The five pets wait on the path. */
+.world__pets { position: absolute !important; inset: 0; pointer-events: none; }
+.world__pet {
+  position: absolute; left: var(--x); bottom: 7%;
+  height: clamp(40px, 14vh, 112px); width: auto; transform: translateX(-50%);
+}
+.world__pet:nth-child(odd) { animation: pet-bob 0.7s steps(2) infinite alternate; }
+.world__pet:nth-child(2n) { animation: pet-bob 0.9s steps(2) 0.3s infinite alternate; }
+
+/* Splash: the name on a wooden sign, top left, sunset behind. */
+.splash__sign {
+  position: absolute !important; left: clamp(16px, 6vw, 88px); top: clamp(16px, 9vh, 96px);
+  display: grid; justify-items: start; gap: clamp(10px, 2.4vh, 18px);
+}
+.splash .crt__title--block {
+  width: min(600px, 54vw); margin: 0; padding: clamp(10px, 1.6vw, 18px);
+  background: var(--parchment); border: 4px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+}
+.splash .crt__line, .intro .crt__line { margin: 0; color: var(--ink); }
+.splash .crt__line {
+  padding: 6px 10px; font: 600 0.95rem/1.3 var(--font-ui);
+  background: var(--parchment); border: 3px solid var(--ink);
+}
+.splash .btn { font-size: 1.1rem; padding: 0.85rem 1.4rem; }
+
+/* Name entry: one parchment card, top left. */
+.intro__card {
+  position: absolute !important; left: clamp(16px, 6vw, 88px); top: clamp(12px, 8vh, 88px);
+  width: min(30rem, calc(100% - 32px)); max-height: calc(80% - clamp(12px, 8vh, 88px)); overflow: auto;
+  display: grid; justify-items: start; gap: 10px; padding: clamp(12px, 2vw, 20px);
+  background: var(--parchment); border: 4px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+  text-align: left;
+}
+.intro .crt__line--big { font: 700 clamp(1.05rem, 2.3vw, 1.45rem)/1.3 var(--font-ui); }
+.intro .crt__line:not(.crt__line--big) { font: 1rem/1.4 var(--font-body); }
+.intro .intro__form { align-items: flex-start; margin-top: 4px; gap: 6px; width: 100%; }
+.intro .intro__form label { color: #8a3b12; letter-spacing: 0.12em; font-weight: 700; }
+.intro__row { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+.intro .intro__form input {
+  flex: 1 1 10rem; width: auto; min-width: 0;
+  background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 0;
+}
+
+/* Pixel type for card text and short lines (OFL, self-hosted in v2/fonts/). */
+@font-face {
+  font-family: "Pixelify Sans"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("../fonts/PixelifySans.woff2") format("woff2");
+}
+:root { --font-pixel: "Pixelify Sans", var(--font-ui); }
+
+/* Field guide: five collectible cards in one row, standing on the night lawn. */
+.guide {
+  --gut: clamp(12px, 4vw, 64px); --gap: clamp(6px, 1.4vw, 22px); --headH: clamp(58px, 13vh, 110px);
+  --cw: min((100vw - 2 * var(--gut) - 4 * var(--gap)) / 5, (100dvh - var(--headH) - 4vh) / 1.62);
+  --ch: calc(var(--cw) * 1.62);
+  text-align: left; color: #f1ecff;
+}
+.guide__head {
+  position: absolute !important; left: 0; right: 0; top: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  padding: clamp(10px, 3vh, 28px) var(--gut) 0;
+}
+.guide__title {
+  margin: 0; padding: 0.35rem 0.8rem; font: 700 clamp(1.1rem, 3vw, 2rem)/1.2 var(--font-ui); letter-spacing: 0.12em;
+  background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); box-shadow: 4px 4px 0 #0d0b20;
+}
+.guide__count { margin: 0; font: 700 clamp(0.85rem, 1.8vw, 1.1rem) var(--font-ui); color: #ffe08a; }
+.guide__back { margin-left: auto; }
+.guide .guide__row {
+  position: absolute !important; left: var(--gut); right: var(--gut); bottom: 4vh;
+  width: auto; max-width: none; margin: 0; padding: 0; list-style: none;
+  display: flex; justify-content: center; align-items: flex-end; gap: var(--gap);
+}
+.guide .guide__card {
+  position: relative; flex: none; width: var(--cw); height: var(--ch);
+  display: flex; flex-direction: column; gap: calc(var(--cw) * 0.035);
+  padding: calc(var(--cw) * 0.06); border: calc(var(--cw) * 0.018 + 1.5px) solid #2a1d12; border-radius: calc(var(--cw) * 0.04);
+  background: var(--parchment); color: var(--ink); text-align: left;
+  box-shadow: inset 0 0 0 calc(var(--cw) * 0.02) var(--parchment), inset 0 0 0 calc(var(--cw) * 0.03) #d9c9a0, 4px 5px 0 #0d0b20;
+  font: 400 calc(var(--cw) * 0.07)/1.15 var(--font-pixel);
+}
+.guide .guide__card:nth-child(odd) { transform: rotate(-1.5deg); }
+.guide .guide__card:nth-child(even) { transform: rotate(1.2deg) translateY(-4px); }
+.gc__top { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-weight: 600; font-size: calc(var(--cw) * 0.068); color: #8a3b12; }
+.gc__top span:first-child { font: 700 calc(var(--cw) * 0.058)/1 var(--font-ui); }
+.gc__art {
+  position: relative; display: block; flex: none; height: calc(var(--ch) * 0.31); overflow: hidden;
+  border: calc(var(--cw) * 0.012 + 1.5px) solid #2a1d12; border-radius: 3px;
+  background: linear-gradient(#9fd2f0 0 58%, #6aa84a 58% 100%);
+}
+.gc__art img { position: absolute; left: 50%; bottom: 6%; height: 84%; width: auto; transform: translateX(-50%); }
+.gc__stamp {
+  position: absolute; z-index: 2; right: 4%; top: calc(var(--ch) * 0.27); width: 58%; margin: 0;
+  padding: calc(var(--cw) * 0.025); border: calc(var(--cw) * 0.014 + 1px) solid currentColor; border-radius: 3px;
+  color: #c7301f; background: rgba(255, 246, 220, 0.7); transform: rotate(-12deg);
+}
+.gc__stamp .block-type { width: 100%; height: auto; }
+.gc__name { flex: none; height: calc(var(--ch) * 0.13); margin: calc(var(--cw) * 0.02) 0 0; display: flex; align-items: center; }
+.gc__name .block-type { width: 100%; height: 100%; }
+.guide .guide__card .gc__tip {
+  margin: auto 0 0; padding: calc(var(--cw) * 0.04) calc(var(--cw) * 0.05);
+  background: #2f5a24; color: #f4ffe9; border: 2px solid #2a1d12; border-radius: 3px;
+  font: 400 calc(var(--cw) * 0.066)/1.15 var(--font-pixel);
+}
+.guide .guide__card--fooled { background: #e7e1d3; color: #4a4038; box-shadow: inset 0 0 0 calc(var(--cw) * 0.02) #e7e1d3, inset 0 0 0 calc(var(--cw) * 0.03) #bfb5a0, 4px 5px 0 #0d0b20; }
+.guide__card--fooled .gc__art { filter: grayscale(0.85) contrast(0.9); }
+.guide__card--fooled .gc__stamp { color: #4c4a6b; }
+.guide .guide__card--fooled .gc__tip { background: #4a4038; }
+.guide__card--fooled .gc__top { color: #6b5f52; }
+/* Not found yet: the card lies face down. */
+.guide .guide__card--empty {
+  padding: calc(var(--cw) * 0.07); background: #7a2e1c; box-shadow: 4px 5px 0 #0d0b20;
+  justify-content: flex-end; align-items: center;
+}
+.gc__back {
+  position: absolute; inset: calc(var(--cw) * 0.07); border: 2px solid #ffcf86; border-radius: 3px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 207, 134, 0.18) 0 3px, transparent 3px 12px),
+    repeating-linear-gradient(-45deg, rgba(255, 207, 134, 0.18) 0 3px, transparent 3px 12px),
+    #5e2214;
+}
+.gc__backmark {
+  position: absolute; left: 50%; top: 42%; width: 42%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  display: grid; place-items: center; background: #5e2214; border: 2px solid #ffcf86; border-radius: 50%;
+}
+.gc__backmark .block-type { width: 46%; height: auto; }
+.gc__backnum { position: relative; margin: 0 0 6%; padding: 2px 6px; font: 700 calc(var(--cw) * 0.06)/1.2 var(--font-ui); letter-spacing: 0.08em; color: #ffe0a8; background: #5e2214; }
+
+/* The ending's guide cards keep their own parchment layout. */
+.ending__guide .guide__cards {
+  width: auto; max-width: 70rem; margin: 22px 0 0; gap: 22px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+}
+.ending__guide .guide__card {
+  position: relative; padding: 14px 14px 16px;
+  background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--ink); box-shadow: 4px 4px 0 #0d0b20;
+}
+.ending__guide .guide__card h3 { color: var(--ink); font-size: 1.1rem; letter-spacing: 0.04em; }
+.ending__guide .guide__card .crt__kicker { color: #8a3b12; letter-spacing: 0.12em; }
+.ending__guide .ending__tip, .ending__guide .ending__gloss, .ending__guide .ending__where { font-family: var(--font-pixel); font-size: 1rem; line-height: 1.3; }
+.intro .crt__line:not(.crt__line--big) { font-family: var(--font-pixel) !important; font-size: 1.1rem; }
+
+/* Ending: the finished garden at dawn, every bed on the path. */
+.ending__garden.world { padding: 0; text-align: left; background: #2a2550; }
+.ending__head { position: absolute !important; left: 22px; top: 18px; display: grid; justify-items: start; gap: 10px; }
+.ending__head .map__sub { margin: 0; padding: 4px 8px; font: 600 0.85rem var(--font-ui); background: var(--parchment); border: 2px solid var(--ink); }
+.ending__garden .ending__plots { position: absolute !important; inset: 0; max-width: none; margin: 0; padding: 0; display: block; pointer-events: none; }
+.ending__garden .ending__plot {
+  --bw: clamp(84px, 14.5vw, 240px); --bh: calc(var(--bw) * 0.17);
+  position: absolute; left: var(--x); bottom: 21%; width: var(--bw); max-width: none; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 0;
+  background: none; border: 0; color: var(--ink);
+}
+.ending__stake {
+  align-self: flex-start; margin: 0 0 calc(var(--bw) / 3.2) -6px; max-width: calc(var(--bw) + 24px);
+  display: grid; gap: 2px; padding: 5px 9px 6px; text-align: left;
+  background: var(--parchment); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+}
+.ending__garden .ending__plot-title { font-size: 0.8rem; }
+.ending__garden .ending__plot-helper { font-size: 0.68rem; opacity: 1; color: #8a3b12; }
+.ending__garden .ending__plot-stars { color: #c98a00; -webkit-text-stroke: 0.5px #6b4a00; font-size: 0.95rem; }
+.ending__plot--fooled .ending__stake { border-style: dashed; }
+.ending__bed {
+  position: relative; display: block; height: var(--bh);
+  background: linear-gradient(#5a381d 0 4px, #7a4f2c 4px); border: 3px solid #3d2814;
+}
+.ending__garden .ending__plant { position: absolute; left: 50%; bottom: 55%; width: calc(var(--bw) / 2.6); height: auto; transform: translateX(-50%); }
+.ending__garden .ending__helper {
+  position: absolute; left: 50%; top: calc(100% - var(--bh) * 0.35); z-index: 2; margin: 0;
+  width: calc(var(--bw) / 2.6); height: auto; transform: translateX(-50%);
+}
+.ending__down { position: absolute !important; right: 22px; top: 18px; z-index: 3; }
+@media (max-height: 500px) { .ending__down { right: 12px; top: 10px; font-size: 0.85rem; padding: 0.55rem 0.8rem; min-height: 40px; } }
+/* The field guide under it: the night sky in hard-edged stars. */
+.ending__guide {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1rem;
+  padding: 36px clamp(16px, 6vw, 80px) 56px; text-align: left; color: #f1ecff;
+  border-top: 6px solid #12101f;
+  background: #1d1a3a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' shape-rendering='crispEdges'%3E%3Cg fill='%23fff'%3E%3Crect x='10' y='14' width='3' height='3'/%3E%3Crect x='72' y='8' width='3' height='3' opacity='.7'/%3E%3Crect x='40' y='60' width='3' height='3' opacity='.5'/%3E%3Crect x='96' y='84' width='3' height='3'/%3E%3Crect x='22' y='100' width='3' height='3' opacity='.6'/%3E%3C/g%3E%3C/svg%3E");
+  font-family: var(--font-ui);
+}
+.ending__guide .crt__title--small .block-type { width: min(460px, calc(100vw - 32px)); margin: 0; }
+.ending__guide .ending__score { margin: 0; color: #ffe08a; }
+.ending__guide .guide__cards { align-self: stretch; }
+.ending__guide .ending__gloss { color: #5e4a32; opacity: 1; }
+.ending__guide .ending__where { color: #4a3a2a; }
+.ending__guide .ending__where strong { color: #8a3b12; }
+.ending__guide .ending__card--caught .ending__badge { color: #2e6b22; }
+.ending__guide .ending__card--fooled .ending__badge { color: #a0381a; }
+.ending__guide .ending__card--fooled { border-color: var(--ink); }
+.ending__guide .ending__share { align-items: flex-start; }
+.ending__guide .ending__status { color: #b9f6ca; }
+.ending__guide .ending__hint { color: #d9d4f5; }
+.ending__guide .ending__text { background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); }
+
+@media (max-height: 500px) {
+  .splash .crt__title--block { width: min(400px, 52vw); border-width: 3px; box-shadow: 4px 4px 0 var(--ink); }
+  .splash .crt__line { font-size: 0.8rem; }
+  .splash .btn { font-size: 0.95rem; padding: 0.6rem 1rem; min-height: 40px; }
+  .world__pet { height: clamp(34px, 13vh, 60px); }
+  .intro__card { gap: 6px; border-width: 3px; box-shadow: 4px 4px 0 var(--ink); width: min(34rem, calc(100% - 32px)); }
+  .intro .crt__line--big { font-size: 0.95rem; }
+  .intro .crt__line:not(.crt__line--big) { font-size: 0.82rem; }
+  .intro .intro__form input, .intro .intro__form .btn { min-height: 40px; padding-block: 0.4rem; }
+  .ending__head { left: 12px; top: 10px; gap: 6px; }
+  .ending__head .map__sub { font-size: 0.7rem; }
+  .ending__stake { padding: 3px 6px 4px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); margin-left: -4px; }
+  .ending__garden .ending__plot-title { font-size: 0.64rem; }
+  .ending__garden .ending__plot-helper { display: none; }
+  .ending__garden .ending__plot-stars { font-size: 0.75rem; }
+  .ending__bed { border-width: 2px; }
+}
+@media (max-width: 640px) and (max-height: 500px) {
+  .ending__garden .ending__plot-title { display: none; }
+  .ending__head .map__sub { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .world__pet { animation: none !important; } }
+#ending-guide:focus { outline: none; }
+@media (max-height: 500px) {
+  .guide__head { flex-wrap: nowrap; gap: 8px; }
+  .guide__title { padding: 0.25rem 0.55rem; border-width: 2px; box-shadow: 3px 3px 0 #0d0b20; }
+  .guide__back { padding: 0.45rem 0.6rem; min-height: 36px; font-size: 0.78rem; white-space: nowrap; }
+  .guide .guide__card { box-shadow: inset 0 0 0 calc(var(--cw) * 0.02) var(--parchment), inset 0 0 0 calc(var(--cw) * 0.03) #d9c9a0, 3px 3px 0 #0d0b20; }
+}

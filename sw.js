@@ -6,7 +6,7 @@
  * a second visit works with no connection at all. Camera models and the
  * optional live-AI proxy are never cached.
  */
-const VERSION = "dw-v27";
+const VERSION = "dw-v28";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -18,7 +18,8 @@ const PRECACHE = [
   "./icons/app-icon-maskable-512.png",
   "./icons/app-icon-180.png",
   "./icons/mood-garden-favicon.svg",
-  "./icons/fox.svg", "./icons/parrot.svg", "./icons/bunny.svg", "./icons/dog.svg", "./icons/cat.svg"
+  "./icons/fox.svg", "./icons/parrot.svg", "./icons/bunny.svg", "./icons/dog.svg", "./icons/cat.svg",
+  "./v2/fonts/PixelifySans.woff2"
 ];
 const RUNTIME_HOSTS = ["cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.jsdelivr.net"];
 const NEVER_CACHE = ["itp-ima-replicate-proxy.web.app", "justadudewhohacks.github.io"];
