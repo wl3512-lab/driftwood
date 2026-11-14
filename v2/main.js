@@ -8,6 +8,7 @@ import { mountLevel } from "./ui/level-view.js";
 import { renderReveal } from "./ui/reveal.js";
 import { renderEnding } from "./ui/ending.js";
 import { earlierPlots } from "./ui/finished-garden.js";
+import { reachedLevel } from "./mechanics/shelf.js";
 // Level tool views register themselves with ui/tools.js when loaded.
 import "./ui/almanac-view.js";
 import "./ui/magnifier-view.js";
@@ -46,6 +47,8 @@ const go = {
     unmountLevel = mountLevel(root, LEVELS[id], {
       name: progress.name || "friend",
       earlier,
+      // The almanac's seed shelf opens every packet up to the furthest level reached.
+      reached: reachedLevel(LEVELS, progress, LEVELS[id].number),
       onDone: (state) => { save(recordLevel(progress, LEVELS[id], state)); go.reveal(id, state); },
       onExit: () => go.map(), // leaving mid-level saves nothing
     });

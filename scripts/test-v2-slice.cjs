@@ -151,7 +151,7 @@ async function mapButton(page) {
   await page.locator('[data-level="level-1"]').focus();
   await page.keyboard.press("Enter");
   await phase(page, "ask");
-  assert.equal(await page.locator('[data-plant="sunflower"]').count(), 0, "re-entering starts the level fresh");
+  assert.equal(await page.locator('[data-bed] [data-plant="sunflower"]').count(), 0, "re-entering starts the level fresh");
 }
 
 // Endings stop on the garden: an outcome line and one button, focused, then the reveal.

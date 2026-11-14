@@ -18,7 +18,6 @@ import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
 import { toolView, pageView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
 
-const DEFAULT_ICON = "seed-packet";
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
 const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: ALMANAC_SPRITE };
@@ -26,7 +25,9 @@ const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.
 
 // `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
 // ui/finished-garden.js) for a level whose props ask for them (Level 4).
-export function mountLevel(root, level, { onDone, onExit, name = "friend", earlier = [] }) {
+// `reached`: the highest level number the player has reached (the almanac's
+// seed shelf opens every packet up to it); defaults to this level.
+export function mountLevel(root, level, { onDone, onExit, name = "friend", earlier = [], reached = level.number }) {
   let state = createRun(level);
   const t = (text) => fill(text, { name, ...memoryVars(level, state.memory) });
   let said = level.greeting;
@@ -46,8 +47,6 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const meterText = h("span", { class: "meter__text" });
   const meterFill = h("div", { class: "meter__fill" });
   const beds = h("div", { class: "beds", style: `--beds: ${level.beds.length}` });
-  const plainPackets = level.evidence.every((e) => (e.icon || DEFAULT_ICON) === DEFAULT_ICON);
-  const packets = h("ul", { class: "packets", "aria-label": plainPackets ? "Seed packets" : "Labels and signs" });
   const toolbar = h("div", { class: "tools", role: "toolbar", "aria-label": "Tools" });
   // Decorative scene props come from the level data only (the sprite form;
   // the { from: "finished" } row is drawn by its own module).
@@ -115,7 +114,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       "aria-label": name, title: name,
     },
     h("img", { src: tool.id === "almanac" ? ALMANAC_SPRITE : tool.sprite, alt: "", width: 28, height: 28 }));
-    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, cards: packets, pages });
+    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, pages, reached });
     button.addEventListener("click", () => view.open());
     toolbar.append(button);
     tools.push({ id: `tool:${tool.id}`, key: tool.key, view });
@@ -215,11 +214,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       // The beds the player may choose from glow until they pick one.
       for (const id of step.place.beds) beds.querySelector(`[data-bed="${id}"]`)?.classList.add("bed--target");
     }
-    packets.replaceChildren(...level.evidence.map(packet));
-    // A card that just unlocked marks the almanac button until the book is opened.
-    if (fresh.size > 0) {
-      almanacView?.markNews(); // unless the cards are on screen right now
-    }
+    // A card that just unlocked marks its packet (and the almanac button, while the book is shut).
+    if (fresh.size > 0) almanacView?.markNews([...fresh]);
     fresh = new Set();
     if (nudge && state.stepIndex > 0) dropNudge();
     for (const tl of tools) tl.view.update?.(state);
@@ -230,16 +226,6 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (grown) { celebrate(grown); grown = null; }
     talk.replaceChildren(...dockFor(step));
     placeFocus(keep);
-  }
-
-  // A packet shows its `locked` line (dashed, italic) until the player has checked it.
-  function packet(e) {
-    const locked = e.locked && !state.checks.includes(e.id);
-    const cls = ["packet", locked && "packet--locked", fresh.has(e.id) && "packet--fresh"].filter(Boolean).join(" ");
-    return h("li", { class: cls, "data-evidence": e.id },
-      h("img", { src: `./art/${e.icon || DEFAULT_ICON}.svg`, alt: "", width: 32, height: 32 }),
-      h("strong", {}, t(e.title)),
-      locked ? h("span", {}, t(e.locked)) : e.lines.map((line) => h("span", {}, t(line))));
   }
 
   function unlocked(id) {
