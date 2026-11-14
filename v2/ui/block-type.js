@@ -55,6 +55,12 @@ export const GLYPHS = {
   " ": [".....", ".....", ".....", ".....", ".....", ".....", "....."],
 };
 
+// True when every character of text has a block letter (names with accents
+// or emoji fall back to plain text).
+export function canBlock(text) {
+  return [...String(text ?? "").toUpperCase()].every((ch) => ch === "\n" || Object.hasOwn(GLYPHS, ch));
+}
+
 const ADVANCE = 7; // 6 heavy columns + 1 gap
 const LINE = 10; // 7 rows + 3 gap
 
@@ -123,4 +129,16 @@ export function blockTitle(text, { fill = "currentColor", shadow = null, align =
   if (shadow) svg.append(layer(shadow, 0.5));
   svg.append(layer(fill, 0));
   return svg;
+}
+
+// The children of a heading set in block letters: the drawing, plus the words
+// themselves (visually hidden) for screen readers, search and tests. Text with
+// a character the grid can't draw stays plain words.
+export function blockText(text, opts = {}) {
+  const words = String(text ?? "");
+  if (!canBlock(words)) return [words];
+  const label = document.createElement("span");
+  label.className = "sr-only";
+  label.textContent = words;
+  return [blockTitle(words, opts), label];
 }

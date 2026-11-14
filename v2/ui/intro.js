@@ -1,14 +1,21 @@
 // Splash (CRT title) and the intro: the one framing line plus name entry,
 // merged on one screen so there's one less tap before play.
 import { h, focusFirst, finePointer } from "./dom.js";
+import { blockText } from "./block-type.js";
+
+let splashShown = false; // the title builds in, cell by cell, the first time only
 
 export function renderSplash(root, { onBegin }) {
   root.replaceChildren(
     h("main", { class: "crt splash" },
-      h("h1", { class: "crt__title" }, "DRIFTWOOD"),
+      h("h1", { class: "crt__title crt__title--block" }, blockText("DRIFTWOOD", {
+        fill: "#69f0ae", shadow: "#0b5a33", align: "center",
+        build: !splashShown && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+      })),
       h("img", { class: "crt__sprite", src: "../icons/parrot.svg", alt: "", width: 80, height: 112 }),
       h("p", { class: "crt__line" }, "A short game about the AI helpers we trust."),
       h("button", { class: "btn btn--crt", "data-autofocus": true, onclick: onBegin }, "Begin")));
+  splashShown = true;
   focusFirst(root);
 }
 

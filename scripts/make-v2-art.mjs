@@ -54,6 +54,10 @@ const PALETTE = {
   X: "#7b1fa2", // almanac ribbon (Luna purple)
   j: "#7f9f88", // rosemary needle (grey-green)
   J: "#4f6b58", // rosemary needle shade
+  z: "#e0405a", // radish
+  Z: "#a3243b", // radish shade
+  K: "#c9b458", // dry seed pod (radish gone to seed)
+  D: "#5a2a1a", // split in a woody radish
 };
 
 const E = "................";
@@ -898,6 +902,80 @@ const ART = {
     "....dddddddd....",
     "......dddd......",
     E, E, E],
+  // The opening cutscene's example packet (ui/cutscene.js). The radish is in
+  // no level, so the cutscene spoils nothing; it is not on the seed shelf.
+  "radish-sown": [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "..........ccccc.",
+    "..........ckkkc.",
+    "..........ccccc.",
+    "..........ckkcc.",
+    "..........ccccc.",
+    "............n...",
+    "............n...",
+    "............n...",
+    "..ssSSssSSssn...",
+    "..sSsSsSsSsSsS..",
+    ".ssssssssssssss.",
+  ],
+  "radish-growing": [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "......l..l......",
+    ".....lgl.lgl....",
+    ".....lgglggl....",
+    "......gGgGg.....",
+    ".......GGG......",
+    "......zzzz......",
+    "..ssSSzzZZSSss..",
+    "..sSsSsSsSsSsS..",
+    ".ssssssssssssss.",
+  ],
+  "radish-thriving": [
+    "................",
+    "...l.......l....",
+    "..lgl.....lgl...",
+    ".lgggl...lgggl..",
+    ".lgGggl.lggGgl..",
+    "..lgGglllgGgl...",
+    "...lgGGgGGgl....",
+    ".....gGGGg......",
+    "......GGG.......",
+    ".....zzzzz......",
+    "....zzzzzZz.....",
+    "...zzczzzzZz....",
+    "...zczzzzzZz....",
+    "..sszzzzzZZss...",
+    "..sSsSZZZsSsSs..",
+    ".ssssssssssssss.",
+  ],
+  "radish-woody": [
+    ".......c.c......",
+    "......cGc.c.....",
+    ".......G.G......",
+    "........G.......",
+    "...K....G....K..",
+    "..KlK...G...KlK.",
+    "...KGK..G..KGK..",
+    ".....KG.G.GK....",
+    "......GGGG......",
+    ".....zzzzzz.....",
+    "....zzzDzzZz....",
+    "...zzzzDDzZZz...",
+    "...zzczzDzzZz...",
+    "..sszzzzDzZZss..",
+    "..sSsSZZZZsSsS..",
+    ".ssssssssssssss.",
+  ],
 };
 
 export function toSvg(name, rows) {

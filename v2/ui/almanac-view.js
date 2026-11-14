@@ -76,6 +76,94 @@ function icon(name) {
   return svg;
 }
 
+// ---- a seed packet's front (the shelf's button; the cutscene's radish) ----
+// attrs go on the element (a <button> unless `as` says otherwise). `band` and
+// `meta` replace the usual "SEEDS · LV n" and "FROM <helper>" lines.
+export function packetFront(plant, { locked = false, isNew = false, tilt = 0, as = "button", band = null, meta = null, attrs = {} } = {}) {
+  const note = plant.kind === "note";
+  return h(as, {
+    ...attrs,
+    class: `pk${locked ? " pk--locked" : ""}${note ? " pk--note" : ""}${attrs.class ? ` ${attrs.class}` : ""}`,
+    "data-plant": plant.id,
+    style: `--c: ${plant.color}; --c-ink: ${inkFor(plant.color)}; --tilt: ${tilt}deg`,
+  },
+  h("span", { class: "pk__crimp", "aria-hidden": "true" }),
+  h("span", { class: "pk__band", "aria-hidden": "true" }, band || (locked ? (note ? "NOTES" : "SEEDS") : `${note ? "NOTES" : "SEEDS"} · LV ${plant.level}`)),
+  h("span", { class: "pk__win", "aria-hidden": "true" }, h("img", { src: art(plant.art || plant.stages.at(-1)), alt: "", width: 32, height: 32 })),
+  h("span", { class: "pk__name", "aria-hidden": "true" }, locked ? "???" : plant.name.toUpperCase()),
+  h("span", { class: "pk__meta", "aria-hidden": "true" }, meta || (locked ? " " : `FROM ${helperOf(plant.level).toUpperCase()}`)),
+  locked && h("span", { class: "pk__stamp", "aria-hidden": "true" }, icon("lock"), `LEVEL ${plant.level}`),
+  isNew && !locked && h("span", { class: "pk__new", "aria-hidden": "true" }, "NEW"),
+  h("span", { class: "pk__dot", "aria-hidden": "true" }));
+}
+
+// ---- the back of a packet ----
+const sunny = (line) => {
+  const parts = String(line).split(/\s*(☀+)/);
+  return parts.map((part) => (/^☀+$/.test(part)
+    ? h("span", { class: "fact__suns", role: "img", "aria-label": `${part.length} suns` }, [...part].map(() => icon("sun")))
+    : part));
+};
+
+// card: { title, lines, lockedLine, evidence } (mechanics/shelf.js factCard),
+// or null for no fact card. `kicker` replaces "LEVEL n · <HELPER>'S GARDEN";
+// `extra` goes inside the fact card, under its lines (the cutscene's crossed-out
+// claim); no onFlipBack, no Flip back button (the cutscene's packet).
+export function packetBack(plant, { card = null, t = (x) => x, pop = false, onFlipBack = null, kicker = null, extra = null } = {}) {
+  const lines = (card?.lines || []).map(t);
+  const sealed = Boolean(card?.lockedLine); // locked in this level: show only the hint
+  const helper = helperOf(plant.level);
+  const note = plant.kind === "note";
+  const cardTitle = card && t(card.title);
+  const fact = card && h("div", {
+    class: `fact${sealed ? " fact--locked" : ""}${pop && !sealed ? " fact--fresh" : ""}`,
+    "data-evidence": card.evidence,
+  },
+  h("span", { class: "fact__tab" }, icon("tip"), "FACT CARD"),
+  cardTitle && cardTitle !== plant.name && h("p", { class: "fact__title" }, cardTitle),
+  sealed
+    ? h("p", { class: "fact__locked" }, t(card.lockedLine))
+    : h("p", { class: "fact__lines" }, lines.map((line, i) => [
+      i > 0 && h("span", { class: "fact__dot", "aria-hidden": "true" }, " · "),
+      h("span", { class: "fact__line" }, sunny(line)),
+    ])),
+  extra);
+  const names = plant.stageNames || ["Seed", "Growing", "Thriving"];
+  const stages = plant.stages.length > 0 && h("div", { class: "back__grows" },
+    h("p", { class: "back__lab" }, "HOW IT GROWS"),
+    h("ol", { class: "stages" }, plant.stages.map((s, i) => [
+      i > 0 && h("li", { class: "stages__arrow", "aria-hidden": "true" }, "→"),
+      h("li", {}, h("img", { src: art(s), alt: "", width: 32, height: 32 }), h("span", {}, names[i])),
+    ])));
+  const keep = (v) => v && !repeatsCard(v, lines);
+  const watch = !sealed && plant.watch && keep(plant.watch[1]) && h("div", { class: "watch" },
+    h("img", { src: art(plant.watch[0]), alt: "", width: 32, height: 32 }),
+    h("p", {}, h("b", {}, "WATCH FOR"), plant.watch[1]));
+  const careRows = sealed ? [] : [["sun", "SUN", plant.sun], ["water", "WATER", plant.water], ["space", "SPACE", plant.space], ["tip", "TIP", plant.tip]]
+    .filter(([, , v]) => keep(v));
+  const care = careRows.length > 0 && h("div", { class: "back__care" },
+    h("p", { class: "back__lab" }, "CARE"),
+    h("dl", { class: "care" }, careRows.map(([ic, label, v]) => h("div", {}, h("dt", {}, icon(ic), label), h("dd", {}, v)))));
+  const moreRows = sealed ? [] : [["seed", "PLANT", plant.plant], ["basket", "HARVEST", plant.harvest], ["soil", "SOIL", plant.soil], ["pals", "GOOD NEXT TO", plant.pals]]
+    .filter(([, , v]) => keep(v));
+  const more = moreRows.length > 0 && h("dl", { class: "more" },
+    moreRows.map(([ic, label, v]) => h("div", {}, h("dt", {}, icon(ic), label), h("dd", {}, v))));
+  const left = (stages || watch) && h("div", { class: "back__col" }, stages, watch);
+  return h("div", {
+    class: `back${note ? " back--note" : ""}`, role: "group", tabindex: -1,
+    "aria-label": `${plant.name}, back of the ${note ? "note" : "packet"}`, "data-plant": plant.id,
+    style: `--c: ${plant.color}`,
+  },
+  h("div", { class: "back__top" },
+    h("div", { class: "back__heading" },
+      h("p", { class: "back__kick" }, kicker || `LEVEL ${plant.level} · ${helper.toUpperCase()}'S GARDEN`),
+      h("h3", { class: "back__name" }, h("span", { class: "back__swatch", "aria-hidden": "true" }), plant.name.toUpperCase())),
+    onFlipBack && h("button", { type: "button", class: "back__flip", "data-flipback": "", onclick: onFlipBack }, "↻ Flip back")),
+  fact,
+  (left || care) && h("div", { class: "back__body" }, left, care),
+  more);
+}
+
 defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = [], reached = level.number }) => {
   const book = level.almanac || { title: "Almanac", pages: [], notFound: "" };
   const searchable = book.pages.length > 0;
@@ -98,21 +186,14 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     const label = locked
       ? `Locked packet. Reach Level ${plant.level} to open it.`
       : `${plant.name}, ${note ? "note" : "seed packet"} from Level ${plant.level}. Turn it over to read it.`;
-    const btn = h("button", {
-      type: "button", class: `pk${locked ? " pk--locked" : ""}${note ? " pk--note" : ""}`,
-      "data-plant": plant.id, "data-evidence": live ? plant.id : null,
-      "aria-disabled": locked ? "true" : null, "aria-label": label,
-      style: `--c: ${plant.color}; --c-ink: ${inkFor(plant.color)}; --tilt: ${((i % 3) - 1) * 1.4}deg`,
-      onclick: () => (locked ? nope(btn, plant) : turnOver(btn, plant)),
-    },
-    h("span", { class: "pk__crimp", "aria-hidden": "true" }),
-    h("span", { class: "pk__band", "aria-hidden": "true" }, locked ? (note ? "NOTES" : "SEEDS") : `${note ? "NOTES" : "SEEDS"} · LV ${plant.level}`),
-    h("span", { class: "pk__win", "aria-hidden": "true" }, h("img", { src: art(plant.art || plant.stages.at(-1)), alt: "", width: 32, height: 32 })),
-    h("span", { class: "pk__name", "aria-hidden": "true" }, locked ? "???" : plant.name.toUpperCase()),
-    h("span", { class: "pk__meta", "aria-hidden": "true" }, locked ? " " : `FROM ${helperOf(plant.level).toUpperCase()}`),
-    locked && h("span", { class: "pk__stamp", "aria-hidden": "true" }, icon("lock"), `LEVEL ${plant.level}`),
-    isNew && !locked && h("span", { class: "pk__new", "aria-hidden": "true" }, "NEW"),
-    h("span", { class: "pk__dot", "aria-hidden": "true" }));
+    const btn = packetFront(plant, {
+      locked, isNew, tilt: ((i % 3) - 1) * 1.4,
+      attrs: {
+        type: "button", "data-evidence": live ? plant.id : null,
+        "aria-disabled": locked ? "true" : null, "aria-label": label,
+        onclick: () => (locked ? nope(btn, plant) : turnOver(btn, plant)),
+      },
+    });
     return btn;
   });
   const byId = (id) => buttons.find((b) => b.dataset.plant === id);
@@ -240,72 +321,15 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     toastTimer = setTimeout(() => { toast.hidden = true; }, 1800);
   }
 
-  // ---- the back of a packet ----
-  const sunny = (line) => {
-    const parts = String(line).split(/\s*(☀+)/);
-    return parts.map((part) => (/^☀+$/.test(part)
-      ? h("span", { class: "fact__suns", role: "img", "aria-label": `${part.length} suns` }, [...part].map(() => icon("sun")))
-      : part));
-  };
-
+  // ---- the back of a packet (packetBack, below) ----
   function backFor(plant, pop) {
     const card = factCard(plant, level, LEVELS, getState().checks);
-    const lines = (card?.lines || []).map(t);
-    const sealed = Boolean(card?.lockedLine); // locked in this level: show only the hint
-    const helper = helperOf(plant.level);
-    const note = plant.kind === "note";
-    const cardTitle = card && t(card.title);
-    const fact = card && h("div", {
-      class: `fact${sealed ? " fact--locked" : ""}${pop && !sealed ? " fact--fresh" : ""}`,
-      "data-evidence": card.evidence,
-    },
-    h("span", { class: "fact__tab" }, icon("tip"), "FACT CARD"),
-    cardTitle && cardTitle !== plant.name && h("p", { class: "fact__title" }, cardTitle),
-    sealed
-      ? h("p", { class: "fact__locked" }, t(card.lockedLine))
-      : h("p", { class: "fact__lines" }, lines.map((line, i) => [
-        i > 0 && h("span", { class: "fact__dot", "aria-hidden": "true" }, " · "),
-        h("span", { class: "fact__line" }, sunny(line)),
-      ])));
-    const names = plant.stageNames || ["Seed", "Growing", "Thriving"];
-    const stages = plant.stages.length > 0 && h("div", { class: "back__grows" },
-      h("p", { class: "back__lab" }, "HOW IT GROWS"),
-      h("ol", { class: "stages" }, plant.stages.map((s, i) => [
-        i > 0 && h("li", { class: "stages__arrow", "aria-hidden": "true" }, "→"),
-        h("li", {}, h("img", { src: art(s), alt: "", width: 32, height: 32 }), h("span", {}, names[i])),
-      ])));
-    const keep = (v) => v && !repeatsCard(v, lines);
-    const watch = !sealed && plant.watch && keep(plant.watch[1]) && h("div", { class: "watch" },
-      h("img", { src: art(plant.watch[0]), alt: "", width: 32, height: 32 }),
-      h("p", {}, h("b", {}, "WATCH FOR"), plant.watch[1]));
-    const careRows = sealed ? [] : [["sun", "SUN", plant.sun], ["water", "WATER", plant.water], ["space", "SPACE", plant.space], ["tip", "TIP", plant.tip]]
-      .filter(([, , v]) => keep(v));
-    const care = careRows.length > 0 && h("div", { class: "back__care" },
-      h("p", { class: "back__lab" }, "CARE"),
-      h("dl", { class: "care" }, careRows.map(([ic, label, v]) => h("div", {}, h("dt", {}, icon(ic), label), h("dd", {}, v)))));
-    const moreRows = sealed ? [] : [["seed", "PLANT", plant.plant], ["basket", "HARVEST", plant.harvest], ["soil", "SOIL", plant.soil], ["pals", "GOOD NEXT TO", plant.pals]]
-      .filter(([, , v]) => keep(v));
-    const more = moreRows.length > 0 && h("dl", { class: "more" },
-      moreRows.map(([ic, label, v]) => h("div", {}, h("dt", {}, icon(ic), label), h("dd", {}, v))));
-    const left = (stages || watch) && h("div", { class: "back__col" }, stages, watch);
-    return h("div", {
-      class: `back${note ? " back--note" : ""}`, role: "group", tabindex: -1,
-      "aria-label": `${plant.name}, back of the ${note ? "note" : "packet"}`, "data-plant": plant.id,
-      style: `--c: ${plant.color}`,
-    },
-    h("div", { class: "back__top" },
-      h("div", { class: "back__heading" },
-        h("p", { class: "back__kick" }, `LEVEL ${plant.level} · ${helper.toUpperCase()}'S GARDEN`),
-        h("h3", { class: "back__name" }, h("span", { class: "back__swatch", "aria-hidden": "true" }), plant.name.toUpperCase())),
-      h("button", { type: "button", class: "back__flip", "data-flipback": "", onclick: () => turnBack() }, "↻ Flip back")),
-    fact,
-    (left || care) && h("div", { class: "back__body" }, left, care),
-    more);
+    return packetBack(plant, { card, t, pop, onFlipBack: () => turnBack() });
   }
 
   // ---- turning a packet over: lift it to the middle edge-on, swap in the
   // back (also edge-on, so the swap is invisible), turn the back in. ----
-  let inspecting = null; // { btn, plant, layer, back, clone, dx, dy, closing }
+  let inspecting = null; // { btn, plant, layer, back, pkt, clone, dx, dy, closing }
   const FALLBACK_MS = 700; // every wait has a timeout, even if an animation is cancelled
 
   function settle(anim, then) {
@@ -326,13 +350,27 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     btn.classList.remove("pk--fresh", "pk--found");
     const back = backFor(plant, pop);
     const dim = h("div", { class: "inspect__dim", onclick: () => turnBack() });
-    const layer = h("div", { class: "inspect" }, dim, back);
+    // The packet is a 3D object: the back is its face, with two paper sheets
+    // stacked behind it (its thickness). .pkt turns (the flip), .pkt__tilt leans (rest + mouse).
+    const pkt = h("div", { class: "pkt" }, h("div", { class: "pkt__tilt" },
+      h("i", { class: "pkt__rear", "aria-hidden": "true" }),
+      h("i", { class: "pkt__rear pkt__rear--2", "aria-hidden": "true" }),
+      back,
+      h("i", { class: "pkt__sheen", "aria-hidden": "true" })));
+    const layer = h("div", { class: "inspect" }, dim, pkt);
+    if (!calm() && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches) {
+      layer.addEventListener("pointermove", (ev) => {
+        const r = layer.getBoundingClientRect();
+        pkt.style.setProperty("--mx", ((ev.clientX - r.left) / r.width - 0.5).toFixed(3));
+        pkt.style.setProperty("--my", ((ev.clientY - r.top) / r.height - 0.5).toFixed(3));
+      });
+    }
     head.inert = true;
     screen.inert = true;
     panel.append(layer);
     const pr = panel.getBoundingClientRect();
     const br = btn.getBoundingClientRect();
-    const state = { btn, plant, layer, back, clone: null, dx: 0, dy: 0, closing: false };
+    const state = { btn, plant, layer, back, pkt, clone: null, dx: 0, dy: 0, closing: false };
     inspecting = state;
     const focusBack = () => back.querySelector("[data-flipback]")?.focus({ preventScroll: true });
     if (calm() || !back.animate) {
@@ -351,7 +389,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     state.clone = clone;
     state.dx = pr.width / 2 - (br.left - pr.left + br.width / 2);
     state.dy = pr.height / 2 - (br.top - pr.top + br.height / 2);
-    back.style.visibility = "hidden";
+    pkt.style.visibility = "hidden";
     dim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 440, fill: "both" });
     const lift = clone.animate([
       { transform: "translate(0, 0) perspective(900px) rotateY(0deg) scale(1)" },
@@ -360,10 +398,10 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     settle(lift, () => {
       if (inspecting !== state || state.closing) return;
       clone.style.visibility = "hidden";
-      back.style.visibility = "";
-      back.animate([
-        { transform: "perspective(1400px) rotateY(-90deg) scale(.8)" },
-        { transform: "perspective(1400px) rotateY(0deg) scale(1)" },
+      pkt.style.visibility = "";
+      pkt.animate([
+        { transform: "rotateY(-90deg) scale(.8)" },
+        { transform: "rotateY(0deg) scale(1)" },
       ], { duration: 220, easing: "cubic-bezier(0, 0, .2, 1)" });
       focusBack();
     });
@@ -389,13 +427,13 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
       return;
     }
     st.layer.querySelector(".inspect__dim").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 440, fill: "forwards" });
-    const away = st.back.animate([
-      { transform: "perspective(1400px) rotateY(0deg) scale(1)" },
-      { transform: "perspective(1400px) rotateY(-90deg) scale(.8)" },
+    const away = st.pkt.animate([
+      { transform: "rotateY(0deg) scale(1)" },
+      { transform: "rotateY(-90deg) scale(.8)" },
     ], { duration: 200, easing: "cubic-bezier(.4, 0, 1, 1)", fill: "forwards" });
     settle(away, () => {
       if (inspecting !== st) return;
-      st.back.style.visibility = "hidden";
+      st.pkt.style.visibility = "hidden";
       st.clone.style.visibility = "visible";
       settle(st.clone.animate([
         { transform: `translate(${st.dx}px, ${st.dy}px) perspective(900px) rotateY(90deg) scale(1.4)` },

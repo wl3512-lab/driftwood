@@ -187,18 +187,57 @@
 .almanac__toast[hidden] { display: none; }
 
 /* ---------- the back of a packet ---------- */
-.inspect { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; }
+.inspect { position: absolute; inset: 0; z-index: 5; display: grid; grid-template-rows: 100%; place-items: center; perspective: 1600px; }
+/* The packet in 3D: .pkt flips, .pkt__tilt leans (a resting angle plus up to
+   ±5° toward the mouse). Two paper sheets sit behind the face, each a few px
+   further back and down-right, so the packet has a visible thickness, and the
+   last one casts the shadow onto the shelf. */
+.pkt {
+  --t: 6px; --mx: 0; --my: 0;
+  position: relative; z-index: 3; display: flex; flex-direction: column;
+  width: min(440px, calc(100% - 40px)); max-height: calc(100% - 44px);
+  transform-style: preserve-3d;
+  pointer-events: none; /* Chrome hit-tests 3D wrappers over their children: only the face takes clicks */
+}
+.pkt .back { pointer-events: auto; }
+.pkt__tilt {
+  position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(6deg - var(--my) * 10deg)) rotateY(calc(-10deg + var(--mx) * 10deg));
+  transition: transform 0.3s ease-out;
+}
+.pkt__rear, .pkt__sheen { position: absolute; inset: 0; pointer-events: none; border-radius: 4px; }
+.pkt__rear {
+  transform: translate3d(var(--t), var(--t), calc(var(--t) * -1));
+  background: #dccaa0; border: 3px solid var(--line);
+}
+.pkt__rear--2 {
+  transform: translate3d(calc(var(--t) * 2), calc(var(--t) * 2), calc(var(--t) * -2));
+  background: #b9a274;
+  box-shadow: 0 26px 44px rgba(10, 6, 2, 0.6), 0 6px 12px rgba(10, 6, 2, 0.4);
+}
+.pkt__sheen {
+  transform: translateZ(1px);
+  background: linear-gradient(115deg, transparent calc(28% + var(--mx) * 30%), rgba(255, 255, 255, 0.2) calc(40% + var(--mx) * 30%), transparent calc(52% + var(--mx) * 30%));
+}
+@media (prefers-reduced-motion: reduce) { .pkt__tilt { transition: none; } }
 .inspect__dim { position: absolute; inset: 0; background: rgba(20, 12, 4, 0.62); }
 .back {
   position: relative; z-index: 3;
-  width: min(800px, calc(100% - 40px)); max-height: calc(100% - 28px);
-  display: flex; flex-direction: column; gap: 14px; padding: 16px 20px;
+  flex: 1 1 auto; min-height: 0; width: 100%;
+  display: flex; flex-direction: column; gap: 14px; padding: 26px 22px 18px;
   overflow-y: auto; overscroll-behavior: contain;
   background: var(--parchment) repeating-linear-gradient(transparent 0 27px, rgba(59, 42, 26, 0.08) 27px 28px);
-  color: var(--ink); border: 3px solid var(--line); border-radius: 4px; box-shadow: 6px 6px 0 var(--line);
+  color: var(--ink); border: 3px solid var(--line); border-radius: 4px;
   text-align: left;
 }
 .back:focus { outline: none; }
+/* Tall and narrow like a real seed packet, with a crimped top edge. */
+.back::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 12px;
+  background: repeating-linear-gradient(90deg, rgba(59, 42, 26, 0.28) 0 3px, transparent 3px 7px);
+  border-bottom: 2px solid rgba(59, 42, 26, 0.35);
+}
 .back__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 3px dashed rgba(59, 42, 26, 0.35); }
 .back__heading { min-width: 0; }
 .back__kick { margin: 0; font: 700 0.72rem/1.2 var(--font-ui); letter-spacing: 0.16em; color: #8a3b12; }
@@ -236,7 +275,7 @@
 @keyframes fact-glow { to { box-shadow: 4px 4px 0 #1b5e20, 0 0 0 7px rgba(124, 211, 107, 0.6); } }
 @media (prefers-reduced-motion: reduce) { .fact--fresh { animation: none; } }
 
-.back__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; }
+.back__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .back__lab { margin: 0 0 8px; font: 700 0.7rem/1 var(--font-ui); letter-spacing: 0.18em; color: #6b5235; }
 .stages { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-start; gap: 6px; }
 .stages li { flex: 1 1 0; display: grid; justify-items: center; gap: 4px; font: 600 0.75rem/1.1 var(--font-ui); text-align: center; }
@@ -251,9 +290,9 @@
 .care div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: baseline; }
 .care dt { display: inline-flex; gap: 6px; align-items: center; font: 700 0.72rem/1.2 var(--font-ui); letter-spacing: 0.12em; color: #5e4a32; }
 .care dd { margin: 0; font: 500 0.98rem/1.35 var(--font-body); }
-.more { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; padding-top: 12px; border-top: 3px dashed rgba(59, 42, 26, 0.35); }
+.more { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 0; margin: 0; padding-top: 12px; border-top: 3px dashed rgba(59, 42, 26, 0.35); }
 .more div { padding: 0 12px; border-left: 2px solid rgba(59, 42, 26, 0.18); }
-.more div:first-child { padding-left: 0; border-left: 0; }
+.more div:nth-child(odd) { padding-left: 0; border-left: 0; }
 .more dt { display: flex; gap: 6px; align-items: center; margin-bottom: 5px; font: 700 0.68rem/1.2 var(--font-ui); letter-spacing: 0.12em; color: #5e4a32; }
 .more dd { margin: 0; font: 500 0.9rem/1.3 var(--font-body); }
 
@@ -304,7 +343,10 @@
   .pk__meta { padding-bottom: 4px; }
   .pk__new { top: -8px; right: -8px; padding: 2px 4px; }
   .pk__stamp { padding: 3px 5px; border-width: 2px; }
-  .back { width: calc(100% - 12px); max-height: calc(100% - 12px); gap: 6px; padding: 8px 14px; box-shadow: 4px 4px 0 var(--line); }
+  .pkt { --t: 4px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 40px); }
+  .pkt__tilt { transform: rotateX(4deg) rotateY(-7deg); }
+  .back { gap: 6px; padding: 18px 14px 10px; }
+  .back::before { height: 9px; }
   .back__top { padding-bottom: 6px; }
   .back__name { font-size: 1.15rem; margin-top: 2px; }
   .back__kick { font-size: 0.62rem; }
@@ -340,9 +382,8 @@
   .pk__new { font-size: 0.45rem; }
   .almanac__label { display: none; }
   .almanac__search { grid-template-columns: minmax(0, 1fr); }
-  .back__body { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .more { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 0; }
-  .more div:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .back__body { gap: 8px; }
+  .more { gap: 6px 0; }
 }
 /* While the book is open the dock is away: on a laptop the book can be taller. */
 .level.is-reading .almanac { height: min(800px, calc(100dvh - 40px)); }
