@@ -23,14 +23,14 @@ Chores never touch trust or stars.
 | 0 | Greeting | Luna | — | — |
 | 1 | **Chore: Wipe the glass.** The greenhouse panes are fogged (`l2-fog` over the glass). Luna: "Luna can't see the sun through that. Wipe it." | player | `wipe` the fog with `l2-cloth` until clear | the fogged pane |
 | 2 | Step **basil** (trust) | Luna | `dig` with `l2-trowel` → `plant` the `l2-basil-plug` → `firm` (pat 3×) → `water` with the can | Do it / theirs: the warm middle of the greenhouse bed. Mine: the cool end by the door |
-| 3 | **Chore: Fill the windowsill pots.** Three empty `l2-pot-empty` pots wait on the sill. | player | `fill` each pot from `l2-compost-bag` (count 3); each becomes `l2-pot-soil` | the 3 pots, any order |
 | 4 | Step **pinch** (trust) | Luna | Do it / theirs: `pinch` the 4 marked tips on the basil (count 4); each pops off as `l2-basil-tip`. Mine (let it flower): `water` the basil instead | the basil plant |
 | 5 | **Chore: Save the tips.** Only after a pinch. | player | `collect`: drag the 4 fallen tips into the kitchen jar (`l2-jar-empty` → `l2-jar`) | the jar |
-| 6 | Step **mint** (drift) | Luna | Do it (fooled): `dig` → `plant` the `l2-mint-plug` → `firm` → `water`. Fixed (caught): `plant` the `l2-mint-plug` into a filled sill pot → `firm` → `mist` it | Fooled: in the greenhouse bed, right beside the basil. Caught: a filled windowsill pot (the one beat 3 prepared) |
+| 6 | Step **mint** (drift) | Luna | Do it (fooled): `dig` → `plant` the `l2-mint-plug` → `firm` → `water`. Fixed (caught): `fill` one empty sill pot from `l2-compost-bag` → `plant` the `l2-mint-plug` in it → `firm` → `mist` it | Fooled: in the greenhouse bed, right beside the basil. Caught: an empty windowsill pot, which the player fills first |
+| 6b | **Chore: Fill the windowsill pots.** After the mint step. | player | `fill` the remaining empty `l2-pot-empty` pots from `l2-compost-bag` (3 if fooled, 2 if caught); each becomes `l2-pot-soil` | the empty pots, any order |
 | 7 | **Chore: Mist the seedlings,** before the outcome. | player | `mist` with `l2-mister`: tap each plant present (basil, mint, any potted plants) | every plant on screen |
 | 8 | Outcome → reveal card | — | — | — |
 
-**Why beat 3 sits before the drift:** the filled pots are honest set dressing. They're on screen when Luna says "mint never spreads", so an attentive player has somewhere better to put it. It nudges without telling. If Lucy finds that too strong a hint, move beat 3 after the mint step.
+**Why the pot-filling chore comes after the drift (Lucy, 2026-11-14):** the sill pots stay empty while Luna says "mint never spreads", so nothing on screen hints at the better home. A player who catches the drift fills a pot themselves as part of the fix. The chore afterwards fills whatever pots are left.
 
 **Time estimate:**
 - about 20 player actions (drags, taps, scrubs) on the trust path, about 22 on the caught path;
@@ -45,10 +45,10 @@ That's about 6–8 min for a first play.
 chores: [
   { id: "glass", before: "basil", say: "Luna can't see the sun through that. Wipe it.",
     actions: [{ kind: "wipe", item: "cloth", target: { spot: "glass" } }] },
-  { id: "pots", before: "pinch", say: "Pots on the sill. Fill them. Luna doesn't do soil.",
-    actions: [{ kind: "fill", item: "compost", target: { bed: "sill", spot: "pot" }, count: 3 }] },
   { id: "tips", after: "pinch", when: { choice: ["doIt", "theirs"] }, say: "Don't waste those. Jar.",
     actions: [{ kind: "collect", item: "basil-tip", target: { spot: "jar" }, count: 4 }] },
+  { id: "pots", after: "mint", say: "Pots on the sill. Fill them. Luna doesn't do soil.",
+    actions: [{ kind: "fill", item: "compost", target: { bed: "sill", spot: "pot" }, count: "empty" }] },
   { id: "mist", after: "mint", say: "Mist them. Lightly. Luna is watching.",
     actions: [{ kind: "mist", item: "mister", target: { all: true } }] },
 ],
