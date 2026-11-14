@@ -198,21 +198,24 @@ async function shot(page, size, label) {
 // A planted bed reads as full of its crop (Lucy: one carrot in the side bed
 // looked like room for more): the crop's fields cover the bed's soil, tiled at
 // a whole number of CSS px per art pixel (sprites are 16 art px square), at
-// least four plants to a field; an empty bed has no field.
+// least four plants to a field; an empty bed has no field. A crop the level
+// will still plant in the bed holds its share as an empty .field--empty (Lucy:
+// the sunflowers take half the South bed, the other half waits for tomatoes).
 async function assertBedsFull(page, name) {
   const beds = await page.evaluate(() => [...document.querySelectorAll("main.level .bed")].map((bed) => {
     const inner = bed.querySelector(".bed__plants").getBoundingClientRect();
-    const fields = [...bed.querySelectorAll(".field")].map((f) => {
+    const reserved = [...bed.querySelectorAll(".field--empty")].reduce((sum, f) => { const r = f.getBoundingClientRect(); return sum + r.width * r.height; }, 0);
+    const fields = [...bed.querySelectorAll(".field:not(.field--empty)")].map((f) => {
       const r = f.getBoundingClientRect(), cs = getComputedStyle(f);
       return { w: r.width, h: r.height, size: parseFloat(cs.backgroundSize), image: cs.backgroundImage, repeat: cs.backgroundRepeat };
     });
     const b = bed.getBoundingClientRect();
-    return { id: bed.dataset.bed, plants: bed.querySelectorAll("img.plant[data-plant]").length, bedArea: b.width * b.height, area: inner.width * inner.height, fields };
+    return { id: bed.dataset.bed, plants: bed.querySelectorAll("img.plant[data-plant]").length, bedArea: b.width * b.height, area: inner.width * inner.height, reserved, fields };
   }));
   for (const bed of beds) {
     assert.equal(bed.fields.length, bed.plants, `${name}: one field per crop in the ${bed.id} bed`);
     if (!bed.plants) continue;
-    const covered = bed.fields.reduce((sum, f) => sum + f.w * f.h, 0);
+    const covered = bed.fields.reduce((sum, f) => sum + f.w * f.h, 0) + bed.reserved;
     assert.ok(covered >= bed.area * 0.9 && bed.area >= bed.bedArea * 0.6, `${name}: the ${bed.id} bed is not full of its crop ${JSON.stringify(bed)}`);
     for (const f of bed.fields) {
       assert.match(f.image, /url\(.*\/art\/.*\.svg/, `${name}: ${bed.id} field has its sprite`);

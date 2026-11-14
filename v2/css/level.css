@@ -199,17 +199,49 @@
   image-rendering: pixelated;
   transform-origin: 50% 100%;
 }
-.field--dense::before {
-  content: ""; position: absolute; pointer-events: none;
-  inset: calc(var(--plant) * 0.5) calc(var(--plant) * 0.5) calc(var(--plant) * 0.3);
-  background: inherit;
-}
+/* One plant per tile for every crop (Lucy: "don't make it so crowded"); the
+   staggered second row small crops used to get is gone. */
 /* The crop's <img> lies over its whole field and draws nothing (its picture is
    pushed out of its box): it is the one element the magnifier, the tests and
    screen readers address, and a tap anywhere on the crop lands on it. */
 .field > .plant { position: absolute; inset: 0; width: 100%; height: 100%; object-position: -100000px 0; }
-.field--new { animation: pop 0.6s steps(4); }
-@keyframes pop { from { transform: scale(0.3) translateY(25%); } to { transform: none; } }
+/* A new crop grows up out of the soil where it stands: each plant's tile is
+   revealed from its base upward, in pixel steps (the mask tiles line up with
+   the sprite tiles). The mask lives only in the animation, so nothing is
+   masked once the crop has grown. */
+.field--new {
+  -webkit-mask-size: var(--plant) var(--plant); mask-size: var(--plant) var(--plant);
+  -webkit-mask-repeat: space; mask-repeat: space;
+  animation: grow-up 0.7s step-end;
+}
+@keyframes grow-up {
+  0% { -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 0%); mask-image: linear-gradient(to top, #000 0%, transparent 0%); }
+  20% { -webkit-mask-image: linear-gradient(to top, #000 20%, transparent 20%); mask-image: linear-gradient(to top, #000 20%, transparent 20%); }
+  40% { -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 40%); mask-image: linear-gradient(to top, #000 40%, transparent 40%); }
+  60% { -webkit-mask-image: linear-gradient(to top, #000 60%, transparent 60%); mask-image: linear-gradient(to top, #000 60%, transparent 60%); }
+  80% { -webkit-mask-image: linear-gradient(to top, #000 80%, transparent 80%); mask-image: linear-gradient(to top, #000 80%, transparent 80%); }
+  100% { -webkit-mask-image: linear-gradient(to top, #000 100%, transparent 100%); mask-image: linear-gradient(to top, #000 100%, transparent 100%); }
+}
+/* A crop that changes where it stands (pinched basil going bushy) keeps the old
+   plant and grows the new leaves in from the top down over it: the old sprite
+   (--was) lies on top and is cleared from the top in pixel steps. */
+.field--regrow.field--new { animation: none; }
+.field--regrow::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: var(--was) 0 0 / var(--plant) var(--plant) space; image-rendering: pixelated;
+  -webkit-mask-size: var(--plant) var(--plant); mask-size: var(--plant) var(--plant);
+  -webkit-mask-repeat: space; mask-repeat: space;
+}
+.field--regrow.field--new::after { animation: grow-top 0.8s step-end; }
+@keyframes grow-top {
+  0% { opacity: 1; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 0%); mask-image: linear-gradient(to bottom, transparent 0%, #000 0%); }
+  20% { opacity: 1; -webkit-mask-image: linear-gradient(to bottom, transparent 20%, #000 20%); mask-image: linear-gradient(to bottom, transparent 20%, #000 20%); }
+  40% { opacity: 1; -webkit-mask-image: linear-gradient(to bottom, transparent 40%, #000 40%); mask-image: linear-gradient(to bottom, transparent 40%, #000 40%); }
+  60% { opacity: 1; -webkit-mask-image: linear-gradient(to bottom, transparent 60%, #000 60%); mask-image: linear-gradient(to bottom, transparent 60%, #000 60%); }
+  80% { opacity: 1; -webkit-mask-image: linear-gradient(to bottom, transparent 80%, #000 80%); mask-image: linear-gradient(to bottom, transparent 80%, #000 80%); }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .field--new, .field--regrow.field--new::after { animation: none; } }
 
 .packets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .packet {

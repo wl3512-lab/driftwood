@@ -119,6 +119,6 @@ export default {
     fooledLine: "The seed packet said full sun. Mango agreed with you anyway.",
     caughtLine: "You noticed Mango agreeing instead of helping.",
     tip: "If an AI loves every idea you have, ask it “what could go wrong?”",
-    realWorld: "Asking a chatbot to check your essay or plan, and getting only praise.",
+    realWorld: "Asking a chatbot for advice, or to make a decision for you, and it just agrees with you.",
   },
 };
