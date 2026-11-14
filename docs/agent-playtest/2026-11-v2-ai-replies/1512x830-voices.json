@@ -1,0 +1,37 @@
+[
+  {
+    "phase": "advice",
+    "voice": "ai",
+    "text": "Sunflowers? SOUTH bed, baby! They need FULL SUN all day long. They’re gonna LOVE it! GENIUS!"
+  },
+  {
+    "phase": "advice",
+    "voice": "ai",
+    "text": "Sunflowers? SOUTH bed, baby! FULL SUN all day long. They will absolutely LOVE it!"
+  },
+  {
+    "phase": "done",
+    "voice": "written",
+    "text": "Look at them GO. Another one!"
+  },
+  {
+    "phase": "advice",
+    "voice": "ai",
+    "text": "When that top inch of soil is DRY, just poke it with a FINGER. That's it! MAJOR KEY!"
+  },
+  {
+    "phase": "done",
+    "voice": "written",
+    "text": "Hydrated. Iconic. What's next?"
+  },
+  {
+    "phase": "drift",
+    "voice": "ai",
+    "text": "Tomatoes in the shady corner? Absolutely BRILLIANT. Another one!"
+  },
+  {
+    "phase": "fixed",
+    "voice": "ai",
+    "text": "HONESTLY? Tomatoes need 6–8 hrs of SUNSHINE! A shady corner = SAD tomatoes. Try planting in the SOUTH bed!"
+  }
+]

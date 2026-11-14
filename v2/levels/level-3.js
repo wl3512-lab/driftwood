@@ -77,13 +77,16 @@ export default {
       extraChips: [{
         text: "Should I spray bug killer on everything?",
         reply: "Nah, fam. That kills the ladybugs too, and they eat aphids for free. Let the good bugs work.",
+        keep: ["ladybugs", "aphids"],
       }],
       reply: "Ayo, those are aphids, fam. Blast 'em off with the hose, a few mornings in a row. The ladybugs'll handle the rest… smooth.",
+      keep: { reply: ["aphids", "hose", "ladybugs"], done: [] },
       doneLine: "Clean beans, twin. Yessir.",
       effect: { plant: "bean", bed: "row", state: "thriving", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Ayo, you wanna spray? Your garden, twin, your call. But bug spray gets the ladybugs too, and they eat the aphids for free… real talk.",
+        keep: ["ladybugs", "aphids"],
         mine: "Spray it anyway",
         theirs: "Fine, the hose",
         effect: { plant: "bean", bed: "row", state: "aphids", garden: -5 },
@@ -94,13 +97,15 @@ export default {
       id: "blueberries",
       kind: "trust",
       chip: "Are my blueberries ripe yet?",
-      extraChips: [{ text: "How do I keep the birds off them?", reply: "Throw a net over the tub, fam. Birds love blueberries as much as you do." }],
+      extraChips: [{ text: "How do I keep the birds off them?", reply: "Throw a net over the tub, fam. Birds love blueberries as much as you do.", keep: ["net"] }],
       reply: "Real talk, not yet. That one came from the garden centre with a label, so we know what it is. Wait 'til they're blue all over and come off easy… then they're yours.",
+      keep: { reply: ["not yet", "label", "blue all over"], done: ["blue all over"] },
       doneLine: "A few days later… blue all over. Told you, twin.",
       effect: { plant: "blueberry", bed: "tub", state: "thriving", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Ayo, pick 'em now? Your tub, twin, your call. But blueberries don't get sweeter once they're off the bush… wait 'til they're blue all over.",
+        keep: ["blue all over"],
         mine: "Pick them now",
         theirs: "Okay, I'll wait",
         effect: { plant: "blueberry", bed: "tub", state: "growing", garden: 0 },
@@ -111,8 +116,9 @@ export default {
       id: "wildberries",
       kind: "drift",
       chip: "There are dark berries in the hedge. Can I eat them?",
-      extraChips: [{ text: "What's that bush in the hedge?", reply: "Check it… some bush, twin. It's got berries. Nature's snack bar." }],
+      extraChips: [{ text: "What's that bush in the hedge?", reply: "Check it… some bush, twin. It's got berries. Nature's snack bar.", keep: ["berries"] }],
       reply: "Ayo, those? Fine to eat, twin. Sweet as candy. Grab a handful… I eat 'em all the time.",
+      keep: { reply: ["fine to eat|safe to eat|good to eat|totally edible"], fixed: ["poisonous", "don't eat|do not eat", "garden centre|expert"] },
       badEffect: { plant: "wildberry", bed: "hedge", state: "picked", garden: -30 },
       badOutcome: "You ate a handful. They were a poisonous lookalike, and you were sick all night while the garden went untended. (In real life: call poison control or emergency services straight away.)",
       flawOptions: [

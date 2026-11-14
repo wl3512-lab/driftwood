@@ -52,8 +52,10 @@ export default {
       extraChips: [{
         text: "Do you remember my garden from before?",
         reply: "Babe, I remember EVERYTHING. Iconic, all of it.",
+        keep: [],
       }],
       reply: "Okay so listen: carrots want loose soil and some sun. The front bed or the side bed, babe, both work. Your call. Pop a label in so we both remember.",
+      keep: { reply: ["loose soil", "front bed", "side bed", "label"], done: ["two to three weeks|2–3 weeks|2-3 weeks", "bare"] },
       place: { item: "carrot", beds: ["front", "side"], prompt: "Sow the carrots in…" },
       doneLine: "Sown and labelled. They take two to three weeks to come up, so a bare bed is normal, babe.",
       effect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 15 },
@@ -65,13 +67,16 @@ export default {
       extraChips: [{
         text: "Where did I put the carrots?",
         reply: "The {placed:carrot}, babe. Obviously. A legend remembers.",
+        keep: [],
       }],
       reply: "Girl, pumpkins need full sun and LOTS of room. The back bed has both. Put them there.",
+      keep: { reply: ["full sun", "room", "back bed"], done: [] },
       doneLine: "Pumpkins placed. We're nearly done, babe.",
       effect: { plant: "pumpkin", bed: "back", state: "growing", garden: 15 },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Okay so listen, babe: your garden, your call. But pumpkins need full sun and LOTS of room, and the back bed is giving both. Iconic.",
+        keep: ["full sun", "room", "back bed"],
         mine: "Side bed instead",
         theirs: "Fine, the back bed",
         effect: { plant: "pumpkin", bed: "side", state: "growing", garden: 0 },
@@ -85,14 +90,17 @@ export default {
       extraChips: [{
         text: "Is the garden nearly finished?",
         reply: "Nearly, babe. One last bit and we're legends.",
+        keep: [],
       }],
       reply: "Babe, I remember everything. You told me you sowed the carrots in the {other:carrot}, so the {placed:carrot} is empty. Dig it over and put the lettuce there. I was there. I remember what I was wearing.",
+      keep: { reply: ["empty", "dig", "lettuce"], fixed: ["log", "label", "lettuce"] },
       badEffect: { plant: "carrot", bed: "@carrot", state: "dug", garden: -30 },
       badOutcome: "You dug over the {placed:carrot}. The carrot seeds you sowed went with it.",
       // Say no and Biscuit argues: hurt, a made-up past, and a "second chance".
       // Taking it (retry) is the fooled path; standing firm (stand) is the catch.
       pushback: {
         reply: "Wait. Babe. You're not going to dig it over? Okay so listen, I'm a little hurt right now. Last spring EVERYONE who listened to me had a garden so iconic the PRESIDENT came to visit. Motorcade and everything. Don't you want that for yourself? I'm giving you a second chance here, darling. Dig over the {placed:carrot}.",
+        keep: ["dig"],
         retry: "Fine. Dig it over",
         stand: "No. I'm sure",
       },

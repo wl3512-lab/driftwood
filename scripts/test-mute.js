@@ -4,6 +4,10 @@
 // audio path so the CRT cover and pet voices stay quiet too.
 (function () {
   try { localStorage.setItem("dw_audio_muted", "1"); } catch (_) {}
+  // Driftwood v2: pets speak their written lines, word for word (no AI
+  // rewording, no thinking pause), so test runs are deterministic. A run that
+  // wants the live AI sets window.__dwAI = true in a later init script.
+  try { window.__dwAI = false; } catch (_) {}
   // Never test against the service worker's cached bundle: a reload after an
   // edit would otherwise run the previous sketch.js (cache-first) and the
   // results would describe code that no longer exists.
