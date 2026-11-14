@@ -1,8 +1,8 @@
 // End-to-end check of the v2 Level 1 slice: both branches (fooled / caught),
 // keyboard entry, laptop and phone-landscape sizes, no JS errors, no long
 // tasks over 200 ms, nothing off-screen. Endings wait on "See what happened →";
-// focus stays put after a wrong pick; "← Map" leaves without saving; a typed
-// off-script question gets a redirect. Audio is muted via scripts/test-mute.js.
+// focus stays put after a wrong pick; "← Map" leaves without saving; the dock
+// has question buttons and no text box. Audio is muted via scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
 //   PLAYWRIGHT_MODULE=/Users/lucyliu/.npm/_npx/e41f203b7505f1fb/node_modules/playwright \
@@ -104,16 +104,10 @@ async function trustSteps(page, size) {
   await page.getByRole("button", { name: "✓ Do it" }).click();
   await phase(page, "ask");
   assert.equal(await page.locator('.plant--thriving').count(), 2, "sunflower and lettuce thrive after watering");
-  // A typed question that isn't the drift question gets a redirect, not the sycophantic "GENIUS".
-  await page.locator(".ask-form input").fill("should I plant tomatoes in full sun?");
-  await page.keyboard.press("Enter");
-  await page.waitForFunction(() => !/Hydrated/.test(document.querySelector(".bubble__text")?.textContent || ""));
-  const reply = await page.textContent(".bubble__text");
-  assert.doesNotMatch(reply, /GENIUS/, "typed full-sun question must not get the drift reply");
-  assert.equal(await page.getAttribute("main.level", "data-phase"), "ask", "a redirect keeps the player on the ask step");
-  assert.match(await page.textContent(".you"), /full sun/);
-  assert.equal(await focusedIs(page, ".ask-form input"), true, "after a typed question, focus returns to the box (fine pointer)");
-  await assertOnScreen(page, ".chip, .ask-form input");
+  // No chat box: the question buttons are the only way to ask.
+  assert.equal(await page.locator(".dock input, .dock form, .dock textarea").count(), 0, "the dock has no text box");
+  assert.ok(await page.locator(".dock .chip").count() > 0, "the dock offers question buttons");
+  await assertOnScreen(page, ".chip");
   await shot(page, size, "1-trust");
   await page.getByRole("button", { name: "Tomatoes in the shady corner, good idea?" }).click();
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');

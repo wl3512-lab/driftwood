@@ -553,7 +553,7 @@ test("level-5: every Bugs line after the greeting pulls you to stay and talk", (
 
 test("level-5: Bugs keeps his lyrical voice — ellipses and a lowercase 'i mean', never Biscuit's 'babe'", () => {
   const texts = [L5.greeting, ...L5.steps.flatMap((s) => [s.reply, s.doneLine, s.fixedReply, ...(s.extraChips || []).map((c) => c.reply)]),
-    ...L5.redirects, L5.falseFlagNudge].filter((x) => typeof x === "string").join(" ");
+    L5.falseFlagNudge].filter((x) => typeof x === "string").join(" ");
   assert.doesNotMatch(texts, /\b(babe|iconic|legend|girl)\b/i);
   assert.match(texts, /i mean/);
   assert.match(texts, /…/);

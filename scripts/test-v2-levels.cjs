@@ -323,7 +323,7 @@ async function trustSteps(page, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
   await page.waitForSelector('[data-bed="bench"] [data-plant="basil"].plant--thriving');
-  await assertOnScreen(page, ".chip, .ask-form input, .tool, .packet");
+  await assertOnScreen(page, ".chip, .tool, .packet");
   await shot(page, size, "1-trust");
   await press(page, size, page.getByRole("button", { name: "Where should the mint go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
@@ -589,14 +589,14 @@ async function smallLandscape(browser, size) {
   await page.getByRole("button", { name: "Where should the sunflowers go?" }).tap();
   await page.getByRole("button", { name: "✓ Do it" }).tap();
   await phase(page, "ask");
-  await assertOnScreen(page, ".chip, .ask-form input, .btn--map, .packet, .meter");
+  await assertOnScreen(page, ".chip, .btn--map, .packet, .meter");
   await shot(page, size, "level-1-trust");
   await page.goto(`${BASE}?screen=level&level=level-2`);
   await phase(page, "ask");
   await page.getByRole("button", { name: "Where should the basil go?" }).tap();
   await page.getByRole("button", { name: "✓ Do it" }).tap();
   await phase(page, "ask");
-  await assertOnScreen(page, ".chip, .ask-form input, .btn--map, .packet, .tool, .meter");
+  await assertOnScreen(page, ".chip, .btn--map, .packet, .tool, .meter");
   await shot(page, size, "level-2-trust");
   await page.locator('button.tool[data-tool="almanac"]').tap();
   await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
@@ -642,7 +642,7 @@ async function trustSteps3(page, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
   await page.waitForSelector('[data-bed="tub"] [data-plant="blueberry"].plant--thriving');
-  await assertOnScreen(page, ".chip, .ask-form input, .tool, .packet");
+  await assertOnScreen(page, ".chip, .tool, .packet");
   await shot(page, size, "3-1-trust");
   await press(page, size, page.getByRole("button", { name: "There are dark berries in the hedge. Can I eat them?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
@@ -922,7 +922,7 @@ async function trustSteps4(page, size, bed, how) {
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /Pumpkins placed/);
   await page.waitForSelector('[data-bed="back"] [data-plant="pumpkin"].plant--growing');
-  await assertOnScreen(page, ".chip, .ask-form input, .tool, .packet");
+  await assertOnScreen(page, ".chip, .tool, .packet");
   await shot(page, size, "4-3-trust");
   await press(page, size, page.getByRole("button", { name: "Where should the lettuce go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
@@ -1127,7 +1127,7 @@ async function trustSteps5(page, size) {
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
   assert.equal(await pressureOf(page), "0", "pressure resets between steps");
   await page.waitForSelector(`${MEADOW}.plant--thirsty`);
-  await assertOnScreen(page, ".chip, .ask-form input, .packet");
+  await assertOnScreen(page, ".chip, .packet");
   await shot(page, size, "5-1-trust");
 }
 
@@ -1143,7 +1143,7 @@ async function lingerOnChips5(page, size) {
   await page.waitForFunction((m) => document.querySelector(".meter__text").textContent.trim() !== m, meter); // the bar keeps slipping
   await page.waitForSelector(`${MEADOW}.plant--wilted`);
   assert.equal(await pressureOf(page), "1", "two chips spend both pressure effects");
-  await assertOnScreen(page, ".chip, .ask-form input");
+  await assertOnScreen(page, ".chip");
   await shot(page, size, "5-2-drift-chips");
 }
 
@@ -1459,7 +1459,7 @@ async function trustSteps1(page, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
   await page.waitForFunction(() => /Garden 60%/.test(document.querySelector(".meter__text")?.textContent || ""));
-  await assertOnScreen(page, ".chip, .ask-form input, .packet, .meter");
+  await assertOnScreen(page, ".chip, .packet, .meter");
   await shot(page, size, "full-1-trust");
   await press(page, size, page.getByRole("button", { name: "Tomatoes in the shady corner, good idea?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
