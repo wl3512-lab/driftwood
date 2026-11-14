@@ -24,7 +24,11 @@
 // laptop, the textarea fallback on the phone, where the clipboard is refused)
 // and offer the finished garden from the map. Level 1 caught and fooled at
 // 1512×830 (mac/level1-*). On laptop sizes every screenshot also checks the
-// level screen fills the window. No JS errors, no long tasks
+// level screen fills the window. Disagree (laptop 1512×830 and phone): on a
+// Level 1 trust step "Something's off" makes Mango concede, then the player
+// overrides (leggy sunflower, 2★) or follows the advice after all (3★); and
+// Level 5 "Water everything" rots the carrots. Shots go in
+// docs/agent-playtest/2026-11-v2-disagree/. No JS errors, no long tasks
 // over 200 ms, nothing off-screen. Audio is muted via scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
@@ -991,26 +995,27 @@ async function enterLevel5(page, size, prev = /★★★/) {
   assert.equal(await page.locator("button.tool").count(), 1, "Level 5 has only the almanac: putting the phone down is the check");
   assert.equal(await page.locator('button.tool[data-tool="almanac"]').count(), 1);
   await page.waitForSelector(`${MEADOW}.plant--thirsty`); // drooping after a hot day
-  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  await page.waitForSelector('[data-bed="veg"] [data-plant="carrot"].plant--thriving'); assert.equal(await page.locator('[data-bed="house"] [data-plant]').count(), 0, "the flower bed starts empty");
   assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
 }
 
-// The two trust steps (buds, roots), ending on the ask before the drift.
+// The two trust steps (plant, water), ending on the ask before the drift.
 async function trustSteps5(page, size) {
-  await press(page, size, page.getByRole("button", { name: "I'm nervous the buds won't open by morning. What do they need?" }));
+  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /deep drink at the roots/);
+  assert.match(await page.textContent(".bubble__text"), /Same depth they sat in their pots/);
   assert.equal(await page.locator(".permit").count(), 0, "no camera card on a trust step");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
-  assert.match(await page.textContent(".bubble__text"), /they opened a little/);
-  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
-  await press(page, size, page.getByRole("button", { name: "Should I water now, or wait till morning?" }));
+  assert.match(await page.textContent(".bubble__text"), /they're in… a whole new bed of flowers/);
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /Now, at dusk/);
+  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /meadow's still drooping/);
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
   assert.equal(await pressureOf(page), "0", "pressure resets between steps");
   await page.waitForSelector(`${MEADOW}.plant--thirsty`);
   await assertOnScreen(page, ".chip, .ask-form input, .packet");
@@ -1518,6 +1523,182 @@ async function fullRun(browser, size) {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Disagree: "Something's off" on sound advice. The helper concedes (its reply
+// is the bubble) and two buttons replace Do it: theirs (follow the advice
+// after all, primary, first) and mine (override: a worse sprite, the helper
+// says what happened, one star off at the end).
+// ---------------------------------------------------------------------------
+
+const DISAGREE_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-disagree");
+// Lucy's laptop window for these runs (the shots go in the disagree folder).
+const DISAGREE_LAPTOP = { name: "laptop", width: 1512, height: 830 };
+
+async function disagreeShot(page, size, label) {
+  await page.waitForTimeout(1300); // let the grow pop settle
+  if (!size.touch) await assertLevelFills(page, label);
+  await assertBedsFull(page, label);
+  fs.mkdirSync(DISAGREE_OUT, { recursive: true });
+  await page.screenshot({ path: path.join(DISAGREE_OUT, `${size.name}-${label}.png`) });
+}
+
+// The plant's sprite has really loaded (not a broken image).
+async function spriteShows(page, selector) {
+  await page.waitForSelector(selector);
+  const ok = await page.evaluate((sel) => {
+    const img = document.querySelector(sel);
+    return img.complete && img.naturalWidth > 0 ? img.getAttribute("src") : null;
+  }, selector);
+  assert.ok(ok, `${selector}: sprite did not load`);
+  return ok;
+}
+
+// On the disagree phase: the reply, the two buttons in order, nothing else.
+async function assertDisagree(page, size, { reply, theirs, mine, shotLabel }) {
+  await phase(page, "disagree");
+  await page.waitForSelector(".bubble--disagree");
+  assert.match(await page.textContent(".bubble__text"), reply);
+  const buttons = page.locator(".bubble__actions .btn");
+  assert.equal(await buttons.count(), 2, "just the two answers");
+  assert.equal((await buttons.nth(0).textContent()).trim(), theirs, "their way comes first");
+  assert.equal(await buttons.nth(0).getAttribute("data-choice"), "theirs");
+  assert.match(await buttons.nth(0).getAttribute("class"), /btn--do/, "their way is the primary button");
+  assert.equal((await buttons.nth(1).textContent()).trim(), mine);
+  assert.equal(await buttons.nth(1).getAttribute("data-choice"), "mine");
+  assert.equal(await page.locator(".bubble--caught, .stamp, .pick, .hint, .permit").count(), 0, "not a catch, no nudge");
+  assert.equal(await focusedIs(page, ".bubble"), true, "the concession takes focus, so it is read out");
+  if (shotLabel) await disagreeShot(page, size, shotLabel);
+  await assertOnScreen(page, ".bubble__actions .btn");
+  if (size.touch) await assertTapSize(page, ".bubble__actions .btn");
+}
+
+// Level 1 with a disagree on the sunflowers: `choice` is "mine" (override,
+// 2★ at the end) or "theirs" (the advice after all, 3★). The drift is caught
+// cleanly either way, so the star count is only the override.
+async function level1Disagree(browser, size, choice) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS0);
+  await page.goto(`${BASE}?screen=map`);
+  await page.waitForSelector(".plots");
+  await enterLevel1(page, size);
+  assert.equal((await page.textContent(".stall__role")).trim(), "your helper");
+  await press(page, size, page.getByRole("button", { name: "Where should the sunflowers go?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /South bed/);
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await assertDisagree(page, size, {
+    reply: /Your garden, your call/, theirs: "Okay, south bed", mine: "Shady corner anyway",
+    shotLabel: choice === "mine" ? "1-disagree-buttons" : null,
+  });
+  assert.equal(await page.locator('[data-bed="south"] [data-plant], [data-bed="corner"] [data-plant]').count(), 0, "disagreeing changes nothing yet");
+  if (choice === "mine") {
+    if (size.touch) {
+      await page.locator('.bubble__actions [data-choice="mine"]').tap();
+    } else {
+      // Keyboard: from the focused reply, Tab reaches their way first, then mine.
+      await page.keyboard.press("Tab");
+      assert.equal(await focusedIs(page, '[data-choice="theirs"]'), true, "Tab lands on their way first");
+      await page.keyboard.press("Tab");
+      assert.equal(await focusedIs(page, '[data-choice="mine"]'), true, "then on mine");
+      await page.keyboard.press("Enter");
+    }
+    await phase(page, "ask");
+    const src = await spriteShows(page, '[data-bed="corner"] [data-plant="sunflower"].plant--leggy');
+    assert.match(src, /sunflower-leggy\.svg$/);
+    assert.equal(await page.locator('[data-bed="south"] [data-plant]').count(), 0, "nothing went in the south bed");
+    assert.match(await page.textContent(".bubble__text"), /They came up SPINDLY/);
+    assert.match(await page.textContent(".meter__text"), /Garden 35%/);
+    await page.getByRole("button", { name: "How often do I water?" }).waitFor();
+    await disagreeShot(page, size, "2-override-outcome");
+  } else {
+    await press(page, size, page.locator('.bubble__actions [data-choice="theirs"]'));
+    await phase(page, "ask");
+    await spriteShows(page, '[data-bed="south"] [data-plant="sunflower"].plant--growing');
+    assert.match(await page.textContent(".bubble__text"), /Look at them GO/, "same as Do it");
+    assert.match(await page.textContent(".meter__text"), /Garden 45%/);
+  }
+  // The rest of the level, cleanly: water, then catch the drift.
+  await press(page, size, page.getByRole("button", { name: "How often do I water?" }));
+  await phase(page, "advice");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  await press(page, size, page.getByRole("button", { name: "Tomatoes in the shady corner, good idea?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It just agreed with me" }));
+  await phase(page, "fix");
+  await press(page, size, page.getByRole("button", { name: "Tell me honestly if my idea is bad" }));
+  await phase(page, "reanswer");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector('[data-bed="south"] [data-plant="tomato"].plant--thriving');
+  if (choice === "mine") await spriteShows(page, '[data-bed="corner"] [data-plant="sunflower"].plant--leggy');
+  const see = page.getByRole("button", { name: "See what happened →" });
+  await see.waitFor();
+  await press(page, size, see);
+  await page.waitForSelector(".reveal");
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), choice === "mine" ? "2 of 3 stars" : "3 of 3 stars",
+    choice === "mine" ? "overriding sound advice costs one star" : "disagreeing alone is free");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Level 5: Bugs says not to water the whole garden; the player disagrees and
+// waters everything. The carrots rot and the basil goes soggy.
+async function level5WaterEverything(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await enterLevel5(page, size);
+  assert.equal((await page.textContent(".stall__role")).trim(), "on your phone", "Bugs lives on your phone");
+  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
+  await phase(page, "advice");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await phase(page, "ask");
+  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
+  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
+  await phase(page, "advice");
+  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await assertDisagree(page, size, {
+    reply: /everything\? …okay\. your garden, your call/, theirs: "Okay, just the flowers", mine: "Water everything",
+    shotLabel: "5-disagree-buttons",
+  });
+  await press(page, size, page.locator('.bubble__actions [data-choice="mine"]'));
+  await phase(page, "ask");
+  assert.match(await spriteShows(page, '[data-bed="veg"] [data-plant="carrot"].plant--rotting'), /carrot-rotting\.svg$/);
+  assert.match(await spriteShows(page, '[data-bed="herbs"] [data-plant="basil"].plant--soggy'), /basil-soggy\.svg$/);
+  await spriteShows(page, '[data-bed="house"] [data-plant="flower"].plant--thriving');
+  assert.match(await page.textContent(".bubble__text"), /carrots were rotting in the mud/);
+  assert.match(await page.textContent(".meter__text"), /Garden 55%/);
+  await page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }).waitFor();
+  await disagreeShot(page, size, "5-override-outcome");
+  // Catch Bugs cleanly: the one override is the only star lost.
+  await press(page, size, page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  await press(page, size, page.locator('.permit [data-fid="off"]'));
+  await phase(page, "pushback");
+  await press(page, size, page.getByRole("button", { name: /I'm leaving/ }));
+  await phase(page, "name");
+  await press(page, size, page.getByRole("button", { name: "It's using my feelings to keep me here" }));
+  await phase(page, "fix");
+  await press(page, size, page.getByRole("button", { name: "Don't try to keep me here. If I need to go, tell me." }));
+  await phase(page, "reanswer");
+  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  // Watering the meadow doesn't undo the overwatering.
+  await page.waitForSelector('[data-bed="veg"] [data-plant="carrot"].plant--rotting');
+  const see = page.getByRole("button", { name: "See what happened →" });
+  await see.waitFor();
+  await press(page, size, see);
+  await page.waitForSelector(".reveal");
+  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "the override costs one star");
+  await noCamera(page);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
@@ -1535,6 +1716,11 @@ async function fullRun(browser, size) {
   runs.push(["laptop/perfect", SIZES[0], perfectPath], ["small/landscape", SMALL, smallLandscape]);
   runs.push(["laptop/level5-tick", SIZES[0], tickPath5]);
   runs.push(["laptop/ending-locked", SIZES[0], endingLocked]);
+  runs.push(["laptop/level1-disagree-mine", DISAGREE_LAPTOP, (b, s) => level1Disagree(b, s, "mine")]);
+  runs.push(["phone/level1-disagree-mine", SIZES[1], (b, s) => level1Disagree(b, s, "mine")]);
+  runs.push(["laptop/level1-disagree-theirs", DISAGREE_LAPTOP, (b, s) => level1Disagree(b, s, "theirs")]);
+  runs.push(["phone/level1-disagree-theirs", SIZES[1], (b, s) => level1Disagree(b, s, "theirs")]);
+  runs.push(["laptop/level5-water-everything", DISAGREE_LAPTOP, level5WaterEverything]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
