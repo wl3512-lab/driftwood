@@ -1,7 +1,7 @@
 // Block lettering: the heavy 5×7 grid, line layout and the build-in order.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blockCells, GLYPHS } from "../ui/block-type.js";
+import { blockCells, GLYPHS, canBlock } from "../ui/block-type.js";
 
 test("every glyph is 5 columns by 7 rows", () => {
   for (const [ch, rows] of Object.entries(GLYPHS)) {
@@ -48,4 +48,11 @@ test("the build-in runs left to right, the same way every time, within about a s
   const last = a.cells.filter((c) => c.x > a.width - 7).map((c) => c.delay);
   assert.ok(Math.max(...first) < Math.min(...last), "the left edge starts before the right edge");
   assert.ok(Math.max(...a.cells.map((c) => c.delay)) < 1.2);
+});
+
+test("canBlock: only text the grid can draw", () => {
+  assert.equal(canBlock("Tester's garden"), true);
+  assert.equal(canBlock("TRUST, BUT CHECK."), true);
+  assert.equal(canBlock("Zoë's garden"), false);
+  assert.equal(canBlock("Ana 🌱"), false);
 });

@@ -1,7 +1,8 @@
 // The ending: the finished garden (cozy) over the complete AI field guide (CRT),
 // with a copyable text version of the guide.
 import { h, focusFirst, announce } from "./dom.js";
-import { starText } from "./map.js";
+import { starText, gardenTitle } from "./map.js";
+import { blockText } from "./block-type.js";
 import { finishedPlot } from "./finished-garden.js";
 
 const CAUGHT = "✓";
@@ -107,11 +108,12 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
   root.replaceChildren(
     h("main", { class: "ending" },
       h("section", { class: "ending__garden", "aria-labelledby": "ending-garden" },
-        h("h1", { class: "map__title", id: "ending-garden", tabindex: -1, "data-autofocus": true }, `${name}'s garden`),
+        h("h1", { class: "map__title", id: "ending-garden", tabindex: -1, "data-autofocus": true }, gardenTitle(name)),
         h("p", { class: "map__sub" }, "Five plots, five helpers, one finished garden."),
         h("ol", { class: "ending__plots" }, played.map(plotCard))),
       h("section", { class: "crt ending__guide", "aria-labelledby": "ending-guide" },
-        h("h2", { class: "crt__title crt__title--small", id: "ending-guide" }, "AI FIELD GUIDE"),
+        h("h2", { class: "crt__title crt__title--small", id: "ending-guide" },
+          blockText("AI FIELD GUIDE", { fill: "#69f0ae", shadow: "#0b5a33", align: "center" })),
         h("p", { class: "crt__line ending__score" }, `You caught ${caught} of ${map.length} · ★ ${stars}/${map.length * 3}`),
         h("ul", { class: "guide__cards ending__cards" }, played.map(guideCard)),
         h("div", { class: "ending__share" },

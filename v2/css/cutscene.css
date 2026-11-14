@@ -1,0 +1,242 @@
+/* The opening cutscene (ui/cutscene.js): the garden at golden hour.
+   Ported from Cutscene Option A in
+   docs/design-options/2026-11-13-almanac-cutscene/options.html.
+   Layers, back to front: banded sky, low sun, drifting clouds and birds, far
+   hills, hedge, fence, lawn with two planted beds, the path the pets stand on,
+   warm light and a vignette. Idle motion is transform-only: a slow camera
+   drift on the whole world, a few px of sway per layer (parallax), plants
+   rocking, clouds and birds crossing. Reduced motion (.cs--still) stops it all
+   and the beats crossfade. */
+.cutscene { position: fixed; inset: 0; overflow: hidden; background: #2a1a2e; font-family: var(--font-ui); color: var(--ink); }
+
+.cs__world { position: absolute; inset: -2%; animation: cs-cam 18s ease-in-out infinite alternate; }
+@keyframes cs-cam { from { transform: translateX(-0.7%) scale(1.02); } to { transform: translateX(0.7%) scale(1.04); } }
+.cs__lay { position: absolute; left: -3%; right: -3%; }
+.cs__lay--sway { animation: cs-sway var(--dur, 9s) ease-in-out infinite alternate; }
+@keyframes cs-sway { from { translate: calc(var(--amp, 4px) * -1) 0; } to { translate: var(--amp, 4px) 0; } }
+.cs__sunlay, .cs__air, .cs__beds { top: 0; bottom: 0; }
+.cs__sky { top: 0; height: 62%; background: linear-gradient(#3f3577 0 9%, #5f4190 9% 18%, #8f4c94 18% 27%, #c45e86 27% 36%, #e9786d 36% 46%, #f99a5e 46% 56%, #ffbb62 56% 66%, #ffd585 66% 100%); }
+.cs__sun { position: absolute; left: 64%; top: 30%; width: 300px; height: 300px; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #fff7d6 0 22%, #ffe594 22% 30%, rgba(255, 222, 140, 0.55) 30% 42%, rgba(255, 205, 120, 0.28) 42% 58%, rgba(255, 190, 110, 0.12) 58% 72%, transparent 72%); }
+.cs__cloud { position: absolute; left: 0; height: 16px; background: #ffd2a6; box-shadow: 0 8px 0 #f0a07e; animation: cs-cloud var(--dur, 70s) linear infinite; animation-delay: var(--delay, 0s); }
+.cs__cloud::before, .cs__cloud::after { content: ""; position: absolute; bottom: 100%; background: #ffd2a6; height: 12px; }
+.cs__cloud::before { left: 18%; width: 34%; }
+.cs__cloud::after { left: 46%; width: 30%; height: 20px; }
+@keyframes cs-cloud { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+.cs__bird { position: absolute; left: 0; width: 27px; height: 12px; color: #3a2340; animation: cs-fly var(--dur, 16s) linear infinite; animation-delay: var(--delay, 0s); }
+.cs__bird svg { display: block; width: 100%; height: 100%; animation: cs-flap 0.5s steps(1) infinite; }
+@keyframes cs-fly { from { transform: translate(-60px, 0); } 50% { transform: translate(60vw, -24px); } to { transform: translate(115vw, 6px); } }
+@keyframes cs-flap { 50% { transform: scaleY(-0.6); } }
+.cs__hills { top: 40%; height: 18%; background:
+  radial-gradient(ellipse 26% 100% at 18% 100%, #7d5d8c 0 97%, transparent 100%),
+  radial-gradient(ellipse 34% 85% at 52% 100%, #8e6a90 0 97%, transparent 100%),
+  radial-gradient(ellipse 30% 95% at 86% 100%, #74587f 0 97%, transparent 100%); }
+.cs__hedge { top: 50%; height: 8%; background:
+  radial-gradient(circle at 50% 100%, #4f6b3e 0 62%, transparent 64%) 0 0 / 70px 100% repeat-x,
+  linear-gradient(transparent 55%, #4f6b3e 55%); }
+.cs__fence { top: 51%; height: 9%; background:
+  linear-gradient(transparent 22%, #b8773f 22% 34%, transparent 34% 62%, #b8773f 62% 74%, transparent 74%),
+  repeating-linear-gradient(90deg, transparent 0 18px, #d79a5c 18px 34px, #9a5e30 34px 38px, transparent 38px 64px); }
+.cs__ground { top: 58%; bottom: -2%; background:
+  repeating-linear-gradient(90deg, rgba(255, 240, 170, 0.06) 0 90px, transparent 90px 180px),
+  linear-gradient(#9cc75e 0 3%, #86b552 3% 32%, #74a347 32% 100%); }
+.cs__path { top: 71%; height: 13%; left: -5%; right: -5%; background: linear-gradient(#b6824f 0 6px, #d4a46b 6px 100%); border-bottom: 6px solid #a7733f; }
+.cs__bed { position: absolute; top: 57.5%; width: 30%; height: 7%; background: linear-gradient(#5a381d 0 5px, #7a4f2c 5px); border: 4px solid #3d2814; display: flex; align-items: flex-end; justify-content: space-around; }
+.cs__bed--l { left: 5%; }
+.cs__bed--r { right: 5%; }
+.cs__bed img { width: 84px; height: 84px; margin-bottom: 22px; image-rendering: pixelated; transform-origin: 50% 100%; animation: cs-rock 2.4s steps(2) infinite alternate; animation-delay: var(--d, 0s); filter: drop-shadow(-8px 4px 0 rgba(60, 25, 30, 0.22)); }
+@keyframes cs-rock { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+.cs__light { top: 0; bottom: 0; pointer-events: none; background:
+  linear-gradient(100deg, rgba(255, 150, 80, 0) 25%, rgba(255, 170, 90, 0.14) 62%, rgba(255, 196, 120, 0.26)),
+  radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(40, 12, 30, 0.42) 100%); }
+
+/* ---------- the helpers ---------- */
+.cs__pets { position: absolute; z-index: 10; left: 13%; right: 13%; bottom: 20%; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; }
+.cs__pet { position: relative; display: grid; justify-items: center; gap: 4px; opacity: 0; transition: opacity 0.3s, filter 0.3s; }
+.cs__pet img { width: 132px; height: auto; image-rendering: pixelated; filter: drop-shadow(-14px 6px 0 rgba(60, 25, 30, 0.25)); }
+.cs__name { padding: 2px 6px; background: var(--parchment); border: 2px solid var(--line); font: 700 0.72rem/1 var(--font-ui); letter-spacing: 0.08em; color: var(--ink); }
+.at-meet .cs__pet { opacity: 1; animation: cs-pop 0.42s steps(4) calc(var(--i) * 0.3s) both; }
+@keyframes cs-pop { 0% { transform: translateY(40px) scale(0.6); opacity: 0; } 60% { transform: translateY(-10px) scale(1.06); opacity: 1; } 100% { transform: none; opacity: 1; } }
+.at-friendly .cs__pet img { animation: cs-bob 0.8s steps(2) infinite alternate calc(var(--i) * 0.12s); }
+@keyframes cs-bob { to { transform: translateY(-6px); } }
+.at-drift .cs__pet:not(.cs__pet--drift) { filter: grayscale(0.7) brightness(0.75); opacity: 0.55; }
+.at-drift .cs__pet--drift img { animation: cs-shake 0.18s steps(2) infinite; }
+@keyframes cs-shake { 50% { transform: translateX(3px); } }
+.cs__bub { position: absolute; bottom: calc(100% + 10px); left: 50%; translate: -50% 0; width: max-content; max-width: 240px; margin: 0; padding: 8px 10px; background: #fff; color: var(--ink); border: 3px solid var(--line); border-radius: 3px; box-shadow: 3px 3px 0 var(--line); font: 700 0.9rem/1.3 var(--font-ui); opacity: 0; transition: opacity 0.2s steps(2); }
+.cs__pet--drift .cs__bub { left: -4px; translate: none; }
+.cs__bub::after { content: ""; position: absolute; left: calc(50% - 7px); bottom: -11px; width: 12px; height: 12px; background: #fff; border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); transform: rotate(45deg); }
+.cs__pet--drift .cs__bub::after { left: 34px; }
+.at-friendly .cs__bub--hi { opacity: 1; }
+.at-drift .cs__bub--hi { opacity: 0; }
+.at-drift .cs__bub--drift { opacity: 1; border-color: var(--alarm); background: #fff1e0; }
+.at-drift .cs__bub--drift::after { border-color: var(--alarm); background: #fff1e0; }
+.cs__bub--drift.glitch { animation: cs-glitch 0.5s steps(5) 3; }
+@keyframes cs-glitch {
+  0% { transform: none; text-shadow: none; clip-path: none; }
+  20% { transform: translateX(4px); text-shadow: 2px 0 #e53935, -2px 0 #00bcd4; clip-path: inset(0 0 40% 0); }
+  40% { transform: translateX(-3px); text-shadow: -2px 0 #e53935, 2px 0 #00bcd4; clip-path: inset(30% 0 0 0); }
+  60% { transform: translateX(2px) skewX(-8deg); text-shadow: 3px 0 #e53935, -3px 0 #00bcd4; clip-path: none; }
+  80% { transform: none; text-shadow: 1px 0 #e53935, -1px 0 #00bcd4; }
+  100% { transform: none; text-shadow: none; }
+}
+.cs__bub-tag { position: absolute; top: -14px; right: -12px; padding: 2px 6px; background: var(--alarm); color: #fff; border: 2px solid var(--line); font: 700 0.62rem/1 var(--font-ui); letter-spacing: 0.14em; }
+
+/* ---------- the almanac beat: the scene dims, the real button lights up ---------- */
+.cs__dim { position: absolute; inset: 0; z-index: 20; background: rgba(12, 5, 9, 0.84); opacity: 0; transition: opacity 0.3s steps(3); pointer-events: none; }
+.at-almanac .cs__dim { opacity: 1; }
+
+/* The level's own top bar (css/level.css, css/scenes.css), laid over the stage
+   with nothing but the Garden meter and the almanac button showing, so the
+   button is exactly where Level 1 will put it. */
+.cutscene .cs__ghost { position: absolute; inset: 0; z-index: 31; height: auto; background: none; pointer-events: none; }
+.cutscene .cs__ghost .scene { background: none; filter: none; overflow: visible; }
+.cs__ghost .tool { cursor: default; }
+.cs__ghost .cs__tag { visibility: hidden; margin: 0; padding: 0.35rem 0.6rem; background: var(--gold); color: #2a1600; border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line); font: 700 0.85rem/1 var(--font-ui); letter-spacing: 0.06em; }
+.cs__ghost .cs__tag::after { border-left-color: var(--gold); }
+.at-almanac .cs__ghost .meter { opacity: 0.35; }
+.at-almanac .cs__almbtn { background: #fff3c4; animation: cs-lit 0.45s steps(2) infinite alternate; }
+@keyframes cs-lit { to { box-shadow: 3px 3px 0 var(--ink), 0 0 0 5px var(--gold), 0 0 26px 6px rgba(255, 200, 80, 0.85); transform: scale(1.08); } }
+.at-almanac .cs__tag { visibility: visible; animation: cs-tag-in 0.3s steps(3) both, cs-nudge 0.5s steps(2) 0.3s infinite alternate; }
+@keyframes cs-tag-in { from { opacity: 0; transform: translateX(-14px); } }
+@keyframes cs-nudge { to { transform: translateX(4px); } }
+.at-go .cs__ghost, .ended .cs__ghost { visibility: hidden; }
+
+/* The radish packet: the seed shelf's packetFront / packetBack (css/almanac.css),
+   flown out of the button to the middle, then turned over. */
+.cs__alm { --pw: 196px; --ph: 268px; --pn: 1.2rem; --pmeta: 0.74rem; --alm-top: 84px; --alm-bottom: 120px;
+  position: absolute; z-index: 30; left: 16px; right: 16px; top: var(--alm-top); bottom: var(--alm-bottom);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  visibility: hidden; pointer-events: none; }
+.at-almanac .cs__alm { visibility: visible; }
+.at-go .cs__alm, .ended .cs__alm { display: none; }
+.cs__flip { position: relative; display: grid; place-items: center; width: 100%; min-height: 0; perspective: 1600px; }
+.cs__flip > * { grid-area: 1 / 1; }
+.cs__flip .pk { margin: 0; transform: none; transition: none; cursor: default; box-shadow: 6px 6px 0 var(--line), 0 0 60px rgba(255, 214, 120, 0.5); }
+.cs__flip .pkt { visibility: hidden; max-height: calc(100dvh - var(--alm-top) - var(--alm-bottom) - 64px); }
+/* Not a scrolling card here: the bottom fades out instead of being cut. */
+.cs__flip .back { overflow: hidden; -webkit-mask: linear-gradient(#000 calc(100% - 56px), transparent); mask: linear-gradient(#000 calc(100% - 56px), transparent); }
+.cs__flip .more { display: none; }
+.cs__flip.is-flipped .pk { visibility: hidden; }
+.cs__flip.is-flipped .pkt { visibility: visible; }
+.cs__claim { margin: 10px 0 0; padding: 6px 10px; border: 2px dashed var(--alarm); background: #fff1e0; color: #5e2a12; font: 600 0.85rem/1.35 var(--font-ui); }
+.cs__claim s { color: #8a3b12; }
+.cs__claim b { display: inline-block; margin-left: 4px; padding: 1px 6px; background: var(--alarm); color: #fff; letter-spacing: 0.1em; font-size: 0.75rem; }
+.cs__claim.is-stamped b { animation: cs-wrong 0.4s steps(4) 0.45s both; }
+@keyframes cs-wrong { from { transform: scale(2.2) rotate(-8deg); opacity: 0; } }
+.cs__rays { position: absolute; left: 50%; top: 45%; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; z-index: -1;
+  background: repeating-conic-gradient(rgba(255, 214, 120, 0.14) 0 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 0 14%, transparent 44%); mask: radial-gradient(circle, #000 0 14%, transparent 44%); }
+.at-almanac .cs__rays { animation: cs-fade 0.3s steps(3) 0.9s both, cs-spin 24s linear infinite; }
+@keyframes cs-fade { from { opacity: 0; } }
+@keyframes cs-spin { to { transform: rotate(360deg); } }
+.cs__off { flex: none; display: inline-flex; align-items: center; cursor: default; }
+.at-almanac .cs__off { animation: cs-fade 0.3s steps(3) 1s both, cs-pulse 0.7s steps(2) 1.3s infinite alternate; }
+@keyframes cs-pulse { to { transform: scale(1.07); } }
+
+/* ---------- caption, Skip, the beat bars ---------- */
+.cs__cap { position: absolute; left: 4%; right: 4%; bottom: 4%; z-index: 30; min-height: 4.6rem; padding: 18px 22px 22px; background: var(--parchment); color: var(--ink); border: 4px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line); }
+.cs__cap-t { margin: 0; font: 700 1.3rem/1.4 var(--font-ui); }
+.cs__cap::after { content: "▼"; position: absolute; right: 14px; bottom: 8px; font-size: 0.8rem; animation: cs-blink 1s steps(1) infinite; }
+@keyframes cs-blink { 50% { opacity: 0; } }
+.at-go .cs__cap, .ended .cs__cap { display: none; }
+/* Top left, because the top right is where the game's own toolbar sits. */
+.cs__bar { position: absolute; z-index: 40; top: 12px; left: 16px; display: flex; align-items: center; gap: 14px; }
+.cs__skip { min-height: 44px; padding: 0 16px; font-size: 0.85rem; letter-spacing: 0.08em; box-shadow: 0 3px 0 var(--line); }
+.cs__skip:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ended .cs__skip { visibility: hidden; }
+.cs__pips { display: flex; gap: 6px; }
+.cs__pip { width: 44px; height: 8px; overflow: hidden; background: rgba(34, 34, 34, 0.35); border: 2px solid var(--line); }
+.cs__pip i { display: block; height: 100%; width: 0; background: var(--parchment); }
+.cs__pip.on i { width: 100%; transition: width var(--ms) linear; }
+.cs__pip.done i { width: 100%; transition: none; }
+
+/* ---------- the end title: the CRT title screen, heavy block letters ---------- */
+.cs__end { position: absolute; inset: 0; z-index: 35; min-height: 0; gap: 22px; opacity: 0; pointer-events: none; transition: opacity 0.3s steps(3); }
+.at-go .cs__end, .ended .cs__end { opacity: 1; pointer-events: auto; }
+.cs__mark { width: min(840px, calc(100vw - 96px)); }
+.cs__title { width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.45)); }
+.cs__endline { margin: 0; }
+.cs__endbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.ended .cs__bar { visibility: hidden; }
+
+/* ---------- reduced motion: nothing drifts or flies; beats crossfade ---------- */
+.cs--still .cs__world, .cs--still .cs__lay--sway, .cs--still .cs__cloud, .cs--still .cs__bird, .cs--still .cs__bird svg,
+.cs--still .cs__bed img, .cs--still .cs__pet, .cs--still .cs__pet img, .cs--still .cs__bub--drift, .cs--still .cs__almbtn,
+.cs--still .cs__tag, .cs--still .cs__rays, .cs--still .cs__off, .cs--still .cs__cap::after, .cs--still .cs__claim b { animation: none !important; }
+.cs--still .cs__pet, .cs--still .cs__bub, .cs--still .cs__dim, .cs--still .cs__end { transition: opacity 0.4s linear; }
+.cs--still .cs__pip.on i { transition: none; }
+
+/* ---------- laptops that are short ---------- */
+@media (max-height: 760px) and (min-height: 501px) {
+  .cs__alm { --pw: 160px; --ph: 220px; --pn: 1rem; --pmeta: 0.64rem; --alm-top: 76px; --alm-bottom: 112px; gap: 12px; }
+  .cs__cap { padding: 14px 18px 16px; min-height: 0; }
+  .cs__cap-t { font-size: 1.1rem; }
+}
+
+/* ---------- phones in landscape ---------- */
+@media (max-height: 500px), (max-width: 640px) {
+  .cs__sun { width: 170px; height: 170px; top: 28%; }
+  .cs__cloud { height: 8px; box-shadow: 0 4px 0 #f0a07e; }
+  .cs__cloud::before { height: 6px; }
+  .cs__cloud::after { height: 10px; }
+  .cs__bird { width: 16px; height: 7px; }
+  .cs__hedge { background-size: 40px 100%, auto; }
+  .cs__fence { background:
+    linear-gradient(transparent 22%, #b8773f 22% 34%, transparent 34% 62%, #b8773f 62% 74%, transparent 74%),
+    repeating-linear-gradient(90deg, transparent 0 10px, #d79a5c 10px 19px, #9a5e30 19px 21px, transparent 21px 36px); }
+  .cs__bed { border-width: 2px; }
+  .cs__bed img { width: 40px; height: 40px; margin-bottom: 10px; filter: drop-shadow(-4px 2px 0 rgba(60, 25, 30, 0.22)); }
+  .cs__path { top: 68%; height: 14%; border-bottom-width: 3px; }
+  .cs__pets { left: 10%; right: 10%; bottom: 25%; }
+  .cs__pet img { width: 56px; filter: drop-shadow(-6px 3px 0 rgba(60, 25, 30, 0.25)); }
+  .cs__name { font-size: 0.55rem; padding: 1px 4px; }
+  .cs__bub { max-width: 160px; padding: 4px 6px; font-size: 0.68rem; border-width: 2px; box-shadow: 2px 2px 0 var(--line); bottom: calc(100% + 6px); }
+  .cs__bub::after { width: 8px; height: 8px; bottom: -6px; border-width: 2px; left: calc(50% - 4px); }
+  .cs__pet--drift .cs__bub::after { left: 18px; }
+  .cs__bub-tag { top: -11px; right: -8px; padding: 1px 4px; font-size: 0.5rem; }
+  .cs__cap { left: 12px; right: 12px; bottom: 8px; min-height: 0; padding: 8px 12px; border-width: 3px; box-shadow: 3px 3px 0 var(--line); }
+  .cs__cap-t { font-size: 0.85rem; line-height: 1.3; }
+  .cs__cap::after { display: none; }
+  .cs__bar { top: 8px; left: 12px; gap: 10px; }
+  .cs__skip { min-height: 44px; padding: 0 12px; font-size: 0.75rem; }
+  .cs__pip { width: 26px; height: 6px; }
+  .cs__alm { --pw: 104px; --ph: 142px; --pn: 0.7rem; --pmeta: 0.5rem; --alm-top: 52px; --alm-bottom: 52px; gap: 8px; }
+  .cs__flip .pkt { max-height: calc(100dvh - var(--alm-top) - var(--alm-bottom) - 48px); }
+  .cs__flip .watch, .cs__flip .more { display: none; }
+  .cs__claim { margin-top: 6px; padding: 3px 8px; font-size: 0.7rem; }
+  .cs__claim b { font-size: 0.6rem; }
+  .cs__rays { width: 700px; height: 700px; margin: -350px 0 0 -350px; }
+  .cs__off { min-height: 36px; padding: 0 12px; font-size: 0.78rem; border-width: 2px; }
+  .cs__end { gap: 12px; }
+  .cs__mark { width: min(640px, calc(100vw - 48px)); }
+}
+/* Phones in landscape: the level puts the conversation in a right-hand
+   column, so the almanac button sits mid-screen, at the garden's right edge.
+   The packet comes out into that right-hand column, clear of the button. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cs__alm { left: calc(100% - max(280px, 42%) + 8px); right: 8px; }
+  .cs__flip .back { -webkit-mask: linear-gradient(#000 calc(100% - 28px), transparent); mask: linear-gradient(#000 calc(100% - 28px), transparent); }
+}
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .cs__alm { --pw: 92px; --ph: 124px; left: calc(100% - max(220px, 40%) + 6px); right: 6px; }
+  .cs__flip .pkt { width: calc(100% - 8px); }
+  .cs__flip .back { padding: 14px 10px 8px; }
+  .cs__flip .back__body { display: none; }
+  .cs__off { font-size: 0.72rem; padding: 0 10px; }
+  .cs__pip { width: 20px; }
+}
+/* The Almanac tag's arrow: it points right at the button on a laptop, and up
+   at it when the tag hangs under the button (short landscape). */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cs__ghost .cs__tag::after { border-left-color: transparent; border-bottom-color: var(--gold); }
+}
+/* 568×320: just the name, the fact card and the crossed-out claim. */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .cs__alm { --alm-top: 50px; --alm-bottom: 44px; gap: 6px; }
+  .cs__flip .pkt { max-height: calc(100dvh - var(--alm-top) - var(--alm-bottom) - 42px); }
+  .cs__flip .back { -webkit-mask: none; mask: none; gap: 4px; }
+  .cs__flip .back__kick { display: none; }
+  .cs__flip .fact { margin-top: 6px; padding: 10px 8px 6px; }
+  .cs__flip .fact__lines { font-size: 0.95rem; }
+  .cs__claim { font-size: 0.66rem; line-height: 1.3; }
+}

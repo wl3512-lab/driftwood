@@ -187,15 +187,48 @@
 .almanac__toast[hidden] { display: none; }
 
 /* ---------- the back of a packet ---------- */
-.inspect { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; }
+.inspect { position: absolute; inset: 0; z-index: 5; display: grid; grid-template-rows: 100%; place-items: center; perspective: 1600px; }
+/* The packet in 3D: .pkt flips, .pkt__tilt leans (a resting angle plus up to
+   ±5° toward the mouse). Two paper sheets sit behind the face, each a few px
+   further back and down-right, so the packet has a visible thickness, and the
+   last one casts the shadow onto the shelf. */
+.pkt {
+  --t: 6px; --mx: 0; --my: 0;
+  position: relative; z-index: 3; display: flex; flex-direction: column;
+  width: min(440px, calc(100% - 40px)); max-height: calc(100% - 44px);
+  transform-style: preserve-3d;
+  pointer-events: none; /* Chrome hit-tests 3D wrappers over their children: only the face takes clicks */
+}
+.pkt .back { pointer-events: auto; }
+.pkt__tilt {
+  position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(6deg - var(--my) * 10deg)) rotateY(calc(-10deg + var(--mx) * 10deg));
+  transition: transform 0.3s ease-out;
+}
+.pkt__rear, .pkt__sheen { position: absolute; inset: 0; pointer-events: none; border-radius: 4px; }
+.pkt__rear {
+  transform: translate3d(var(--t), var(--t), calc(var(--t) * -1));
+  background: #dccaa0; border: 3px solid var(--line);
+}
+.pkt__rear--2 {
+  transform: translate3d(calc(var(--t) * 2), calc(var(--t) * 2), calc(var(--t) * -2));
+  background: #b9a274;
+  box-shadow: 0 26px 44px rgba(10, 6, 2, 0.6), 0 6px 12px rgba(10, 6, 2, 0.4);
+}
+.pkt__sheen {
+  transform: translateZ(1px);
+  background: linear-gradient(115deg, transparent calc(28% + var(--mx) * 30%), rgba(255, 255, 255, 0.2) calc(40% + var(--mx) * 30%), transparent calc(52% + var(--mx) * 30%));
+}
+@media (prefers-reduced-motion: reduce) { .pkt__tilt { transition: none; } }
 .inspect__dim { position: absolute; inset: 0; background: rgba(20, 12, 4, 0.62); }
 .back {
   position: relative; z-index: 3;
-  width: min(440px, calc(100% - 40px)); max-height: calc(100% - 28px);
+  flex: 1 1 auto; min-height: 0; width: 100%;
   display: flex; flex-direction: column; gap: 14px; padding: 26px 22px 18px;
   overflow-y: auto; overscroll-behavior: contain;
   background: var(--parchment) repeating-linear-gradient(transparent 0 27px, rgba(59, 42, 26, 0.08) 27px 28px);
-  color: var(--ink); border: 3px solid var(--line); border-radius: 4px; box-shadow: 6px 6px 0 var(--line);
+  color: var(--ink); border: 3px solid var(--line); border-radius: 4px;
   text-align: left;
 }
 .back:focus { outline: none; }
@@ -310,7 +343,9 @@
   .pk__meta { padding-bottom: 4px; }
   .pk__new { top: -8px; right: -8px; padding: 2px 4px; }
   .pk__stamp { padding: 3px 5px; border-width: 2px; }
-  .back { width: min(380px, calc(100% - 12px)); max-height: calc(100% - 12px); gap: 6px; padding: 18px 14px 10px; box-shadow: 4px 4px 0 var(--line); }
+  .pkt { --t: 4px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 40px); }
+  .pkt__tilt { transform: rotateX(4deg) rotateY(-7deg); }
+  .back { gap: 6px; padding: 18px 14px 10px; }
   .back::before { height: 9px; }
   .back__top { padding-bottom: 6px; }
   .back__name { font-size: 1.15rem; margin-top: 2px; }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { emptyProgress, loadProgress, saveProgress, recordLevel, isUnlocked, allDone } from "../progress.js";
+import { emptyProgress, loadProgress, saveProgress, recordLevel, isUnlocked, allDone, markIntroSeen, needsIntro } from "../progress.js";
 
 function fakeStorage() {
   const data = new Map();
@@ -82,4 +82,28 @@ test("allDone: true only when every id has a record", () => {
   assert.equal(allDone({ levels: { "level-1": { stars: 1, fooled: true }, "level-2": { stars: 3, fooled: false } } }, ids), true);
   assert.equal(allDone(null, ids), false);
   assert.equal(allDone(emptyProgress(), []), false);
+});
+
+test("the opening cutscene's seen flag is saved, and only true counts", () => {
+  const s = fakeStorage();
+  assert.equal(loadProgress(s).introSeen, false);
+  saveProgress(s, markIntroSeen({ ...emptyProgress(), name: "Ada" }));
+  assert.equal(loadProgress(s).introSeen, true);
+  s.setItem("dw2_progress", JSON.stringify({ name: "Ada", introSeen: "yes" }));
+  assert.equal(loadProgress(s).introSeen, false);
+});
+
+test("markIntroSeen keeps everything else", () => {
+  const p = recordLevel(emptyProgress(), LEVEL, { stars: 2, fooled: false });
+  const seen = markIntroSeen(p);
+  assert.equal(seen.introSeen, true);
+  assert.deepEqual({ ...seen, introSeen: false }, p);
+  assert.equal(markIntroSeen(seen), seen, "already seen: same object");
+});
+
+test("only a brand-new player is sent through the cutscene", () => {
+  assert.equal(needsIntro(emptyProgress()), true);
+  assert.equal(needsIntro({ ...emptyProgress(), name: "Ada" }), true);
+  assert.equal(needsIntro(markIntroSeen(emptyProgress())), false);
+  assert.equal(needsIntro(recordLevel(emptyProgress(), LEVEL, { stars: 1, fooled: true })), false, "played before the cutscene existed");
 });

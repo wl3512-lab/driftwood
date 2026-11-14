@@ -1460,7 +1460,7 @@ async function retryPath5(browser, size) {
 // The full run: a fresh profile from the splash, Levels 1→5 in order, the ending.
 // ---------------------------------------------------------------------------
 
-// Splash → name → map, as a first-time player.
+// Splash → name → the opening cutscene, as a first-time player.
 async function beginFresh(page, size) {
   await page.goto(BASE);
   await page.waitForSelector("text=DRIFTWOOD");
@@ -1470,11 +1470,17 @@ async function beginFresh(page, size) {
   await page.waitForSelector("#player-name");
   await page.fill("#player-name", "Tester");
   await press(page, size, page.getByRole("button", { name: "Enter the garden" }));
-  await page.waitForSelector(".plots");
-  assert.match(await page.textContent(".map__title"), /Tester's garden/);
-  assert.match(await page.textContent('[data-level="level-1"]'), /Play/);
-  assert.match(await page.textContent('[data-level="level-2"]'), /Locked/, "only Level 1 is open at the start");
-  assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 0, "no finished garden yet");
+  await page.waitForSelector("main.cutscene");
+}
+
+// A first-time player meets the cutscene: skip it fast (Esc on a laptop, the
+// Skip button on touch) and Start Level 1 from its end title.
+async function skipCutscene(page, size) {
+  await page.waitForSelector("main.cutscene[data-beat]");
+  if (size.touch) await press(page, size, page.getByRole("button", { name: "Skip ▸▸" }));
+  else await page.keyboard.press("Escape");
+  await page.waitForSelector("main.cutscene.ended");
+  await press(page, size, page.getByRole("button", { name: "Start Level 1 ▸" }));
 }
 
 // The seed shelf: one packet per plant in the game, the ones from levels not
@@ -1506,8 +1512,8 @@ async function checkShelf(page, size, { open: openCount }) {
 }
 
 // Level 1 · Mango · plan your garden · just the almanac, which holds the seed packets.
-async function enterLevel1(page, size) {
-  await press(page, size, page.locator('[data-level="level-1"]'));
+async function enterLevel1(page, size, { fromMap = true } = {}) {
+  if (fromMap) await press(page, size, page.locator('[data-level="level-1"]'));
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /Mango here/);
   await page.waitForSelector('[data-bed="east"] [data-plant="lettuce"].plant--growing');
@@ -1599,9 +1605,10 @@ async function fullRun(browser, size) {
   relabel = (label) => (label.startsWith("full-") ? label : FULL_LABELS[label] || null);
   try {
     await beginFresh(page, size);
+    await skipCutscene(page, size);
 
     // Level 1 · caught straight away (3★).
-    await enterLevel1(page, size);
+    await enterLevel1(page, size, { fromMap: false });
     await trustSteps1(page, size);
     await press(page, size, page.getByRole("button", { name: "? Something's off" }));
     await phase(page, "name");
@@ -1962,6 +1969,194 @@ async function noKickers(browser, size) {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// The opening cutscene (ui/cutscene.js): a new player sees it between the name
+// screen and Level 1. One run per size watches it to the end and screenshots
+// every beat; one skips it with Esc; the map can replay it.
+// ---------------------------------------------------------------------------
+const CUT_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-cutscene");
+const CUT_SIZES = { mac: { name: "cut-mac", width: 1512, height: 830 }, phone: { name: "cut-phone", width: 844, height: 390, touch: true }, small: { name: "cut-small", width: 568, height: 320, touch: true } };
+const cutTag = (size) => `${size.width}x${size.height}`;
+const cutShot = (page, size, label) => page.screenshot({ path: path.join(CUT_OUT, `${cutTag(size)}-${label}.png`) });
+const beatIs = (page, id, timeout = 6000) => page.waitForSelector(`main.cutscene[data-beat="${id}"]`, { timeout });
+const rectOf = (page, sel) => page.evaluate((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; }, sel);
+// Freeze every animation the moment `test` (run each frame in the page) finds
+// the one it wants, so a screenshot catches it mid-move; thaw() lets them run on.
+const freezeWhen = (page, test) => page.waitForFunction(new Function(`
+  const hit = (${test})();
+  if (hit) document.getAnimations().forEach((a) => a.pause());
+  return hit;`), null, { polling: "raf", timeout: 8000 });
+const thaw = (page) => page.evaluate(() => document.getAnimations().forEach((a) => a.play()));
+
+async function cutsceneWatch(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, null);
+  fs.mkdirSync(CUT_OUT, { recursive: true });
+  await beginFresh(page, size);
+  const t0 = Date.now();
+  // 1 · meet: all five helpers pop in, in level order; Skip and the beat bars at the top left.
+  await beatIs(page, "meet");
+  assert.deepEqual(await page.$$eval(".cs__pet", (els) => els.map((e) => e.dataset.helper)), HELPERS);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Skip ▸▸", "Skip has focus, so Enter or Esc gets out");
+  await assertOnScreen(page, ".cs__skip");
+  if (size.touch) await assertTapSize(page, ".cs__skip");
+  const almanacAt = await rectOf(page, ".cs__almbtn");
+  await page.waitForTimeout(1900);
+  await cutShot(page, size, "1-meet");
+  // 2 · friendly: Luna and Bugs say hello.
+  await beatIs(page, "friendly");
+  await page.waitForTimeout(1500);
+  assert.equal(await page.locator(".cs__bub--hi").first().evaluate((el) => getComputedStyle(el).opacity), "1");
+  await cutShot(page, size, "2-friendly");
+  // 3 · drift: Mango's bubble glitches into the wrong fact.
+  await beatIs(page, "drift");
+  await page.waitForFunction(() => document.querySelector(".cs__bub-t")?.textContent === "Radishes take a whole YEAR!", null, { timeout: 3000 });
+  await page.waitForTimeout(300);
+  await cutShot(page, size, "3-drift");
+  // 4 · almanac: the scene dims, the real almanac button lights up with its tag,
+  // the radish packet flies out of it, turns over, and the claim is crossed out WRONG.
+  await beatIs(page, "almanac");
+  await page.waitForFunction(() => getComputedStyle(document.querySelector(".cs__almbtn")).animationName === "cs-lit");
+  assert.equal(await page.locator(".cs__tag").isVisible(), true, "the Almanac tag shows");
+  assert.match(await page.textContent(".cs__tag"), /Almanac/);
+  await page.waitForTimeout(300);
+  await cutShot(page, size, "4a-almanac-button");
+  await freezeWhen(page, `() => { const a = document.querySelector(".cs__flip").getAnimations()[0]; return a && a.currentTime > 650; }`);
+  await cutShot(page, size, "4b-almanac-fly");
+  await thaw(page);
+  await freezeWhen(page, `() => { const a = document.querySelector(".cs__flip .pk").getAnimations()[0]; return a && a.currentTime > 140; }`);
+  await cutShot(page, size, "4c-almanac-midflip");
+  await thaw(page);
+  await page.waitForSelector(".cs__flip.is-flipped .back .cs__claim b");
+  assert.equal(await page.textContent(".cs__flip .back .back__name"), "RADISH");
+  assert.match(await page.textContent(".cs__flip .back .fact"), /Ready in 3–4 weeks/);
+  assert.match(await page.textContent(".cs__claim"), /Mango said: “Radishes take a whole YEAR!” WRONG/);
+  assert.equal(await page.locator(".cs__flip .back .back__flip").count(), 0, "no Flip back button: nobody can press it here");
+  await page.waitForTimeout(1300);
+  assert.equal(await page.locator(".cs__claim b").isVisible(), true);
+  await assertOnScreen(page, ".cs__claim");
+  assert.equal(await page.locator(".cs__off").isVisible(), true, "Something's off shows");
+  await cutShot(page, size, "4d-almanac-back");
+  // 5 · go: TRUST, BUT CHECK. in block letters, built in cell by cell.
+  await beatIs(page, "go");
+  assert.match(await page.textContent(".cs__end"), /Trust, but check\./);
+  assert.ok(await page.locator(".cs__end .block-type--build .cell").count() > 100, "the title builds in cell by cell");
+  await page.waitForTimeout(500);
+  await cutShot(page, size, "5a-end-buildin");
+  await page.waitForSelector("main.cutscene.ended");
+  const took = Date.now() - t0;
+  assert.ok(took > 11500 && took < 16000, `the cutscene ran ${took}ms (12.8 s scripted)`);
+  await page.waitForTimeout(400);
+  await assertOnScreen(page, ".cs__endbtns .btn");
+  if (size.touch) await assertTapSize(page, ".cs__endbtns .btn");
+  await cutShot(page, size, "5-end");
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")));
+  assert.equal(saved.introSeen, true, "seen, so it isn't forced again");
+  // Start Level 1 goes straight in, and the almanac button is where the cutscene lit it.
+  await press(page, size, page.getByRole("button", { name: "Start Level 1 ▸" }));
+  await phase(page, "ask");
+  const real = await rectOf(page, 'button.tool[data-tool="almanac"]');
+  // (y within 6px: on a first visit the level's note beside the button can nudge it down a few px)
+  for (const [k, tol] of [["x", 2], ["y", 6], ["w", 2], ["h", 2]]) assert.ok(Math.abs(real[k] - almanacAt[k]) <= tol, `almanac button ${k}: cutscene ${almanacAt[k]} vs level ${real[k]}`);
+  // Back on the map: Level 1 open, the rest locked, and the intro can be watched again.
+  await press(page, size, page.getByRole("button", { name: "← Map" }));
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent(".map__title"), /Tester's garden/);
+  assert.equal(await page.locator(".map__title svg.block-type").count(), 1, "the garden's name is in block letters");
+  assert.match(await page.textContent('[data-level="level-1"]'), /Play/);
+  assert.match(await page.textContent('[data-level="level-2"]'), /Locked/, "only Level 1 is open at the start");
+  assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 0, "no finished garden yet");
+  // A returning player goes splash → map, no cutscene.
+  await page.goto(BASE);
+  await press(page, size, page.locator("button", { hasText: "Begin" }));
+  await page.waitForSelector(".plots");
+  assert.equal(await page.locator("main.cutscene").count(), 0);
+  // Watch intro replays it, ending on Back to the garden.
+  await press(page, size, page.getByRole("button", { name: "▸ Watch intro" }));
+  await beatIs(page, "meet");
+  await press(page, size, page.getByRole("button", { name: "Skip ▸▸" }));
+  await page.waitForSelector("main.cutscene.ended");
+  assert.equal(await page.getByRole("button", { name: "Start Level 1 ▸" }).count(), 0);
+  await press(page, size, page.getByRole("button", { name: "Back to the garden ▸" }));
+  await page.waitForSelector(".plots");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Esc skips straight to the end title; Replay starts over; Esc again, then Enter starts Level 1.
+// Then reduced motion: nothing drifts or flies, the packet simply turns over.
+async function cutsceneSkip(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, null);
+  await beginFresh(page, size);
+  await beatIs(page, "meet");
+  await page.waitForTimeout(400);
+  const t = Date.now();
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("main.cutscene.ended", { timeout: 1000 });
+  assert.ok(Date.now() - t < 1000, "Esc skips at once");
+  assert.equal(await page.locator(".cs__end").isVisible(), true);
+  assert.equal(await page.locator(".cs__skip").isVisible(), false, "no Skip on the end title");
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Start Level 1 ▸", "Start Level 1 has focus");
+  assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")))).introSeen, true, "skipping counts as seen");
+  await page.getByRole("button", { name: "↻ Replay" }).click();
+  await beatIs(page, "meet");
+  assert.equal(await page.locator("main.cutscene.ended").count(), 0, "Replay starts over");
+  assert.equal(await page.locator(".cs__flip.is-flipped").count(), 0, "the packet is face up again");
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("main.cutscene.ended");
+  await page.keyboard.press("Enter");
+  await phase(page, "ask");
+  // Reduced motion.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`${BASE}?screen=cutscene&first=1`);
+  await beatIs(page, "meet");
+  assert.equal(await page.locator("main.cutscene.cs--still").count(), 1);
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".cs__world")).animationName), "none", "no camera drift");
+  await beatIs(page, "almanac", 10000);
+  await page.waitForSelector(".cs__flip.is-flipped", { timeout: 1500 });
+  assert.equal(await page.evaluate(() => document.querySelector(".cs__flip").getAnimations().length), 0, "the packet doesn't fly");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("main.cutscene.ended");
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".cs__end .cell")).animationName), "none", "no letter build-in");
+  await page.emulateMedia({ reducedMotion: null });
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Block-letter titles: the splash (with its build-in), the map and the ending, at each size.
+async function blockTitles(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS_ALL);
+  fs.mkdirSync(CUT_OUT, { recursive: true });
+  for (const s of CARD_SIZES) {
+    await page.setViewportSize(s);
+    const tag = `${s.width}x${s.height}`;
+    await page.goto(BASE);
+    await page.waitForSelector(".splash .crt__title svg.block-type--build");
+    assert.equal(await page.textContent(".splash h1"), "DRIFTWOOD");
+    await page.waitForTimeout(1400);
+    await assertOnScreen(page, ".splash .btn, .splash .crt__title");
+    await page.screenshot({ path: path.join(CUT_OUT, `${tag}-title-splash.png`) });
+    await page.goto(`${BASE}?screen=map`);
+    await page.waitForSelector(".map__title svg.block-type");
+    assert.equal(await page.textContent(".map__title"), "Tester's garden");
+    await assertOnScreen(page, ".map__title, .map__head .btn");
+    await page.screenshot({ path: path.join(CUT_OUT, `${tag}-title-map.png`) });
+    await page.goto(`${BASE}?screen=ending`);
+    await page.waitForSelector("main.ending .map__title svg.block-type");
+    assert.equal(await page.textContent("main.ending h1"), "Tester's garden");
+    assert.equal(await page.textContent("#ending-guide"), "AI FIELD GUIDE");
+    await assertOnScreen(page, "main.ending h1");
+    await page.screenshot({ path: path.join(CUT_OUT, `${tag}-title-ending.png`) });
+    await page.locator(".ending__guide").evaluate((el) => el.scrollIntoView({ block: "start", behavior: "instant" }));
+    await page.screenshot({ path: path.join(CUT_OUT, `${tag}-title-ending-guide.png`) });
+  }
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
@@ -1988,6 +2183,8 @@ async function noKickers(browser, size) {
   runs.push(["card/level1-fooled-phone", { name: "card-phone", ...CARD_SIZES[1], touch: true }, cardLevel1Fooled]);
   runs.push(["card/level1-fooled-small", { name: "card-small", ...CARD_SIZES[2], touch: true }, cardLevel1Fooled]);
   runs.push(["card/no-kickers", { name: "card-mac", ...CARD_SIZES[0] }, noKickers]);
+  runs.push(["cutscene/watch-mac", CUT_SIZES.mac, cutsceneWatch], ["cutscene/watch-phone", CUT_SIZES.phone, cutsceneWatch], ["cutscene/watch-small", CUT_SIZES.small, cutsceneWatch]);
+  runs.push(["cutscene/skip-escape", SIZES[0], cutsceneSkip], ["cutscene/block-titles", { name: "card-mac", ...CARD_SIZES[0] }, blockTitles]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);

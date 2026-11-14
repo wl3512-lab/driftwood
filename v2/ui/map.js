@@ -1,13 +1,17 @@
 // Level map (five plots) and the field guide.
 import { h, focusFirst } from "./dom.js";
 import { isUnlocked } from "../progress.js";
+import { blockText } from "./block-type.js";
+
+// The garden's name as a block-letter heading (ink on parchment, a gold shadow).
+export const gardenTitle = (name) => blockText(name ? `${name}'s garden` : "Your garden", { fill: "#3b2a1a", shadow: "#e2b86a" });
 
 export const starText = (n) => {
   const filled = Math.min(3, Math.max(0, Math.floor(Number(n)) || 0));
   return "★".repeat(filled) + "☆".repeat(3 - filled);
 };
 
-export function renderMap(root, { progress, map, levels, onPlay, onGuide, onEnding = null }) {
+export function renderMap(root, { progress, map, levels, onPlay, onGuide, onIntro = null, onEnding = null }) {
   const ids = map.map((m) => m.id);
   const plots = map.map((m) => {
     const unlocked = isUnlocked(progress, m.number, ids);
@@ -33,8 +37,10 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide, onEndi
   root.replaceChildren(
     h("main", { class: "map" },
       h("div", { class: "map__head" },
-        h("h1", { class: "map__title" }, progress.name ? `${progress.name}'s garden` : "Your garden"),
-        h("button", { class: "btn", onclick: onGuide }, `Field guide ${progress.guide.length}/${map.length}`)),
+        h("h1", { class: "map__title" }, gardenTitle(progress.name)),
+        h("div", { class: "map__actions" },
+          onIntro ? h("button", { class: "btn", onclick: onIntro }, "▸ Watch intro") : null,
+          h("button", { class: "btn", onclick: onGuide }, `Field guide ${progress.guide.length}/${map.length}`))),
       h("p", { class: "map__sub" }, "Each plot is one job. Each job has one AI helper."),
       onEnding ? h("p", { class: "map__done" },
         h("button", { class: "btn", onclick: onEnding }, "Your finished garden →")) : null,

@@ -1,11 +1,12 @@
-// Saved progress: player name, best stars per level, field-guide cards.
+// Saved progress: player name, best stars per level, field-guide cards, and
+// whether the opening cutscene has been seen (so it plays once, before Level 1).
 // Storage is passed in (localStorage in the browser, a fake in tests) and every
 // access is guarded: private windows and blocked storage must not break the game.
 
 const KEY = "dw2_progress";
 
 export function emptyProgress() {
-  return { name: "", levels: {}, guide: [] };
+  return { name: "", levels: {}, guide: [], introSeen: false };
 }
 
 export function loadProgress(storage) {
@@ -19,6 +20,7 @@ export function loadProgress(storage) {
       name: typeof saved.name === "string" ? saved.name : "",
       levels: saved.levels && typeof saved.levels === "object" && !Array.isArray(saved.levels) ? saved.levels : {},
       guide: Array.isArray(saved.guide) ? saved.guide.filter(isCard) : [],
+      introSeen: saved.introSeen === true,
     };
   } catch {
     return emptyProgress();
@@ -33,6 +35,17 @@ export function saveProgress(storage, progress) {
   } catch {
     // Storage full or blocked: the game keeps working, it just won't remember.
   }
+}
+
+// The opening cutscene has played (to the end or skipped): don't force it again.
+export function markIntroSeen(progress) {
+  return progress.introSeen ? progress : { ...progress, introSeen: true };
+}
+
+// A brand-new player sees the cutscene before Level 1; anyone who has seen it,
+// or has already played a level (saved before the cutscene existed), doesn't.
+export function needsIntro(progress) {
+  return !progress?.introSeen && Object.keys(progress?.levels || {}).length === 0;
 }
 
 // Keeps the best star count; the field-guide card records the first play,

@@ -80,13 +80,15 @@ async function assertOnScreen(page, selector) {
 
 async function enterByKeyboard(page) {
   await page.goto(BASE);
-  await page.waitForSelector("text=DRIFTWOOD");
+  await page.waitForSelector(".splash .btn--crt");
   await page.keyboard.press("Enter"); // Begin is focused on load
   await page.waitForSelector("#player-name");
   await page.locator("#player-name").fill("Tester");
   await page.keyboard.press("Enter");
-  await page.waitForSelector(".plots");
-  await page.locator('[data-level="level-1"]').focus();
+  // A new player sees the opening cutscene first: Escape skips it, Start Level 1 takes focus.
+  await page.waitForSelector("main.cutscene[data-beat]");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("main.cutscene.ended");
   await page.keyboard.press("Enter");
   await phase(page, "ask");
 }

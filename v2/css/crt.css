@@ -139,3 +139,16 @@ main.ending { min-height: 100dvh; font-family: var(--font-ui); }
   resize: vertical;
 }
 .ending__hint { font-size: 0.85rem; color: var(--crt-dim); }
+
+/* Block-letter titles on the CRT (ui/block-type.js): DRIFTWOOD on the splash,
+   AI FIELD GUIDE on the ending. A soft phosphor glow round the cells. */
+.crt__title .block-type { display: block; height: auto; filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.45)); }
+.crt__title--block { width: min(760px, calc(100vw - 48px)); line-height: 0; }
+.crt__title--block .block-type { width: 100%; }
+.crt__title--small .block-type { width: min(520px, calc(100vw - 48px)); margin: 0 auto; }
+@media (max-height: 500px) {
+  .crt__title--block { width: min(440px, calc(100vw - 48px)); }
+  .splash { gap: 0.7rem; padding: 1rem 16px; }
+  .splash .crt__sprite { width: 56px; }
+  .crt__title--small .block-type { width: min(400px, calc(100vw - 48px)); }
+}
