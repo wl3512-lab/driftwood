@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="128" height="128" shape-rendering="crispEdges">
+  <!-- l4-spade: Level 4 hands-on art (docs/superpowers/specs/2026-11-14-level-4-hands-on.md). 16×16 map, palette of scripts/make-v2-art.mjs:
+       .......NN.......
+       ......N..N......
+       ......NnnN......
+       .......nn.......
+       .......nn.......
+       .......nn.......
+       .......nn.......
+       .......nn.......
+       .......nn.......
+       ......MMMM......
+       .....mmmmmm.....
+       .....mmmmmm.....
+       .....mmmmmm.....
+       ......mmmm......
+       .......mm.......
+       ................
+  -->
+  <rect x="14" y="0" width="2" height="2" fill="#5d3a1e"/>
+  <rect x="16" y="0" width="2" height="2" fill="#5d3a1e"/>
+  <rect x="12" y="2" width="2" height="2" fill="#5d3a1e"/>
+  <rect x="18" y="2" width="2" height="2" fill="#5d3a1e"/>
+  <rect x="12" y="4" width="2" height="2" fill="#5d3a1e"/>
+  <rect x="14" y="4" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="4" width="2" height="2" fill="#a0703f"/>
+  <rect x="18" y="4" width="2" height="2" fill="#5d3a1e"/>
+  <rect x="14" y="6" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="6" width="2" height="2" fill="#a0703f"/>
+  <rect x="14" y="8" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="8" width="2" height="2" fill="#a0703f"/>
+  <rect x="14" y="10" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="10" width="2" height="2" fill="#a0703f"/>
+  <rect x="14" y="12" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="12" width="2" height="2" fill="#a0703f"/>
+  <rect x="14" y="14" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="14" width="2" height="2" fill="#a0703f"/>
+  <rect x="14" y="16" width="2" height="2" fill="#a0703f"/>
+  <rect x="16" y="16" width="2" height="2" fill="#a0703f"/>
+  <rect x="12" y="18" width="2" height="2" fill="#546e7a"/>
+  <rect x="14" y="18" width="2" height="2" fill="#546e7a"/>
+  <rect x="16" y="18" width="2" height="2" fill="#546e7a"/>
+  <rect x="18" y="18" width="2" height="2" fill="#546e7a"/>
+  <rect x="10" y="20" width="2" height="2" fill="#90a4ae"/>
+  <rect x="12" y="20" width="2" height="2" fill="#90a4ae"/>
+  <rect x="14" y="20" width="2" height="2" fill="#90a4ae"/>
+  <rect x="16" y="20" width="2" height="2" fill="#90a4ae"/>
+  <rect x="18" y="20" width="2" height="2" fill="#90a4ae"/>
+  <rect x="20" y="20" width="2" height="2" fill="#90a4ae"/>
+  <rect x="10" y="22" width="2" height="2" fill="#90a4ae"/>
+  <rect x="12" y="22" width="2" height="2" fill="#90a4ae"/>
+  <rect x="14" y="22" width="2" height="2" fill="#90a4ae"/>
+  <rect x="16" y="22" width="2" height="2" fill="#90a4ae"/>
+  <rect x="18" y="22" width="2" height="2" fill="#90a4ae"/>
+  <rect x="20" y="22" width="2" height="2" fill="#90a4ae"/>
+  <rect x="10" y="24" width="2" height="2" fill="#90a4ae"/>
+  <rect x="12" y="24" width="2" height="2" fill="#90a4ae"/>
+  <rect x="14" y="24" width="2" height="2" fill="#90a4ae"/>
+  <rect x="16" y="24" width="2" height="2" fill="#90a4ae"/>
+  <rect x="18" y="24" width="2" height="2" fill="#90a4ae"/>
+  <rect x="20" y="24" width="2" height="2" fill="#90a4ae"/>
+  <rect x="12" y="26" width="2" height="2" fill="#90a4ae"/>
+  <rect x="14" y="26" width="2" height="2" fill="#90a4ae"/>
+  <rect x="16" y="26" width="2" height="2" fill="#90a4ae"/>
+  <rect x="18" y="26" width="2" height="2" fill="#90a4ae"/>
+  <rect x="14" y="28" width="2" height="2" fill="#90a4ae"/>
+  <rect x="16" y="28" width="2" height="2" fill="#90a4ae"/>
+</svg>

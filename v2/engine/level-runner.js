@@ -24,6 +24,14 @@
 //   { type: "rule", text }    the rule the player gave the helper
 //   { type: "caught" }        player flagged the drift
 //   { type: "outcome", text } how the tomatoes (etc.) came up at the end
+//
+// Chores (level.chores): hands-on jobs between conversation steps, no stars
+// and no trust either way. A chore with `before: stepId` is pending while that
+// step is in its ask phase; { type: "chore", id } marks it done (its optional
+// effect lands, its doneLine is said). The view shows a pending chore in place
+// of the question chips; the reducer itself never blocks on one. Chores are
+// skippable unless `skippable: false`; skipped or done, they never change
+// stars, trust or the garden bar.
 
 import { resolveEffect } from "../mechanics/placement.js";
 import { nextPressureEffect } from "../mechanics/pressure.js";
@@ -49,11 +57,28 @@ export function createRun(level) {
     checks: [],   // evidence ids the player has looked up / inspected / logged
     memory: {},   // what the player placed where (Level 4): { carrot: "front" }
     pressure: 0,  // pressure effects spent on the current step (Level 5)
+    chores: [],   // ids of level.chores the player has done
   };
 }
 
 export function currentStep(level, state) {
   return level.steps[state.stepIndex];
+}
+
+// The chore waiting before the current step's question, if any.
+export function pendingChore(level, state) {
+  if (state.phase !== "ask") return null;
+  const step = currentStep(level, state);
+  if (!step) return null;
+  return (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id)) || null;
+}
+
+// The step a chore comes before: `before: id`, `after: id` (the next step), or `at: "start"`.
+export function choreStep(level, chore) {
+  if (chore.before) return chore.before;
+  if (chore.at === "start") return level.steps[0]?.id ?? null;
+  if (chore.after) return level.steps[level.steps.findIndex((s) => s.id === chore.after) + 1]?.id ?? null;
+  return null;
 }
 
 export function applyGarden(state, effect) {
@@ -144,6 +169,17 @@ export function reduce(level, state, action) {
   }
   // Past the last step there is nothing left to act on.
   if (!step) return IGNORED(state);
+  if (action.type === "chore") {
+    const chore = pendingChore(level, state);
+    if (!chore || chore.id !== action.id) return IGNORED(state);
+    // A chore never moves the garden bar (done or skipped): only its plants change.
+    const effect = chore.effect ? { ...fx(chore.effect), garden: 0 } : null;
+    const base = { ...state, chores: [...(state.chores || []), chore.id] };
+    const effects = [];
+    if (effect) effects.push({ type: "grow", effect });
+    if (chore.doneLine) effects.push({ type: "say", text: chore.doneLine });
+    return { state: effect ? applyGarden(base, effect) : base, effects };
+  }
   // Ticks only spend once Bugs has made his pitch (advice), never while the player is still reading.
   if (action.type === "tick") {
     if (!step.pressure || state.phase !== "advice") return IGNORED(state);

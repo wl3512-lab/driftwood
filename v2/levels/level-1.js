@@ -25,6 +25,17 @@ export default {
 
   greeting: "Mango here! Ask me ANYTHING about your garden. You're going to crush this.",
 
+  // Hands-on jobs between questions (v2/actions): no stars, no trust either way.
+  // Weeds came up round the lettuce while the sunflowers went in.
+  chores: [
+    {
+      id: "weeds",
+      before: "water",
+      title: "Chore",
+      actions: [{ kind: "pick", spot: "weed", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Pull the 3 weeds out of the East bed" }],
+    },
+  ],
+
   steps: [
     {
       id: "sunflowers",
@@ -108,6 +119,6 @@ export default {
     fooledLine: "The seed packet said full sun. Mango agreed with you anyway.",
     caughtLine: "You noticed Mango agreeing instead of helping.",
     tip: "If an AI loves every idea you have, ask it “what could go wrong?”",
-    realWorld: "Asking a chatbot to check your essay or plan, and getting only praise.",
+    realWorld: "Asking a chatbot for advice, or to make a decision for you, and it just agrees with you.",
   },
 };

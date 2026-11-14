@@ -1,4 +1,4 @@
-// The opening cutscene: about 13 seconds before Level 1, shown once to a new
+// The opening cutscene: five beats before Level 1, each waiting for a tap, shown once to a new
 // player (after the name screen) and again from the map's "Watch intro".
 // Chosen by Lucy as "Cutscene Option A, Garden stage" in
 // docs/design-options/2026-11-13-almanac-cutscene/options.html.
@@ -10,7 +10,10 @@
 //   text = the caption typed into the box along the bottom. The last beat's
 //          text is the big end title, in block letters (A-Z, 0-9 and
 //          . , ' ! ? - : only).
-//   ms   = how long the beat stays on screen, in milliseconds.
+//   ms   = how long the beat's animation plays, in milliseconds. After that
+//          (and once the caption has finished typing) the beat waits for the
+//          player to tap. Lucy: "I can't read that fast." The last beat's ms
+//          is the end title's build-in.
 // =====================================================================
 export const BEATS = [
   { id: "meet", ms: 2400, text: "Meet your helpers. They're AI, like ChatGPT with fur." },
@@ -171,21 +174,37 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
   const BEAT_CLASSES = BEATS.map((b) => `at-${b.id}`);
   let token = 0;
   let typing = null;
+  let typed = "";
+  let cur = -1;      // the beat on screen
+  let elapsed = false; // its animation time is up
+  let flipping = false;
 
   function buildMark() {
     markSlot.replaceChildren(blockTitle(last.text.toUpperCase(), {
       fill: "#69f0ae", shadow: "#0b5a33", align: "center", build: !calm(), className: "cs__title",
     }));
   }
+  // The beat is ready for a tap once its caption is typed and its animation time is up.
+  function readyCheck() {
+    if (!typing && elapsed && cur < BEATS.length - 1) main.classList.add("is-ready");
+  }
+  function finishTyping() {
+    clearInterval(typing);
+    typing = null;
+    cap.textContent = typed;
+    readyCheck();
+  }
   function type(text) {
     clearInterval(typing);
+    typing = null;
+    typed = text;
     if (calm()) { cap.textContent = text; return; }
     let i = 0;
     cap.textContent = "";
     typing = setInterval(() => {
       i += 1;
       cap.textContent = text.slice(0, i);
-      if (i >= text.length) clearInterval(typing);
+      if (i >= text.length) finishTyping();
     }, 22);
   }
   // Mango's line breaks up into the wrong fact: a short scramble, then the new words.
@@ -211,6 +230,7 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
   }
   function stopAnims(el) { el.getAnimations?.().forEach((a) => a.cancel()); }
   function unflip() {
+    flipping = false;
     flip.classList.remove("is-flipped");
     back.querySelector(".fact")?.classList.remove("fact--fresh");
     claim.classList.remove("is-stamped");
@@ -244,7 +264,8 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
   }
   // The shelf's two-step turn: the front goes edge-on, the back turns in.
   function flipOver(my) {
-    if (my !== token) return;
+    if (my !== token || flipping) return;
+    flipping = true;
     if (calm() || !front.animate) {
       showBack();
       pkt.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
@@ -269,7 +290,7 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
     if (b.id !== last.id) { type(b.text); announce(b.text); }
     if (b.id === "drift") {
       later(() => {
-        if (my !== token) return;
+        if (my !== token || main.dataset.beat !== "drift") return;
         driftBub.classList.remove("glitch");
         void driftBub.offsetWidth;
         if (!calm()) driftBub.classList.add("glitch");
@@ -294,7 +315,10 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
   function reset() {
     clearAll();
     clearInterval(typing);
-    main.classList.remove("ended", ...BEAT_CLASSES);
+    main.classList.remove("ended", "is-ready", ...BEAT_CLASSES);
+    cur = -1;
+    elapsed = false;
+    typing = null;
     delete main.dataset.beat;
     for (const p of pips.children) p.classList.remove("on", "done");
     cap.textContent = "";
@@ -308,16 +332,27 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
     reset();
     const my = ++token;
     main.classList.toggle("cs--still", Boolean(calm()));
-    let at = 0;
-    BEATS.forEach((b, i) => {
-      later(() => {
-        if (my !== token) return;
-        if (i > 0) pips.children[i - 1].classList.replace("on", "done");
-        beat(b, i, my);
-      }, at);
-      at += b.ms;
-    });
+    goTo(0, my);
     skipBtn.focus({ preventScroll: true });
+  }
+  // Show beat i: its animation plays for b.ms, then it waits for a tap.
+  function goTo(i, my) {
+    if (i > 0) pips.children[i - 1].classList.replace("on", "done");
+    cur = i;
+    elapsed = false;
+    main.classList.remove("is-ready");
+    const b = BEATS[i];
+    beat(b, i, my);
+    if (i < BEATS.length - 1) later(() => { if (my === token && cur === i) { elapsed = true; readyCheck(); } }, b.ms);
+  }
+  // A tap: finish the typing first, then turn the packet if it hasn't yet, then the next beat.
+  function next() {
+    if (cur < 0 || main.classList.contains("ended")) return;
+    const my = token;
+    if (typing) { finishTyping(); return; }
+    if (BEATS[cur].id === "almanac" && !flipping) { flipOver(my); return; }
+    if (cur === BEATS.length - 1) { main.classList.add("ended"); focusFirst(end); return; }
+    goTo(cur + 1, my);
   }
   function skip() {
     if (main.classList.contains("ended")) return;
@@ -325,6 +360,8 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
     clearInterval(typing);
     const my = ++token;
     main.classList.add(...BEAT_CLASSES, "ended");
+    main.classList.remove("is-ready");
+    cur = BEATS.length - 1;
     main.dataset.beat = last.id;
     for (const p of pips.children) { p.classList.remove("on"); p.classList.add("done"); }
     cap.textContent = last.text;
@@ -334,10 +371,12 @@ export function renderCutscene(root, { first = true, onSeen = () => {}, onStart 
     arrive(my);
   }
   const onKey = (ev) => {
-    if (ev.key !== "Escape" || ev.defaultPrevented) return;
-    ev.preventDefault();
-    skip();
+    if (ev.defaultPrevented) return;
+    if (ev.key === "Escape") { ev.preventDefault(); skip(); return; }
+    if (ev.key === "ArrowRight" || ev.key === "PageDown") { ev.preventDefault(); next(); }
   };
+  // Tap anywhere on the scene (not on a button) to go on.
+  main.addEventListener("click", (ev) => { if (!ev.target.closest("button, a")) next(); });
   document.addEventListener("keydown", onKey);
   play();
 

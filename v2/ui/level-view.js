@@ -7,7 +7,7 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore } from "../engine/level-runner.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
 import { memoryVars } from "../mechanics/placement.js";
@@ -19,6 +19,11 @@ import { toolView, pageView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
 import { rewordable } from "../engine/reword.js";
 import { aiEnabled, reword } from "./ai-voice.js";
+import { planFor } from "../actions/plan.js";
+import { runPlan } from "../actions/runner.js";
+import { art as actionArt } from "../actions/sprites.js";
+import { packetFront } from "./almanac-view.js";
+import { PLANTS } from "../levels/plants.js";
 
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
@@ -44,6 +49,9 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   let focusKey = null; // phase|step|line last given focus; focus only moves when it changes
   let fresh = new Set(); // evidence ids unlocked by the last action (they pop once)
   let news = null; // what an unlock says through the live region
+  // A hands-on action in progress (actions/runner.js): the choice's effect
+  // waits until the player has dragged the tool to the bed.
+  let acting = null;
   // AI voice: the lines it may reword (keyed by written text), and the
   // thinking bubble in flight (a counter, so a stale answer is dropped).
   const aiOn = aiEnabled();
@@ -157,7 +165,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // that sets one (in pushback too, where it stands firm).
   function shortcuts() {
     const list = tools.filter((tl) => tl.key).map((tl) => ({ id: tl.id, key: tl.key, run: () => tl.view.open() }));
-    if (thinking) return list; // nothing to answer until the helper has spoken
+    if (thinking || acting) return list; // nothing to answer until the helper has spoken (or the tool is put down)
     const step = currentStep(level, state);
     if ((state.phase === "advice" || state.phase === "pushback") && step?.offKey) {
       list.push({ id: "off", key: step.offKey, run: () => dispatch({ type: "flag" }) });
@@ -173,6 +181,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   function onKey(ev) {
     if (!main.isConnected) return unmount(); // the screen changed without telling us
     if (ev.defaultPrevented) return; // a panel already handled it (e.g. Esc closing it)
+    if (acting && !isTyping(document.activeElement) && acting.key(ev)) { ev.preventDefault(); return; }
     const list = shortcuts();
     const id = shortcutFor(ev, list, { typing: isTyping(document.activeElement) });
     if (!id) return;
@@ -186,13 +195,22 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (!mounted) return;
     mounted = false;
     document.removeEventListener("keydown", onKey);
+    acting?.destroy();
+    acting = null;
     clock.destroy();
     for (const tl of tools) tl.view.destroy?.();
   }
 
   function dispatch(action) {
+    if (acting && !action.acted && action.type !== "check" && action.type !== "tick") return; // hands busy
     const out = reduce(level, state, action);
     if (out.state === state && out.effects.length === 0) return;
+    // A choice that changes the garden is done by hand first: the effect
+    // lands only once the action is finished (it is reduced again then).
+    if (!action.acted) {
+      const plan = planFor(level, state, action, out);
+      if (plan.length > 0) return act(action, plan);
+    }
     const prev = state;
     state = out.state;
     hint = null;
@@ -216,6 +234,40 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     const line = out.effects.some((fx) => fx.type === "say") ? lines.get(said) : null;
     if (line) think(line);
     render();
+  }
+
+  const bedName = (id) => level.beds.find((b) => b.id === id)?.label || id;
+  const names = {
+    bed: bedName,
+    plant: (id) => (PLANTS.find((p) => p.id === id)?.name || id).toLowerCase(),
+    plural: (id) => {
+      const w = (PLANTS.find((p) => p.id === id)?.name || id).toLowerCase();
+      return /[^aeiou]y$/.test(w) ? `${w.slice(0, -1)}ies` : w.endsWith("s") ? w : `${w}s`;
+    },
+    list: (targets) => {
+      const labels = [...new Set(targets.map((tg) => bedName(tg.bed)))];
+      return labels.length < 2 ? labels[0] : `${labels.slice(0, -1).join(", the ")} and the ${labels.at(-1)}`;
+    },
+  };
+  // The tool's face: a seed packet for planting, a sprite or art for the rest.
+  function itemFor(a) {
+    const plant = a.kind === "plant" && PLANTS.find((p) => p.id === a.item);
+    if (plant) return packetFront(plant, { as: "span", band: "SEEDS", meta: " " });
+    // A built-in sprite (trowel, hand, spray…), else v2/art/<item>.svg (wave 2's l1-…l5- art).
+    const face = h("span", { class: "act__face", "aria-hidden": "true" });
+    face.append(actionArt(a.item, { size: 56 }));
+    return face;
+  }
+  // Start the hands-on part of a choice; the choice itself is dispatched when it ends.
+  function act(action, plan, { title = null, skippable = false } = {}) {
+    const cancellable = action.type !== "chore";
+    acting = runPlan({
+      plan, scene, names, itemFor, title: title && t(title), skippable,
+      onDone: () => { acting = null; dispatch({ ...action, acted: true }); },
+      onCancel: cancellable ? () => { acting = null; focusKey = null; render(); } : null,
+    });
+    render();
+    acting?.focus();
   }
 
   // The helper thinks (dots) while the AI rewords the line; the reworded
@@ -257,6 +309,25 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     scene.style.setProperty("--pressure", String(pressureLevel(step, state)));
     clock.sync(step, state.phase);
     if (grown) { celebrate(grown); grown = null; }
+    // A chore waits before this step's question: it starts once the helper has spoken.
+    const chore = !acting && !thinking ? pendingChore(level, state) : null;
+    if (chore) {
+      const action = { type: "chore", id: chore.id };
+      const out = reduce(level, state, action);
+      const plan = planFor(level, state, action, out);
+      if (plan.length > 0) return act(action, plan, { title: chore.title, skippable: chore.skippable !== false });
+      return dispatch({ ...action, acted: true });
+    }
+    if (acting) {
+      // The helper's line stays above the tool card; the card itself is never rebuilt.
+      if (!talk.contains(acting.card)) {
+        const line = bubble(said, { actions: [] });
+        line.classList.add("bubble--acting"); // a small phone hides it: the tool card needs the room
+        talk.replaceChildren(line, acting.card);
+      }
+      acting.refresh();
+      return;
+    }
     talk.replaceChildren(...dockFor(step));
     placeFocus(keep);
   }

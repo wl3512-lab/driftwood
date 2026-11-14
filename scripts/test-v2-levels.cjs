@@ -198,21 +198,24 @@ async function shot(page, size, label) {
 // A planted bed reads as full of its crop (Lucy: one carrot in the side bed
 // looked like room for more): the crop's fields cover the bed's soil, tiled at
 // a whole number of CSS px per art pixel (sprites are 16 art px square), at
-// least four plants to a field; an empty bed has no field.
+// least four plants to a field; an empty bed has no field. A crop the level
+// will still plant in the bed holds its share as an empty .field--empty (Lucy:
+// the sunflowers take half the South bed, the other half waits for tomatoes).
 async function assertBedsFull(page, name) {
   const beds = await page.evaluate(() => [...document.querySelectorAll("main.level .bed")].map((bed) => {
     const inner = bed.querySelector(".bed__plants").getBoundingClientRect();
-    const fields = [...bed.querySelectorAll(".field")].map((f) => {
+    const reserved = [...bed.querySelectorAll(".field--empty")].reduce((sum, f) => { const r = f.getBoundingClientRect(); return sum + r.width * r.height; }, 0);
+    const fields = [...bed.querySelectorAll(".field:not(.field--empty)")].map((f) => {
       const r = f.getBoundingClientRect(), cs = getComputedStyle(f);
       return { w: r.width, h: r.height, size: parseFloat(cs.backgroundSize), image: cs.backgroundImage, repeat: cs.backgroundRepeat };
     });
     const b = bed.getBoundingClientRect();
-    return { id: bed.dataset.bed, plants: bed.querySelectorAll("img.plant[data-plant]").length, bedArea: b.width * b.height, area: inner.width * inner.height, fields };
+    return { id: bed.dataset.bed, plants: bed.querySelectorAll("img.plant[data-plant]").length, bedArea: b.width * b.height, area: inner.width * inner.height, reserved, fields };
   }));
   for (const bed of beds) {
     assert.equal(bed.fields.length, bed.plants, `${name}: one field per crop in the ${bed.id} bed`);
     if (!bed.plants) continue;
-    const covered = bed.fields.reduce((sum, f) => sum + f.w * f.h, 0);
+    const covered = bed.fields.reduce((sum, f) => sum + f.w * f.h, 0) + bed.reserved;
     assert.ok(covered >= bed.area * 0.9 && bed.area >= bed.bedArea * 0.6, `${name}: the ${bed.id} bed is not full of its crop ${JSON.stringify(bed)}`);
     for (const f of bed.fields) {
       assert.match(f.image, /url\(.*\/art\/.*\.svg/, `${name}: ${bed.id} field has its sprite`);
@@ -1979,6 +1982,11 @@ const CUT_SIZES = { mac: { name: "cut-mac", width: 1512, height: 830 }, phone: {
 const cutTag = (size) => `${size.width}x${size.height}`;
 const cutShot = (page, size, label) => page.screenshot({ path: path.join(CUT_OUT, `${cutTag(size)}-${label}.png`) });
 const beatIs = (page, id, timeout = 6000) => page.waitForSelector(`main.cutscene[data-beat="${id}"]`, { timeout });
+// Each beat waits for a tap once its animation and caption are done (Lucy: "I can't read that fast").
+async function tapNext(page, size, from) {
+  await page.waitForSelector(`main.cutscene.is-ready[data-beat="${from}"]`, { timeout: 8000 });
+  await press(page, size, page.locator(".cs__cap"));
+}
 const rectOf = (page, sel) => page.evaluate((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; }, sel);
 // Freeze every animation the moment `test` (run each frame in the page) finds
 // the one it wants, so a screenshot catches it mid-move; thaw() lets them run on.
@@ -2002,16 +2010,24 @@ async function cutsceneWatch(browser, size) {
   const almanacAt = await rectOf(page, ".cs__almbtn");
   await page.waitForTimeout(1900);
   await cutShot(page, size, "1-meet");
+  // It doesn't move on by itself: well past its 2.4 s, it's still on meet, showing Next.
+  await page.waitForTimeout(1600);
+  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "meet", "a beat waits for a tap");
+  assert.equal(await page.locator("main.cutscene.is-ready").count(), 1);
+  await cutShot(page, size, "1b-meet-next");
+  await tapNext(page, size, "meet");
   // 2 · friendly: Luna and Bugs say hello.
   await beatIs(page, "friendly");
   await page.waitForTimeout(1500);
   assert.equal(await page.locator(".cs__bub--hi").first().evaluate((el) => getComputedStyle(el).opacity), "1");
   await cutShot(page, size, "2-friendly");
+  await tapNext(page, size, "friendly");
   // 3 · drift: Mango's bubble glitches into the wrong fact.
   await beatIs(page, "drift");
   await page.waitForFunction(() => document.querySelector(".cs__bub-t")?.textContent === "Radishes take a whole YEAR!", null, { timeout: 3000 });
   await page.waitForTimeout(300);
   await cutShot(page, size, "3-drift");
+  await tapNext(page, size, "drift");
   // 4 · almanac: the scene dims, the real almanac button lights up with its tag,
   // the radish packet flies out of it, turns over, and the claim is crossed out WRONG.
   await beatIs(page, "almanac");
@@ -2036,6 +2052,7 @@ async function cutsceneWatch(browser, size) {
   await assertOnScreen(page, ".cs__claim");
   assert.equal(await page.locator(".cs__off").isVisible(), true, "Something's off shows");
   await cutShot(page, size, "4d-almanac-back");
+  await tapNext(page, size, "almanac");
   // 5 · go: TRUST, BUT CHECK. in block letters, built in cell by cell.
   await beatIs(page, "go");
   assert.match(await page.textContent(".cs__end"), /Trust, but check\./);
@@ -2044,7 +2061,7 @@ async function cutsceneWatch(browser, size) {
   await cutShot(page, size, "5a-end-buildin");
   await page.waitForSelector("main.cutscene.ended");
   const took = Date.now() - t0;
-  assert.ok(took > 11500 && took < 16000, `the cutscene ran ${took}ms (12.8 s scripted)`);
+  assert.ok(took > 11500, `the cutscene ran ${took}ms, at least its 12.8 s of animation`);
   await page.waitForTimeout(400);
   await assertOnScreen(page, ".cs__endbtns .btn");
   if (size.touch) await assertTapSize(page, ".cs__endbtns .btn");
@@ -2065,9 +2082,10 @@ async function cutsceneWatch(browser, size) {
   assert.match(await page.textContent('[data-level="level-1"]'), /Play/);
   assert.match(await page.textContent('[data-level="level-2"]'), /Locked/, "only Level 1 is open at the start");
   assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 0, "no finished garden yet");
-  // A returning player goes splash → map, no cutscene.
+  // A returning player goes splash → Continue → map, no cutscene.
   await page.goto(BASE);
-  await press(page, size, page.locator("button", { hasText: "Begin" }));
+  assert.match(await page.textContent(".splash__save"), /Tester's garden · 0 of 5 levels/);
+  await press(page, size, page.getByRole("button", { name: "Continue ▸" }));
   await page.waitForSelector(".plots");
   assert.equal(await page.locator("main.cutscene").count(), 0);
   // Watch intro replays it, ending on Back to the garden.
@@ -2083,13 +2101,69 @@ async function cutsceneWatch(browser, size) {
   return result;
 }
 
+// A returning player can start a new game: New game asks once, "Keep my garden"
+// backs out, "Yes, start over" erases the save and goes to the name screen,
+// then the cutscene plays again.
+async function newGame(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, null);
+  fs.mkdirSync(CUT_OUT, { recursive: true });
+  await page.goto(BASE);
+  await page.evaluate(() => {
+    localStorage.setItem("dw2_progress", JSON.stringify({ name: "Lucy", introSeen: true, guide: [],
+      levels: { "level-1": { stars: 3, fooled: false }, "level-2": { stars: 2, fooled: true } } }));
+    localStorage.setItem("dw2_map_time", "2");
+    localStorage.setItem("dw2_almanac_hint_level-1", "1");
+    localStorage.setItem("dw2_ai", "0");
+  });
+  await page.reload();
+  await page.waitForSelector(".splash__save");
+  assert.match(await page.textContent(".splash__save"), /Lucy's garden · 2 of 5 levels/);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Continue ▸", "Continue has focus");
+  await assertOnScreen(page, ".splash__btns .btn");
+  await assertOnScreen(page, ".splash__save");
+  if (size.touch) await assertTapSize(page, ".splash__btns .btn");
+  await page.waitForTimeout(1500);
+  await cutShot(page, size, "splash-continue");
+  await press(page, size, page.getByRole("button", { name: "New game" }));
+  assert.match(await page.textContent(".splash__warn"), /Start over\?/);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Keep my garden", "the safe choice has focus");
+  await assertOnScreen(page, ".splash__btns .btn");
+  await cutShot(page, size, "splash-new-confirm");
+  await press(page, size, page.getByRole("button", { name: "Keep my garden" }));
+  assert.equal(await page.getByRole("button", { name: "Continue ▸" }).count(), 1);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("dw2_progress"))).name, "Lucy", "backing out keeps the save");
+  await press(page, size, page.getByRole("button", { name: "New game" }));
+  await press(page, size, page.getByRole("button", { name: "Yes, start over" }));
+  await page.waitForSelector("#player-name");
+  const st = await page.evaluate(() => ({ p: JSON.parse(localStorage.getItem("dw2_progress")), t: localStorage.getItem("dw2_map_time"), n: localStorage.getItem("dw2_almanac_hint_level-1"), ai: localStorage.getItem("dw2_ai") }));
+  assert.deepEqual(st.p.levels, {}, "levels erased");
+  assert.equal(st.p.name, "");
+  assert.equal(st.t, null, "the map's sun starts over");
+  assert.equal(st.n, null, "almanac nudges come back");
+  assert.equal(st.ai, "0", "the AI setting stays");
+  await page.fill("#player-name", "Tester");
+  await press(page, size, page.getByRole("button", { name: "Enter the garden" }));
+  await page.waitForSelector("main.cutscene[data-beat]");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
 // Esc skips straight to the end title; Replay starts over; Esc again, then Enter starts Level 1.
 // Then reduced motion: nothing drifts or flies, the packet simply turns over.
 async function cutsceneSkip(browser, size) {
   const { ctx, page, errors } = await open(browser, size, null);
   await beginFresh(page, size);
   await beatIs(page, "meet");
-  await page.waitForTimeout(400);
+  // A tap while the caption is still typing shows the whole line, and stays on the beat.
+  await page.waitForTimeout(150);
+  await press(page, size, page.locator(".cs__cap"));
+  assert.equal(await page.textContent(".cs__cap-t"), "Meet your helpers. They're AI, like ChatGPT with fur.");
+  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "meet");
+  // → also goes on, once the beat is ready.
+  await page.waitForSelector('main.cutscene.is-ready[data-beat="meet"]');
+  await page.keyboard.press("ArrowRight");
+  await beatIs(page, "friendly");
   const t = Date.now();
   await page.keyboard.press("Escape");
   await page.waitForSelector("main.cutscene.ended", { timeout: 1000 });
@@ -2113,7 +2187,8 @@ async function cutsceneSkip(browser, size) {
   await beatIs(page, "meet");
   assert.equal(await page.locator("main.cutscene.cs--still").count(), 1);
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".cs__world")).animationName), "none", "no camera drift");
-  await beatIs(page, "almanac", 10000);
+  for (const id of ["meet", "friendly", "drift"]) await tapNext(page, size, id);
+  await beatIs(page, "almanac");
   await page.waitForSelector(".cs__flip.is-flipped", { timeout: 1500 });
   assert.equal(await page.evaluate(() => document.querySelector(".cs__flip").getAnimations().length), 0, "the packet doesn't fly");
   await page.keyboard.press("Escape");
@@ -2260,6 +2335,7 @@ async function aiLiveLevel1(browser, size) {
   runs.push(["card/level1-fooled-small", { name: "card-small", ...CARD_SIZES[2], touch: true }, cardLevel1Fooled]);
   runs.push(["card/no-kickers", { name: "card-mac", ...CARD_SIZES[0] }, noKickers]);
   runs.push(["cutscene/watch-mac", CUT_SIZES.mac, cutsceneWatch], ["cutscene/watch-phone", CUT_SIZES.phone, cutsceneWatch], ["cutscene/watch-small", CUT_SIZES.small, cutsceneWatch]);
+  runs.push(["start/new-game-mac", CUT_SIZES.mac, newGame], ["start/new-game-phone", CUT_SIZES.phone, newGame], ["start/new-game-small", CUT_SIZES.small, newGame]);
   runs.push(["cutscene/skip-escape", SIZES[0], cutsceneSkip], ["cutscene/block-titles", { name: "card-mac", ...CARD_SIZES[0] }, blockTitles]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   runs.push(["ai/live-level1", MAC, aiLiveLevel1], ["ai/live-level1-phone", SIZES[1], aiLiveLevel1]);

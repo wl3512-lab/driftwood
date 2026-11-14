@@ -19,7 +19,27 @@ function sky(main, time) {
 
 let splashShown = false; // the title builds in, cell by cell, the first time only
 
-export function renderSplash(root, { onBegin }) {
+// saved: { name, done, total } for a returning player, who gets Continue and
+// New game (with a second "are you sure" tap); null for a first visit (Begin).
+export function renderSplash(root, { onBegin, onNew = () => {}, saved = null }) {
+  const choices = h("div", { class: "splash__btns" });
+  const showChoices = () => {
+    choices.replaceChildren(
+      h("div", { class: "splash__row" },
+        h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, onclick: onBegin }, "Continue ▸"),
+        h("button", { class: "btn btn--crt splash__new", onclick: confirmNew }, "New game")),
+      h("p", { class: "splash__save" }, `${saved.name}'s garden · ${saved.done} of ${saved.total} levels`));
+  };
+  const confirmNew = () => {
+    choices.replaceChildren(
+      h("p", { class: "splash__save splash__warn", id: "splash-warn" }, "Start over? Your garden and field guide get erased."),
+      h("div", { class: "splash__row" },
+        h("button", { class: "btn btn--crt btn--gold", "aria-describedby": "splash-warn", onclick: onNew }, "Yes, start over"),
+        h("button", { class: "btn btn--crt splash__new", "data-autofocus": true, onclick: () => { showChoices(); focusFirst(choices); } }, "Keep my garden")));
+    focusFirst(choices);
+  };
+  if (saved) showChoices();
+  else choices.append(h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, onclick: onBegin }, "Begin ▸"));
   const main = h("main", { class: "world splash" },
     h("div", { class: "splash__sign" },
       h("h1", { class: "crt__title crt__title--block" }, blockText("DRIFTWOOD", {
@@ -27,7 +47,7 @@ export function renderSplash(root, { onBegin }) {
         build: !splashShown && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
       })),
       h("p", { class: "crt__line" }, "A short game about the AI helpers we trust."),
-      h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, onclick: onBegin }, "Begin ▸")),
+      choices),
     pets());
   root.replaceChildren(main);
   splashShown = true;

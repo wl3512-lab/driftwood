@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="128" height="128" shape-rendering="crispEdges">
+  <!-- l4-soil-pile: Level 4 hands-on art (docs/superpowers/specs/2026-11-14-level-4-hands-on.md). 16×16 map, palette of scripts/make-v2-art.mjs:
+       ................
+       ................
+       ................
+       ................
+       ................
+       ................
+       ................
+       ................
+       ................
+       ................
+       ................
+       ......sSs.......
+       ....sSsSsSs.....
+       ...sSssSssSs....
+       ..sssSssssSss...
+       .ssssssssssssss.
+  -->
+  <rect x="12" y="22" width="2" height="2" fill="#8a6440"/>
+  <rect x="14" y="22" width="2" height="2" fill="#b98a5a"/>
+  <rect x="16" y="22" width="2" height="2" fill="#8a6440"/>
+  <rect x="8" y="24" width="2" height="2" fill="#8a6440"/>
+  <rect x="10" y="24" width="2" height="2" fill="#b98a5a"/>
+  <rect x="12" y="24" width="2" height="2" fill="#8a6440"/>
+  <rect x="14" y="24" width="2" height="2" fill="#b98a5a"/>
+  <rect x="16" y="24" width="2" height="2" fill="#8a6440"/>
+  <rect x="18" y="24" width="2" height="2" fill="#b98a5a"/>
+  <rect x="20" y="24" width="2" height="2" fill="#8a6440"/>
+  <rect x="6" y="26" width="2" height="2" fill="#8a6440"/>
+  <rect x="8" y="26" width="2" height="2" fill="#b98a5a"/>
+  <rect x="10" y="26" width="2" height="2" fill="#8a6440"/>
+  <rect x="12" y="26" width="2" height="2" fill="#8a6440"/>
+  <rect x="14" y="26" width="2" height="2" fill="#b98a5a"/>
+  <rect x="16" y="26" width="2" height="2" fill="#8a6440"/>
+  <rect x="18" y="26" width="2" height="2" fill="#8a6440"/>
+  <rect x="20" y="26" width="2" height="2" fill="#b98a5a"/>
+  <rect x="22" y="26" width="2" height="2" fill="#8a6440"/>
+  <rect x="4" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="6" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="8" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="10" y="28" width="2" height="2" fill="#b98a5a"/>
+  <rect x="12" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="14" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="16" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="18" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="20" y="28" width="2" height="2" fill="#b98a5a"/>
+  <rect x="22" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="24" y="28" width="2" height="2" fill="#8a6440"/>
+  <rect x="2" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="4" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="6" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="8" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="10" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="12" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="14" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="16" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="18" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="20" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="22" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="24" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="26" y="30" width="2" height="2" fill="#8a6440"/>
+  <rect x="28" y="30" width="2" height="2" fill="#8a6440"/>
+</svg>

@@ -2,7 +2,7 @@
 // splash → intro (framing + name) → opening cutscene (new players) → level 1
 // → reveal → map → level … The map can replay the cutscene ("Watch intro").
 import { LEVELS, MAP } from "./levels/index.js";
-import { loadProgress, saveProgress, recordLevel, allDone, markIntroSeen, needsIntro } from "./progress.js";
+import { loadProgress, saveProgress, recordLevel, allDone, markIntroSeen, needsIntro, startOver } from "./progress.js";
 import { renderSplash, renderIntro } from "./ui/intro.js";
 import { renderMap, renderGuide } from "./ui/map.js";
 import { mountLevel } from "./ui/level-view.js";
@@ -35,7 +35,12 @@ const leaving = (show) => (...args) => {
 };
 
 const go = {
-  splash: () => { unmount = renderSplash(root, { onBegin: () => (progress.name ? go.map() : go.intro()) }); },
+  // A returning player chooses: Continue (to the map) or New game (erase, then name → cutscene).
+  splash: () => { unmount = renderSplash(root, {
+    saved: progress.name ? { name: progress.name, done: Object.keys(progress.levels).length, total: MAP.length } : null,
+    onBegin: () => (progress.name ? go.map() : go.intro()),
+    onNew: () => { progress = startOver(storage); go.intro(); },
+  }); },
   intro: () => { unmount = renderIntro(root, {
     onSubmit: (name) => {
       save({ ...progress, name: name || "friend" });
