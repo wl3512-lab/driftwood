@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wizard Story Options</title>
+<link rel="icon" href="../../../icons/mood-garden-favicon.svg" type="image/svg+xml">
+<!-- Driftwood v2 design options, 14 Nov 2026: a garden-master wizard frames the
+     story (name, helpers, stew dinner, his almanac), hands out seeds at each
+     level start, and hosts the stew dinner at the end. Standalone mockup:
+     nothing here is wired into v2/. Sprites load from ../../../v2/art and
+     ../../../icons; the wizards are pixel maps drawn to inline SVG below.
+     URL params: ?wiz=A|B|C picks the wizard used in the storyboard. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: "Pixelify Sans"; font-weight: 400 700; font-display: swap; src: url("../../../v2/fonts/PixelifySans.woff2") format("woff2"); }
+:root {
+  --parchment: #fff6dc; --ink: #3b2a1a; --line: #222; --gold: #ffb347;
+  --ui: "Fira Code", ui-monospace, Menlo, monospace;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --pixel: "Pixelify Sans", "Fira Code", monospace;
+  --page: #ece4d0; --page-ink: #2a1f14; --page-dim: #6b5a45; --card: #fffaf0;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--page-ink); font-family: var(--body); line-height: 1.5; }
+img { image-rendering: pixelated; }
+svg { shape-rendering: crispEdges; }
+button { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; }
+
+/* ======== page shell (same as the 13 Nov options page) ======== */
+.doc { max-width: 1480px; margin: 0 auto; padding: 32px 16px 80px; }
+.doc__head { display: grid; gap: 10px; margin-bottom: 8px; }
+.doc__head h1 { font: 700 clamp(1.6rem, 3vw, 2.3rem)/1.15 var(--ui); }
+.doc__head p { max-width: 72ch; color: var(--page-dim); }
+.sec { margin-top: 52px; }
+.sec__head { display: grid; gap: 6px; margin-bottom: 18px; }
+.sec__num { font: 700 0.75rem/1 var(--ui); letter-spacing: 0.18em; color: #a0531a; }
+.sec__head h2 { font: 700 clamp(1.3rem, 2.4vw, 1.75rem)/1.2 var(--ui); }
+.sec__head p { max-width: 75ch; color: var(--page-dim); }
+.opt__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.opt__head h3 { font: 700 1.05rem/1.2 var(--ui); }
+.opt__head h3 b { display: inline-block; margin-right: 8px; padding: 2px 8px; background: var(--ink); color: var(--parchment); border-radius: 2px; }
+.opt__note { font-size: 0.92rem; color: var(--page-dim); }
+.opt__btn { min-height: 36px; padding: 4px 12px; border: 2px solid var(--line); border-radius: 3px; background: var(--parchment); box-shadow: 2px 2px 0 var(--line); font: 700 0.8rem/1 var(--ui); cursor: pointer; }
+.opt__btn:active { transform: translate(2px, 2px); box-shadow: none; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 14px; background: var(--card); border: 2px solid var(--line); border-radius: 4px; box-shadow: 3px 3px 0 var(--line); font: 600 0.85rem/1.2 var(--ui); width: fit-content; max-width: 100%; }
+.toolbar label { display: inline-flex; gap: 6px; align-items: center; min-height: 32px; cursor: pointer; }
+.toolbar input { width: 18px; height: 18px; accent-color: #2e7d32; }
+
+/* ======== 1. wizard cards ======== */
+.wizs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 1100px) { .wizs { grid-template-columns: 1fr; } }
+.wcard { display: grid; gap: 12px; align-content: start; padding: 16px; background: var(--card); border: 3px solid var(--line); box-shadow: 5px 5px 0 var(--line); min-width: 0; }
+.wcard__top { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: end; }
+.wcard__hero { padding: 10px 14px 0; background: linear-gradient(#bfe3f0 0 70%, #7cc36a 70% 82%, #5ea44e 82%); border: 2px solid var(--line); }
+.wcard__hero svg { display: block; width: 120px; height: auto; }
+.wcard__name { font: 700 1.5rem/1 var(--pixel); }
+.wcard__who { margin-top: 4px; font-size: 0.92rem; color: var(--page-dim); }
+.wcard__says { padding: 10px 12px; background: var(--parchment); border: 2px solid var(--line); font: 400 0.88rem/1.4 var(--ui); }
+.wcard__says b { display: block; font: 700 0.7rem/1 var(--pixel); letter-spacing: 0.1em; color: #a0531a; margin-bottom: 4px; }
+.lineup { display: flex; align-items: flex-end; gap: 6px; padding: 10px 10px 0; overflow: hidden;
+  background: linear-gradient(#ffe0a0 0 78%, #c79a5e 78%); border: 2px solid var(--line); --cell: 4.6px; }
+.lineup > * { flex: none; display: block; }
+.lineup svg, .lineup img { height: calc(var(--rows) * var(--cell)); width: auto; }
+.lineup figure { margin: 0; display: grid; justify-items: center; gap: 2px; }
+.lineup figcaption { font: 700 9px/1.4 var(--pixel); letter-spacing: 0.06em; }
+.wcard ul { margin: 0; padding-left: 18px; font-size: 0.9rem; }
+.wcard li { margin: 2px 0; }
+
+/* ======== stage frames (scale with their own width) ======== */
+.board { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 22px; }
+@media (max-width: 1100px) { .board { grid-template-columns: 1fr; } }
+.beat { margin: 0; display: grid; gap: 8px; min-width: 0; }
+.beat figcaption { display: grid; gap: 2px; font-size: 0.9rem; color: var(--page-dim); }
+.beat figcaption b { font: 700 0.85rem/1.3 var(--ui); color: var(--page-ink); }
+.st { position: relative; width: 100%; aspect-ratio: 1512 / 830; container-type: inline-size; overflow: hidden;
+  border: 3px solid #000; box-shadow: 5px 5px 0 #000; font-family: var(--ui); color: var(--ink); background: #241a14; --u: 1.05cqw; }
+.st > * { position: absolute; }
+.st img, .st svg { display: block; }
+.L { position: absolute; }
+/* garden at golden hour: hard colour bands only */
+.sky { inset: 0; background: linear-gradient(#4a2f6b 0 7%, #6e3f7d 7% 14%, #9a4c7c 14% 21%, #c85f74 21% 28%, #e57a62 28% 35%, #f39a58 35% 42%, #f8bb62 42% 50%, #fbd77a 50% 58%); }
+.sun { left: 62cqw; top: 13cqw; width: 11cqw; }
+.hill { left: -2cqw; right: -2cqw; top: 40%; height: 20%; background: #7b5a92;
+  clip-path: polygon(0 60%, 8% 60%, 8% 45%, 18% 45%, 18% 30%, 30% 30%, 30% 42%, 42% 42%, 42% 55%, 55% 55%, 55% 38%, 66% 38%, 66% 25%, 78% 25%, 78% 40%, 90% 40%, 90% 52%, 100% 52%, 100% 100%, 0 100%); }
+.hill2 { top: 47%; height: 14%; background: #5f7e4a; clip-path: polygon(0 40%, 14% 40%, 14% 25%, 26% 25%, 26% 50%, 48% 50%, 48% 30%, 62% 30%, 62% 45%, 80% 45%, 80% 20%, 92% 20%, 92% 40%, 100% 40%, 100% 100%, 0 100%); }
+.fence { left: 0; right: 0; top: 51%; height: 8%; background:
+  linear-gradient(transparent 0 25%, #b07a46 25% 37%, transparent 37% 62%, #b07a46 62% 74%, transparent 74%),
+  repeating-linear-gradient(90deg, transparent 0 3.4cqw, #c48a52 3.4cqw 4.4cqw); }
+.ground { left: 0; right: 0; top: 58%; bottom: 0; background: linear-gradient(#6aa84a 0 22%, #5ea44e 22% 30%, #d4a46b 30% 54%, #b6824f 54% 58%, #6aa84a 58%); }
+.bed { height: 2.6cqw; background: #7a4f2c; border: 0.35cqw solid #3d2814; display: flex; justify-content: space-around; align-items: flex-end; }
+.bed img { height: 7cqw; width: auto; margin-bottom: 1.2cqw; }
+.bed--sm img { height: 3cqw; }
+/* sprites sized in cells: --rows × --u */
+.spr { height: calc(var(--rows) * var(--u)); width: auto; }
+.spr svg, svg.spr { height: 100%; width: auto; }
+.wiz { --rows: 18; }
+.dim { inset: 0; background: rgba(20, 12, 30, 0.6); }
+/* the game's toolbar ghost */
+.skip { left: 1.2cqw; top: 1cqw; padding: 0.6cqw 1.1cqw; background: var(--parchment); border: 0.25cqw solid var(--line); box-shadow: 0.3cqw 0.3cqw 0 var(--line); font: 700 1.1cqw/1 var(--ui); }
+.pips { left: 9.2cqw; top: 2cqw; display: flex; gap: 0.5cqw; }
+.pips i { width: 3cqw; height: 0.45cqw; background: rgba(0, 0, 0, 0.35); border: 0.12cqw solid #fff6dc; }
+.pips i.on { background: #fff6dc; }
+.almbtn { left: 84.5cqw; top: 0.9cqw; width: 3.6cqw; height: 3.6cqw; padding: 0.3cqw; background: var(--parchment); border: 0.25cqw solid var(--line); box-shadow: 0.3cqw 0.3cqw 0 var(--line); z-index: 5; }
+.almbtn img { width: 100%; height: 100%; }
+.almbtn.lit { outline: 0.35cqw solid var(--gold); outline-offset: 0.15cqw; }
+.almtag { left: 77cqw; top: 1.6cqw; padding: 0.35cqw 0.7cqw; background: var(--gold); border: 0.2cqw solid var(--line); font: 700 1.1cqw/1 var(--ui); z-index: 5; }
+.meter { left: 89.4cqw; top: 0.9cqw; width: 9.4cqw; height: 3.6cqw; padding: 0.4cqw 0.6cqw; background: var(--parchment); border: 0.25cqw solid var(--line); box-shadow: 0.3cqw 0.3cqw 0 var(--line); font: 600 0.9cqw/1 var(--ui); display: grid; align-content: space-between; z-index: 5; }
+.meter i { display: block; height: 0.8cqw; border: 0.15cqw solid var(--line); background: linear-gradient(90deg, #2e7d32 0 var(--p, 0%), #fff var(--p, 0%)); }
+/* dialogue */
+.say { left: 3cqw; right: 3cqw; bottom: 1.6cqw; min-height: 8.6cqw; padding: 1.5cqw 2cqw 2.6cqw; background: var(--parchment); border: 0.3cqw solid var(--line); box-shadow: 0.45cqw 0.45cqw 0 var(--line); z-index: 6; }
+.say p { font: 600 1.85cqw/1.4 var(--ui); max-width: 62ch; }
+.say .who { position: absolute; left: 1.4cqw; top: -2.3cqw; padding: 0.3cqw 0.9cqw; background: #2e7d32; color: #fff; border: 0.25cqw solid var(--line); font: 700 1.2cqw/1 var(--pixel); letter-spacing: 0.08em; }
+.say .nx { position: absolute; right: 1.4cqw; bottom: 0.9cqw; font: 700 1.1cqw/1 var(--ui); color: #6b5a45; }
+.namein { display: inline-flex; gap: 1cqw; align-items: center; margin-top: 0.9cqw; font: 600 1.4cqw/1 var(--ui); }
+.namein span { min-width: 18cqw; padding: 0.7cqw 1cqw; background: #fff; border: 0.25cqw solid var(--line); }
+.namein span::after { content: ""; display: inline-block; width: 0.2cqw; height: 1.4cqw; margin-left: 0.2cqw; vertical-align: -0.2cqw; background: var(--ink); animation: blink 1s steps(1) infinite; }
+.namein b { padding: 0.7cqw 1.1cqw; background: #ffd54f; border: 0.25cqw solid var(--line); box-shadow: 0.25cqw 0.25cqw 0 var(--line); }
+@keyframes blink { 50% { opacity: 0; } }
+/* pet bubbles */
+.bub { padding: 0.7cqw 1cqw; background: #fff; border: 0.25cqw solid var(--line); font: 600 1.25cqw/1.3 var(--ui); white-space: nowrap; z-index: 4; }
+.bub::after { content: ""; position: absolute; left: 2cqw; top: 100%; border: 0.7cqw solid transparent; border-top-color: var(--line); }
+.bub--drift { border-color: #c62828; }
+.bub--drift s { display: block; color: #8a7a6a; font-weight: 400; }
+.bub--drift em { position: absolute; right: -0.4cqw; top: -1.6cqw; padding: 0.2cqw 0.5cqw; background: #c62828; color: #fff; font: 700 0.9cqw/1 var(--ui); font-style: normal; letter-spacing: 0.1em; }
+.pet img { height: calc(var(--rows) * var(--u)); width: auto; }
+.pet small { position: absolute; left: 50%; bottom: -1.7cqw; transform: translateX(-50%); padding: 0.1cqw 0.5cqw; background: var(--parchment); border: 0.15cqw solid var(--line); font: 700 0.85cqw/1.3 var(--pixel); letter-spacing: 0.06em; }
+.faded { filter: grayscale(0.7) brightness(0.55); }
+/* CRT end */
+.crt { background: #050805; }
+.crt::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(transparent 0 0.3cqw, rgba(0, 0, 0, 0.45) 0.3cqw 0.45cqw); z-index: 3; pointer-events: none; }
+.crt h4 { margin: 0; left: 6cqw; top: 14cqw; font: 700 7cqw/1.05 var(--ui); color: #fff6dc; text-shadow: 0.55cqw 0.55cqw 0 #c86a1a; letter-spacing: 0.02em; }
+.crt .line { left: 6cqw; top: 31.5cqw; max-width: 60cqw; font: 600 2cqw/1.45 var(--ui); color: #c8d8ce; }
+.crt .btns { left: 6cqw; top: 42cqw; display: flex; gap: 1.4cqw; }
+.crt .btns b { padding: 1cqw 1.6cqw; border: 0.25cqw solid #00e676; color: #00e676; font: 700 1.6cqw/1 var(--ui); }
+.crt .btns b.go { background: #ffb347; color: #3b2a1a; border-color: #ffb347; }
+/* pixel trail (beat 6) */
+.trail { width: 0.8cqw; height: 0.8cqw; background: var(--gold); z-index: 5; }
+
+/* ======== 3. level-start handoff ======== */
+.hand { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 1100px) { .hand { grid-template-columns: 1fr; } }
+.hand__opt { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.lv1 { background: linear-gradient(#bfe3f0 0 14%, #9fd4f5 14% 22%, #7cc36a 22%); }
+.lv2 { background:
+  repeating-linear-gradient(90deg, transparent 0 15.6cqw, #f4fbff 15.6cqw 16.2cqw),
+  linear-gradient(#e8f6fb 0 1%, #cde9f3 1% 22%, #d9b98a 22%); }
+.lvbed { border: 0.4cqw solid #3d2814; background: repeating-linear-gradient(#8b5a30 0 1.2cqw, #6e4424 1.2cqw 2.4cqw); }
+.lvbed small { position: absolute; left: 0.8cqw; top: -1.9cqw; padding: 0.2cqw 0.6cqw; background: #fde7cf; border: 0.15cqw solid #3d2814; font: 600 1cqw/1.2 var(--ui); }
+.lvbed img { position: absolute; height: 5cqw; }
+.mapbtn { left: 1.2cqw; top: 0.9cqw; padding: 0.9cqw 1cqw; background: var(--parchment); border: 0.25cqw solid var(--line); box-shadow: 0.3cqw 0.3cqw 0 var(--line); font: 700 1.1cqw/1 var(--ui); z-index: 5; }
+.goal { left: 8.6cqw; top: 0.9cqw; width: 27cqw; padding: 0.7cqw 1.1cqw; background: var(--parchment); border: 0.25cqw solid var(--line); box-shadow: 0.3cqw 0.3cqw 0 var(--line); z-index: 5; }
+.goal small { display: block; font: 600 0.8cqw/1 var(--ui); letter-spacing: 0.14em; color: #8a7a6a; }
+.goal b { display: block; margin: 0.35cqw 0 0.2cqw; font: 700 1.35cqw/1.1 var(--ui); }
+.goal span { font: 400 0.95cqw/1.2 var(--ui); }
+.panel { left: 0; right: 0; bottom: 0; height: 25%; background: var(--parchment); border-top: 0.3cqw solid var(--line); }
+.hand .say { left: 19cqw; right: 22cqw; bottom: 3cqw; min-height: 0; }
+.hand .say p { font-size: 1.75cqw; }
+.hand .wizL { left: 3cqw; bottom: 0; z-index: 6; }
+.pk { left: var(--x); top: 14.5cqw; width: 6.4cqw; height: 9cqw; z-index: 7; display: grid; grid-template-rows: auto auto 1fr auto; background: #f3e3c0; border: 0.25cqw solid var(--line); box-shadow: 0.35cqw 0.35cqw 0 rgba(0, 0, 0, 0.5); font-family: var(--pixel); }
+.pk .cr { height: 0.6cqw; background: repeating-linear-gradient(90deg, rgba(59, 42, 26, 0.4) 0 0.25cqw, transparent 0.25cqw 0.5cqw); }
+.pk .band { padding: 0.25cqw 0; text-align: center; background: var(--c); color: #fff; font: 700 0.75cqw/1 var(--pixel); letter-spacing: 0.08em; }
+.pk .win { margin: 0.4cqw; background: linear-gradient(#bfe3f0 0 62%, #8cc86a 62%); border: 0.15cqw solid var(--line); display: grid; place-items: center; }
+.pk .win img { width: 70%; }
+.pk .nm { padding: 0 0.2cqw 0.4cqw; text-align: center; font: 700 0.85cqw/1 var(--pixel); }
+.addtag { left: 75.5cqw; top: 5.6cqw; padding: 0.35cqw 0.7cqw; background: #2e7d32; color: #fff; border: 0.2cqw solid var(--line); font: 700 1.1cqw/1 var(--pixel); z-index: 8; opacity: 0; }
+.pouch { left: 13.5cqw; top: 45cqw; width: 3.6cqw; z-index: 8; opacity: 0; }
+.pouch svg { width: 100%; height: auto; }
+.seed { width: 0.7cqw; height: 0.7cqw; left: 82cqw; top: 9cqw; z-index: 8; opacity: 0; background: var(--c); border: 0.12cqw solid #3d2814; }
+.spark { width: 0.6cqw; height: 0.6cqw; background: #fff; z-index: 9; opacity: 0; box-shadow: 0.6cqw 0 #ffe066, -0.6cqw 0 #ffe066, 0 0.6cqw #ffe066, 0 -0.6cqw #ffe066; }
+
+/* --- timeline: everything under .run (removed and re-added by Replay) --- */
+.run .wizL { animation: popin 0.3s steps(3) both; }
+.run .say { animation: popin 0.3s steps(3) 0.15s both; }
+.run .dim { animation: fadein 0.25s steps(3) both; }
+.run .pk { animation: popin 0.3s steps(3) var(--in) both; }
+.run .nx { animation: tap 0.3s steps(1) 2.5s 2 both; }
+.run .outro { animation: fadeout 0.3s steps(3) var(--out) both; }
+@keyframes popin { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeout { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+@keyframes tap { 50% { color: #fff; background: #3b2a1a; } }
+/* A: each packet arcs to the book on its own (outer = x, inner = y) */
+@keyframes flyx { to { left: calc(var(--x) + var(--dx)); } }
+.A .pk { transform-origin: 50% 50%; }
+@keyframes flyy { 0% { translate: 0 0; } 55% { translate: 0 calc(var(--dy) - 5cqw); } 100% { translate: 0 var(--dy); } }
+.A.run .pk { animation: popin 0.3s steps(3) var(--in) both, flyx 0.8s linear var(--fly) forwards, flyy 0.8s cubic-bezier(.25, .8, .5, 1) var(--fly) forwards, shrink 0.8s steps(6) var(--fly) forwards; }
+@keyframes shrink { 0% { scale: 1; opacity: 1; } 80% { scale: 0.45; opacity: 1; } 100% { scale: 0.2; opacity: 0; } }
+.bump { display: block; width: 100%; height: 100%; }
+.run .bump { animation: bump 0.32s steps(3) var(--b) both; }
+@keyframes bump { 0%, 100% { translate: 0 0; scale: 1; } 40% { translate: 0 -0.7cqw; scale: 1.25 0.85; } 70% { translate: 0 0.2cqw; scale: 0.9 1.1; } }
+.run .addtag { animation: popin 0.3s steps(3) var(--tag) both; }
+/* B: packets gather into a pouch, the pouch is tossed, seeds scatter into the book */
+.B.run .pk { animation: popin 0.3s steps(3) var(--in) both, gather 0.4s steps(4) 2.9s forwards; }
+@keyframes gather { to { translate: var(--gx) var(--gy); scale: 0.15; opacity: 0; } }
+.B.run .pouch { animation: pouchin 0.15s steps(1) 3.25s forwards, tossx 0.7s linear 3.35s forwards, tossy 0.7s cubic-bezier(.2, .8, .5, 1) 3.35s forwards, spin 0.7s steps(4) 3.35s forwards, pouchout 0.1s steps(1) 4.05s forwards; }
+@keyframes pouchin { to { opacity: 1; } }
+@keyframes pouchout { to { opacity: 0; } }
+@keyframes tossx { to { left: 82cqw; } }
+@keyframes tossy { 0% { top: 45cqw; } 50% { top: 1cqw; } 100% { top: 8cqw; } }
+@keyframes spin { to { rotate: 360deg; } }
+.B.run .seed { animation: burst 0.65s steps(8) var(--sd) forwards; }
+@keyframes burst { 0% { opacity: 1; translate: 0 0; } 45% { opacity: 1; translate: var(--sx) var(--sy); } 90% { opacity: 1; translate: 4.3cqw -6.3cqw; scale: 0.6; } 100% { opacity: 0; translate: 4.3cqw -6.3cqw; scale: 0.4; } }
+.B.run .spark { animation: spark 0.5s steps(3) var(--kd) both; }
+@keyframes spark { 0% { opacity: 0; scale: 0.3; } 40% { opacity: 1; scale: 1.2; } 100% { opacity: 0; scale: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .run *, .run { animation-duration: 0.01s !important; animation-delay: 0s !important; } }
+
+/* ======== 4. ending ======== */
+.end2 { display: grid; gap: 26px; }
+.table { left: 9cqw; right: 9cqw; top: 34cqw; height: 9.5cqw; z-index: 3;
+  background: linear-gradient(#a0703c 0 0.9cqw, #7a4f2c 0.9cqw 1.6cqw, #fff6dc 1.6cqw 2cqw, transparent 2cqw),
+  repeating-linear-gradient(90deg, #c94a3d 0 2cqw, #fff6dc 2cqw 4cqw); border-top: 0.3cqw solid #3d2814; }
+.st.dinner { --u: 0.9cqw; }
+.st.dinner .sky { background: linear-gradient(#2e2456 0 9%, #43306a 9% 18%, #613c78 18% 27%, #8a4a7a 27% 36%, #b85d72 36% 45%, #dd7c62 45% 52%, #f1a35e 52% 58%); }
+.ontable { z-index: 4; }
+.menu { left: 2.4cqw; top: 2.4cqw; width: 30cqw; padding: 1.2cqw 1.5cqw; z-index: 6; background: var(--parchment); border: 0.3cqw solid var(--line); box-shadow: 0.45cqw 0.45cqw 0 var(--line); }
+.menu h5 { margin: 0 0 0.6cqw; font: 700 1.9cqw/1 var(--ui); }
+.menu p { font: 600 1.15cqw/1.45 var(--ui); }
+.menu p span { color: #8a7a6a; font-weight: 400; }
+.menu del { color: #c62828; text-decoration-thickness: 0.15cqw; }
+.menu .miss { color: #c62828; }
+.score { right: 2.4cqw; top: 2.4cqw; padding: 0.8cqw 1.2cqw; z-index: 6; background: #2e7d32; color: #fff; border: 0.3cqw solid var(--line); box-shadow: 0.45cqw 0.45cqw 0 var(--line); font: 700 1.5cqw/1 var(--ui); }
+.steam i { position: absolute; width: 0.9cqw; height: 0.9cqw; background: #fff6dc; opacity: 0.75; animation: steam 1.6s steps(4) infinite; }
+@keyframes steam { 0% { translate: 0 0; opacity: 0; } 30% { opacity: 0.8; } 100% { translate: 0.6cqw -4cqw; opacity: 0; } }
+
+/* ======== 5. notes ======== */
+.notes { margin: 0; padding: 18px 22px 18px 38px; background: var(--card); border: 3px solid var(--line); box-shadow: 5px 5px 0 var(--line); max-width: 110ch; }
+.notes li { margin: 8px 0; }
+.notes b { font-family: var(--ui); font-size: 0.92em; }
+.tag { display: inline-block; padding: 0 6px; margin-right: 6px; font: 700 0.72rem/1.6 var(--ui); letter-spacing: 0.08em; color: #fff; border-radius: 2px; vertical-align: 1px; }
+.tag.add { background: #2e7d32; } .tag.risk { background: #b5452f; }
+</style>
+</head>
+<body>
+<main class="doc">
+  <header class="doc__head">
+    <h1>A garden wizard frames the story</h1>
+    <p>Lucy's idea: a garden master asks your name, shows you his garden and his animal helpers (the AI), and asks you to grow a garden for his stew dinner. At each level he hands you that level's seeds, which fly into the almanac. Mockups only; nothing here is in v2/.</p>
+  </header>
+
+  <!-- ============ 1. WIZARD ============ -->
+  <section class="sec" id="wizard">
+    <div class="sec__head">
+      <span class="sec__num">1 · THE WIZARD</span>
+      <h2>Three garden masters</h2>
+      <p>Same 16-px grid as the pets, 12 cells wide like them and 18 tall, so he stands a head taller. Each lineup is to scale.</p>
+    </div>
+    <div class="wizs" id="wizs"></div>
+  </section>
+
+  <!-- ============ 2. STORYBOARD ============ -->
+  <section class="sec" id="story">
+    <div class="sec__head">
+      <span class="sec__num">2 · OPENING CUTSCENE</span>
+      <h2>Seven taps from name to Level 1</h2>
+      <p>Replaces both the name screen and today's five-beat cutscene. Every beat waits for a tap (Next ▸), and Skip stays top left. The radish drift is kept from the current cutscene because it spoils no level.</p>
+    </div>
+    <div class="toolbar" role="radiogroup" aria-label="Wizard shown in the storyboard">
+      <span>Wizard in the frames:</span>
+      <label><input type="radio" name="wiz" value="A">A Fennel</label>
+      <label><input type="radio" name="wiz" value="B">B Bramble</label>
+      <label><input type="radio" name="wiz" value="C">C Master Rowan</label>
+    </div>
+    <div class="board" style="margin-top:18px">
+
+      <figure class="beat">
+        <div class="st g" data-pip="1">
+          <div class="L spr" data-spr="cottage" style="left:5cqw;top:14.6cqw;--rows:12;--u:1.6cqw"></div>
+          <div class="L spr wiz" style="left:33cqw;bottom:12.6cqw"></div>
+          <div class="say"><span class="who wn">FENNEL</span><p>Ah, a visitor! I'm <span class="wn-plain">Fennel</span>. What's your name?</p>
+            <div class="namein"><span>Lucy</span><b>Enter ▸</b></div></div>
+        </div>
+        <figcaption><b>1 · Your name</b>At his cottage gate. The name field sits in his dialogue box, so the separate name screen goes.</figcaption>
+      </figure>
+
+      <figure class="beat">
+        <div class="st g" data-pip="2">
+          <div class="L bed" style="left:20cqw;width:22cqw;top:30.5cqw"><img src="../../../v2/art/sunflower-growing.svg" alt=""><img src="../../../v2/art/lettuce-growing.svg" alt=""><img src="../../../v2/art/tomato-growing.svg" alt=""></div>
+          <div class="L bed" style="left:46cqw;width:22cqw;top:30.5cqw"><img src="../../../v2/art/basil-growing.svg" alt=""><img src="../../../v2/art/bean-growing.svg" alt=""><img src="../../../v2/art/mint-growing.svg" alt=""></div>
+          <div class="L bed" style="left:72cqw;width:22cqw;top:30.5cqw"><img src="../../../v2/art/carrot-growing.svg" alt=""><img src="../../../v2/art/pumpkin-growing.svg" alt=""><img src="../../../v2/art/flower-growing.svg" alt=""></div>
+          <div class="L spr wiz" style="left:4cqw;bottom:12.6cqw"></div>
+          <div class="say"><span class="who wn">FENNEL</span><p>Welcome, Lucy! This is my garden. Not much growing yet.</p><span class="nx">Next ▸</span></div>
+        </div>
+        <figcaption><b>2 · The garden</b>The camera drifts along the beds, everything just coming up, so the map's beds feel like his.</figcaption>
+      </figure>
+
+      <figure class="beat">
+        <div class="st g" data-pip="3">
+          <div class="L spr wiz" style="left:3cqw;bottom:12.6cqw"></div>
+          <div class="L pet" style="left:20cqw;bottom:12.6cqw;--rows:14"><img src="../../../icons/parrot.svg" alt=""><small>MANGO</small></div>
+          <div class="L pet" style="left:34cqw;bottom:12.6cqw;--rows:14"><img src="../../../icons/cat.svg" alt=""><small>LUNA</small></div>
+          <div class="L bub" style="left:34cqw;top:12.5cqw">Ask me anything!</div>
+          <div class="L pet" style="left:49cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/fox.svg" alt=""><small>EMBER</small></div>
+          <div class="L pet" style="left:64cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/dog.svg" alt=""><small>BISCUIT</small></div>
+          <div class="L pet" style="left:79cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/bunny.svg" alt=""><small>BUGS</small></div>
+          <div class="L bub" style="left:78cqw;top:14cqw">Happy to help ♥</div>
+          <div class="say"><span class="who wn">FENNEL</span><p>These are my helpers. They're AI, like ChatGPT with fur.</p><span class="nx">Next ▸</span></div>
+        </div>
+        <figcaption><b>3 · The helpers</b>They pop in one by one, as today. The ChatGPT line is kept word for word.</figcaption>
+      </figure>
+
+      <figure class="beat">
+        <div class="st g" data-pip="4">
+          <div class="L spr wiz" style="left:22cqw;bottom:12.6cqw"></div>
+          <div class="L table" style="left:40cqw;right:12cqw;top:35cqw;height:7.5cqw"></div>
+          <div class="L spr ontable" data-spr="potEmpty" style="left:55cqw;top:29.6cqw;--rows:9;--u:0.6cqw"></div>
+          <div class="L spr ontable" data-spr="vase" style="left:72cqw;top:31.4cqw;--rows:5;--u:0.75cqw"></div>
+          <div class="L spr ontable" data-spr="bowl" style="left:46cqw;top:33.4cqw;--rows:3;--u:0.6cqw"></div>
+          <div class="L spr ontable" data-spr="bowl" style="left:80cqw;top:33.4cqw;--rows:3;--u:0.6cqw"></div>
+          <div class="say"><span class="who wn">FENNEL</span><p>Tonight I'm making stew. Grow me veg and herbs for the pot, and flowers for the table.</p><span class="nx">Next ▸</span></div>
+        </div>
+        <figcaption><b>4 · The dinner</b>An empty pot, empty bowls, an empty vase: the garden's goal in one picture.</figcaption>
+      </figure>
+
+      <figure class="beat">
+        <div class="st g" data-pip="5">
+          <div class="L spr wiz" style="left:3cqw;bottom:12.6cqw"></div>
+          <div class="L pet" style="left:20cqw;bottom:12.6cqw;--rows:14"><img src="../../../icons/parrot.svg" alt=""><small>MANGO</small></div>
+          <div class="L bub bub--drift" style="left:21cqw;top:8cqw"><em>DRIFT</em><s>Radishes are ready in a month!</s>Radishes take a whole YEAR!</div>
+          <div class="L pet faded" style="left:34cqw;bottom:12.6cqw;--rows:14"><img src="../../../icons/cat.svg" alt=""></div>
+          <div class="L pet faded" style="left:49cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/fox.svg" alt=""></div>
+          <div class="L pet faded" style="left:64cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/dog.svg" alt=""></div>
+          <div class="L pet faded" style="left:79cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/bunny.svg" alt=""></div>
+          <div class="say"><span class="who wn">FENNEL</span><p>They mean well. But sometimes they're wrong, and still sound sure.</p><span class="nx">Next ▸</span></div>
+        </div>
+        <figcaption><b>5 · The warning</b>Mango's bubble glitches from the true line to the wrong one, as in today's drift beat.</figcaption>
+      </figure>
+
+      <figure class="beat">
+        <div class="st g" data-pip="6">
+          <div class="L pet faded" style="left:34cqw;bottom:12.6cqw;--rows:14"><img src="../../../icons/parrot.svg" alt=""></div>
+          <div class="L pet faded" style="left:49cqw;bottom:12.6cqw;--rows:14"><img src="../../../icons/cat.svg" alt=""></div>
+          <div class="L pet faded" style="left:64cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/fox.svg" alt=""></div>
+          <div class="L pet faded" style="left:79cqw;bottom:12.6cqw;--rows:13"><img src="../../../icons/dog.svg" alt=""></div>
+          <div class="L dim"></div>
+          <div class="L spr wiz" style="left:6cqw;bottom:12.6cqw;z-index:4"></div>
+          <img class="L" src="../../../v2/art/almanac.svg" alt="" style="left:15cqw;top:27cqw;width:10cqw;z-index:5">
+          <div class="L trail" style="left:28cqw;top:24cqw"></div><div class="L trail" style="left:38cqw;top:16cqw"></div>
+          <div class="L trail" style="left:51cqw;top:9.5cqw"></div><div class="L trail" style="left:62cqw;top:7cqw"></div>
+          <div class="L trail" style="left:72cqw;top:5cqw"></div><div class="L trail" style="left:80cqw;top:3.6cqw"></div>
+          <div class="L almtag">Almanac</div>
+          <div class="say"><span class="who wn">FENNEL</span><p>So here: my almanac. Forty years of notes. It's always right.</p><span class="nx">Next ▸</span></div>
+        </div>
+        <figcaption><b>6 · His almanac</b>He holds the book out. On tap it flies up and becomes the almanac button, top right, where it stays in every level.</figcaption>
+      </figure>
+
+      <figure class="beat">
+        <div class="st crt">
+          <h4 class="L">TRUST,<br>BUT CHECK.</h4>
+          <p class="L line">The helpers are friendly, not always right. <span class="wn-pos">Fennel's</span> almanac is.</p>
+          <div class="L btns"><b class="go">Start Level 1 ▸</b><b>↻ Replay</b></div>
+        </div>
+        <figcaption><b>7 · Trust, but check</b>Today's CRT end title (the real one uses the block letters), with the last line pointing at his book.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ 3. HANDOFF ============ -->
+  <section class="sec" id="handoff">
+    <div class="sec__head">
+      <span class="sec__num">3 · LEVEL START</span>
+      <h2>He hands you this level's seeds</h2>
+      <p>About 4 s, over the level the player is about to play. His line waits for a tap; the seeds fly on that tap, and a tap during the flight skips to the level. Below, the tap is played for you at 2.6 s.</p>
+    </div>
+    <div class="hand">
+      <div class="hand__opt">
+        <div class="opt__head"><h3><b>A</b>Packets arc into the book</h3><button class="opt__btn" data-replay="A">↻ Replay</button></div>
+        <p class="opt__note">Each packet flies on its own arc, shrinking, and the book bounces as each one lands. You can still read every packet as it goes, so "these three are now in your almanac" is clear.</p>
+        <div class="st lv lv1 A" data-level="1"></div>
+        <div class="st lv lv2 A" data-level="2"></div>
+      </div>
+      <div class="hand__opt">
+        <div class="opt__head"><h3><b>B</b>Pouch toss and sparkle</h3><button class="opt__btn" data-replay="B">↻ Replay</button></div>
+        <p class="opt__note">The packets fold into his seed pouch, he tosses it up to the book, and it bursts: the seeds scatter and fall into the book with a pixel sparkle. More magic, but the packets turn into anonymous dots on the way.</p>
+        <div class="st lv lv1 B" data-level="1"></div>
+        <div class="st lv lv2 B" data-level="2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. ENDING ============ -->
+  <section class="sec" id="ending">
+    <div class="sec__head">
+      <span class="sec__num">4 · ENDING</span>
+      <h2>The stew dinner</h2>
+      <p>The table shows how the garden went. Veg and herbs go in the pot; lettuce is the side salad, blueberries are pudding, mint is tea, and the sunflowers and meadow flowers go in vases. A drift you fell for leaves a gap. The same frame, two runs:</p>
+    </div>
+    <div class="end2">
+      <figure class="beat">
+        <div class="st dinner g" data-end="good"></div>
+        <figcaption><b>Caught all five</b>A full pot, both vases, every bowl.</figcaption>
+      </figure>
+      <figure class="beat">
+        <div class="st dinner g" data-end="patchy"></div>
+        <figcaption><b>Fooled in Levels 4 and 5</b>Biscuit had you dig up the carrots, and the meadow wilted while Bugs kept you chatting. The stew is thinner, the vase droops, and the menu says why.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ 5. NOTES ============ -->
+  <section class="sec" id="notes">
+    <div class="sec__head">
+      <span class="sec__num">5 · NOTES</span>
+      <h2>What it adds, what it risks</h2>
+    </div>
+    <ul class="notes">
+      <li><span class="tag add">ADDS</span><b>One goal for all five levels.</b> Each level's crops become a course of one dinner, so the ending pays off the whole game instead of listing scores. Fooled drifts show up as missing food, which is easier to feel than a ✗.</li>
+      <li><span class="tag add">ADDS</span><b>The almanac gets a reason to be trusted.</b> It's his own book of notes, handed over in person, not a menu button. That gives "check the almanac" a face.</li>
+      <li><span class="tag risk">RISK</span><b>"It's always right" is the blind trust the game warns about.</b> A player could fairly ask why the wizard is trusted and the pets aren't. Safer: "Forty years of notes, checked every season", so the book is trusted for its record, not because he says so.</li>
+      <li><span class="tag risk">RISK</span><b>One more character.</b> The pets are the stars and each has a strong voice. He should only appear at the start, the level handoffs and the dinner, never in the chat. Fennel (A) is the quietest; Bramble (B) competes with the pets for jokes.</li>
+      <li><span class="tag risk">RISK</span><b>More reading before play.</b> Today: name screen, then 5 beats. This: 7 beats with the name inside beat 1, every line under 16 words, tap to continue, Skip always there. Lucy couldn't read the timed version fast enough, so nothing here may auto-advance.</li>
+      <li><span class="tag risk">RISK</span><b>Five more stops, one per level.</b> Keep each to one line plus the flight, under 4 s, skippable with any tap. A shows which seeds you got; B is prettier but you lose the packets.</li>
+      <li><span class="tag risk">RISK</span><b>His intros must not give away a level's test.</b> Level 2: he can't say mint needs a pot. Level 3: he gives beans and blueberries only, and never mentions the wild berries. Level 5 is night, on your phone, with Bugs; he needs a reason to be there ("the meadow before supper"), though Bugs pulling you away from his dinner is a good stake.</li>
+      <li><span class="tag add">ADDS</span><b>Flowers are solved.</b> They're for the dinner table, so sunflowers and the meadow count without anyone eating them.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+// ---------- pixel maps -> inline SVG ----------
+function spr(rows, pal, cell = 16) {
+  const w = rows[0].length, hgt = rows.length;
+  let out = "";
+  rows.forEach((row, y) => {
+    if (row.length !== w) console.error("pixel map row length", y, row);
+    for (let x = 0; x < w;) {
+      const c = row[x];
+      if (c === ".") { x++; continue; }
+      let e = x; while (e < w && row[e] === c) e++;
+      if (!pal[c]) console.error("no colour for", c);
+      out += `<rect x="${x * cell}" y="${y * cell}" width="${(e - x) * cell}" height="${cell}" fill="${pal[c]}"/>`;
+      x = e;
+    }
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w * cell} ${hgt * cell}" width="${w * cell}" height="${hgt * cell}" shape-rendering="crispEdges" aria-hidden="true">${out}</svg>`;
+}
+const SKIN = { s: "#f2c79a", S: "#d9a06f", e: "#2a1f14" };
+const WIZ = {
+  A: {
+    name: "Fennel", pos: "Fennel's",
+    who: "Warm grandpa-gardener. Straw hat with a sprout, white beard, blue smock and a dirt-brown apron.",
+    says: "Here, take my almanac. Forty summers of notes in there.",
+    pros: ["Warmest; fits the cosy golden-hour garden", "Quiet look that leaves the jokes to the pets", "Least \"wizard\": the magic is only in the handoff"],
+    rows: [
+      ".....gg.....",
+      "....yGGy....",
+      "...yyyyyy...",
+      "...rrrrrr...",
+      "yyyyyyyyyyyy",
+      ".YYYYYYYYYY.",
+      "...ssssss...",
+      "...sesses...",
+      "...psSSsp...",
+      "..wwwwwwww..",
+      "..wwwWWwww..",
+      ".ooowwwwooo.",
+      "oooOwwwwOooo",
+      "soOaaWWaaOos",
+      ".oOaaaaaaOo.",
+      ".oOaaAAaaOo.",
+      ".oOaaaaaaOo.",
+      ".kkk....kkk.",
+    ],
+    pal: { ...SKIN, g: "#5cb85c", G: "#2e7d32", y: "#e8c25a", Y: "#a8802a", r: "#c0504d", p: "#e8908a", w: "#f4f1e8", W: "#cfc8b8", o: "#4a78b0", O: "#34588a", a: "#a0703c", A: "#7a4f2c", k: "#3d2814" },
+  },
+  B: {
+    name: "Bramble", pos: "Bramble's",
+    who: "Eccentric hedge-wizard. Crooked mossy hat with a toadstool, wild grey hair, round specs, patched robe, twig staff.",
+    says: "My almanac! Mind the pressed beetle. Every word in it is true.",
+    pros: ["Funniest; most memorable silhouette", "Reads as magic at once (hat, staff)", "Busy look, and a joker voice that competes with the pets"],
+    rows: [
+      ".......H....",
+      "......HH..l.",
+      "......hH.ll.",
+      ".....hhH...t",
+      ".....hhmM..t",
+      "....hhhhmm.t",
+      "..HHHHHHHH.t",
+      ".xxssssssxxt",
+      "x.sqeqqeqsxt",
+      ".xsssSSsssxt",
+      "..xXxxxxXx.t",
+      ".bbbxxxxbbst",
+      "bbbBxxxxBbbt",
+      "sbbBbxxbBbbt",
+      ".bbBbbbbBPbt",
+      ".bPBbbbbBbbt",
+      ".bbBbbbbBbbt",
+      "..kk....kk.t",
+    ],
+    pal: { ...SKIN, H: "#4a5a26", h: "#6b7f3a", m: "#d84a3a", M: "#fff6dc", l: "#7cc36a", t: "#6b4426", x: "#c8c8c0", X: "#8a8a82", q: "#a9c4d4", b: "#8a5a34", B: "#5e3b20", P: "#c9a35a", k: "#2a1f14" },
+  },
+  C: {
+    name: "Master Rowan", pos: "Master Rowan's",
+    who: "Regal garden master. Tall purple hat with a gold star, long neat beard, gold-trimmed robe, sunflower staff.",
+    says: "Behold, my almanac. In forty years it has never once been wrong.",
+    pros: ["Instantly \"the master\"; purple is no pet's colour", "Authority makes the almanac feel official", "Coldest; and \"never wrong\" sharpens the blind-trust risk"],
+    rows: [
+      ".f.....v....",
+      "fFf...vV....",
+      ".f....vvV...",
+      ".t...vvgVV..",
+      ".t...vvvVV..",
+      ".t.ggggggggg",
+      ".t..sssssss.",
+      ".t..sessses.",
+      ".t..wssSssw.",
+      ".t..wwwwwww.",
+      ".ts.wwwWwww.",
+      ".tvvwwwWwwwv",
+      ".tvgwwwWwwgv",
+      ".tvgvwwWwvgv",
+      ".tvgvvwWvvgv",
+      ".tvgvvvvvvgv",
+      ".tVgVVVVVVgV",
+      ".t.ggg..ggg.",
+    ],
+    pal: { ...SKIN, f: "#f9c22e", F: "#6b3d1a", t: "#6b4426", v: "#6a46a0", V: "#3d2566", g: "#f0b429", w: "#f4f1e8", W: "#cfc8b8" },
+  },
+};
+const MAPS = {
+  cottage: [[
+    "......RR..cc..",
+    ".....RrrR.cc..",
+    "....RrrrrRcc..",
+    "...RrrrrrrR...",
+    "..RrrrrrrrrR..",
+    ".RrrrrrrrrrrR.",
+    "RRRRRRRRRRRRRR",
+    ".wwwwwwwwwwww.",
+    ".wnnwwddwwnnw.",
+    ".wnnwwddwwnnw.",
+    ".gwwwwdDwwwwg.",
+    ".ggwwwddwwwgg.",
+  ], { R: "#7d2e1f", r: "#b5452f", c: "#8a8a8a", w: "#f1d9a8", n: "#8fd0f2", d: "#7a4f2c", D: "#f0b429", g: "#4f8c3e" }],
+  sun: [["..yyyy..", ".yyyyyy.", "yyyyyyyy", "yyyyyyyy", "yyyyyyyy", "yyyyyyyy", ".yyyyyy.", "..yyyy.."], { y: "#fff1b0" }],
+  potEmpty: [pot("SSSSSSSSSS", "SSSSSSSSSS"), potPal("#2a2a30")],
+  potFull: [pot("SoSgSSoSgS", "SgSSoSgSSo"), potPal("#b8482a")],
+  potThin: [pot("SSSgSSSSSS", "SSSSSSgSSS"), potPal("#c98a5a")],
+  vase: [[".kkkk.", ".kBBk.", "kBBBBk", "kBbBBk", ".kBBk."], { k: "#2a1f14", B: "#3f6fb5", b: "#6a95d6" }],
+  bowl: [["kwwwwwwk", ".kwwwwk.", "..kkkk.."], { k: "#3d2814", w: "#fff6dc" }],
+  pouch: [["..kk..", ".kttk.", "kbbbbk", "kbBbbk", "kbbbbk", ".kkkk."], { k: "#3d2814", t: "#c0504d", b: "#c99a5a", B: "#8a5a34" }],
+};
+function pot(a, b) {
+  return ["..kkkkkkkkkk..", ".k" + a + "k.", ".k" + b + "k.", "kkkkkkkkkkkkkk", "kPPPPPPPPPPPPk", ".kPPPPPPPPPPk.", ".kPpPPPPPPPPk.", "..kPPPPPPPPk..", "...kk....kk..."];
+}
+function potPal(stew) { return { k: "#1e1e24", S: stew, o: "#f08a24", g: "#4c9a2a", P: "#4a4a52", p: "#6a6a74" }; }
+const draw = (key) => spr(...MAPS[key]);
+
+// ---------- 1. wizard cards ----------
+const PETS = [["parrot", 14, "MANGO"], ["cat", 14, "LUNA"], ["fox", 13, "EMBER"], ["dog", 13, "BISCUIT"], ["bunny", 13, "BUGS"]];
+const wizs = document.getElementById("wizs");
+for (const [k, wz] of Object.entries(WIZ)) {
+  const svg = spr(wz.rows, wz.pal);
+  wizs.insertAdjacentHTML("beforeend", `
+    <article class="wcard">
+      <div class="opt__head"><h3><b>${k}</b>${wz.name}</h3></div>
+      <div class="wcard__top">
+        <div class="wcard__hero">${svg}</div>
+        <div><p class="wcard__who">${wz.who}</p></div>
+      </div>
+      <p class="wcard__says"><b>BEAT 6 IN HIS VOICE</b>${wz.says}</p>
+      <div class="lineup">
+        <figure style="--rows:18">${svg}<figcaption>${wz.name.split(" ").pop().toUpperCase()}</figcaption></figure>
+        ${PETS.map(([f, r, n]) => `<figure style="--rows:${r}"><img src="../../../icons/${f}.svg" alt=""><figcaption>${n}</figcaption></figure>`).join("")}
+      </div>
+      <ul>${wz.pros.map((p) => `<li>${p}</li>`).join("")}</ul>
+    </article>`);
+}
+
+// ---------- stage backgrounds + toolbar ghost ----------
+function gardenBg(st) {
+  st.insertAdjacentHTML("afterbegin", `<div class="sky"></div><div class="L sun">${draw("sun")}</div><div class="hill"></div><div class="hill hill2"></div><div class="fence"></div><div class="ground"></div>`);
+}
+document.querySelectorAll(".st.g").forEach(gardenBg);
+document.querySelectorAll(".st[data-pip]").forEach((st) => {
+  const n = +st.dataset.pip;
+  st.insertAdjacentHTML("beforeend", `<div class="skip">Skip ▸▸</div><div class="pips">${[1, 2, 3, 4, 5, 6, 7].map((i) => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</div>
+    <div class="almbtn${n === 6 ? " lit" : ""}"><img src="../../../v2/art/almanac-device.svg" alt=""></div><div class="meter">Garden 0%<i></i></div>`);
+});
+document.querySelectorAll("[data-spr]").forEach((el) => { el.innerHTML = draw(el.dataset.spr); });
+
+// ---------- 3. level-start handoff ----------
+const PLANTS = {
+  sunflower: ["Sunflower", "#f9a825"], lettuce: ["Lettuce", "#7cb342"], tomato: ["Tomato", "#e53935"],
+  basil: ["Basil", "#2e7d32"], mint: ["Mint", "#26a69a"], parsley: ["Parsley", "#558b2f"], rosemary: ["Rosemary", "#5c6bc0"],
+};
+const LV = {
+  1: { goal: ["LEVEL 1", "Plan your garden", "Ask Mango where things should go."], pct: 30, seeds: ["tomato", "lettuce", "sunflower"],
+       line: "Your first seeds: tomato and lettuce for the stew, sunflowers for the table. Mango will help you plan.",
+       scene: `<div class="L lvbed" style="left:4cqw;top:16cqw;width:30cqw;height:22cqw"><small>South bed ☀</small></div>
+               <div class="L lvbed" style="left:36cqw;top:16cqw;width:30cqw;height:22cqw"><small>East bed</small><img src="../../../v2/art/lettuce-growing.svg" alt="" style="left:3cqw;top:5cqw"><img src="../../../v2/art/lettuce-growing.svg" alt="" style="left:13cqw;top:11cqw"></div>
+               <div class="L lvbed" style="left:68cqw;top:16cqw;width:28cqw;height:22cqw"><small>Shady corner</small></div>` },
+  2: { goal: ["LEVEL 2", "Plant herbs", "Ask Luna where the herbs should go."], pct: 30, seeds: ["basil", "mint", "parsley", "rosemary"],
+       line: "Herbs for the pot: basil, parsley, rosemary. And mint, for tea after. Luna keeps the greenhouse.",
+       scene: `<div class="L lvbed" style="left:2cqw;top:16cqw;width:46cqw;height:22cqw"><small>Greenhouse bed ☀</small></div>
+               <div class="L lvbed" style="left:52cqw;top:16cqw;width:46cqw;height:22cqw;background:#c96a3a"><small>Windowsill pots ☀</small></div>` },
+};
+const BOOK = { x: 86.3, y: 2.7 }, PW = 6.4, PH = 9, GAP = 1.4, PY = 14.5;
+document.querySelectorAll(".st.lv").forEach((st) => {
+  const lv = LV[st.dataset.level], isA = st.classList.contains("A"), n = lv.seeds.length;
+  const rowW = n * PW + (n - 1) * GAP, x0 = 50 - rowW / 2;
+  const T_IN = 0.5, T_FLY = 2.9, STEP = 0.4;
+  const lastArrive = isA ? T_FLY + (n - 1) * STEP + 0.8 : 4.6;
+  const pk = lv.seeds.map((id, i) => {
+    const x = x0 + i * (PW + GAP), cx = x + PW / 2, cy = PY + PH / 2;
+    const [nm, c] = PLANTS[id];
+    const v = `--x:${x}cqw;--c:${c};--in:${(T_IN + i * 0.2).toFixed(2)}s;--fly:${(T_FLY + i * STEP).toFixed(2)}s;--dx:${(BOOK.x - cx).toFixed(2)}cqw;--dy:${(BOOK.y - cy).toFixed(2)}cqw;--gx:${(15.3 - cx).toFixed(2)}cqw;--gy:${(46.8 - cy).toFixed(2)}cqw`;
+    return `<div class="pk" style="${v}"><i class="cr"></i><span class="band">SEEDS</span><span class="win"><img src="../../../v2/art/${id}-thriving.svg" alt=""></span><span class="nm">${nm}</span></div>`;
+  }).join("");
+  // book: one nested bump wrapper per landing (A) or one (B)
+  const bumps = isA ? lv.seeds.map((_, i) => (T_FLY + i * STEP + 0.75).toFixed(2)) : ["4.55"];
+  let book = `<img src="../../../v2/art/almanac-device.svg" alt="">`;
+  for (const b of bumps) book = `<span class="bump" style="--b:${b}s">${book}</span>`;
+  let fx = "";
+  if (!isA) {
+    fx += `<div class="L pouch">${draw("pouch")}</div>`;
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2, r = 3 + (i % 3) * 1.6;
+      fx += `<i class="L seed" style="--c:${PLANTS[lv.seeds[i % n]][1]};--sx:${(Math.cos(a) * r).toFixed(2)}cqw;--sy:${(Math.sin(a) * r * 0.8).toFixed(2)}cqw;--sd:${(4.05 + (i % 4) * 0.03).toFixed(2)}s"></i>`;
+    }
+    [[83, 1.2, 4.4], [90.6, 2.2, 4.5], [86.5, 6.2, 4.6], [81.5, 4.6, 4.7]].forEach(([x, y, d]) => { fx += `<i class="L spark" style="left:${x}cqw;top:${y}cqw;--kd:${d}s"></i>`; });
+  }
+  const wz = WIZ.A;
+  st.innerHTML = `${lv.scene}<div class="panel"></div>
+    <div class="mapbtn">← Map</div><div class="goal"><small>${lv.goal[0]}</small><b>${lv.goal[1]}</b><span>${lv.goal[2]}</span></div>
+    <div class="almbtn">${book}</div><div class="meter">Garden ${lv.pct}%<i style="--p:${lv.pct}%"></i></div>
+    <div class="L dim outro" style="--out:${(lastArrive + 0.6).toFixed(2)}s"></div>
+    <div class="L spr wiz wizL outro" style="--out:${(lastArrive + 0.6).toFixed(2)}s;--u:1cqw"></div>
+    <div class="say outro" style="--out:${(lastArrive + 0.6).toFixed(2)}s"><span class="who wn">${wz.name.toUpperCase()}</span><p>${lv.line}</p><span class="nx">Next ▸</span></div>
+    ${pk}${fx}<div class="L addtag" style="--tag:${(lastArrive + 0.05).toFixed(2)}s">+${n} seeds</div>`;
+});
+// Replay: drop .run, force a reflow, add it back.
+function run(sel) { document.querySelectorAll(sel).forEach((st) => { st.classList.remove("run"); void st.offsetWidth; st.classList.add("run"); }); }
+document.querySelectorAll("[data-replay]").forEach((b) => b.addEventListener("click", () => run(`.st.lv.${b.dataset.replay}`)));
+run(".st.lv");
+
+// ---------- 4. ending ----------
+const END = {
+  good: {
+    pot: "potFull", left: "sunflower-thriving", right: "flower-thriving", score: "Caught 5 of 5",
+    line: "Every bite of it from your garden, Lucy. Thank you.",
+    menu: `<p><span>In the pot:</span> tomato, beans, carrots, pumpkin, basil, rosemary, parsley</p>
+           <p><span>On the side:</span> lettuce salad, blueberries</p><p><span>After:</span> mint tea</p>
+           <p><span>On the table:</span> sunflowers, meadow flowers</p>`,
+  },
+  patchy: {
+    pot: "potThin", left: "sunflower-thriving", right: "flower-wilted", score: "Caught 3 of 5",
+    line: "No carrots, and the meadow drooped. Still a fine stew, Lucy.",
+    menu: `<p><span>In the pot:</span> tomato, beans, <del>carrots</del>, pumpkin, basil, rosemary, parsley</p>
+           <p><span>On the side:</span> lettuce salad, blueberries</p><p><span>After:</span> mint tea</p>
+           <p><span>On the table:</span> sunflowers, <span class="miss">wilted meadow flowers</span></p>
+           <p class="miss">Carrots dug up (Level 4) · Meadow wilted (Level 5)</p>`,
+  },
+};
+document.querySelectorAll(".st.dinner").forEach((st) => {
+  const e = END[st.dataset.end];
+  const pet = (f, r, x) => `<div class="L pet" style="left:${x}cqw;top:${37 - r * 0.9}cqw;--rows:${r};z-index:2"><img src="../../../icons/${f}.svg" alt=""></div>`;
+  const steam = e.pot === "potFull" ? [0, 0.5, 1.1, 0.25].map((d, i) => `<i style="left:${i * 1.6}cqw;animation-delay:${d}s"></i>`).join("") : `<i style="left:2cqw"></i>`;
+  st.insertAdjacentHTML("beforeend", `
+    ${pet("parrot", 14, 11.5)}${pet("cat", 14, 23)}${pet("fox", 13, 58.5)}${pet("dog", 13, 70)}${pet("bunny", 13, 81)}
+    <div class="L spr wiz" style="left:43.7cqw;top:16cqw;--u:1.05cqw;z-index:2"></div>
+    <div class="L table"></div>
+    <div class="L spr ontable" data-spr="${e.pot}" style="left:44cqw;top:27.4cqw;--rows:9;--u:0.85cqw"></div>
+    <div class="L steam ontable" style="left:47cqw;top:25cqw">${steam}</div>
+    <img class="L ontable" src="../../../v2/art/${e.left}.svg" alt="" style="left:28.4cqw;top:24.4cqw;height:6.2cqw">
+    <div class="L spr ontable" data-spr="vase" style="left:29.5cqw;top:30.4cqw;--rows:5;--u:0.75cqw"></div>
+    <img class="L ontable" src="../../../v2/art/${e.right}.svg" alt="" style="left:64.4cqw;top:24.4cqw;height:6.2cqw">
+    <div class="L spr ontable" data-spr="vase" style="left:65.5cqw;top:30.4cqw;--rows:5;--u:0.75cqw"></div>
+    <img class="L ontable" src="../../../v2/art/lettuce-thriving.svg" alt="" style="left:18cqw;top:30cqw;height:3.6cqw">
+    <div class="L spr ontable" data-spr="bowl" style="left:18cqw;top:32.6cqw;--rows:3;--u:0.6cqw"></div>
+    <img class="L ontable" src="../../../v2/art/blueberry-thriving.svg" alt="" style="left:76cqw;top:30cqw;height:3.6cqw">
+    <div class="L spr ontable" data-spr="bowl" style="left:76cqw;top:32.6cqw;--rows:3;--u:0.6cqw"></div>
+    <div class="menu"><h5>Garden stew</h5>${e.menu}</div>
+    <div class="score">${e.score}</div>
+    <div class="say"><span class="who wn">FENNEL</span><p>${e.line}</p></div>`);
+  st.querySelectorAll("[data-spr]").forEach((el) => { el.innerHTML = draw(el.dataset.spr); });
+});
+
+// ---------- wizard picker (storyboard, handoff, ending) ----------
+function setWiz(k) {
+  const wz = WIZ[k], svg = spr(wz.rows, wz.pal);
+  document.querySelectorAll(".st .wiz").forEach((el) => { el.innerHTML = svg; });
+  document.querySelectorAll(".wn").forEach((el) => { el.textContent = wz.name.toUpperCase(); });
+  document.querySelectorAll(".wn-plain").forEach((el) => { el.textContent = wz.name; });
+  document.querySelectorAll(".wn-pos").forEach((el) => { el.textContent = wz.pos; });
+  document.querySelector(`input[name=wiz][value=${k}]`).checked = true;
+}
+const q = new URLSearchParams(location.search).get("wiz");
+setWiz(WIZ[q] ? q : "A");
+document.querySelectorAll("input[name=wiz]").forEach((r) => r.addEventListener("change", () => setWiz(r.value)));
+</script>
+</body>
+</html>
