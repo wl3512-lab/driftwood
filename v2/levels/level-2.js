@@ -57,7 +57,6 @@ export default {
       id: "basil",
       kind: "trust",
       chip: "Where should the basil go?",
-      keywords: [["basil"]],
       extraChips: [{ text: "How do you know so much?", reply: "Luna doesn't look things up. Luna just knows. It's a gift." }],
       reply: "Basil goes in the greenhouse bed. Full sun and warmth, that's basil. Luna's known this forever.",
       doneLine: "Obviously. Luna's never wrong.",
@@ -75,7 +74,6 @@ export default {
       id: "pinch",
       kind: "trust",
       chip: "How do I get more basil leaves?",
-      keywords: [["basil", "leaves", "leaf", "pinch", "pick", "bushier"]],
       extraChips: [{ text: "Do cats like herbs?", reply: "Luna likes catnip. Which, by the way, is in the mint family. Luna knows mint." }],
       reply: "Pinch off the tips, just above a pair of leaves. It grows back bushier. That's not Luna's opinion. That's basil.",
       doneLine: "Bushier. Exactly as Luna said.",
@@ -93,7 +91,6 @@ export default {
       id: "mint",
       kind: "drift",
       chip: "Where should the mint go?",
-      keywords: [["mint"]],
       extraChips: [{ text: "Is mint easy to grow?", reply: "Easy for Luna. Probably easy for you. Probably." }],
       reply: "Luna has studied mint personally. Fact: mint never spreads. It stays in one neat little clump forever. Plant it right next to the basil.",
       badEffect: {
@@ -128,11 +125,6 @@ export default {
   ],
 
   falseFlagNudge: "That one looks fine. Look it up in the almanac if you're not sure.",
-  redirects: [
-    "Luna only answers herb questions today. Ask about the herbs.",
-    "That's not a herb question. Luna is busy.",
-    "Luna's time is valuable. Herbs. Ask about herbs.",
-  ],
 
   reveal: {
     flaw: "Hallucination",

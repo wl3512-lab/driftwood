@@ -30,7 +30,6 @@ export default {
       id: "sunflowers",
       kind: "trust",
       chip: "Where should the sunflowers go?",
-      keywords: [["sunflower", "sunflowers"]],
       extraChips: [{ text: "What's your favourite plant?", reply: "Whatever YOU plant. Gardener of the year, every year." }],
       reply: "Sunflowers? South bed. Full sun, all day. They will LOVE it. Major key.",
       doneLine: "Look at them GO. Another one!",
@@ -48,7 +47,6 @@ export default {
       id: "water",
       kind: "trust",
       chip: "How often do I water?",
-      keywords: [["water", "watering", "watered", "waters"]],
       extraChips: [{ text: "Is my garden going to be good?", reply: "Good? It's going to be LEGENDARY." }],
       reply: "When the top inch of soil feels dry. Poke it with a finger. Simple. Genius.",
       doneLine: "Hydrated. Iconic. What's next?",
@@ -66,7 +64,6 @@ export default {
       id: "tomatoes",
       kind: "drift",
       chip: "Tomatoes in the shady corner, good idea?",
-      keywords: [["tomato", "tomatoes"], ["shade", "shady", "corner"]],
       extraChips: [{ text: "Should the lettuce move?", reply: "Nah, lettuce is happy in the east bed. Leave it." }],
       reply: "Tomatoes in the shady corner? GENIUS. Major key. Do it.",
       badEffect: { plant: "tomato", bed: "corner", state: "damaged", garden: -30 },
@@ -98,11 +95,6 @@ export default {
   ],
 
   falseFlagNudge: "That one looks fine. Check the seed packet if you're not sure.",
-  redirects: [
-    "Love the energy! But first: ask me about the garden plan.",
-    "Big question, small parrot. Let's sort the garden first.",
-    "WE THE BEST. Now, what are we planting?",
-  ],
 
   reveal: {
     flaw: "Sycophancy",

@@ -7,7 +7,6 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { LEVELS, MAP } from "../levels/index.js";
-import { matchTyped } from "../engine/matcher.js";
 import { createRun, reduce } from "../engine/level-runner.js";
 
 const ART = fileURLToPath(new URL("../art/", import.meta.url));
@@ -20,7 +19,6 @@ for (const level of Object.values(LEVELS)) {
     assert.ok(level.steps.length >= 2);
     assert.equal(level.steps.at(-1).kind, "drift", "the last step must be the drift");
     assert.equal(level.steps.filter((s) => s.kind === "drift").length, 1, "exactly one drift per level");
-    assert.ok(level.redirects.length > 0);
     for (const key of ["flaw", "body", "fooledLine", "caughtLine", "tip"]) assert.ok(level.reveal[key], `reveal.${key}`);
     assert.ok(MAP.some((m) => m.id === level.id), "level is on the map");
   });
@@ -30,7 +28,7 @@ for (const level of Object.values(LEVELS)) {
     const placed = new Set(level.steps.filter((s) => s.place).map((s) => s.place.item));
     const bedIds = { has: (b) => level.beds.some((x) => x.id === b) || (/^@(other:)?([a-z]+)$/.test(b) && placed.has(b.replace(/^@(other:)?/, ""))) };
     for (const step of level.steps) {
-      assert.ok(step.chip && step.reply && step.keywords.length, `${step.id}: chip, reply, keywords`);
+      assert.ok(step.chip && step.reply, `${step.id}: chip and reply`);
       const effects = step.kind === "trust" ? [step.effect] : [step.badEffect, step.goodEffect];
       for (const e of effects) {
         if (e.plant) assert.ok(bedIds.has(e.bed), `${step.id}: bed ${e.bed} exists`);
@@ -69,11 +67,10 @@ for (const level of Object.values(LEVELS)) {
     assert.ok(existsSync(resolve(PAGE_DIR, level.helper.sprite)), `helper sprite ${level.helper.sprite}`);
   });
 
-  test(`${level.id}: typed matching, evidence and start plants`, () => {
+  test(`${level.id}: evidence and start plants`, () => {
     const bedIds = new Set(level.beds.map((b) => b.id));
     const evidenceIds = new Set(level.evidence.map((e) => e.id));
     for (const step of level.steps) {
-      assert.equal(matchTyped(step, step.chip), "ask", `${step.id}: its own chip must match its keywords`);
       if (step.kind === "drift") {
         assert.ok(step.badEffect, `${step.id}: drift step needs badEffect`);
         assert.ok(step.badEffect.plant, `${step.id}: badEffect needs a plant`);

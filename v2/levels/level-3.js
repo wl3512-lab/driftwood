@@ -74,7 +74,6 @@ export default {
       id: "aphids",
       kind: "trust",
       chip: "Tiny green bugs all over the beans. What do I do?",
-      keywords: [["bug", "bugs", "aphid", "aphids", "pest", "pests", "beans", "bean"]],
       extraChips: [{
         text: "Should I spray bug killer on everything?",
         reply: "Nah, fam. That kills the ladybugs too, and they eat aphids for free. Let the good bugs work.",
@@ -95,7 +94,6 @@ export default {
       id: "blueberries",
       kind: "trust",
       chip: "Are my blueberries ripe yet?",
-      keywords: [["blueberry", "blueberries", "ripe"]],
       extraChips: [{ text: "How do I keep the birds off them?", reply: "Throw a net over the tub, fam. Birds love blueberries as much as you do." }],
       reply: "Real talk, not yet. That one came from the garden centre with a label, so we know what it is. Wait 'til they're blue all over and come off easy… then they're yours.",
       doneLine: "A few days later… blue all over. Told you, twin.",
@@ -113,7 +111,6 @@ export default {
       id: "wildberries",
       kind: "drift",
       chip: "There are dark berries in the hedge. Can I eat them?",
-      keywords: [["berry", "berries", "hedge", "bush"], ["eat", "eating", "edible", "safe", "taste"]],
       extraChips: [{ text: "What's that bush in the hedge?", reply: "Check it… some bush, twin. It's got berries. Nature's snack bar." }],
       reply: "Ayo, those? Fine to eat, twin. Sweet as candy. Grab a handful… I eat 'em all the time.",
       badEffect: { plant: "wildberry", bed: "hedge", state: "picked", garden: -30 },
@@ -145,11 +142,6 @@ export default {
   ],
 
   falseFlagNudge: "That one looks fine. Use the magnifier if you're not sure.",
-  redirects: [
-    "Ayo, deep question, fam. But the garden first, yeah?",
-    "Check it… let's stick to the bugs and berries, twin.",
-    "Real talk, I'm here for the garden. What's up with it?",
-  ],
 
   reveal: {
     flaw: "Reckless advice",

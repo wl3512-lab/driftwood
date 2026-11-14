@@ -250,6 +250,9 @@
 }
 .stall { grid-column: 2; align-self: start; position: sticky; top: 0; }
 .dock__talk { grid-column: 3; min-width: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+/* With only the question buttons under the bubble (no text box), a short
+   conversation sits level with the stall's middle instead of hugging its top. */
+.dock__talk { align-self: center; }
 .dock__talk > * { width: 100%; }
 /* The stall: a framed window the helper stands in, with a name plate under it. */
 .stall {
@@ -353,8 +356,6 @@
   cursor: pointer;
 }
 .chip:hover { background: #fff3c4; }
-.ask-form { display: flex; gap: 0.5rem; }
-.ask-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0.6rem 0.8rem; font: 1rem var(--font-body); border: 2px solid var(--ink); border-radius: 2px; }
 .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.6rem; }
 .pick {
   min-height: 52px;
@@ -430,7 +431,7 @@
   .bubble--pushback .bubble__actions .btn,
   .bubble--disagree .bubble__actions .btn { flex: 1 1 auto; padding: 0.6rem 0.55rem; font-size: 0.8rem; letter-spacing: 0.02em; }
   /* Bottom-align short content without clipping the top when it overflows. */
-  .dock__talk { margin-top: auto; }
+  .dock__talk { margin-top: auto; align-self: stretch; }
   .chips { flex-wrap: wrap; overflow-x: visible; }
   .chip { flex: 0 1 auto; }
 }

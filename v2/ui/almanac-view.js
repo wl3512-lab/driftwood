@@ -1,102 +1,177 @@
-// The almanac: a high-tech book, a pixel-art device with a glowing screen,
-// shown as a non-modal panel over the scene. Every level has one. Its first
-// screen page holds that level's fact cards (level.evidence, rendered and kept
-// current by the level view, passed in as ctx.cards): the cards live in the
-// book, not on the garden, so checking a helper's claim is a deliberate look.
-// Level 2 adds a searchable book (level.almanac) under the cards: a search box
-// and a row of page tabs. A document tool (ui/tools.js definePage, e.g. Level
-// 4's planting log) is the device's COVER: the screen the book opens on, with
-// the fact cards after it, switched by the device's ◀ ▶ buttons and page tabs
-// along the bottom bezel. The cover is the only way to read it: it has no
-// button, key or anything on the garden.
-// Registered with ui/tools.js; the level view owns the toolbar button and the
-// "/" shortcut and calls open() to toggle the panel.
+// The almanac: a wooden seed shelf, opened as a modal over the level (a small
+// square icon button, the page behind dimmed and inert, the dock sliding down).
+// Chosen by Lucy as "Almanac Option A" in
+// docs/design-options/2026-11-13-almanac-cutscene/options.html.
+//
+// The shelf holds one big seed packet per plant across all five levels
+// (levels/plants.js, rules in mechanics/shelf.js). A packet from a level the
+// player hasn't reached is locked: a silhouette stamped "Level N". Tapping (or
+// Enter on) an open packet lifts it to the middle and turns it over (reduced
+// motion: a crossfade) to its back: the plant's name, its FACT CARD (the
+// level's evidence card, the one thing to check a helper against), how it
+// grows, care rows (a row that repeats the fact card is hidden), "Watch for",
+// and a strip of when to plant, harvest, soil and good neighbours.
+//
+// A card that is locked in this level (Level 3's warning before the
+// magnifier, Level 4's label before the log) shows only its hint on the back,
+// so the packet gives nothing away early. Turning over a packet whose id is a
+// page of the level's book (Level 2) is looking it up: it dispatches
+// check(id), which unlocks the card there and then.
+//
+// Level 2 also gets a "Look up a plant" box on top of the shelf: typing marks
+// the matching packet, Enter (or Look up) turns it over. A document page
+// (ui/tools.js definePage, Level 4's planting log) is the book's COVER: a tab
+// beside "Seed shelf" in the header, and the page the book opens on.
 //
 // Ways in and around:
-//   keyboard  "/" opens (on the cover, else the cards with the search box
-//             focused) · ←/→ (or ↑/↓, Home/End) move between tabs, Tab walks them · Esc closes
-//   mouse     the Almanac button, the device buttons, the tabs, the × button
-//   touch     the same buttons (44px+); the first tab gets focus, not the
-//             search box, so the keyboard doesn't jump up on open
-// Focus goes back to the Almanac button whenever the panel closes from inside.
-// Showing a book page whose id is a locked evidence card dispatches check(id),
-// and the level view pops and announces the card. Reading the cards list
-// itself checks nothing: a locked card stays locked until its tool unlocks it.
+//   keyboard  "/" opens (on the cover, else the shelf, with the search box
+//             focused in Level 2) · Tab walks the packets · Enter turns one
+//             over · Esc turns it back, Esc again closes · ←/→ move between tabs
+//   mouse     the Almanac button, the tabs, the packets, the × button, the backdrop
+//   touch     the same (44px+); nothing auto-focuses a text box
+// Focus goes back to the Almanac button whenever the book closes from inside.
 import { h, finePointer } from "./dom.js";
 import { defineTool } from "./tools.js";
+import { blockTitle } from "./block-type.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
+import { shelfPackets, factCard, repeatsCard } from "../mechanics/shelf.js";
+import { LEVELS } from "../levels/index.js";
 
 let panels = 0; // unique ids if a level is ever mounted twice
 
-defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pages = [] }) => {
+const levelByNumber = (n) => Object.values(LEVELS).find((l) => l.number === n);
+const helperOf = (n) => levelByNumber(n)?.helper?.name || "the almanac";
+const art = (name) => `./art/${name}.svg`;
+// Dark or light ink on a packet's colour band.
+function inkFor(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 150 ? "#1d140b" : "#fff6dc";
+}
+
+// 7×7 pixel icons for the back's labels.
+const ICONS = {
+  sun: ["...#...", ".#.#.#.", "..###..", "#######", "..###..", ".#.#.#.", "...#..."],
+  water: ["...#...", "..###..", "..###..", ".#####.", ".#####.", ".#####.", "..###.."],
+  space: [".......", "#.....#", "##...##", "#######", "##...##", "#.....#", "......."],
+  tip: ["...#...", "..###..", "#######", ".#####.", "..###..", ".##.##.", "#.....#"],
+  lock: ["..###..", ".#...#.", ".#...#.", "#######", "###.###", "###.###", "#######"],
+  seed: [".......", "...#...", "..###..", ".#####.", ".#####.", "..###..", "...#..."],
+  basket: [".......", "..###..", ".#...#.", "#######", ".#####.", ".#####.", "..###.."],
+  soil: ["...#...", "..#.#..", ".......", "#######", "#.#.#.#", "#######", ".#.#.#."],
+  pals: [".##.##.", "#######", "#######", ".#####.", "..###..", "...#...", "......."],
+};
+const SVG = "http://www.w3.org/2000/svg";
+function icon(name) {
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("class", "ico");
+  svg.setAttribute("viewBox", "0 0 7 7");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("shape-rendering", "crispEdges");
+  ICONS[name].forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch !== "#") return;
+    const r = document.createElementNS(SVG, "rect");
+    r.setAttribute("x", x); r.setAttribute("y", y); r.setAttribute("width", 1); r.setAttribute("height", 1);
+    svg.append(r);
+  }));
+  return svg;
+}
+
+defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = [], reached = level.number }) => {
   const book = level.almanac || { title: "Almanac", pages: [], notFound: "" };
   const searchable = book.pages.length > 0;
+  const bookIds = new Set(book.pages.map((p) => p.id));
   const lockedIds = new Set(level.evidence.filter((e) => e.locked).map((e) => e.id));
   const uid = `almanac-${++panels}`;
-  let shown = null; // the book page on display, or null
+  const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const news = new Set(); // packets whose card unlocked and haven't been turned over since
+  const packets = shelfPackets(reached, level.number);
+  const open = packets.filter((p) => !p.locked);
+  // Level 2's search finds the book's pages first (their keywords: "peppermint"
+  // is mint), then any open packet by name; a locked packet stays unfindable.
+  const findable = [...book.pages, ...open.filter((p) => !bookIds.has(p.plant.id)).map(({ plant }) =>
+    ({ id: plant.id, title: plant.name, keywords: [plant.id, ...plant.name.toLowerCase().split(/[^a-z]+/)] }))];
 
-  const input = h("input", {
+  // ---- the shelf ----
+  const buttons = packets.map(({ plant, locked, isNew }, i) => {
+    const live = level.evidence.some((e) => e.id === plant.id);
+    const note = plant.kind === "note";
+    const label = locked
+      ? `Locked packet. Reach Level ${plant.level} to open it.`
+      : `${plant.name}, ${note ? "note" : "seed packet"} from Level ${plant.level}. Turn it over to read it.`;
+    const btn = h("button", {
+      type: "button", class: `pk${locked ? " pk--locked" : ""}${note ? " pk--note" : ""}`,
+      "data-plant": plant.id, "data-evidence": live ? plant.id : null,
+      "aria-disabled": locked ? "true" : null, "aria-label": label,
+      style: `--c: ${plant.color}; --c-ink: ${inkFor(plant.color)}; --tilt: ${((i % 3) - 1) * 1.4}deg`,
+      onclick: () => (locked ? nope(btn, plant) : turnOver(btn, plant)),
+    },
+    h("span", { class: "pk__crimp", "aria-hidden": "true" }),
+    h("span", { class: "pk__band", "aria-hidden": "true" }, locked ? (note ? "NOTES" : "SEEDS") : `${note ? "NOTES" : "SEEDS"} · LV ${plant.level}`),
+    h("span", { class: "pk__win", "aria-hidden": "true" }, h("img", { src: art(plant.art || plant.stages.at(-1)), alt: "", width: 32, height: 32 })),
+    h("span", { class: "pk__name", "aria-hidden": "true" }, locked ? "???" : plant.name.toUpperCase()),
+    h("span", { class: "pk__meta", "aria-hidden": "true" }, locked ? " " : `FROM ${helperOf(plant.level).toUpperCase()}`),
+    locked && h("span", { class: "pk__stamp", "aria-hidden": "true" }, icon("lock"), `LEVEL ${plant.level}`),
+    isNew && !locked && h("span", { class: "pk__new", "aria-hidden": "true" }, "NEW"),
+    h("span", { class: "pk__dot", "aria-hidden": "true" }));
+    return btn;
+  });
+  const byId = (id) => buttons.find((b) => b.dataset.plant === id);
+  const shelf = h("div", { class: "shelf", role: "group", "aria-label": "Seed packets" }, buttons);
+
+  // Level 2's book: look a plant up by name.
+  const input = searchable && h("input", {
     id: `${uid}-q`, type: "search", class: "almanac__q", autocomplete: "off", spellcheck: "false",
     maxlength: 40, placeholder: "e.g. mint", enterkeyhint: "search",
   });
-  const tabs = book.pages.map((p) => h("button", {
-    type: "button", class: "almanac__tab", "data-page": p.id, "aria-pressed": "false",
-    onclick: () => show(p),
-  }, t(p.title)));
-  const result = h("div", { class: "almanac__page", id: `${uid}-page`, "aria-live": "polite" });
-  const close = h("button", { type: "button", class: "almanac__close", "aria-label": "Close almanac", onclick: () => hide(true) }, "×");
+  const none = searchable && h("p", { class: "almanac__none", role: "status" });
+  const search = searchable && h("form", {
+    class: "almanac__search", role: "search",
+    onsubmit: (e) => { e.preventDefault(); lookUp(input.value, true); },
+  },
+  h("label", { for: input.id, class: "almanac__label" }, "Look up a plant"),
+  h("div", { class: "almanac__row" }, input, h("button", { type: "submit", class: "btn almanac__go" }, "Look up")),
+  none);
+  if (input) input.addEventListener("input", () => lookUp(input.value, false));
 
-  // Screen page 1: the fact cards (and Level 2's searchable book).
-  const cardsSheet = h("div", { class: "almanac__sheet", "data-sheet": "cards" },
-    h("h2", { class: "almanac__title", id: `${uid}-title` }, t(book.title)),
-    cards && h("div", { class: "almanac__cards" },
-      h("p", { class: "almanac__label" }, "Fact cards"),
-      cards),
-    searchable && h("form", {
-      class: "almanac__search", role: "search",
-      onsubmit: (e) => { e.preventDefault(); lookUp(input.value, true); },
-    },
-    h("label", { for: input.id, class: "almanac__label" }, "Look up a plant"),
-    h("div", { class: "almanac__row" }, input, h("button", { type: "submit", class: "btn almanac__go" }, "Look up"))),
-    searchable && h("div", { class: "almanac__tabs", role: "group", "aria-label": "Pages" }, tabs),
-    searchable && result);
+  const shelfSheet = h("div", { class: "almanac__sheet almanac__sheet--shelf", "data-sheet": "shelf" }, search, shelf);
 
-  // Every screen page: a document page is the cover (page 1), the cards come after it.
+  // Every screen page: a document page is the cover (first), the shelf comes after it.
   const sheets = [
     ...pages.map((p) => ({
       id: p.id, title: p.view.title, view: p.view,
+      hint: "Your own record of what you planted.",
       el: h("div", { class: "almanac__sheet almanac__sheet--cover", "data-sheet": p.id, hidden: true },
-        h("h2", { class: "almanac__title almanac__cover-title" }, p.view.title),
-        p.view.body),
+        h("div", { class: "monitor" },
+          h("h3", { class: "almanac__cover-title" }, p.view.title),
+          p.view.body)),
     })),
-    { id: "cards", title: "Fact cards", el: cardsSheet },
+    { id: "shelf", title: "Seed shelf", hint: "Tap a packet to turn it over.", el: shelfSheet },
   ];
   const first = sheets[0].id;
+  const multi = sheets.length > 1;
   let current = first;
   const sheetTabs = sheets.map((s) => h("button", {
     type: "button", class: "almanac__sheet-tab", "data-sheet": s.id, "aria-pressed": String(s.id === first),
     onclick: () => showSheet(s.id, true),
   }, s.title));
-  const cardsTab = sheetTabs.find((tb) => tb.dataset.sheet === "cards");
-  const multi = sheets.length > 1;
-  const flip = (dir, label, glyph) => h("button", {
-    type: "button", class: "almanac__flip", "aria-label": label,
-    onclick: () => showSheet(sheets[(sheets.findIndex((s) => s.id === current) + dir + sheets.length) % sheets.length].id, true),
-  }, glyph);
-  const status = h("span", { class: "almanac__status-page" });
+  const shelfTab = sheetTabs.find((tb) => tb.dataset.sheet === "shelf");
+
+  const close = h("button", { type: "button", class: "almanac__close", "aria-label": "Close almanac", onclick: () => hide(true) }, "×");
+  const hint = h("p", { class: "almanac__hint" });
+  const head = h("header", { class: "almanac__head" },
+    h("div", { class: "almanac__sign" },
+      blockTitle("SEED SHELF", { fill: "#3b2a1a", className: "almanac__sign-type" }),
+      h("h2", { class: "sr-only", id: `${uid}-title` }, t(book.title)),
+      hint),
+    multi && h("div", { class: "almanac__sheet-tabs", role: "group", "aria-label": "Almanac pages" }, sheetTabs),
+    h("span", { class: "almanac__count" }, `${open.length} / ${packets.length}`, h("span", { class: "almanac__count-word" }, " PACKETS")),
+    close);
+  const screen = h("div", { class: "almanac__screen" }, sheets.map((s) => s.el));
+  const toast = h("p", { class: "almanac__toast", role: "status", hidden: true });
 
   const panel = h("section", {
-    class: "almanac", id: uid, role: "dialog", "aria-modal": "false", "aria-label": t(book.title), hidden: true,
-  },
-  h("div", { class: "almanac__bezel" },
-    h("span", { class: "almanac__status", "aria-hidden": "true" },
-      h("span", { class: "almanac__led" }), "ALMANAC", status),
-    close),
-  h("div", { class: "almanac__screen" }, sheets.map((s) => s.el)),
-  multi && h("div", { class: "almanac__controls", role: "group", "aria-label": "Almanac pages" },
-    flip(-1, "Previous page", "◀"),
-    h("div", { class: "almanac__sheet-tabs" }, sheetTabs),
-    flip(1, "Next page", "▶")));
+    class: "almanac", id: uid, role: "dialog", "aria-modal": "false", "aria-labelledby": `${uid}-title`, hidden: true,
+  }, head, screen, toast);
 
   button.setAttribute("aria-controls", uid);
   button.setAttribute("aria-expanded", "false");
@@ -105,11 +180,10 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
   // Clicking the dimmed backdrop, × or Esc closes it.
   const dialog = h("dialog", { class: "almanac-dialog", "aria-label": t(book.title) }, panel);
   (scene.parentElement || scene).append(dialog);
-  dialog.addEventListener("cancel", (ev) => { ev.preventDefault(); hide(true); }); // Esc
+  dialog.addEventListener("cancel", (ev) => { ev.preventDefault(); if (inspecting) turnBack(); else hide(true); }); // Esc
   dialog.addEventListener("click", (ev) => { if (ev.target === dialog) hide(true); }); // the backdrop
-  const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   let closing = null; // the close animation's timer
-  // While the book is open the chat dock slides down out of view (CSS:
+  // While the book is open the dock slides down out of view (CSS:
   // .level.is-reading), inert and hidden from screen readers; it slides back
   // up as the book fades out.
   const stage = scene.parentElement; // the .level screen
@@ -122,74 +196,232 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     else dock.removeAttribute("aria-hidden");
   }
 
-  // Typing looks up as you go; an empty box clears the page.
-  input.addEventListener("input", () => lookUp(input.value, false));
-
   panel.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") {
       ev.preventDefault(); // the level view's shortcut listener skips handled keys
-      hide(true);
+      if (inspecting) turnBack(); else hide(true);
       return;
     }
-    for (const row of [tabs, sheetTabs]) {
-      const i = row.indexOf(document.activeElement);
-      if (i < 0) continue;
-      const to = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: row.length - 1 }[ev.key];
-      if (to == null) return;
-      ev.preventDefault();
-      const next = row[(to + row.length) % row.length];
-      next.focus();
-      next.click();
-      return;
-    }
+    const i = sheetTabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    const to = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: sheetTabs.length - 1 }[ev.key];
+    if (to == null) return;
+    ev.preventDefault();
+    const next = sheetTabs[(to + sheetTabs.length) % sheetTabs.length];
+    next.focus();
+    next.click();
   });
 
+  // ---- Level 2: the search box marks a packet; Enter turns it over ----
   function lookUp(query, submitted) {
-    if (!query.trim()) { render(null, ""); return; }
-    const page = searchAlmanac(book.pages, query);
-    if (page) show(page);
-    else if (submitted || query.trim().length >= 3) render(null, t(book.notFound));
-    else render(null, "");
-  }
-
-  function show(page) {
-    render(page);
-    if (lockedIds.has(page.id)) dispatch({ type: "check", id: page.id });
-  }
-
-  function render(page, message = "") {
-    shown = page;
-    for (const tab of tabs) tab.setAttribute("aria-pressed", String(tab.dataset.page === page?.id));
-    if (page) {
-      result.replaceChildren(
-        h("h3", { class: "almanac__page-title" }, t(page.title)),
-        ...page.lines.map((line) => h("p", {}, t(line))));
-    } else {
-      result.replaceChildren(...(message ? [h("p", { class: "almanac__none" }, message)] : []));
+    for (const b of buttons) b.classList.remove("pk--found");
+    none.textContent = "";
+    if (!query.trim()) return;
+    const page = searchAlmanac(findable, query);
+    const btn = page && byId(page.id);
+    if (btn) {
+      btn.classList.add("pk--found");
+      btn.scrollIntoView?.({ block: "nearest" });
+      if (submitted) turnOver(btn, packets.find((p) => p.plant.id === page.id).plant);
+    } else if (submitted || query.trim().length >= 3) {
+      none.textContent = t(book.notFound);
     }
   }
 
-  // Put one screen page on the device. `fromTab`: the player switched pages
-  // inside the book, so focus stays on the device's own controls. `quiet`:
-  // set up only (at mount), so a page's show() (the log's check) never runs
-  // until the player has actually opened the book.
+  // ---- a locked packet shakes and says when it opens ----
+  let toastTimer = null;
+  function nope(btn, plant) {
+    btn.classList.remove("pk--nope");
+    void btn.offsetWidth; // restart the shake
+    if (!calm()) btn.classList.add("pk--nope");
+    toast.textContent = `Reach Level ${plant.level} to open this packet.`;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 1800);
+  }
+
+  // ---- the back of a packet ----
+  const sunny = (line) => {
+    const parts = String(line).split(/\s*(☀+)/);
+    return parts.map((part) => (/^☀+$/.test(part)
+      ? h("span", { class: "fact__suns", role: "img", "aria-label": `${part.length} suns` }, [...part].map(() => icon("sun")))
+      : part));
+  };
+
+  function backFor(plant, pop) {
+    const card = factCard(plant, level, LEVELS, getState().checks);
+    const lines = (card?.lines || []).map(t);
+    const sealed = Boolean(card?.lockedLine); // locked in this level: show only the hint
+    const helper = helperOf(plant.level);
+    const note = plant.kind === "note";
+    const cardTitle = card && t(card.title);
+    const fact = card && h("div", {
+      class: `fact${sealed ? " fact--locked" : ""}${pop && !sealed ? " fact--fresh" : ""}`,
+      "data-evidence": card.evidence,
+    },
+    h("span", { class: "fact__tab" }, icon("tip"), "FACT CARD"),
+    cardTitle && cardTitle !== plant.name && h("p", { class: "fact__title" }, cardTitle),
+    sealed
+      ? h("p", { class: "fact__locked" }, t(card.lockedLine))
+      : h("p", { class: "fact__lines" }, lines.map((line, i) => [
+        i > 0 && h("span", { class: "fact__dot", "aria-hidden": "true" }, " · "),
+        h("span", { class: "fact__line" }, sunny(line)),
+      ])));
+    const names = plant.stageNames || ["Seed", "Growing", "Thriving"];
+    const stages = plant.stages.length > 0 && h("div", { class: "back__grows" },
+      h("p", { class: "back__lab" }, "HOW IT GROWS"),
+      h("ol", { class: "stages" }, plant.stages.map((s, i) => [
+        i > 0 && h("li", { class: "stages__arrow", "aria-hidden": "true" }, "→"),
+        h("li", {}, h("img", { src: art(s), alt: "", width: 32, height: 32 }), h("span", {}, names[i])),
+      ])));
+    const keep = (v) => v && !repeatsCard(v, lines);
+    const watch = !sealed && plant.watch && keep(plant.watch[1]) && h("div", { class: "watch" },
+      h("img", { src: art(plant.watch[0]), alt: "", width: 32, height: 32 }),
+      h("p", {}, h("b", {}, "WATCH FOR"), plant.watch[1]));
+    const careRows = sealed ? [] : [["sun", "SUN", plant.sun], ["water", "WATER", plant.water], ["space", "SPACE", plant.space], ["tip", "TIP", plant.tip]]
+      .filter(([, , v]) => keep(v));
+    const care = careRows.length > 0 && h("div", { class: "back__care" },
+      h("p", { class: "back__lab" }, "CARE"),
+      h("dl", { class: "care" }, careRows.map(([ic, label, v]) => h("div", {}, h("dt", {}, icon(ic), label), h("dd", {}, v)))));
+    const moreRows = sealed ? [] : [["seed", "PLANT", plant.plant], ["basket", "HARVEST", plant.harvest], ["soil", "SOIL", plant.soil], ["pals", "GOOD NEXT TO", plant.pals]]
+      .filter(([, , v]) => keep(v));
+    const more = moreRows.length > 0 && h("dl", { class: "more" },
+      moreRows.map(([ic, label, v]) => h("div", {}, h("dt", {}, icon(ic), label), h("dd", {}, v))));
+    const left = (stages || watch) && h("div", { class: "back__col" }, stages, watch);
+    return h("div", {
+      class: `back${note ? " back--note" : ""}`, role: "group", tabindex: -1,
+      "aria-label": `${plant.name}, back of the ${note ? "note" : "packet"}`, "data-plant": plant.id,
+      style: `--c: ${plant.color}`,
+    },
+    h("div", { class: "back__top" },
+      h("div", { class: "back__heading" },
+        h("p", { class: "back__kick" }, `LEVEL ${plant.level} · ${helper.toUpperCase()}'S GARDEN`),
+        h("h3", { class: "back__name" }, h("span", { class: "back__swatch", "aria-hidden": "true" }), plant.name.toUpperCase())),
+      h("button", { type: "button", class: "back__flip", "data-flipback": "", onclick: () => turnBack() }, "↻ Flip back")),
+    fact,
+    (left || care) && h("div", { class: "back__body" }, left, care),
+    more);
+  }
+
+  // ---- turning a packet over: lift it to the middle edge-on, swap in the
+  // back (also edge-on, so the swap is invisible), turn the back in. ----
+  let inspecting = null; // { btn, plant, layer, back, clone, dx, dy, closing }
+  const FALLBACK_MS = 700; // every wait has a timeout, even if an animation is cancelled
+
+  function settle(anim, then) {
+    let done = false;
+    const run = () => { if (!done) { done = true; clearTimeout(timer); then(); } };
+    const timer = setTimeout(run, FALLBACK_MS);
+    anim.finished.then(run, run);
+  }
+
+  function turnOver(btn, plant) {
+    clearTimeout(toastTimer);
+    toast.hidden = true;
+    if (inspecting || panel.hidden) return;
+    // Turning over a page of the level's book is looking it up (Level 2).
+    if (bookIds.has(plant.id) && lockedIds.has(plant.id)) dispatch({ type: "check", id: plant.id });
+    const pop = news.has(plant.id) || (bookIds.has(plant.id) && lockedIds.has(plant.id));
+    news.delete(plant.id);
+    btn.classList.remove("pk--fresh", "pk--found");
+    const back = backFor(plant, pop);
+    const dim = h("div", { class: "inspect__dim", onclick: () => turnBack() });
+    const layer = h("div", { class: "inspect" }, dim, back);
+    head.inert = true;
+    screen.inert = true;
+    panel.append(layer);
+    const pr = panel.getBoundingClientRect();
+    const br = btn.getBoundingClientRect();
+    const state = { btn, plant, layer, back, clone: null, dx: 0, dy: 0, closing: false };
+    inspecting = state;
+    const focusBack = () => back.querySelector("[data-flipback]")?.focus({ preventScroll: true });
+    if (calm() || !back.animate) {
+      layer.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+      focusBack();
+      return;
+    }
+    const clone = btn.cloneNode(true);
+    clone.className = `${btn.className} pk--clone`;
+    clone.removeAttribute("aria-label");
+    clone.setAttribute("aria-hidden", "true");
+    clone.tabIndex = -1;
+    Object.assign(clone.style, { left: `${br.left - pr.left}px`, top: `${br.top - pr.top}px`, width: `${br.width}px`, height: `${br.height}px` });
+    layer.append(clone);
+    btn.style.visibility = "hidden";
+    state.clone = clone;
+    state.dx = pr.width / 2 - (br.left - pr.left + br.width / 2);
+    state.dy = pr.height / 2 - (br.top - pr.top + br.height / 2);
+    back.style.visibility = "hidden";
+    dim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 440, fill: "both" });
+    const lift = clone.animate([
+      { transform: "translate(0, 0) perspective(900px) rotateY(0deg) scale(1)" },
+      { transform: `translate(${state.dx}px, ${state.dy}px) perspective(900px) rotateY(90deg) scale(1.4)` },
+    ], { duration: 220, easing: "cubic-bezier(.4, 0, 1, 1)", fill: "forwards" });
+    settle(lift, () => {
+      if (inspecting !== state || state.closing) return;
+      clone.style.visibility = "hidden";
+      back.style.visibility = "";
+      back.animate([
+        { transform: "perspective(1400px) rotateY(-90deg) scale(.8)" },
+        { transform: "perspective(1400px) rotateY(0deg) scale(1)" },
+      ], { duration: 220, easing: "cubic-bezier(0, 0, .2, 1)" });
+      focusBack();
+    });
+  }
+
+  // Back onto the shelf (`now`: no animation, e.g. the book is closing).
+  function turnBack(now = false) {
+    const st = inspecting;
+    if (!st || (st.closing && !now)) return;
+    st.closing = true;
+    const done = () => {
+      if (inspecting !== st) return;
+      inspecting = null;
+      st.layer.remove();
+      st.btn.style.visibility = "";
+      head.inert = false;
+      screen.inert = false;
+      if (!panel.hidden) st.btn.focus({ preventScroll: true });
+    };
+    if (now || calm() || !st.clone) {
+      if (now || !st.layer.animate) { done(); return; }
+      settle(st.layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: "forwards" }), done);
+      return;
+    }
+    st.layer.querySelector(".inspect__dim").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 440, fill: "forwards" });
+    const away = st.back.animate([
+      { transform: "perspective(1400px) rotateY(0deg) scale(1)" },
+      { transform: "perspective(1400px) rotateY(-90deg) scale(.8)" },
+    ], { duration: 200, easing: "cubic-bezier(.4, 0, 1, 1)", fill: "forwards" });
+    settle(away, () => {
+      if (inspecting !== st) return;
+      st.back.style.visibility = "hidden";
+      st.clone.style.visibility = "visible";
+      settle(st.clone.animate([
+        { transform: `translate(${st.dx}px, ${st.dy}px) perspective(900px) rotateY(90deg) scale(1.4)` },
+        { transform: "translate(0, 0) perspective(900px) rotateY(0deg) scale(1)" },
+      ], { duration: 220, easing: "cubic-bezier(0, 0, .2, 1)", fill: "forwards" }), done);
+    });
+  }
+
+  // ---- pages and opening ----
+  // `fromTab`: the player switched pages inside the book, so focus stays on
+  // the tabs. `quiet`: set up only (at mount), so a page's show() (the log's
+  // check) never runs until the player has actually opened the book.
   function showSheet(id, fromTab, quiet = false) {
     const sheet = sheets.find((s) => s.id === id) || sheets[0];
     current = sheet.id;
     for (const s of sheets) s.el.hidden = s !== sheet;
     for (const tb of sheetTabs) tb.setAttribute("aria-pressed", String(tb.dataset.sheet === sheet.id));
-    status.textContent = multi ? ` · page ${sheets.indexOf(sheet) + 1}/${sheets.length}` : "";
-    panel.querySelector(".almanac__screen").scrollTop = 0;
-    if (sheet.id === "cards") cardsTab?.classList.remove("almanac__sheet-tab--news");
-    if (fromTab) {
-      const tb = sheetTabs.find((x) => x.dataset.sheet === sheet.id);
-      if (!panel.contains(document.activeElement) || !document.activeElement.matches(".almanac__flip")) tb?.focus({ preventScroll: true });
-    }
+    hint.textContent = sheet.hint;
+    screen.scrollTop = 0;
+    if (sheet.id === "shelf") shelfTab?.classList.remove("almanac__sheet-tab--news");
+    if (fromTab) sheetTabs.find((x) => x.dataset.sheet === sheet.id)?.focus({ preventScroll: true });
     if (!quiet) sheet.view?.show(getState());
   }
 
-  // open() toggles the book, always on its first page (the cover, else the cards).
-  function open() {
+  // open() toggles the book, always on its first page (the cover, else the shelf).
+  function openBook() {
     if (closing) finishHide(true);
     if (!panel.hidden) { hide(false); return; }
     panel.hidden = false;
@@ -197,10 +429,10 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     if (!dialog.open) dialog.showModal();
     dockAway(true);
     button.setAttribute("aria-expanded", "true");
-    button.classList.remove("tool--news"); // the book is open; the cards tab keeps its own dot
+    button.classList.remove("tool--news"); // the book is open; the packet and the shelf tab keep their own dots
     showSheet(first, false);
-    if (current !== "cards" || !searchable) close.focus({ preventScroll: true });
-    else (finePointer() ? input : (tabs.find((tb) => tb.dataset.page === shown?.id) || tabs[0])).focus({ preventScroll: true });
+    if (current === "shelf" && input && finePointer()) input.focus({ preventScroll: true });
+    else close.focus({ preventScroll: true });
   }
 
   // A short fade and shrink (none under reduced motion), then the book is put away.
@@ -217,31 +449,53 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, cards, pag
     closing = null;
     if (panel.hidden) return;
     const inside = panel.contains(document.activeElement);
+    turnBack(true);
     panel.hidden = true;
+    toast.hidden = true;
     dialog.classList.remove("almanac-dialog--closing");
     if (dialog.open) dialog.close();
     dockAway(false);
-    // A card unlocked on the cover but the cards page was never looked at: the book keeps the dot.
-    if (cardsTab?.classList.contains("almanac__sheet-tab--news")) button.classList.add("tool--news");
+    // A card unlocked on the cover but the shelf was never looked at: the book keeps the dot.
+    if (shelfTab?.classList.contains("almanac__sheet-tab--news")) button.classList.add("tool--news");
     button.setAttribute("aria-expanded", "false");
     if (returnFocus || inside) button.focus({ preventScroll: true });
   }
 
-  render(null, "");
+  function update(state) {
+    for (const b of buttons) {
+      const id = b.dataset.evidence;
+      if (!id) continue;
+      b.classList.toggle("pk--sealed", lockedIds.has(id) && !state.checks.includes(id));
+      b.classList.toggle("pk--fresh", news.has(id));
+    }
+  }
+
   showSheet(first, false, true);
+  update(getState());
   return {
-    open,
-    // A card just unlocked: mark the book (shut) and its cards tab, unless the cards are on screen.
-    markNews() {
-      if (!panel.hidden && current === "cards") return;
+    open: openBook,
+    // Cards just unlocked: dot their packets (and the book, if it's shut, and
+    // the shelf tab, if the shelf isn't showing). A card turned over right now
+    // pops on the packet's back instead.
+    markNews(ids = []) {
+      for (const id of ids) {
+        if (inspecting?.plant.id === id && !inspecting.closing) {
+          inspecting.back.querySelector(".fact")?.replaceWith(backFor(inspecting.plant, true).querySelector(".fact"));
+          continue;
+        }
+        news.add(id);
+      }
+      if (news.size === 0) return;
       if (panel.hidden) button.classList.add("tool--news");
-      if (multi) cardsTab.classList.add("almanac__sheet-tab--news");
+      if (multi && (panel.hidden || current !== "shelf")) shelfTab.classList.add("almanac__sheet-tab--news");
+      update(getState());
     },
     update(state) {
       // The reveal is about the garden: put the book away so it doesn't cover the outcome.
       if (state.phase === "reveal") hide(false, true);
+      update(state);
       for (const s of sheets) s.view?.update?.(state);
     },
-    destroy() { clearTimeout(closing); dialog.remove(); },
+    destroy() { clearTimeout(closing); clearTimeout(toastTimer); dialog.remove(); },
   };
 });

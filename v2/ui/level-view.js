@@ -6,9 +6,8 @@
 // placement vars. Level tools and step shortcuts share one document keydown
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
-import { h, announce, finePointer } from "./dom.js";
+import { h, announce } from "./dom.js";
 import { createRun, reduce, currentStep } from "../engine/level-runner.js";
-import { matchTyped, pickRedirect } from "../engine/matcher.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
 import { memoryVars } from "../mechanics/placement.js";
@@ -19,7 +18,6 @@ import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
 import { toolView, pageView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
 
-const DEFAULT_ICON = "seed-packet";
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
 const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: ALMANAC_SPRITE };
@@ -27,7 +25,9 @@ const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.
 
 // `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
 // ui/finished-garden.js) for a level whose props ask for them (Level 4).
-export function mountLevel(root, level, { onDone, onExit, name = "friend", earlier = [] }) {
+// `reached`: the highest level number the player has reached (the almanac's
+// seed shelf opens every packet up to it); defaults to this level.
+export function mountLevel(root, level, { onDone, onExit, name = "friend", earlier = [], reached = level.number }) {
   let state = createRun(level);
   const t = (text) => fill(text, { name, ...memoryVars(level, state.memory) });
   let said = level.greeting;
@@ -36,8 +36,6 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   let hint = null;
   let grown = null;
   let outcome = null;
-  let typedLast = false;
-  let redirects = 0;
   let focusKey = null; // phase|step|line last given focus; focus only moves when it changes
   let fresh = new Set(); // evidence ids unlocked by the last action (they pop once)
   let news = null; // what an unlock says through the live region
@@ -49,8 +47,6 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const meterText = h("span", { class: "meter__text" });
   const meterFill = h("div", { class: "meter__fill" });
   const beds = h("div", { class: "beds", style: `--beds: ${level.beds.length}` });
-  const plainPackets = level.evidence.every((e) => (e.icon || DEFAULT_ICON) === DEFAULT_ICON);
-  const packets = h("ul", { class: "packets", "aria-label": plainPackets ? "Seed packets" : "Labels and signs" });
   const toolbar = h("div", { class: "tools", role: "toolbar", "aria-label": "Tools" });
   // Decorative scene props come from the level data only (the sprite form;
   // the { from: "finished" } row is drawn by its own module).
@@ -118,7 +114,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       "aria-label": name, title: name,
     },
     h("img", { src: tool.id === "almanac" ? ALMANAC_SPRITE : tool.sprite, alt: "", width: 28, height: 28 }));
-    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, cards: packets, pages });
+    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, pages, reached });
     button.addEventListener("click", () => view.open());
     toolbar.append(button);
     tools.push({ id: `tool:${tool.id}`, key: tool.key, view });
@@ -189,7 +185,6 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     hint = null;
     const newStep = prev.stepIndex !== state.stepIndex;
     if (newStep) asked = null; // the "You:" echo belongs to the step that just ended
-    if (newStep || prev.phase !== state.phase) typedLast = false;
     const before = said;
     for (const fx of out.effects) {
       if (fx.type === "say") said = fx.text;
@@ -219,11 +214,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       // The beds the player may choose from glow until they pick one.
       for (const id of step.place.beds) beds.querySelector(`[data-bed="${id}"]`)?.classList.add("bed--target");
     }
-    packets.replaceChildren(...level.evidence.map(packet));
-    // A card that just unlocked marks the almanac button until the book is opened.
-    if (fresh.size > 0) {
-      almanacView?.markNews(); // unless the cards are on screen right now
-    }
+    // A card that just unlocked marks its packet (and the almanac button, while the book is shut).
+    if (fresh.size > 0) almanacView?.markNews([...fresh]);
     fresh = new Set();
     if (nudge && state.stepIndex > 0) dropNudge();
     for (const tl of tools) tl.view.update?.(state);
@@ -234,16 +226,6 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (grown) { celebrate(grown); grown = null; }
     talk.replaceChildren(...dockFor(step));
     placeFocus(keep);
-  }
-
-  // A packet shows its `locked` line (dashed, italic) until the player has checked it.
-  function packet(e) {
-    const locked = e.locked && !state.checks.includes(e.id);
-    const cls = ["packet", locked && "packet--locked", fresh.has(e.id) && "packet--fresh"].filter(Boolean).join(" ");
-    return h("li", { class: cls, "data-evidence": e.id },
-      h("img", { src: `./art/${e.icon || DEFAULT_ICON}.svg`, alt: "", width: 32, height: 32 }),
-      h("strong", {}, t(e.title)),
-      locked ? h("span", {}, t(e.locked)) : e.lines.map((line) => h("span", {}, t(line))));
   }
 
   function unlocked(id) {
@@ -266,8 +248,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (state.phase === "reveal") {
       if (isNew) { target = byFid("see"); speak = t(outcome); }
     } else if (isNew) {
-      if (typedLast && finePointer()) { target = byFid("input"); speak = t(said); }
-      else target = bubbleEl; // its text is read on focus, so no announce
+      target = bubbleEl; // its text is read on focus, so no announce
     } else {
       target = keep ? byFid(keep) : null;
     }
@@ -412,27 +393,11 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   function askControls(step) {
     const chip = (text, fid, onclick) => h("button", { class: "chip", "data-fid": fid, onclick }, t(text));
     const chips = [
-      chip(step.chip, "chip-0", () => { asked = step.chip; typedLast = false; dispatch({ type: "ask" }); }),
+      chip(step.chip, "chip-0", () => { asked = step.chip; dispatch({ type: "ask" }); }),
       ...(step.extraChips || []).map((c, i) =>
-        chip(c.text, `chip-${i + 1}`, () => { asked = c.text; typedLast = false; dispatch({ type: "chat", reply: c.reply }); })),
+        chip(c.text, `chip-${i + 1}`, () => { asked = c.text; dispatch({ type: "chat", reply: c.reply }); })),
     ];
-    const input = h("input", {
-      "aria-label": `Ask ${level.helper.name} something`, placeholder: "or type a question…",
-      maxlength: 140, autocomplete: "off", "data-fid": "input",
-    });
-    const form = h("form", {
-      class: "ask-form",
-      onsubmit: (e) => {
-        e.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-        asked = text;
-        typedLast = true;
-        if (matchTyped(step, text) === "ask") dispatch({ type: "ask" });
-        else dispatch({ type: "chat", reply: pickRedirect(level, redirects++) });
-      },
-    }, input, h("button", { class: "btn", type: "submit", "data-fid": "ask" }, "Ask"));
-    return [h("div", { class: "chips", role: "group", "aria-label": "Suggested questions" }, chips), form];
+    return [h("div", { class: "chips", role: "group", "aria-label": "Suggested questions" }, chips)];
   }
 
   function picks(kind, prompt, options, onPick) {

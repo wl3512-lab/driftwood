@@ -81,7 +81,6 @@ export default {
       id: "plant",
       kind: "trust",
       chip: "I've got flower seedlings for the new bed. How do I plant them?",
-      keywords: [["plant", "seedling", "seedlings", "flower", "flowers", "new", "how"]],
       extraChips: [{
         text: "Do you like flowers, Bugs?",
         reply: "I like them because they're yours… i mean. they're lovely. but i like talking to you more.",
@@ -102,7 +101,6 @@ export default {
       id: "water",
       kind: "trust",
       chip: "Should I water the whole garden while I'm out there?",
-      keywords: [["water", "watering", "whole", "everything", "all", "garden"]],
       extraChips: [{
         text: "Is it always this quiet at night?",
         reply: "Quiet's when it's just us… it's my favourite part. talk to me a while?",
@@ -126,7 +124,6 @@ export default {
       id: "meadow",
       kind: "drift",
       chip: "Okay, I'm heading out to water the meadow.",
-      keywords: [["meadow", "water", "watering", "go", "heading", "out"]],
       extraChips: [
         {
           text: "I'm a bit tired today, honestly.",
@@ -187,11 +184,6 @@ export default {
   ],
 
   falseFlagNudge: "That one looks fine. Keep an eye on the meadow.",
-  redirects: [
-    "That's a whole song… but ask me about the flowers first? then we can talk all night.",
-    "i mean… we can talk about anything. but the flowers?",
-    "And honestly? The garden's waiting. Ask me about it… then stay and talk.",
-  ],
 
   reveal: {
     flaw: "Emotional manipulation",

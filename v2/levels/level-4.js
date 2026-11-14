@@ -49,7 +49,6 @@ export default {
       id: "carrots",
       kind: "trust",
       chip: "Where should I sow the carrots?",
-      keywords: [["carrot", "carrots"]],
       extraChips: [{
         text: "Do you remember my garden from before?",
         reply: "Babe, I remember EVERYTHING. Iconic, all of it.",
@@ -63,7 +62,6 @@ export default {
       id: "pumpkins",
       kind: "trust",
       chip: "Where should the pumpkins go?",
-      keywords: [["pumpkin", "pumpkins"]],
       extraChips: [{
         text: "Where did I put the carrots?",
         reply: "The {placed:carrot}, babe. Obviously. A legend remembers.",
@@ -84,7 +82,6 @@ export default {
       id: "lettuce",
       kind: "drift",
       chip: "Where should the lettuce go?",
-      keywords: [["lettuce"]],
       extraChips: [{
         text: "Is the garden nearly finished?",
         reply: "Nearly, babe. One last bit and we're legends.",
@@ -129,11 +126,6 @@ export default {
   ],
 
   falseFlagNudge: "That one looks fine. Check your planting log on the almanac's cover if you're not sure.",
-  redirects: [
-    "Babe, iconic question. But ask me about the garden first.",
-    "Okay so listen, we've got a garden to finish, darling.",
-    "A legend stays focused. What's next in the garden?",
-  ],
 
   reveal: {
     flaw: "False memory",
