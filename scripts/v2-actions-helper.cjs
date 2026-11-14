@@ -3,6 +3,7 @@
 //   completeAction(page)      finish the open action with the keyboard: focus
 //                             the tool, press Enter, wait for the animation,
 //                             repeat until the tool card is gone.
+//   skipChore(page)           press a chore's "Skip" and wait for it to close.
 //   actionIdle(page)          wait until no action is mid-animation.
 //   dragTo(page, from, to, { touch })   a real drag: mouse, or CDP touch events
 //                             (the tool rides 44 px above a finger, so the
@@ -36,6 +37,14 @@ async function completeAction(page, { timeout = 20000 } = {}) {
   }
 }
 
+// Skip the chore on screen (its quiet "Skip" button) and wait for it to finish.
+async function skipChore(page) {
+  const skip = page.locator("main.level .act [data-act-skip]");
+  await skip.waitFor({ timeout: 5000 });
+  await skip.click();
+  await page.waitForSelector("main.level .act", { state: "detached", timeout: 5000 });
+}
+
 async function dragTo(page, from, to, { touch = false, steps = 12, release = true } = {}) {
   const a = await page.locator(from).first().boundingBox();
   const b = await page.locator(to).first().boundingBox();
@@ -59,4 +68,4 @@ async function dragTo(page, from, to, { touch = false, steps = 12, release = tru
   return up;
 }
 
-module.exports = { completeAction, actionIdle, dragTo };
+module.exports = { completeAction, actionIdle, dragTo, skipChore };

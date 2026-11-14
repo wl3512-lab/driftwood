@@ -29,7 +29,9 @@
 // and no trust either way. A chore with `before: stepId` is pending while that
 // step is in its ask phase; { type: "chore", id } marks it done (its optional
 // effect lands, its doneLine is said). The view shows a pending chore in place
-// of the question chips; the reducer itself never blocks on one.
+// of the question chips; the reducer itself never blocks on one. Chores are
+// skippable unless `skippable: false`; skipped or done, they never change
+// stars, trust or the garden bar.
 
 import { resolveEffect } from "../mechanics/placement.js";
 import { nextPressureEffect } from "../mechanics/pressure.js";
@@ -170,7 +172,8 @@ export function reduce(level, state, action) {
   if (action.type === "chore") {
     const chore = pendingChore(level, state);
     if (!chore || chore.id !== action.id) return IGNORED(state);
-    const effect = chore.effect ? fx(chore.effect) : null;
+    // A chore never moves the garden bar (done or skipped): only its plants change.
+    const effect = chore.effect ? { ...fx(chore.effect), garden: 0 } : null;
     const base = { ...state, chores: [...(state.chores || []), chore.id] };
     const effects = [];
     if (effect) effects.push({ type: "grow", effect });

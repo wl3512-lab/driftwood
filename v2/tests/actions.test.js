@@ -160,7 +160,7 @@ test("a chore's effect lands like any garden change", () => {
   const s = createRun(L);
   const out = reduce(L, s, { type: "chore", id: "c" });
   assert.equal(out.effects[0].type, "grow");
-  assert.equal(out.state.garden, 35);
+  assert.equal(out.state.garden, 30, "chores never move the garden bar");
   assert.ok(out.state.beds.tub.some((p) => p.plant === "mint"));
 });
 

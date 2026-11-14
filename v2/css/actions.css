@@ -53,6 +53,8 @@
 .act__steps .is-done { background: #5aa83a; }
 .act__steps .is-now { background: #f6c945; }
 .act__back { align-self: start; }
+/* A chore's Skip: a small link-sized button tucked in the card's top-right corner. */
+.act__skip { align-self: start; justify-self: end; min-height: 32px; padding: 3px 10px; font-size: 0.8rem; box-shadow: 2px 2px 0 var(--ink, #2b1d14); }
 
 /* ---------- the director (inside .scene, over the beds) ---------- */
 .act-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
@@ -131,6 +133,7 @@
   .act { grid-template-columns: auto minmax(0, 1fr); }
   .act__back { grid-column: 2; justify-self: start; min-height: 36px; padding: 4px 10px; }
   .act__back .kbd { display: none; }
+  .act__skip { grid-column: 2; grid-row: 1; justify-self: end; }
   .bubble--acting { display: none; }
 }
 

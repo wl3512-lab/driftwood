@@ -28,7 +28,8 @@ const DRAG_START = 5; // px before a press becomes a drag
 
 // plan: normalized actions. scene: the element the beds live in.
 // names: { bed(id), plant(id), list(targets) }. itemFor(action) → the tool's face.
-export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, title = null }) {
+// skippable: a chore's quiet "Skip" link, which finishes it at once with no animation.
+export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, title = null, skippable = false }) {
   const reduced = reducedMotion();
   const layer = h("div", { class: "act-layer", "aria-hidden": "true" });
   scene.append(layer);
@@ -101,6 +102,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
         plan.length > 1 && h("p", { class: "act__steps", "aria-hidden": "true" }, plan.map((_, i) => h("span", { class: i < ai ? "is-done" : i === ai ? "is-now" : "" })))),
       onCancel && ai === 0 && count === 0 && h("button", { class: "btn btn--off act__back", type: "button", "data-act-back": "", onclick: cancel },
         "Back", h("kbd", { class: "kbd", "aria-hidden": "true" }, "Esc")),
+      skippable && h("button", { class: "btn btn--off act__skip", type: "button", "data-act-skip": "", onclick: skip }, "Skip"),
       live].filter(Boolean));
   }
 
@@ -359,6 +361,13 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     over = true;
     cleanup();
     onDone();
+  }
+  // Skip a chore: the end state lands straight away, then the level carries on.
+  function skip() {
+    if (over) return;
+    busy = false;
+    layer.replaceChildren();
+    completeAll();
   }
   function cancel() {
     if (over) return;

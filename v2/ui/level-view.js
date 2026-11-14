@@ -259,10 +259,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     return face;
   }
   // Start the hands-on part of a choice; the choice itself is dispatched when it ends.
-  function act(action, plan, { title = null } = {}) {
+  function act(action, plan, { title = null, skippable = false } = {}) {
     const cancellable = action.type !== "chore";
     acting = runPlan({
-      plan, scene, names, itemFor, title: title && t(title),
+      plan, scene, names, itemFor, title: title && t(title), skippable,
       onDone: () => { acting = null; dispatch({ ...action, acted: true }); },
       onCancel: cancellable ? () => { acting = null; focusKey = null; render(); } : null,
     });
@@ -315,7 +315,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       const action = { type: "chore", id: chore.id };
       const out = reduce(level, state, action);
       const plan = planFor(level, state, action, out);
-      if (plan.length > 0) return act(action, plan, { title: chore.title });
+      if (plan.length > 0) return act(action, plan, { title: chore.title, skippable: chore.skippable !== false });
       return dispatch({ ...action, acted: true });
     }
     if (acting) {

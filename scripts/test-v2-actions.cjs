@@ -17,7 +17,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { completeAction, actionIdle, dragTo } = require("./v2-actions-helper.cjs");
+const { completeAction, actionIdle, dragTo, skipChore } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8766/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-actions");
@@ -120,6 +120,7 @@ async function weedChore(page, size, { shots = true } = {}) {
   assert.equal(await page.locator(".act__title").textContent(), "Chore");
   assert.match(await say(page), /weeds out of the East bed/);
   assert.equal(await page.locator(".act__back").count(), 0, "a chore can't be backed out of");
+  assert.equal(await page.locator(".act [data-act-skip]").count(), 1, "a chore can be skipped");
   assert.equal(await page.locator(".chip").count(), 0, "no questions until the chore is done");
   assert.equal(await page.locator(".act__spot").count(), 3);
   await page.waitForTimeout(400);
@@ -220,6 +221,26 @@ run("1512x830/keyboard", async (browser) => {
   assert.equal(await fields(page, "corner", "sunflower"), 1);
   assert.equal(await page.locator(".act").count(), 0);
   await page.waitForSelector('.chip[data-fid="chip-0"]');
+  return t;
+});
+
+// A skipped chore: gone at once, nothing animates, the score is untouched,
+// and the next question comes up.
+run("1512x830/skip-chore", async (browser) => {
+  const t = await open(browser, MAC);
+  const { page } = t;
+  await level(page, "level-1");
+  await press(page, MAC, '[data-fid="chip-0"]');
+  await press(page, MAC, '[data-fid="do"]');
+  await page.locator(".act__item").focus();
+  await page.keyboard.press("Enter"); // the planting, by keyboard; the chore opens right after
+  await page.waitForSelector('.act[data-kind="pick"] [data-act-skip]');
+  const g = await garden(page);
+  await skipChore(page);
+  assert.equal(await garden(page), g, "skipping never changes the garden bar");
+  assert.equal(await page.locator(".act__fx, .act-layer").count(), 0, "no animation left running");
+  await page.waitForSelector('.chip[data-fid="chip-0"]');
+  assert.match(await page.locator('.chip[data-fid="chip-0"]').textContent(), /water/i, "on to the next question");
   return t;
 });
 

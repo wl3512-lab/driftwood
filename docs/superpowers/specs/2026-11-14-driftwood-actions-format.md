@@ -88,7 +88,8 @@ chores: [
     title: "Chore",           // small kicker over the instruction
     actions: [ { kind: "pick", spot: "weed", target: { bed: "east", plant: "lettuce" }, count: 3,
                  say: "Pull the 3 weeds out of the East bed" } ],
-    effect: { ... },          // optional, lands like any garden effect
+    skippable: true,          // the default; false hides the Skip button
+    effect: { ... },          // optional: plants only, the garden bar never moves
     doneLine: "…",           // optional, the helper says it after. It replaces the
                               // helper's last line (e.g. a "my way" outcome), so
                               // most chores leave it out.
@@ -99,7 +100,8 @@ chores: [
 How chores behave:
 
 - A chore starts by itself once the helper's previous line has been shown, and the question chips wait until it's done.
-- A chore can't be backed out of.
+- A chore can't be backed out of, but it can be skipped. Every chore is `skippable: true` by default (set `skippable: false` to opt out); the card then shows a small "Skip" button in its top-right corner. Skipping finishes the chore at once: its end state lands with no animation and the level carries on to the next beat. Conversation steps (trust and drift) are never skippable.
+- Done or skipped, a chore never changes stars, trust or the garden bar. A chore `effect` may change plants, but its `garden` value is ignored.
 - A chore after the last step never runs (the level ends at the reveal), so there is no `at: "end"`.
 - In the engine, `pendingChore(level, state)` (in engine/level-runner.js) returns the chore that is due, and `{ type: "chore", id }` marks it done in `state.chores`. The reducer never blocks on a chore; the view does the gating.
 - Level 1 has one sample chore (`weeds`, before `water`).
@@ -142,5 +144,5 @@ How chores behave:
 
 - **Unit tests:** v2/tests/actions.test.js. It also checks every level's action lists and chores: known kinds, known beds, and `before` set to a real step.
 - **Existing browser flows:** scripts/test-mute.js sets `window.__dwAutoAct = true`, so every action finishes the moment it opens, through the runner's own commit path. The old flows keep passing while the actions still run.
-- **Hand-run flows:** set `window.__dwAutoAct = false` and use the helpers in scripts/v2-actions-helper.cjs: `completeAction(page)` for the keyboard, and `dragTo(page, from, to, { touch })` for a mouse or CDP touch drag.
+- **Hand-run flows:** set `window.__dwAutoAct = false` and use the helpers in scripts/v2-actions-helper.cjs: `completeAction(page)` for the keyboard, `skipChore(page)` to press a chore's Skip, and `dragTo(page, from, to, { touch })` for a mouse or CDP touch drag.
 - **The action flows themselves:** scripts/test-v2-actions.cjs.
