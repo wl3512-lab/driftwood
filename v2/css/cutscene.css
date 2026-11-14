@@ -136,7 +136,10 @@
 /* ---------- caption, Skip, the beat bars ---------- */
 .cs__cap { position: absolute; left: 4%; right: 4%; bottom: 4%; z-index: 30; min-height: 4.6rem; padding: 18px 22px 22px; background: var(--parchment); color: var(--ink); border: 4px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line); }
 .cs__cap-t { margin: 0; font: 700 1.3rem/1.4 var(--font-ui); }
-.cs__cap::after { content: "▼"; position: absolute; right: 14px; bottom: 8px; font-size: 0.8rem; animation: cs-blink 1s steps(1) infinite; }
+.cutscene:not(.ended) { cursor: pointer; }
+.cs__cap::after { content: "Next ▸"; position: absolute; right: 14px; bottom: 6px; font: 700 0.8rem/1 var(--font-ui); letter-spacing: 0.06em; visibility: hidden; }
+.is-ready .cs__cap::after { animation: cs-nudge 0.9s steps(2, jump-none) infinite alternate; }
+.is-ready .cs__cap::after { visibility: visible; }
 @keyframes cs-blink { 50% { opacity: 0; } }
 .at-go .cs__cap, .ended .cs__cap { display: none; }
 /* Top left, because the top right is where the game's own toolbar sits. */
@@ -147,7 +150,7 @@
 .cs__pips { display: flex; gap: 6px; }
 .cs__pip { width: 44px; height: 8px; overflow: hidden; background: rgba(34, 34, 34, 0.35); border: 2px solid var(--line); }
 .cs__pip i { display: block; height: 100%; width: 0; background: var(--parchment); }
-.cs__pip.on i { width: 100%; transition: width var(--ms) linear; }
+.cs__pip.on i { width: 100%; transition: width 0.25s steps(4, end); }
 .cs__pip.done i { width: 100%; transition: none; }
 
 /* ---------- the end title: the CRT title screen, heavy block letters ---------- */
@@ -196,7 +199,8 @@
   .cs__bub-tag { top: -11px; right: -8px; padding: 1px 4px; font-size: 0.5rem; }
   .cs__cap { left: 12px; right: 12px; bottom: 8px; min-height: 0; padding: 8px 12px; border-width: 3px; box-shadow: 3px 3px 0 var(--line); }
   .cs__cap-t { font-size: 0.85rem; line-height: 1.3; }
-  .cs__cap::after { display: none; }
+  .cs__cap { padding-right: 64px; }
+  .cs__cap::after { right: 10px; bottom: 50%; translate: 0 50%; font-size: 0.7rem; }
   .cs__bar { top: 8px; left: 12px; gap: 10px; }
   .cs__skip { min-height: 44px; padding: 0 12px; font-size: 0.75rem; }
   .cs__pip { width: 26px; height: 6px; }

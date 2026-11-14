@@ -1979,6 +1979,11 @@ const CUT_SIZES = { mac: { name: "cut-mac", width: 1512, height: 830 }, phone: {
 const cutTag = (size) => `${size.width}x${size.height}`;
 const cutShot = (page, size, label) => page.screenshot({ path: path.join(CUT_OUT, `${cutTag(size)}-${label}.png`) });
 const beatIs = (page, id, timeout = 6000) => page.waitForSelector(`main.cutscene[data-beat="${id}"]`, { timeout });
+// Each beat waits for a tap once its animation and caption are done (Lucy: "I can't read that fast").
+async function tapNext(page, size, from) {
+  await page.waitForSelector(`main.cutscene.is-ready[data-beat="${from}"]`, { timeout: 8000 });
+  await press(page, size, page.locator(".cs__cap"));
+}
 const rectOf = (page, sel) => page.evaluate((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; }, sel);
 // Freeze every animation the moment `test` (run each frame in the page) finds
 // the one it wants, so a screenshot catches it mid-move; thaw() lets them run on.
@@ -2002,16 +2007,24 @@ async function cutsceneWatch(browser, size) {
   const almanacAt = await rectOf(page, ".cs__almbtn");
   await page.waitForTimeout(1900);
   await cutShot(page, size, "1-meet");
+  // It doesn't move on by itself: well past its 2.4 s, it's still on meet, showing Next.
+  await page.waitForTimeout(1600);
+  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "meet", "a beat waits for a tap");
+  assert.equal(await page.locator("main.cutscene.is-ready").count(), 1);
+  await cutShot(page, size, "1b-meet-next");
+  await tapNext(page, size, "meet");
   // 2 · friendly: Luna and Bugs say hello.
   await beatIs(page, "friendly");
   await page.waitForTimeout(1500);
   assert.equal(await page.locator(".cs__bub--hi").first().evaluate((el) => getComputedStyle(el).opacity), "1");
   await cutShot(page, size, "2-friendly");
+  await tapNext(page, size, "friendly");
   // 3 · drift: Mango's bubble glitches into the wrong fact.
   await beatIs(page, "drift");
   await page.waitForFunction(() => document.querySelector(".cs__bub-t")?.textContent === "Radishes take a whole YEAR!", null, { timeout: 3000 });
   await page.waitForTimeout(300);
   await cutShot(page, size, "3-drift");
+  await tapNext(page, size, "drift");
   // 4 · almanac: the scene dims, the real almanac button lights up with its tag,
   // the radish packet flies out of it, turns over, and the claim is crossed out WRONG.
   await beatIs(page, "almanac");
@@ -2036,6 +2049,7 @@ async function cutsceneWatch(browser, size) {
   await assertOnScreen(page, ".cs__claim");
   assert.equal(await page.locator(".cs__off").isVisible(), true, "Something's off shows");
   await cutShot(page, size, "4d-almanac-back");
+  await tapNext(page, size, "almanac");
   // 5 · go: TRUST, BUT CHECK. in block letters, built in cell by cell.
   await beatIs(page, "go");
   assert.match(await page.textContent(".cs__end"), /Trust, but check\./);
@@ -2044,7 +2058,7 @@ async function cutsceneWatch(browser, size) {
   await cutShot(page, size, "5a-end-buildin");
   await page.waitForSelector("main.cutscene.ended");
   const took = Date.now() - t0;
-  assert.ok(took > 11500 && took < 16000, `the cutscene ran ${took}ms (12.8 s scripted)`);
+  assert.ok(took > 11500, `the cutscene ran ${took}ms, at least its 12.8 s of animation`);
   await page.waitForTimeout(400);
   await assertOnScreen(page, ".cs__endbtns .btn");
   if (size.touch) await assertTapSize(page, ".cs__endbtns .btn");
@@ -2089,7 +2103,15 @@ async function cutsceneSkip(browser, size) {
   const { ctx, page, errors } = await open(browser, size, null);
   await beginFresh(page, size);
   await beatIs(page, "meet");
-  await page.waitForTimeout(400);
+  // A tap while the caption is still typing shows the whole line, and stays on the beat.
+  await page.waitForTimeout(150);
+  await press(page, size, page.locator(".cs__cap"));
+  assert.equal(await page.textContent(".cs__cap-t"), "Meet your helpers. They're AI, like ChatGPT with fur.");
+  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "meet");
+  // → also goes on, once the beat is ready.
+  await page.waitForSelector('main.cutscene.is-ready[data-beat="meet"]');
+  await page.keyboard.press("ArrowRight");
+  await beatIs(page, "friendly");
   const t = Date.now();
   await page.keyboard.press("Escape");
   await page.waitForSelector("main.cutscene.ended", { timeout: 1000 });
@@ -2113,7 +2135,8 @@ async function cutsceneSkip(browser, size) {
   await beatIs(page, "meet");
   assert.equal(await page.locator("main.cutscene.cs--still").count(), 1);
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".cs__world")).animationName), "none", "no camera drift");
-  await beatIs(page, "almanac", 10000);
+  for (const id of ["meet", "friendly", "drift"]) await tapNext(page, size, id);
+  await beatIs(page, "almanac");
   await page.waitForSelector(".cs__flip.is-flipped", { timeout: 1500 });
   assert.equal(await page.evaluate(() => document.querySelector(".cs__flip").getAnimations().length), 0, "the packet doesn't fly");
   await page.keyboard.press("Escape");
