@@ -38,6 +38,22 @@ export function saveProgress(storage, progress) {
 }
 
 // The opening cutscene has played (to the end or skipped): don't force it again.
+// New game: a blank save, and the small per-player flags (the map's sun, the
+// almanac nudges) cleared too. The AI on/off switch (dw2_ai) is a setting, so it stays.
+export function startOver(storage) {
+  const fresh = emptyProgress();
+  try {
+    const drop = [];
+    for (let i = 0; i < (storage?.length || 0); i++) {
+      const k = storage.key(i);
+      if (k === "dw2_map_time" || k?.startsWith("dw2_almanac_hint_")) drop.push(k);
+    }
+    drop.forEach((k) => storage.removeItem(k));
+  } catch { /* storage blocked: the blank save below still holds in memory */ }
+  saveProgress(storage, fresh);
+  return fresh;
+}
+
 export function markIntroSeen(progress) {
   return progress.introSeen ? progress : { ...progress, introSeen: true };
 }

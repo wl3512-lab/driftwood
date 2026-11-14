@@ -2079,9 +2079,10 @@ async function cutsceneWatch(browser, size) {
   assert.match(await page.textContent('[data-level="level-1"]'), /Play/);
   assert.match(await page.textContent('[data-level="level-2"]'), /Locked/, "only Level 1 is open at the start");
   assert.equal(await page.getByRole("button", { name: "Your finished garden →" }).count(), 0, "no finished garden yet");
-  // A returning player goes splash → map, no cutscene.
+  // A returning player goes splash → Continue → map, no cutscene.
   await page.goto(BASE);
-  await press(page, size, page.locator("button", { hasText: "Begin" }));
+  assert.match(await page.textContent(".splash__save"), /Tester's garden · 0 of 5 levels/);
+  await press(page, size, page.getByRole("button", { name: "Continue ▸" }));
   await page.waitForSelector(".plots");
   assert.equal(await page.locator("main.cutscene").count(), 0);
   // Watch intro replays it, ending on Back to the garden.
@@ -2092,6 +2093,54 @@ async function cutsceneWatch(browser, size) {
   assert.equal(await page.getByRole("button", { name: "Start Level 1 ▸" }).count(), 0);
   await press(page, size, page.getByRole("button", { name: "Back to the garden ▸" }));
   await page.waitForSelector(".plots");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// A returning player can start a new game: New game asks once, "Keep my garden"
+// backs out, "Yes, start over" erases the save and goes to the name screen,
+// then the cutscene plays again.
+async function newGame(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, null);
+  fs.mkdirSync(CUT_OUT, { recursive: true });
+  await page.goto(BASE);
+  await page.evaluate(() => {
+    localStorage.setItem("dw2_progress", JSON.stringify({ name: "Lucy", introSeen: true, guide: [],
+      levels: { "level-1": { stars: 3, fooled: false }, "level-2": { stars: 2, fooled: true } } }));
+    localStorage.setItem("dw2_map_time", "2");
+    localStorage.setItem("dw2_almanac_hint_level-1", "1");
+    localStorage.setItem("dw2_ai", "0");
+  });
+  await page.reload();
+  await page.waitForSelector(".splash__save");
+  assert.match(await page.textContent(".splash__save"), /Lucy's garden · 2 of 5 levels/);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Continue ▸", "Continue has focus");
+  await assertOnScreen(page, ".splash__btns .btn");
+  await assertOnScreen(page, ".splash__save");
+  if (size.touch) await assertTapSize(page, ".splash__btns .btn");
+  await page.waitForTimeout(1500);
+  await cutShot(page, size, "splash-continue");
+  await press(page, size, page.getByRole("button", { name: "New game" }));
+  assert.match(await page.textContent(".splash__warn"), /Start over\?/);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Keep my garden", "the safe choice has focus");
+  await assertOnScreen(page, ".splash__btns .btn");
+  await cutShot(page, size, "splash-new-confirm");
+  await press(page, size, page.getByRole("button", { name: "Keep my garden" }));
+  assert.equal(await page.getByRole("button", { name: "Continue ▸" }).count(), 1);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("dw2_progress"))).name, "Lucy", "backing out keeps the save");
+  await press(page, size, page.getByRole("button", { name: "New game" }));
+  await press(page, size, page.getByRole("button", { name: "Yes, start over" }));
+  await page.waitForSelector("#player-name");
+  const st = await page.evaluate(() => ({ p: JSON.parse(localStorage.getItem("dw2_progress")), t: localStorage.getItem("dw2_map_time"), n: localStorage.getItem("dw2_almanac_hint_level-1"), ai: localStorage.getItem("dw2_ai") }));
+  assert.deepEqual(st.p.levels, {}, "levels erased");
+  assert.equal(st.p.name, "");
+  assert.equal(st.t, null, "the map's sun starts over");
+  assert.equal(st.n, null, "almanac nudges come back");
+  assert.equal(st.ai, "0", "the AI setting stays");
+  await page.fill("#player-name", "Tester");
+  await press(page, size, page.getByRole("button", { name: "Enter the garden" }));
+  await page.waitForSelector("main.cutscene[data-beat]");
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -2283,6 +2332,7 @@ async function aiLiveLevel1(browser, size) {
   runs.push(["card/level1-fooled-small", { name: "card-small", ...CARD_SIZES[2], touch: true }, cardLevel1Fooled]);
   runs.push(["card/no-kickers", { name: "card-mac", ...CARD_SIZES[0] }, noKickers]);
   runs.push(["cutscene/watch-mac", CUT_SIZES.mac, cutsceneWatch], ["cutscene/watch-phone", CUT_SIZES.phone, cutsceneWatch], ["cutscene/watch-small", CUT_SIZES.small, cutsceneWatch]);
+  runs.push(["start/new-game-mac", CUT_SIZES.mac, newGame], ["start/new-game-phone", CUT_SIZES.phone, newGame], ["start/new-game-small", CUT_SIZES.small, newGame]);
   runs.push(["cutscene/skip-escape", SIZES[0], cutsceneSkip], ["cutscene/block-titles", { name: "card-mac", ...CARD_SIZES[0] }, blockTitles]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   runs.push(["ai/live-level1", MAC, aiLiveLevel1], ["ai/live-level1-phone", SIZES[1], aiLiveLevel1]);
