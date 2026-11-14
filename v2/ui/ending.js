@@ -111,7 +111,6 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
         h("p", { class: "map__sub" }, "Five plots, five helpers, one finished garden."),
         h("ol", { class: "ending__plots" }, played.map(plotCard))),
       h("section", { class: "crt ending__guide", "aria-labelledby": "ending-guide" },
-        h("p", { class: "crt__kicker" }, "// SYSTEM NOTES //"),
         h("h2", { class: "crt__title crt__title--small", id: "ending-guide" }, "AI FIELD GUIDE"),
         h("p", { class: "crt__line ending__score" }, `You caught ${caught} of ${map.length} · ★ ${stars}/${map.length * 3}`),
         h("ul", { class: "guide__cards ending__cards" }, played.map(guideCard)),

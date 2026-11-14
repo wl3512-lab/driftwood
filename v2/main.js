@@ -52,7 +52,8 @@ const go = {
   },
   // The last level's reveal continues to the ending once every level is done.
   reveal: (id, state) => renderReveal(root, LEVELS[id], state, {
-    onContinue: id === MAP.at(-1).id && finished() ? go.ending : go.map, name: progress.name || "friend" }),
+    onContinue: id === MAP.at(-1).id && finished() ? go.ending : go.map, name: progress.name || "friend",
+    guide: progress.guide, order: MAP.map((m) => m.id) }),
   ending: () => (finished()
     ? renderEnding(root, { progress, map: MAP, levels: LEVELS, onBack: go.map, name: progress.name || "friend" })
     : go.map()),

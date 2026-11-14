@@ -5,7 +5,6 @@ import { h, focusFirst, finePointer } from "./dom.js";
 export function renderSplash(root, { onBegin }) {
   root.replaceChildren(
     h("main", { class: "crt splash" },
-      h("p", { class: "crt__kicker" }, "// EVERY SYSTEM LEARNS //"),
       h("h1", { class: "crt__title" }, "DRIFTWOOD"),
       h("img", { class: "crt__sprite", src: "../icons/parrot.svg", alt: "", width: 80, height: 112 }),
       h("p", { class: "crt__line" }, "A short game about the AI helpers we trust."),

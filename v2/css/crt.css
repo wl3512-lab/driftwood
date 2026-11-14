@@ -1,4 +1,4 @@
-/* The dark CRT world: splash, intro, reveal, field guide.
+/* The dark CRT world: splash, intro, field guide, the ending's guide.
    This is "the system underneath" the cozy garden. */
 .crt {
   position: relative;
@@ -47,33 +47,6 @@
   border: 2px solid var(--phosphor);
   border-radius: 2px;
 }
-
-.crt.reveal { align-items: stretch; text-align: left; }
-.reveal__col { width: min(38rem, 100%); margin: 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.9rem; }
-.reveal__top { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.reveal__top .crt__kicker { margin: 0; }
-.reveal__flaw {
-  margin: 0;
-  font-size: clamp(2rem, 7vw, 3.6rem);
-  line-height: 1.05;
-  letter-spacing: 0.08em;
-  color: var(--phosphor);
-  text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
-}
-.reveal__flaw:focus { outline: none; }
-.reveal__gloss { margin: -0.5rem 0 0; font-size: 1.05rem; line-height: 1.4; color: var(--crt-text); opacity: 0.8; }
-.reveal__rows { width: 100%; margin: 0.3rem 0 0; padding: 0.2rem 0 0; border-top: 1px solid rgba(105, 240, 174, 0.25); }
-.reveal__row { display: grid; grid-template-columns: 8.5rem 1fr; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid rgba(105, 240, 174, 0.25); }
-.reveal__label { padding-top: 0.15rem; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
-.reveal__text { margin: 0; font-size: 1rem; line-height: 1.45; color: var(--crt-text); }
-.reveal__row:last-child .reveal__text { color: var(--phosphor-light); }
-@media (max-width: 560px) { .reveal__row { grid-template-columns: 1fr; gap: 0.25rem; } }
-.reveal__handoff { width: 100%; display: flex; align-items: flex-start; gap: 0.75rem; }
-.reveal__handoff-pet { width: 2.75rem; height: 2.75rem; flex: none; image-rendering: pixelated; }
-.reveal__handoff-line { margin: 0; padding: 0.6rem 0.85rem; border: 2px solid var(--phosphor); border-radius: 0.6rem; color: var(--phosphor-light); font-size: 0.95rem; line-height: 1.45; }
-.reveal__handoff-name { display: block; margin-bottom: 0.2rem; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
-.reveal__stars { margin: 0; font-size: 1.4rem; letter-spacing: 0.15em; color: var(--gold); }
-.reveal__go { margin-top: 0.3rem; }
 
 .guide__cards {
   list-style: none;

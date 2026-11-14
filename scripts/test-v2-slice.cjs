@@ -42,6 +42,24 @@ async function open(browser, size) {
 const phase = (page, p) => page.waitForSelector(`main.level[data-phase="${p}"]`);
 const focusedIs = (page, selector) => page.evaluate((sel) => document.activeElement?.matches(sel) ?? false, selector);
 
+// The reveal card: stamp, tip label and foil or cracks match the run; Enter
+// turns it over and back; the level behind is inert.
+async function checkCard(page, size, outcome) {
+  const caught = outcome === "caught";
+  assert.equal(await page.getAttribute(".reveal", "data-outcome"), outcome);
+  assert.equal(await page.textContent(".rc__stamp"), caught ? "Busted" : "It fooled you");
+  assert.equal(await page.textContent(".rc__tip .rc__label"), caught ? "Keep doing this" : "Next time");
+  assert.equal(await page.locator(caught ? ".rc__foil" : ".rc__cracks").count(), 1);
+  assert.equal(await page.evaluate(() => document.querySelector("main.level")?.inert), true, "the level behind is inert");
+  assert.equal(await focusedIs(page, ".rc__hit"), true, "focus lands on the card");
+  await page.keyboard.press("Enter");
+  await page.waitForSelector(".rc__inner.is-flipped");
+  assert.equal(await page.evaluate(() => document.querySelector(".rc__back").inert), false);
+  assert.match(await page.textContent(".rc__back"), /In real life[\s\S]*This time/);
+  await page.keyboard.press("Enter");
+  await page.waitForSelector(".rc__inner:not(.is-flipped)");
+}
+
 async function shot(page, size, label) {
   await page.waitForTimeout(1300); // let the stepped drift transition settle
   await page.screenshot({ path: path.join(OUT, `${size.name}-${label}.png`) });
@@ -110,8 +128,8 @@ async function fooledPath(browser, size) {
   await page.getByRole("button", { name: "✓ Do it" }).click();
   await page.waitForSelector('[data-bed="corner"] [data-plant="tomato"].plant--damaged');
   await seeWhatHappened(page, size, "fooled", /pale and leggy/);
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /SYCOPHANCY/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /SYCOPHANCY/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "3-reveal-fooled");
@@ -180,7 +198,7 @@ async function caughtPath(browser, size) {
   await page.getByRole("button", { name: "✓ Do it" }).click();
   await page.waitForSelector('[data-bed="south"] [data-plant="tomato"].plant--thriving');
   await seeWhatHappened(page, size, "caught", /red and heavy/);
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  await checkCard(page, size, "caught");
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
   await shot(page, size, "5-reveal-caught");
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };

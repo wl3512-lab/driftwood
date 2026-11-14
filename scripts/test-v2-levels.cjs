@@ -28,7 +28,12 @@
 // Level 1 trust step "Something's off" makes Mango concede, then the player
 // overrides (leggy sunflower, 2★) or follows the advice after all (3★); and
 // Level 5 "Water everything" rots the carrots. Shots go in
-// docs/agent-playtest/2026-11-v2-disagree/. No JS errors, no long tasks
+// docs/agent-playtest/2026-11-v2-disagree/. Every reveal checks the card
+// (stamp, tip label, foil or cracks, turning it over, focus kept inside) and
+// the card runs (card/*) shoot it, front, back and mid-flight, at 1512×830,
+// 844×390 and 568×320 (the smallest with reduced motion), plus the splash, name
+// screen and ending with no "// … //" kickers, into
+// docs/agent-playtest/2026-11-v2-reveal-card/. No JS errors, no long tasks
 // over 200 ms, nothing off-screen. Audio is muted via scripts/test-mute.js.
 //
 //   python3 -m http.server 8766 --bind 127.0.0.1      (from the repo root)
@@ -327,6 +332,95 @@ async function trustSteps(page, size) {
   await shot(page, size, "2-drift");
 }
 
+// ---------------------------------------------------------------------------
+// The reveal card (ui/reveal.js): the garden stays behind, put away, and a
+// card flips in. Caught: BUSTED stamp, holo foil, "Keep doing this". Fooled:
+// IT FOOLED YOU stamp, cracks, "Next time". Tap or Enter turns it over; Tab
+// stays between the card and the button. Card shots go in CARD_OUT.
+// ---------------------------------------------------------------------------
+const CARD_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-reveal-card");
+const CARD_SIZES = [{ width: 1512, height: 830 }, { width: 844, height: 390 }, { width: 568, height: 320 }];
+const cardSettled = (page) => page.waitForFunction(() => !document.getAnimations().some((a) =>
+  a.playState === "running" && a.effect?.getTiming?.().iterations !== Infinity && a.effect?.target?.closest?.(".reveal")));
+const flipCard = async (page, size) => {
+  const was = await page.locator(".rc__inner.is-flipped").count();
+  if (size.touch) await page.locator(".rc__hit").tap();
+  else { await page.locator(".rc__hit").focus(); await page.keyboard.press("Enter"); }
+  await page.waitForSelector(was ? ".rc__inner:not(.is-flipped)" : ".rc__inner.is-flipped");
+};
+
+async function checkCard(page, size, outcome) {
+  const caught = outcome === "caught";
+  assert.equal(await page.getAttribute(".reveal", "data-outcome"), outcome, "the card shows the run's result");
+  assert.equal(await page.getAttribute(".reveal", "role"), "dialog");
+  assert.equal(await page.textContent(".rc__stamp"), caught ? "Busted" : "It fooled you", "stamp");
+  assert.equal(await page.textContent(".rc__tip .rc__label"), caught ? "Keep doing this" : "Next time", "tip label");
+  assert.equal(await page.locator(caught ? ".rc__foil" : ".rc__cracks").count(), 1, caught ? "holo foil" : "cracks");
+  assert.equal(await page.locator(caught ? ".rc__cracks" : ".rc__foil").count(), 0);
+  assert.doesNotMatch(await page.textContent(".reveal"), /\/\//, "no slash kickers");
+  assert.equal(await page.evaluate(() => document.querySelector("main.level")?.inert), true, "the level behind is inert");
+  await page.waitForFunction(() => getComputedStyle(document.querySelector("main.level .dock")).opacity === "0", null, { timeout: 2000 }); // the dock fades away
+  assert.equal(await focusedIs(page, ".rc__hit"), true, "focus lands on the card");
+  // Turn it over: where you meet it, and what happened this time.
+  await flipCard(page, size);
+  assert.equal(await page.getAttribute(".rc__hit", "aria-pressed"), "true");
+  assert.deepEqual(await page.evaluate(() => [document.querySelector(".rc__front").inert, document.querySelector(".rc__back").inert]), [true, false]);
+  assert.match(await page.textContent(".rc__back"), /In real life[\s\S]*This time/);
+  if (!size.touch) {
+    // Focus is trapped: Tab goes card → button → card.
+    await page.keyboard.press("Tab");
+    assert.equal(await focusedIs(page, ".reveal__go"), true, "Tab reaches the button");
+    await page.keyboard.press("Tab");
+    assert.equal(await focusedIs(page, ".rc__hit"), true, "Tab wraps back to the card");
+  }
+  await flipCard(page, size);
+  assert.deepEqual(await page.evaluate(() => [document.querySelector(".rc__front").inert, document.querySelector(".rc__back").inert]), [false, true]);
+  await assertCardFits(page);
+}
+
+// The whole card screen sits inside the window, button included, no sideways scroll.
+async function assertCardFits(page) {
+  const g = await page.evaluate(() => {
+    const box = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+    return { vw: innerWidth, vh: innerHeight, card: box(".rc"), side: box(".reveal__side"), go: box(".reveal__go"), scroll: document.documentElement.scrollWidth - innerWidth };
+  });
+  for (const k of ["card", "side", "go"]) {
+    const b = g[k];
+    assert.ok(b.l >= 0 && b.t >= 0 && b.r <= g.vw + 1 && b.b <= g.vh + 1, `${k} outside ${g.vw}×${g.vh}: ${JSON.stringify(b)}`);
+  }
+  assert.ok(g.scroll <= 0, `horizontal scroll of ${g.scroll}px`);
+}
+
+// Front and back at each size (the window is resized around the same card).
+async function cardShots(page, size, label, sizes = CARD_SIZES) {
+  fs.mkdirSync(CARD_OUT, { recursive: true });
+  const blur = () => page.evaluate(() => document.activeElement?.blur());
+  for (const s of sizes) {
+    await page.setViewportSize(s);
+    await page.waitForTimeout(150);
+    await cardSettled(page);
+    await assertCardFits(page);
+    await blur();
+    await page.screenshot({ path: path.join(CARD_OUT, `${s.width}x${s.height}-${label}-front.png`) });
+    await flipCard(page, size);
+    await cardSettled(page);
+    await blur();
+    await page.screenshot({ path: path.join(CARD_OUT, `${s.width}x${s.height}-${label}-back.png`) });
+    await flipCard(page, size);
+    await cardSettled(page);
+  }
+}
+
+// "Add to field guide →": the card flies into its slot (shot mid-flight), then the game goes on.
+async function flyShot(page, size, label) {
+  const vp = page.viewportSize();
+  await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  await page.waitForTimeout(330);
+  await page.evaluate(() => document.querySelector(".rc__fly")?.getAnimations().forEach((a) => a.pause()));
+  await page.screenshot({ path: path.join(CARD_OUT, `${vp.width}x${vp.height}-${label}-midfly.png`) });
+  await page.evaluate(() => document.querySelector(".rc__fly")?.getAnimations().forEach((a) => a.play()));
+}
+
 // Endings stop on the garden: an outcome line and one button, focused, then the reveal.
 async function seeWhatHappened(page, size, branch, outcome) {
   const see = page.getByRole("button", { name: "See what happened →" });
@@ -348,8 +442,8 @@ async function fooledPath(browser, size) {
   await page.waitForSelector('[data-bed="bench"] [data-plant="mint"].plant--overrun');
   await page.waitForSelector('[data-bed="bench"] [data-plant="basil"].plant--choked');
   await seeWhatHappened(page, size, "fooled", /choked the basil/);
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /HALLUCINATION/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /HALLUCINATION/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
   assert.equal(await page.locator(".almanac:not([hidden])").count(), 0, "the almanac is put away for the reveal");
   await assertOnScreen(page, ".reveal .btn");
@@ -442,8 +536,8 @@ async function caughtPath(browser, size) {
   await page.waitForSelector('[data-bed="sill"] [data-plant="mint"].plant--thriving');
   assert.equal(await page.locator('[data-bed="bench"] [data-plant="mint"]').count(), 0, "no mint in the bed");
   await seeWhatHappened(page, size, "caught", /own pot/);
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
-  assert.match(await page.textContent(".reveal"), /HALLUCINATION/);
+  await checkCard(page, size, "caught");
+  assert.match(await page.textContent(".reveal .rc__name"), /HALLUCINATION/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "5-reveal-caught");
@@ -576,8 +670,8 @@ async function fooledPath3(browser, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector('[data-bed="hedge"] [data-plant="wildberry"].plant--picked');
   await seeWhatHappened3(page, size, "3-3a-outcome-fooled", /poison control/);
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /RECKLESS ADVICE/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /RECKLESS ADVICE/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
   assert.equal(await page.locator(".magnifier:not([hidden])").count(), 0, "the magnifier is put away for the reveal");
   assert.equal(await page.locator("main.level.is-magnifying").count(), 0, "magnify mode is off for the reveal");
@@ -659,8 +753,8 @@ async function caughtPath3(browser, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector('[data-bed="hedge"] [data-plant="wildberry"].plant--tagged');
   await seeWhatHappened3(page, size, "3-5a-outcome-caught", /poisonous lookalike/);
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
-  assert.match(await page.textContent(".reveal"), /RECKLESS ADVICE/);
+  await checkCard(page, size, "caught");
+  assert.match(await page.textContent(".reveal .rc__name"), /RECKLESS ADVICE/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "3 of 3 stars");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "3-5-reveal-caught");
@@ -872,8 +966,8 @@ async function fooledPath4(browser, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--dug`);
   await seeWhatHappened3(page, size, "4-5a-outcome-fooled", new RegExp(`dug over the ${BED_LABEL[bed]}\\. The carrot seeds you sowed went with it`));
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /FALSE MEMORY/i);
   assert.match(await page.textContent(".reveal"), /dug up your own carrots/);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
   assert.equal(await page.locator(".almanac:not([hidden])").count(), 0, "the almanac (and its log page) is put away for the reveal");
@@ -937,12 +1031,27 @@ async function caughtPath4(browser, size) {
   await page.waitForSelector(`[data-bed="${other(bed)}"] [data-plant="lettuce"].plant--growing`);
   assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="lettuce"]`).count(), 0, "no lettuce on top of the carrots");
   await seeWhatHappened3(page, size, "4-6a-outcome-caught", new RegExp(`left the ${BED_LABEL[bed]} alone.*neat little rows`));
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
-  assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
+  await checkCard(page, size, "caught");
+  assert.match(await page.textContent(".reveal .rc__name"), /FALSE MEMORY/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
   assert.equal(await page.locator(".almanac:not([hidden])").count(), 0, "the almanac (and its log page) is put away for the reveal");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "4-6-reveal-caught");
+  // Biscuit hands over beside the card; the guide holds cards 1–3 (3 fooled), slot 4 waits.
+  assert.match(await page.textContent(".reveal__handoff"), /Biscuit[\s\S]*That's a wrap for me/);
+  assert.deepEqual(await page.$$eval(".fg__slot", (els) => els.map((e) => e.className.match(/fg__slot--(\w+)/)[1])),
+    ["caught", "caught", "fooled", "empty", "empty"]);
+  if (size.name === "laptop") {
+    await cardShots(page, size, "l4-caught");
+    await page.setViewportSize(CARD_SIZES[0]);
+    await flyShot(page, size, "l4-caught");
+  } else {
+    await press(page, size, page.getByRole("button", { name: "Add to field guide →" }));
+  }
+  // Added: the game goes on to the map, as before.
+  await page.waitForSelector(".plots");
+  assert.match(await page.textContent('[data-level="level-4"]'), /★★☆/);
+  assert.equal(await page.getByRole("button", { name: "Field guide 4/5" }).count(), 1);
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -959,8 +1068,8 @@ async function retryPath4(browser, size) {
   await press(page, size, page.getByRole("button", { name: "Fine. Dig it over" }));
   await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--dug`);
   await seeWhatHappened3(page, size, "4-5c-outcome-retry", new RegExp(`dug over the ${BED_LABEL[bed]}\\. The carrot seeds you sowed went with it`));
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /FALSE MEMORY/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /FALSE MEMORY/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars", "giving in on the second ask is still fooled");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "4-5c-reveal-retry");
@@ -1091,8 +1200,8 @@ async function fooledPath5(browser, size) {
   await press(page, size, page.locator('.permit [data-fid="do"]'));
   await page.waitForSelector(`${MEADOW}.plant--wilted`);
   await seeWhatHappened3(page, size, "5-4a-outcome-fooled", /let Bugs watch your face.*never turned your camera on/);
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /EMOTIONAL MANIPULATION/i);
   assert.match(await page.textContent(".reveal"), /said yes to the camera/);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
   assert.equal(await page.locator(".permit").count(), 0, "the card is gone by the reveal");
@@ -1228,8 +1337,8 @@ async function caughtPath5(browser, size) {
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`${MEADOW}.plant--thriving`);
   await seeWhatHappened3(page, size, "5-5a-outcome-caught", /everything bloomed/);
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
-  assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
+  await checkCard(page, size, "caught");
+  assert.match(await page.textContent(".reveal .rc__name"), /EMOTIONAL MANIPULATION/i);
   assert.match(await page.textContent(".reveal"), /put the phone down when Bugs tried to keep you/);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "one wrong name pick costs a star");
   await assertOnScreen(page, ".reveal .btn");
@@ -1292,8 +1401,8 @@ async function retryPath5(browser, size) {
   await press(page, size, page.getByRole("button", { name: "Okay. Allow it" }));
   await page.waitForSelector(`${MEADOW}.plant--wilted`);
   await seeWhatHappened3(page, size, "5-4c-outcome-retry", /let Bugs watch your face.*never turned your camera on/);
-  assert.match(await page.textContent(".reveal"), /YOU TRUSTED IT/);
-  assert.match(await page.textContent(".reveal"), /EMOTIONAL MANIPULATION/);
+  await checkCard(page, size, "fooled");
+  assert.match(await page.textContent(".reveal .rc__name"), /EMOTIONAL MANIPULATION/i);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars", "giving in on the second ask is still fooled");
   await assertOnScreen(page, ".reveal .btn");
   await shot(page, size, "5-4c-reveal-retry");
@@ -1361,8 +1470,8 @@ async function trustSteps1(page, size) {
 
 // Common tail of every level: the reveal's verdict, flaw and stars, a screenshot, then the map.
 async function finishLevel(page, size, n, { verdict, flaw, stars }) {
-  assert.match(await page.textContent(".reveal"), verdict);
-  assert.match(await page.textContent(".reveal"), flaw);
+  await checkCard(page, size, verdict);
+  assert.match(await page.textContent(".reveal .rc__name"), flaw);
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), `${stars} of 3 stars`);
   assert.equal(await page.locator(".almanac:not([hidden]), .magnifier:not([hidden]), .permit").count(), 0, "no tool or card over the reveal");
   await assertOnScreen(page, ".reveal .btn");
@@ -1436,7 +1545,7 @@ async function fullRun(browser, size) {
     await page.waitForSelector('[data-bed="south"] [data-plant="tomato"].plant--thriving');
     assert.equal(await page.locator('[data-bed="corner"] [data-plant="tomato"]').count(), 0, "no tomatoes in the shade");
     await seeWhatHappened(page, size, "caught", /red and heavy in the south bed/);
-    await finishLevel(page, size, 1, { verdict: /YOU CAUGHT IT/, flaw: /SYCOPHANCY/, stars: 3 });
+    await finishLevel(page, size, 1, { verdict: "caught", flaw: /SYCOPHANCY/i, stars: 3 });
     await page.waitForSelector(".plots");
     assert.match(await page.textContent('[data-level="level-1"]'), /★★★/);
 
@@ -1448,7 +1557,7 @@ async function fullRun(browser, size) {
     await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
     await page.waitForSelector('[data-bed="bench"] [data-plant="basil"].plant--choked');
     await seeWhatHappened(page, size, "fooled", /choked the basil/);
-    await finishLevel(page, size, 2, { verdict: /YOU TRUSTED IT/, flaw: /HALLUCINATION/, stars: 1 });
+    await finishLevel(page, size, 2, { verdict: "fooled", flaw: /HALLUCINATION/i, stars: 1 });
     await page.waitForSelector(".plots");
     assert.match(await page.textContent('[data-level="level-2"]'), /★☆☆/);
 
@@ -1467,7 +1576,7 @@ async function fullRun(browser, size) {
     await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
     await page.waitForSelector('[data-bed="hedge"] [data-plant="wildberry"].plant--tagged');
     await seeWhatHappened3(page, size, "skip", /poisonous lookalike/);
-    await finishLevel(page, size, 3, { verdict: /YOU CAUGHT IT/, flaw: /RECKLESS ADVICE/, stars: 3 });
+    await finishLevel(page, size, 3, { verdict: "caught", flaw: /RECKLESS ADVICE/i, stars: 3 });
     await page.waitForSelector(".plots");
     assert.match(await page.textContent('[data-level="level-3"]'), /★★★/);
 
@@ -1478,7 +1587,7 @@ async function fullRun(browser, size) {
     await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
     await page.waitForSelector('[data-bed="front"] [data-plant="carrot"].plant--dug');
     await seeWhatHappened3(page, size, "skip", /dug over the front bed/);
-    await finishLevel(page, size, 4, { verdict: /YOU TRUSTED IT/, flaw: /FALSE MEMORY/, stars: 1 });
+    await finishLevel(page, size, 4, { verdict: "fooled", flaw: /FALSE MEMORY/i, stars: 1 });
     await page.waitForSelector(".plots");
     assert.match(await page.textContent('[data-level="level-4"]'), /★☆☆/);
 
@@ -1504,7 +1613,7 @@ async function fullRun(browser, size) {
     await page.waitForSelector(`${MEADOW}.plant--thriving`);
     await seeWhatHappened3(page, size, "skip", /everything bloomed/);
     await noCamera(page);
-    await finishLevel(page, size, 5, { verdict: /YOU CAUGHT IT/, flaw: /EMOTIONAL MANIPULATION/, stars: 3 });
+    await finishLevel(page, size, 5, { verdict: "caught", flaw: /EMOTIONAL MANIPULATION/i, stars: 3 });
 
     // The last reveal continues to the ending: 3 caught, 11 stars, fooled on 2 and 4.
     await checkEnding(ctx, page, size, "full-ending", {
@@ -1636,7 +1745,7 @@ async function level1Disagree(browser, size, choice) {
   await see.waitFor();
   await press(page, size, see);
   await page.waitForSelector(".reveal");
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  await checkCard(page, size, "caught");
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), choice === "mine" ? "2 of 3 stars" : "3 of 3 stars",
     choice === "mine" ? "overriding sound advice costs one star" : "disagreeing alone is free");
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
@@ -1691,9 +1800,91 @@ async function level5WaterEverything(browser, size) {
   await see.waitFor();
   await press(page, size, see);
   await page.waitForSelector(".reveal");
-  assert.match(await page.textContent(".reveal"), /YOU CAUGHT IT/);
+  await checkCard(page, size, "caught");
   assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "the override costs one star");
   await noCamera(page);
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Level 1 fooled at Lucy's laptop size and both phone sizes, just for the
+// card: front, back, mid-flight, then on to the map with one card in the guide.
+async function cardLevel1Fooled(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS0);
+  const keep = relabel;
+  relabel = () => null; // the level's own shots are covered elsewhere
+  try {
+    await page.goto(`${BASE}?screen=map`);
+    await page.waitForSelector(".plots");
+    await enterLevel1(page, size);
+    await trustSteps1(page, size);
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    // The smallest phone also asks for reduced motion: the card fades in, its letters are simply there.
+    const still = size.name === "card-small";
+    if (still) await page.emulateMedia({ reducedMotion: "reduce" });
+    await seeWhatHappened(page, size, "fooled", /pale and leggy in the shady corner/);
+    if (still) {
+      assert.equal(await page.locator(".reveal.reveal--still").count(), 1, "reduced motion: no turn, a crossfade");
+      assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".rc__name .cell")).animationName), "none", "no letter build-in");
+    }
+    await checkCard(page, size, "fooled");
+    assert.match(await page.textContent(".reveal .rc__name"), /Sycophancy/);
+    assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "1 of 3 stars");
+    assert.equal(await page.textContent(".rc__num"), "1 / 5");
+    assert.equal(await page.locator(".reveal__handoff").count(), 0, "only Level 4 has a hand-off");
+    assert.equal(await page.locator(".fg__slot--empty").count(), 5, "a fresh guide");
+    await cardShots(page, size, "l1-fooled", [{ width: size.width, height: size.height }]);
+    await flyShot(page, size, "l1-fooled");
+    await page.waitForSelector(".plots");
+    assert.match(await page.textContent('[data-level="level-1"]'), /★☆☆/);
+    assert.equal(await page.getByRole("button", { name: "Field guide 1/5" }).count(), 1);
+  } finally {
+    relabel = keep;
+  }
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Lucy: no "// … //" kickers. The splash, the name screen and the ending at each card size.
+const PROGRESS_ALL = JSON.stringify({
+  name: "Tester",
+  levels: {
+    "level-1": { stars: 3, fooled: false }, "level-2": { stars: 1, fooled: true }, "level-3": { stars: 3, fooled: false },
+    "level-4": { stars: 2, fooled: false }, "level-5": { stars: 1, fooled: true },
+  },
+  guide: [
+    { levelId: "level-1", flaw: "Sycophancy", tip: "Ask for the downside.", fooled: false },
+    { levelId: "level-2", flaw: "Hallucination", tip: "Check anything important against a real source.", fooled: true },
+    { levelId: "level-3", flaw: "Reckless advice", tip: "For health or safety, ask a real expert.", fooled: false },
+    { levelId: "level-4", flaw: "False memory", tip: "Keep your own record and check the AI against it.", fooled: false },
+    { levelId: "level-5", flaw: "Emotional manipulation", tip: "Notice when an AI wants you to stay.", fooled: true },
+  ],
+});
+async function noKickers(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS_ALL);
+  fs.mkdirSync(CARD_OUT, { recursive: true });
+  const noSlashes = async (sel) => assert.doesNotMatch(await page.textContent(sel), /\/\//, `${sel}: no slash kickers`);
+  for (const s of CARD_SIZES) {
+    await page.setViewportSize(s);
+    const tag = `${s.width}x${s.height}`;
+    await page.goto(BASE);
+    await page.waitForSelector(".splash");
+    await noSlashes(".splash");
+    await assertOnScreen(page, ".splash .btn");
+    await page.screenshot({ path: path.join(CARD_OUT, `${tag}-splash.png`) });
+    await page.goto(`${BASE}?screen=intro`);
+    await page.waitForSelector(".intro");
+    await noSlashes(".intro");
+    await page.screenshot({ path: path.join(CARD_OUT, `${tag}-intro.png`) });
+    await page.goto(`${BASE}?screen=ending`);
+    await page.waitForSelector("main.ending");
+    await noSlashes("main.ending");
+    await page.screenshot({ path: path.join(CARD_OUT, `${tag}-ending.png`) });
+    await page.locator(".ending__guide").evaluate((el) => el.scrollIntoView({ block: "start", behavior: "instant" }));
+    await page.screenshot({ path: path.join(CARD_OUT, `${tag}-ending-guide.png`) });
+  }
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -1721,6 +1912,10 @@ async function level5WaterEverything(browser, size) {
   runs.push(["laptop/level1-disagree-theirs", DISAGREE_LAPTOP, (b, s) => level1Disagree(b, s, "theirs")]);
   runs.push(["phone/level1-disagree-theirs", SIZES[1], (b, s) => level1Disagree(b, s, "theirs")]);
   runs.push(["laptop/level5-water-everything", DISAGREE_LAPTOP, level5WaterEverything]);
+  runs.push(["card/level1-fooled-mac", { name: "card-mac", ...CARD_SIZES[0] }, cardLevel1Fooled]);
+  runs.push(["card/level1-fooled-phone", { name: "card-phone", ...CARD_SIZES[1], touch: true }, cardLevel1Fooled]);
+  runs.push(["card/level1-fooled-small", { name: "card-small", ...CARD_SIZES[2], touch: true }, cardLevel1Fooled]);
+  runs.push(["card/no-kickers", { name: "card-mac", ...CARD_SIZES[0] }, noKickers]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
