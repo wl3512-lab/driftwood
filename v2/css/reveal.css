@@ -11,9 +11,16 @@
 @media (prefers-reduced-motion: reduce) { .block-type--build .cell { animation: none; } }
 
 /* ---------- the level behind ---------- */
-.level--behind { filter: blur(2px) saturate(0.8); }
-.level--behind-fooled { filter: blur(2px) saturate(0.35) brightness(0.9); }
-.level--behind .dock { opacity: 0; transition: opacity 0.3s linear; }
+.level--behind { filter: saturate(0.9) brightness(0.92); }
+.level--behind-fooled { filter: saturate(0.3) brightness(0.8) contrast(0.95); }
+.level--behind .dock,
+.level--behind .scene__top,
+.level--behind .tools { opacity: 0; transition: opacity 0.3s linear; }
+/* Phones held sideways put the dock in a side column: give its space back to the garden. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .level.level--behind { grid-template-columns: minmax(0, 1fr); }
+  .level.level--behind .dock { display: none; }
+}
 
 /* ---------- overlay + sizes ---------- */
 .reveal {
@@ -28,7 +35,24 @@
   --fs-num: 12px; --fs-gloss: 13px; --fs-tip: 12.5px; --fs-lab: 11px; --fs-back: 15px; --fs-back2: 13px;
   --bw: 178px; --bh: 146px; --gap: 28px; --fs-bub: 12.5px; --bubPet: 38px; --btnH: 44px; --fs-btn: 0.85rem;
 }
-.reveal__dim { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 70% at 45% 50%, rgba(28, 20, 10, 0.5), rgba(28, 20, 10, 0.72)); }
+/* The garden stays crisp behind the card: a vignette at the edges, light behind the card. */
+.reveal__dim { position: absolute; inset: 0; background: radial-gradient(ellipse 62% 72% at 40% 50%, rgba(28, 20, 10, 0.12), rgba(28, 20, 10, 0.62) 100%); }
+.reveal__dim::before {
+  content: ""; position: absolute; left: 40%; top: 50%; width: 170vmax; height: 170vmax; transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(from 0deg, rgba(255, 214, 120, 0.2) 0deg 7deg, rgba(255, 214, 120, 0) 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 0 12%, transparent 34%); mask: radial-gradient(circle, #000 0 12%, transparent 34%);
+  opacity: 0; animation: reveal-rays 0.9s 0.35s ease-out forwards;
+}
+.reveal__dim::after {
+  content: ""; position: absolute; left: 40%; top: 50%; width: 70vmin; height: 70vmin; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 228, 160, 0.45), rgba(255, 228, 160, 0) 65%);
+  opacity: 0; animation: reveal-rays 0.9s 0.35s ease-out forwards;
+}
+.reveal--fooled .reveal__dim { background: radial-gradient(ellipse 62% 72% at 40% 50%, rgba(30, 36, 44, 0.22), rgba(20, 24, 30, 0.7) 100%); }
+.reveal--fooled .reveal__dim::before { display: none; }
+.reveal--fooled .reveal__dim::after { background: radial-gradient(circle, rgba(190, 205, 220, 0.25), rgba(190, 205, 220, 0) 65%); }
+@keyframes reveal-rays { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .reveal__dim::before, .reveal__dim::after { animation: none; opacity: 1; } }
 .reveal__stage {
   position: absolute; left: 50%; top: 50%;
   display: flex; align-items: center; gap: var(--gap);
