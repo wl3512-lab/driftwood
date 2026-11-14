@@ -4,6 +4,7 @@ import { h, focusFirst, announce } from "./dom.js";
 import { starText, gardenTitle } from "./map.js";
 import { blockText } from "./block-type.js";
 import { finishedPlot } from "./finished-garden.js";
+import { mountWorld, BED_X } from "./world.js";
 
 const CAUGHT = "✓";
 const FOOLED = "✗";
@@ -31,7 +32,7 @@ export function shareText(progress, map, levels, url) {
   const caught = played.filter((e) => !wasFooled(e)).length;
   const lines = played.map((e) => {
     const fooled = wasFooled(e);
-    const tip = e.card?.tip || e.level.reveal.tip;
+    const tip = e.level.reveal.tip || e.card?.tip;
     return `${fooled ? FOOLED : CAUGHT} ${e.level.reveal.flaw}${fooled ? " (fooled me)" : ""}: ${tip}`;
   });
   return [
@@ -49,15 +50,19 @@ export function shareUrl(href) {
   try { return new URL("./", href).href; } catch { return href; }
 }
 
-function plotCard(entry) {
+// One finished bed on the dawn path: a stake (name, helper, stars), the crop
+// it grew, and the helper standing in front.
+function plotCard(entry, i) {
   const plot = finishedPlot(entry.level, entry.record);
   const stars = entry.record.stars;
-  return h("li", { class: `ending__plot ${plot?.caught ? "ending__plot--caught" : "ending__plot--fooled"}` },
-    plot ? h("img", { class: "ending__plant", src: plot.src, alt: plot.alt, width: 64, height: 64 }) : null,
-    h("img", { class: "ending__helper", src: entry.meta.sprite, alt: "", width: 40, height: 40 }),
-    h("p", { class: "ending__plot-title" }, `${entry.meta.number}. ${entry.meta.title}`),
-    h("p", { class: "ending__plot-helper" }, `with ${entry.meta.helper}`),
-    h("p", { class: "ending__plot-stars", role: "img", "aria-label": `${stars} of 3 stars` }, starText(stars)));
+  return h("li", { class: `ending__plot ${plot?.caught ? "ending__plot--caught" : "ending__plot--fooled"}`, style: `--x:${BED_X[i] * 100}%` },
+    h("div", { class: "ending__stake" },
+      h("p", { class: "ending__plot-title" }, `${entry.meta.number}. ${entry.meta.title}`),
+      h("p", { class: "ending__plot-helper" }, `with ${entry.meta.helper}`),
+      h("p", { class: "ending__plot-stars", role: "img", "aria-label": `${stars} of 3 stars` }, starText(stars))),
+    h("span", { class: "ending__bed" },
+      plot ? h("img", { class: "ending__plant", src: plot.src, alt: plot.alt, width: 64, height: 64 }) : null),
+    h("img", { class: "ending__helper", src: entry.meta.sprite, alt: "", width: 40, height: 40 }));
 }
 
 function guideCard(entry) {
@@ -67,7 +72,7 @@ function guideCard(entry) {
     h("p", { class: "crt__kicker" }, `${entry.meta.helper} · level ${entry.meta.number}`),
     h("h3", {}, r.flaw),
     r.flawGloss ? h("p", { class: "ending__gloss" }, r.flawGloss) : null,
-    h("p", { class: "ending__tip" }, entry.card?.tip || r.tip),
+    h("p", { class: "ending__tip" }, r.tip || entry.card?.tip),
     r.realWorld ? h("p", { class: "ending__where" }, h("strong", {}, "Where you'll meet it: "), r.realWorld) : null,
     h("p", { class: "ending__badge" }, fooled ? "It fooled you" : "You caught it"));
 }
@@ -86,7 +91,7 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
 
   const status = h("p", { class: "ending__status", role: "status", "aria-live": "polite" });
   const fallback = h("div", { class: "ending__fallback", hidden: true });
-  const copyBtn = h("button", { class: "btn btn--crt", onclick: async () => {
+  const copyBtn = h("button", { class: "btn btn--crt btn--gold", onclick: async () => {
     const ok = await copyText(text, clipboard);
     if (ok) {
       status.textContent = "Copied. Paste it anywhere.";
@@ -105,15 +110,22 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
     announce("Select the text and press Ctrl C or Command C to copy.");
   } }, "Copy my field guide");
 
+  const garden = h("section", { class: "world ending__garden", "aria-labelledby": "ending-garden" },
+    h("div", { class: "ending__head" },
+      h("h1", { class: "map__title", id: "ending-garden", tabindex: -1, "data-autofocus": true }, gardenTitle(name)),
+      h("p", { class: "map__sub" }, "Five plots, five helpers, one finished garden.")),
+    h("ol", { class: "ending__plots" }, played.map(plotCard)),
+    h("button", { class: "btn btn--crt btn--gold ending__down", onclick: () => {
+      const guide = document.getElementById("ending-guide");
+      guide?.scrollIntoView({ block: "start", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+      guide?.focus({ preventScroll: true });
+    } }, "Your field guide ↓"));
   root.replaceChildren(
     h("main", { class: "ending" },
-      h("section", { class: "ending__garden", "aria-labelledby": "ending-garden" },
-        h("h1", { class: "map__title", id: "ending-garden", tabindex: -1, "data-autofocus": true }, gardenTitle(name)),
-        h("p", { class: "map__sub" }, "Five plots, five helpers, one finished garden."),
-        h("ol", { class: "ending__plots" }, played.map(plotCard))),
-      h("section", { class: "crt ending__guide", "aria-labelledby": "ending-guide" },
-        h("h2", { class: "crt__title crt__title--small", id: "ending-guide" },
-          blockText("AI FIELD GUIDE", { fill: "#69f0ae", shadow: "#0b5a33", align: "center" })),
+      garden,
+      h("section", { class: "ending__guide", "aria-labelledby": "ending-guide" },
+        h("h2", { class: "crt__title crt__title--small", id: "ending-guide", tabindex: -1 },
+          blockText("AI FIELD GUIDE", { fill: "#fff6dc", shadow: "#c98a00", align: "left" })),
         h("p", { class: "crt__line ending__score" }, `You caught ${caught} of ${map.length} · ★ ${stars}/${map.length * 3}`),
         h("ul", { class: "guide__cards ending__cards" }, played.map(guideCard)),
         h("div", { class: "ending__share" },
@@ -121,5 +133,8 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
           status,
           fallback),
         h("button", { class: "btn btn--crt", onclick: onBack }, "← Back to the garden"))));
+  // The garden at dawn: every bed done, the sun up behind the hills.
+  const world = mountWorld(garden, { time: 5, beam: false });
   focusFirst(root);
+  return () => world.destroy();
 }
