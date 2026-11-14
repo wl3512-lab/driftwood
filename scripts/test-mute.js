@@ -8,6 +8,11 @@
   // rewording, no thinking pause), so test runs are deterministic. A run that
   // wants the live AI sets window.__dwAI = true in a later init script.
   try { window.__dwAI = false; } catch (_) {}
+  // Driftwood v2 hands-on actions (v2/actions/runner.js): finish each one the
+  // moment it opens (through the same path as the keyboard), so flows written
+  // before the actions still pass while performing them. A run that drags by
+  // hand sets window.__dwAutoAct = false in a later init script.
+  try { if (window.__dwAutoAct === undefined) window.__dwAutoAct = true; } catch (_) {}
   // Never test against the service worker's cached bundle: a reload after an
   // edit would otherwise run the previous sketch.js (cache-first) and the
   // results would describe code that no longer exists.

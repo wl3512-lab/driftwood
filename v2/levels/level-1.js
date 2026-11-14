@@ -25,6 +25,18 @@ export default {
 
   greeting: "Mango here! Ask me ANYTHING about your garden. You're going to crush this.",
 
+  // Hands-on jobs between questions (v2/actions): no stars, no trust either way.
+  // Weeds came up round the lettuce while the sunflowers went in.
+  chores: [
+    {
+      id: "weeds",
+      before: "water",
+      title: "Chore",
+      actions: [{ kind: "pick", spot: "weed", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Pull the 3 weeds out of the East bed" }],
+      doneLine: "WEEDS: GONE. The lettuce can breathe! Okay, ask me anything.",
+    },
+  ],
+
   steps: [
     {
       id: "sunflowers",
