@@ -33,7 +33,6 @@ export default {
       before: "water",
       title: "Chore",
       actions: [{ kind: "pick", spot: "weed", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Pull the 3 weeds out of the East bed" }],
-      doneLine: "WEEDS: GONE. The lettuce can breathe! Okay, ask me anything.",
     },
   ],
 

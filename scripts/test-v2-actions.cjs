@@ -132,7 +132,7 @@ async function weedChore(page, size, { shots = true } = {}) {
     if (i < 2) assert.match(await page.locator(".act__count").textContent(), new RegExp(`${i + 1}/3`));
   }
   await page.waitForSelector(".act", { state: "detached" });
-  assert.match(await page.locator(".bubble__text").first().textContent(), /WEEDS: GONE/);
+  assert.match(await page.locator(".bubble__text").first().textContent(), /Look at them GO/, "Mango's line stays put");
   assert.equal(await garden(page), g, "chores never change the score");
   await page.waitForSelector('.chip[data-fid="chip-0"]');
 }

@@ -89,7 +89,9 @@ chores: [
     actions: [ { kind: "pick", spot: "weed", target: { bed: "east", plant: "lettuce" }, count: 3,
                  say: "Pull the 3 weeds out of the East bed" } ],
     effect: { ... },          // optional, lands like any garden effect
-    doneLine: "WEEDS: GONE. …", // optional, the helper says it after
+    doneLine: "…",           // optional, the helper says it after. It replaces the
+                              // helper's last line (e.g. a "my way" outcome), so
+                              // most chores leave it out.
   },
 ],
 ```
