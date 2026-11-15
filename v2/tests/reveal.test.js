@@ -63,4 +63,14 @@ test("layout: the wide card on laptops, the compact one on phones, always inside
     assert.ok(s.w * pick.scale <= w - 32 + 0.01 && s.h * pick.scale <= h - 32 + 0.01, `${w}×${h} fits`);
   }
   assert.equal(pickLayout(1512, 830, true).scale, 1, "never drawn larger than designed on a laptop");
+  // Upright phones: the card on top, the guide under it, still inside the window.
+  for (const [w, h] of [[390, 844], [375, 667], [360, 780]]) {
+    for (const talk of [true, false]) {
+      const pick = pickLayout(w, h, talk);
+      assert.equal(pick.name, "tall", `${w}×${h}`);
+      const s = stageSize("tall", talk);
+      assert.ok(s.w * pick.scale <= w - 32 + 0.01 && s.h * pick.scale <= h - 32 + 0.01, `${w}×${h} fits`);
+      assert.ok(pick.scale >= 0.7, `${w}×${h}: the card stays big (${pick.scale.toFixed(2)})`);
+    }
+  }
 });

@@ -1,0 +1,164 @@
+/* Phones held upright (390×844, 375×667, 360×780): their own layout, not a
+   squeezed laptop one. Loaded last, so it only has to say what changes.
+   Every rule sits in one query: narrow AND taller than a landscape phone. */
+@media (max-width: 640px) and (min-height: 501px) {
+
+  /* ---------- level: the dock is one column ----------
+     The helper's stall is a strip across the top, the bubble below it at full
+     width, and the questions stack under it as full-width buttons: every one
+     readable, none scrolled out of sight, all under the thumb. */
+  .level { --dock-rest: 296px; }
+  .dock {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    max-height: 64dvh;
+  }
+  .stall { grid-column: 1; grid-row: 1; width: 100%; height: 50px; }
+  .dock__talk { grid-column: 1; grid-row: 2; align-self: start; gap: 8px; }
+  .stall__window { height: 44px; width: 4.4rem; }
+  .stall .helper { height: 38px; margin-bottom: 7px; }
+  .stall__plate { flex-direction: row; align-items: center; justify-content: flex-start; gap: 0.5rem; padding: 0 56px 0 0.6rem; }
+  .stall__name { font-size: 0.8rem; }
+  .stall__role { font-size: 0.75rem; }
+  .stall .snd--stall { top: 50%; right: 4px; translate: 0 -50%; }
+
+  .bubble { padding: 0.6rem 0.75rem; }
+  .bubble__who { font-size: 0.75rem; }
+  .bubble__text { font-size: 1.05rem; line-height: 1.42; }
+  .you { font-size: 1rem; }
+  .chips { flex-direction: column; flex-wrap: nowrap; overflow: visible; gap: 8px; }
+  .chip { width: 100%; min-height: 48px; padding: 0.6rem 0.8rem; text-align: left; font-size: 1rem; line-height: 1.3; box-shadow: 2px 2px 0 var(--ink); }
+  /* Do it / Something's off: side by side, each half the width, never cut. */
+  .bubble__actions { flex-wrap: wrap; gap: 8px; }
+  .bubble__actions .btn { flex: 1 1 calc(50% - 4px); min-width: 0; min-height: 48px; padding: 0.55rem 0.5rem; font-size: 0.95rem; line-height: 1.15; }
+  .permit__actions .btn { flex: 1 1 auto; }
+
+  /* The garden's top bar: Map, goal and meter on one row, a little tighter. */
+  .scene__top { gap: 8px; padding: 10px 12px 0; }
+  .goal { flex: 1 1 auto; min-width: 0; max-width: none; }
+  .scene__top .meter { flex: none; min-width: 0; width: 6.6rem; }
+
+  /* Bed signs wrap inside their bed's width instead of running off the screen. */
+  .level .bed > .bed__label { white-space: normal; max-width: calc(100% + 8px); line-height: 1.2; }
+
+  /* ---------- hands-on tool card: full width, the tool beside its words ---------- */
+  .level .act { grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; padding: 10px 12px; }
+  .level .act__say { font-size: 1.05rem; }
+  .level .act__how { font-size: 0.85rem; }
+  .level .act__title { font-size: 0.75rem; }
+  .level .act__skip { min-height: 44px; min-width: 44px; font-size: 0.9rem; }
+  .level .act__back { min-height: 44px; }
+
+  /* ---------- map: two rows of plots on the lawn ----------
+     Five beds in a 390px line overlapped and their signs were unreadable.
+     Upright, levels 1–3 sit on the lawn and 4–5 on the path below. */
+  .plots__bed { --bw: min(29vw, 132px); }
+  .plots__bed:nth-child(1) { --x: 18% !important; bottom: 41%; }
+  .plots__bed:nth-child(2) { --x: 50% !important; bottom: 41%; }
+  .plots__bed:nth-child(3) { --x: 82% !important; bottom: 41%; }
+  .plots__bed:nth-child(4) { --x: 32% !important; bottom: 14%; }
+  .plots__bed:nth-child(5) { --x: 68% !important; bottom: 14%; }
+  .plot__stake { max-width: calc(var(--bw) + 8px); white-space: normal; }
+  .plot__num { font-size: 0.72rem; }
+  .plot__title { font-size: 0.9rem; }
+
+  /* ---------- splash: the sign spans the width, pets fit on the path ---------- */
+  .splash__sign { left: 16px; right: 16px; top: max(72px, 9vh); }
+  .splash .crt__title--block { width: 100%; box-sizing: border-box; }
+  .splash .crt__line { font-size: 1rem; }
+  .world__pet { height: min(14vh, 18vw); }
+
+  /* ---------- the almanac: header in two rows ----------
+     The sign and the close button on top, the page tabs and the count under
+     them (in one row the sign's title ran under the count). */
+  /* three packets a row at every upright width (100px left 360px with two) */
+  .almanac { --pw: min(100px, calc((100vw - 90px) / 3)); --ph: calc(var(--pw) * 1.36); --pn: 0.72rem; --pmeta: 0.55rem; --gx: 10px; }
+  .almanac__head {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
+    grid-template-areas: "sign sign close" "tabs . count"; gap: 8px; padding: 8px 8px 4px;
+  }
+  .almanac__sign { grid-area: sign; flex-wrap: wrap; row-gap: 4px; }
+  .almanac__sign-type { height: 18px; }
+  .almanac__hint { font-size: 0.85rem; max-width: none; }
+  .almanac__close { grid-area: close; align-self: start; }
+  .almanac__sheet-tabs { grid-area: tabs; }
+  .almanac__count { grid-area: count; margin-left: 0; justify-self: end; font-size: 0.75rem; }
+  .almanac__sheet-tab { font-size: 0.85rem; }
+
+  /* ---------- the stew dinner: bigger cells, the menu readable ---------- */
+  .stew { --cell: min(1.05vw, 0.6dvh); }
+  .stew__menu { width: auto; right: 8px; }
+  .stew__title { font-size: 1rem; }
+  .stew__menu-row { font-size: 0.8rem; }
+  .stew__why { font-size: 0.78rem; }
+  .stew { --top: 72%; }
+  /* his bubble centres over him, so a long line never runs off the right edge */
+  .stew__bub { left: 50%; translate: -50% 0; font-size: 0.95rem; max-width: min(300px, calc(100vw - 32px)); }
+  .stew__tail { left: calc(50% - 4px); }
+  .stew__kinds { font-size: 0.7rem; }
+
+  /* ---------- the opening cutscene ----------
+     The helpers stand in a row across the whole width, in front of Rowan
+     (between his shoulder and his caption there was room for four of five,
+     and Mango hid behind him). Their bubbles alternate high and low, so five
+     lines never stack on each other. The progress pips are shorter, clear of
+     the garden meter in the corner. */
+  .cs__cap-t { font-size: 1rem; line-height: 1.4; }
+  .cs__rowan { bottom: 30%; }
+  .cs__pets { left: 3%; right: 3%; bottom: 150px; z-index: 25; }
+  .cs__dinner { bottom: 150px; }
+  .cs__bub { font-size: 0.8rem; max-width: 128px; }
+  .cs__pet:nth-child(even) .cs__bub { bottom: calc(100% + 46px); }
+  .cs__name { font-size: 0.65rem; }
+  .cs__who { font-size: 0.7rem; }
+  .cs__bar { gap: 10px; }
+  .cs__pips { gap: 4px; }
+  .cs__pip { width: 14px; }
+
+  /* ---------- Rowan's seed handoff ---------- */
+  .ho__line { font-size: 1rem; }
+  .ho__words { grid-template-columns: minmax(0, 1fr); }
+  .ho__pk { width: 56px; }
+  .ho__pk-n { font-size: 0.6rem; }
+  .ho__next, .ho__skip { font-size: 0.85rem; min-height: 44px; }
+}
+
+/* The almanac note hangs under its button, pointing up, instead of lying
+   across the bed labels to its left. */
+@media (max-width: 640px) and (min-height: 501px) {
+  .tool-hint { position: absolute; top: calc(100% + 12px); right: 0; margin: 0; width: max-content; max-width: 9.5rem; font-size: 0.85rem; line-height: 1.25; }
+  .tool-hint::after {
+    right: 17px; top: -10px; margin-top: 0;
+    border: 7px solid transparent; border-top: 0; border-bottom: 10px solid #fff0d6;
+  }
+  .tools:has(.tool ~ .tool) .tool-hint::after { right: 73px; }
+}
+
+/* Narrow tool cards (phones upright, and 568×320): a chore's Skip sits in the
+   card's corner, out of the grid. In the grid it took the text's cell and
+   pushed the words under a stretched, full-width tool. */
+@media (max-width: 640px) {
+  .level .act { position: relative; }
+  .level .act__skip { position: absolute; top: 2px; right: 2px; min-width: 44px; min-height: 44px; }
+  .level .act:has(.act__skip) .act__text { padding-right: 40px; }
+}
+
+/* Shorter upright phones (375×667): the garden gets ~370px, so the top bar
+   drops the "LEVEL n" line, and the bed signs move inside their beds (above
+   them, the shady one ran under the almanac button). */
+@media (max-width: 640px) and (min-height: 501px) and (max-height: 720px) {
+  .level { --dock-rest: 280px; }
+  .goal__level { display: none; }
+  .goal { padding: 0.3rem 0.55rem; }
+  .goal__title { font-size: 0.95rem; line-height: 1.2; }
+  .tools { top: 58px; }
+  /* Each sign is staked just inside its bed's top-left corner (as on short
+     landscape phones), so nothing in the top bar or toolbar can sit on it. */
+  main.level .scene__ground .beds > .bed > .bed__label {
+    top: 3px; bottom: auto; left: 3px; z-index: 1;
+    max-width: calc(100% - 6px); white-space: normal; line-height: 1.15;
+    --stake: 6px; box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+  }
+  .scene__ground { padding-top: 1.2rem; }
+}

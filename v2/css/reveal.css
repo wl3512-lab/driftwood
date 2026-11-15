@@ -180,3 +180,19 @@
 .reveal[data-layout="compact"] .fg__no { display: none; }
 
 .reveal__go { min-height: var(--btnH); padding: 0 20px; font-size: var(--fs-btn); white-space: nowrap; }
+
+/* ---------- phones held upright: the card on top, the guide and button under it ---------- */
+.reveal[data-layout="tall"] { --gap: 26px; --fs-bub: 19px; --btnH: 60px; --fs-btn: 1.2rem; --bw: 170px; --bh: 156px; --bubPet: 60px; }
+.reveal[data-layout="tall"] .reveal__dim::before,
+.reveal[data-layout="tall"] .reveal__dim::after { left: 50%; top: 36%; }
+.reveal[data-layout="tall"] .reveal__stage { flex-direction: column; align-items: stretch; }
+.reveal[data-layout="tall"] .reveal__side {
+  width: var(--cw); height: var(--under);
+  display: grid; grid-template-columns: var(--bw) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: 22px; row-gap: 14px; align-items: end; justify-items: start;
+}
+.reveal[data-layout="tall"] .fg { grid-column: 1; grid-row: 1 / span 2; align-self: end; }
+.reveal[data-layout="tall"] .reveal__handoff { grid-column: 2; grid-row: 1; align-self: end; flex-direction: column; align-items: flex-start; gap: 6px; }
+.reveal[data-layout="tall"] .reveal__handoff-line { max-width: 100%; }
+.reveal[data-layout="tall"] .reveal__handoff-line::before { left: 18px; top: -9px; bottom: auto; transform: rotate(135deg); }
+.reveal[data-layout="tall"] .reveal__go { grid-column: 2; grid-row: 2; width: 100%; padding: 6px 12px; white-space: normal; line-height: 1.2; }
