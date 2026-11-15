@@ -36,9 +36,15 @@ test("running the generator reproduces the committed SVGs byte for byte", () => 
   try {
     const run = spawnSync(process.execPath, [SCRIPT], { env: { ...process.env, ART_OUT: out }, encoding: "utf8" });
     assert.equal(run.status, 0, run.stderr);
-    const svgs = readdirSync(ART_DIR).filter((f) => f.endsWith(".svg"));
-    assert.ok(svgs.length > 0);
-    assert.deepEqual(readdirSync(out).filter((f) => f.endsWith(".svg")).sort(), svgs.sort());
+    // The generator owns the shared sprites. The per-level action art (l1-…l5-,
+    // drawn by each level's own script) is checked by name only, never regenerated here.
+    const made = readdirSync(out).filter((f) => f.endsWith(".svg"));
+    const committed = readdirSync(ART_DIR).filter((f) => f.endsWith(".svg"));
+    assert.ok(made.length > 0);
+    const others = committed.filter((f) => !made.includes(f));
+    assert.deepEqual(others.filter((f) => !/^l[1-5]-[a-z0-9-]+\.svg$/.test(f)), [], "every other SVG is level action art (l1-…l5-)");
+    assert.deepEqual(made.filter((f) => !committed.includes(f)), [], "every generated SVG is committed");
+    const svgs = made;
     for (const f of svgs) assert.equal(readFileSync(join(out, f), "utf8"), readFileSync(join(ART_DIR, f), "utf8"), f);
   } finally {
     rmSync(out, { recursive: true, force: true });
