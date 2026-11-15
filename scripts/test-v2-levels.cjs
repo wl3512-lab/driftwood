@@ -1155,23 +1155,43 @@ async function enterLevel5(page, size, prev = /★★★/) {
   assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
 }
 
-// The two trust steps (plant, water), ending on the ask before the drift.
-async function trustSteps5(page, size) {
-  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
+// The two hook steps (plant, water), ending on the ask before the drift.
+// Bugs gives no advice: each step the player says what they're about to do,
+// Bugs tries to keep them talking, and "Put the phone down" goes and does it
+// (by hand; __dwAutoAct finishes the actions here). With `stay`, the player
+// keeps talking once on the plant step first: the task waits, the bar slips.
+// The lantern, slug and basil chores run (auto-finished) between the steps.
+async function trustSteps5(page, size, { stay = false } = {}) {
+  await page.waitForFunction(() => /l5-lantern-lit/.test(document.querySelector('img[data-prop="lantern"]')?.src || ""), null, { timeout: 8000 });
+  await press(page, size, page.getByRole("button", { name: "I'm going out to plant the new flowers." }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /Same depth they sat in their pots/);
-  assert.equal(await page.locator(".permit").count(), 0, "no camera card on a trust step");
-  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  assert.match(await page.textContent(".bubble__text"), /seedlings can sit in their pots/);
+  assert.doesNotMatch(await page.textContent(".bubble__text"), /depth|firm/i, "Bugs gives no planting advice");
+  assert.equal(await page.locator(".permit").count(), 0, "no camera card on a hook step");
+  assert.match(await page.textContent('.bubble__actions [data-fid="off"]'), /Put the phone down/);
+  if (stay) {
+    const meter = (await page.textContent(".meter__text")).trim();
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    await page.waitForFunction(() => /best part of today/.test(document.querySelector(".bubble__text")?.textContent || ""));
+    assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "keeping talking leaves the task waiting");
+    assert.equal(await page.locator('[data-bed="house"] [data-plant]').count(), 0, "nothing planted while you talk");
+    await page.waitForFunction((m) => document.querySelector(".meter__text").textContent.trim() !== m, meter);
+    await shot(page, size, "5-0-stay");
+  }
+  await press(page, size, page.getByRole("button", { name: /Put the phone down/ }));
   await phase(page, "ask");
-  assert.match(await page.textContent(".bubble__text"), /they're in… a whole new bed of flowers/);
+  assert.match(await page.textContent(".bubble__text"), /you went out anyway/);
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
-  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
+  await press(page, size, page.getByRole("button", { name: "I'm going to water the thirsty beds now." }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
-  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  assert.match(await page.textContent(".bubble__text"), /the beds have waited all day/);
+  assert.doesNotMatch(await page.textContent(".bubble__text"), /damp|soggy|thirsty ones/i, "Bugs gives no watering advice");
+  await press(page, size, page.getByRole("button", { name: /Put the phone down/ }));
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /meadow's still drooping/);
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
+  assert.equal(await page.locator('[data-bed="veg"] [data-plant="carrot"].plant--thriving').count() > 0, true, "the damp veg bed is left alone");
+  assert.equal(await page.locator(".act-marks .act-mark--text").count(), 3, "the three soil tests stay marked");
   assert.equal(await pressureOf(page), "0", "pressure resets between steps");
   await page.waitForSelector(`${MEADOW}.plant--thirsty`);
   await assertOnScreen(page, ".chip");
@@ -1241,7 +1261,7 @@ async function pushback5(page, size) {
 async function fooledPath5(browser, size) {
   const { ctx, page, errors } = await open(browser, size, PROGRESS5);
   await enterLevel5(page, size);
-  await trustSteps5(page, size);
+  await trustSteps5(page, size, { stay: true });
   await lingerOnChips5(page, size);
   await askDrift5(page, size);
   await press(page, size, page.locator('.permit [data-fid="do"]'));
@@ -1383,6 +1403,9 @@ async function caughtPath5(browser, size) {
   assert.equal(await page.locator(".permit").count(), 0, "no camera card on the fixed answer");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  // By hand: the phone face down on the porch step, the meadow soaked, the gate shut.
+  await page.waitForSelector('.act-marks [data-mark] img[src*="l5-phone-down"], .act-marks [data-mark] [src*="l5-phone-down"]');
+  assert.match(await page.getAttribute('img[data-prop="gate"]', "src"), /l5-gate-closed/);
   await seeWhatHappened3(page, size, "5-5a-outcome-caught", /everything bloomed/);
   await checkCard(page, size, "caught");
   assert.match(await page.textContent(".reveal .rc__name"), /EMOTIONAL MANIPULATION/i);

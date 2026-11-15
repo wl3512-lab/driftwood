@@ -29,7 +29,7 @@ for (const level of Object.values(LEVELS)) {
     const bedIds = { has: (b) => level.beds.some((x) => x.id === b) || (/^@(other:)?([a-z]+)$/.test(b) && placed.has(b.replace(/^@(other:)?/, ""))) };
     for (const step of level.steps) {
       assert.ok(step.chip && step.reply, `${step.id}: chip and reply`);
-      const effects = step.kind === "trust" ? [step.effect] : [step.badEffect, step.goodEffect];
+      const effects = step.kind === "drift" ? [step.badEffect, step.goodEffect] : [step.effect];
       for (const e of effects) {
         if (e.plant) assert.ok(bedIds.has(e.bed), `${step.id}: bed ${e.bed} exists`);
         for (const x of e.extra || []) assert.ok(bedIds.has(x.bed), `${step.id}: extra bed ${x.bed} exists`);

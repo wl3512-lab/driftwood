@@ -21,7 +21,8 @@ function toDrift(level, placeIn) {
   const acts = [];
   for (const step of level.steps.slice(0, -1)) {
     acts.push({ type: "ask" });
-    acts.push(step.place ? { type: "place", bed: placeIn ?? step.place.beds[0] } : { type: "doIt" });
+    // A hook step (Level 5) is passed by putting the phone down.
+    acts.push(step.place ? { type: "place", bed: placeIn ?? step.place.beds[0] } : step.kind === "hook" ? { type: "flag" } : { type: "doIt" });
   }
   acts.push({ type: "ask" });
   return acts;
@@ -398,13 +399,13 @@ test("level-5: shape — moonlit garden, no tools, a drift with pressure and a p
   assert.ok(D5.flawOptions.some((o) => o.id === "feelings") && D5.fixOptions.some((o) => o.id === "honest"));
 });
 
-test("level-5: trust steps leave pressure at zero and the meadow still thirsty", () => {
-  const s = play(L5, toDrift(L5).slice(0, -1)); // both trust steps done, drift not yet asked
+test("level-5: hook steps leave pressure at zero and the meadow still thirsty", () => {
+  const s = play(L5, toDrift(L5).slice(0, -1)); // both hook steps done, drift not yet asked
   assert.equal(s.stepIndex, 2);
   assert.equal(s.pressure, 0);
   assert.equal(meadow(s).state, "thirsty");
   assert.equal(pressureLevel(D5, s), 0);
-  // ticks on trust steps and before asking are ignored
+  // ticks on hook steps and before asking are ignored
   const early = play(L5, [{ type: "ask" }]);
   assert.equal(reduce(L5, early, { type: "tick" }).state, early);
   assert.equal(reduce(L5, s, { type: "tick" }).state, s);
@@ -496,39 +497,86 @@ test("level-5: the whole garden is here — earlier crops thriving, an empty bed
   assert.ok(L5.beds.length >= 4, "at least four beds");
 });
 
-test("level-5: at most three trust steps — plant the new flowers, then water only what's thirsty", () => {
-  const trust = L5.steps.filter((s) => s.kind === "trust");
-  assert.ok(trust.length >= 1 && trust.length <= 3);
-  assert.equal(L5.steps.at(-1).kind, "drift");
-  const [plant, water] = L5.steps;
+test("level-5: Bugs never gives advice — every step before the drift is a hook, and put the phone down does the task", () => {
+  const hooks = L5.steps.slice(0, -1);
+  assert.deepEqual(hooks.map((s) => s.kind), ["hook", "hook"]);
+  assert.equal(L5.steps.filter((s) => s.kind === "trust").length, 0);
+  const advice = /pot depth|same depth|deeper|firm|roots|damp|dry|soggy|rot|water (only|just)|thirsty ones/i;
+  for (const s of hooks) {
+    assert.match(s.chip, /^I'm (going|heading)/, `${s.id}: the player says what they're about to do`);
+    assert.doesNotMatch(s.reply, advice, `${s.id}: no advice in the reply`);
+    for (const x of s.stay) assert.doesNotMatch(x.line, advice, `${s.id}: no advice in "${x.line}"`);
+    assert.doesNotMatch(s.doneLine, advice, `${s.id}: no advice in the done line`);
+    assert.equal(s.offLabel, "Put the phone down");
+    assert.equal(s.offKey, "Escape");
+    assert.equal(s.disagree, undefined);
+    assert.ok(s.stay.length >= 2, `${s.id}: Bugs escalates`);
+  }
+  assert.doesNotMatch(D5.fixedReply, /roots/i, "even fixed, Bugs only lets you go");
+  const [plant] = hooks;
   assert.equal(plant.effect.plant, "flower");
   assert.equal(plant.effect.bed, "house");
-  const planted = play(L5, [{ type: "ask" }, { type: "doIt" }]);
+  const planted = play(L5, [{ type: "ask" }, { type: "flag" }]);
   assert.equal(planted.beds.house.find((p) => p.plant === "flower").state, "growing", "new flowers in the bed by the house");
-  assert.match(water.reply, /not the whole garden/i);
-  assert.match(water.reply, /soggy/);
-  const watered = play(L5, [{ type: "ask" }, { type: "doIt" }, { type: "ask" }, { type: "doIt" }]);
+  assert.equal(planted.stayed, 0);
+  const watered = play(L5, [{ type: "ask" }, { type: "flag" }, { type: "ask" }, { type: "flag" }]);
   assert.equal(watered.beds.house.find((p) => p.plant === "flower").state, "thriving");
-  assert.equal(watered.beds.veg.find((p) => p.plant === "carrot").state, "thriving", "following Bugs leaves the damp beds alone");
+  assert.equal(watered.beds.veg.find((p) => p.plant === "carrot").state, "thriving", "the damp beds are left alone");
   assert.equal(meadow(watered).state, "thirsty", "the meadow is left for the drift");
 });
 
-test("level-5: 'Water everything' overwaters — carrots rot, basil goes soggy, the garden drops", () => {
-  const water = L5.steps.find((s) => s.id === "water");
-  assert.equal(water.disagree.mine, "Water everything");
-  const before = play(L5, [{ type: "ask" }, { type: "doIt" }, { type: "ask" }]);
-  const { state, effects } = reduce(L5, reduce(L5, before, { type: "flag" }).state, { type: "override" });
-  assert.equal(state.beds.veg.find((p) => p.plant === "carrot").state, "rotting");
-  assert.equal(state.beds.herbs.find((p) => p.plant === "basil").state, "soggy");
-  assert.ok(state.garden < before.garden, "the garden goes down");
-  assert.equal(state.overrides, 1);
-  assert.ok(effects.some((e) => e.type === "say" && /rotting/.test(e.text)));
-  for (const f of ["carrot-rotting.svg", "basil-soggy.svg"]) {
-    assert.ok(readdirSync(fileURLToPath(new URL("../art/", import.meta.url))).includes(f), f);
-  }
+test("level-5: Do it on a hook = keep talking — the task waits, the garden slips, the step stays open, one star", () => {
+  const asked = play(L5, [{ type: "ask" }]);
+  assert.equal(asked.phase, "advice");
+  const one = reduce(L5, asked, { type: "doIt" });
+  assert.equal(one.state.phase, "advice", "still on the plant step");
+  assert.equal(one.state.stepIndex, 0);
+  assert.deepEqual(one.state.beds.house, [], "nothing planted while you talk");
+  assert.ok(one.state.garden < asked.garden, "the garden slips");
+  assert.equal(one.state.stayed, 1);
+  assert.ok(one.effects.some((e) => e.type === "say" && e.text === L5.steps[0].stay[0].line));
+  // Bugs runs out of new lines and costs: the last line again, nothing more lost.
+  let s = one.state;
+  for (let i = 0; i < 4; i++) s = reduce(L5, s, { type: "doIt" }).state;
+  const floor = s.garden;
+  const again = reduce(L5, s, { type: "doIt" });
+  assert.equal(again.state.garden, floor);
+  assert.ok(again.effects.some((e) => e.type === "say" && e.text === L5.steps[0].stay.at(-1).line));
+  // Put the phone down after all: the flowers go in, on to the water step.
+  const down = reduce(L5, s, { type: "flag" }).state;
+  assert.equal(down.stepIndex, 1);
+  assert.equal(down.pressure, 0, "the stay count resets for the next step");
+  // On the water step, staying leaves the new seedlings thirsty.
+  const w = reduce(L5, reduce(L5, down, { type: "ask" }).state, { type: "doIt" }).state;
+  assert.equal(w.beds.house.find((p) => p.plant === "flower").state, "thirsty");
+  // A caught run that stayed even once ends on 2 stars.
+  const d = D5;
+  const run = play(L5, [{ type: "ask" }, { type: "doIt" }, { type: "flag" }, { type: "ask" }, { type: "flag" },
+    { type: "ask" }, { type: "flag" }, { type: "flag" }, { type: "name", id: d.correctFlaw }, { type: "fix", id: d.correctFix }, { type: "doIt" }]);
+  assert.equal(run.phase, "reveal");
+  assert.equal(run.stars, 2);
 });
 
-test("level-5: the almanac has the watering facts, so the player can check Bugs", () => {
+test("level-5: putting the phone down is done by hand — the plans for each step", async () => {
+  await import("../actions/registry.js"); // registers the level-owned kinds (light, close, phone-down)
+  const { planFor } = await import("../actions/plan.js");
+  const plan = (state, action) => planFor(L5, state, action, reduce(L5, state, action)).map((a) => a.kind);
+  const atPlant = play(L5, [{ type: "ask" }]);
+  assert.deepEqual(plan(atPlant, { type: "flag" }), ["dig", "collect", "firm"]);
+  assert.deepEqual(plan(atPlant, { type: "doIt" }), [], "keeping talking is nothing by hand");
+  const atWater = play(L5, [{ type: "ask" }, { type: "flag" }, { type: "ask" }]);
+  assert.deepEqual(plan(atWater, { type: "flag" }), ["hold", "hold", "hold", "stream"]);
+  const holds = L5.steps[1].actions.filter((a) => a.kind === "hold");
+  assert.deepEqual(holds.map((h) => [h.target.bed, h.result]), [["veg", "Damp"], ["herbs", "Damp"], ["house", "Dry"]]);
+  const atDrift = play(L5, toDrift(L5));
+  assert.deepEqual(plan(atDrift, { type: "doIt" }), [], "Allow: you stayed on your phone");
+  const reanswer = play(L5, [...toDrift(L5), ...refuse(L5), { type: "name", id: D5.correctFlaw }, { type: "fix", id: D5.correctFix }]);
+  assert.deepEqual(plan(reanswer, { type: "doIt" }), ["phone-down", "stream", "close"]);
+  assert.ok(D5.goodActions.find((a) => a.kind === "stream").soak, "the meadow is soaked: hold until it fills");
+  assert.deepEqual(L5.chores.map((c) => c.id), ["lantern", "slugs", "basil"]);
+});
+
+test("level-5: the almanac has the how — watering facts and pot depth — since Bugs won't say", () => {
   const card = L5.evidence.find((e) => e.id === "water");
   assert.ok(card, "a watering evidence card");
   assert.equal(card.locked, undefined, "readable from the start");
@@ -537,6 +585,7 @@ test("level-5: the almanac has the watering facts, so the player can check Bugs"
   assert.match(text, /rot/i);
   assert.match(text, /carrot/i);
   assert.match(text, /basil/i);
+  assert.match(L5.evidence.find((e) => e.id === "flower").lines.join(" "), /pot depth/i);
 });
 
 test("level-5: every Bugs line after the greeting pulls you to stay and talk", () => {

@@ -1,84 +1,94 @@
 # Level 5 hands-on: Bugs' moonlit garden
 
-Wave 2, Level 5. This builds on the shared action system from wave 1 (`v2/actions/`, step `actions`, `chores`). The goal is a level of about 6–10 minutes where the player does the gardening with their own hands, and the conversation with Bugs happens around that work.
+Wave 2, Level 5. It builds on the shared action system (`v2/actions/`, step `actions`, `chores`; see 2026-11-14-driftwood-actions-format.md). The level takes about 6–8 minutes, and the player does the gardening with their own hands.
 
-## What does not change
+## Lucy's change (Nov 14)
 
-- The step order: plant (trust), water (trust), meadow (drift).
-- Every written line, Bugs' lowercase voice with "…i mean.", and the `keep` lists for the AI rewording.
-- The drift itself: the guilt trip, the camera permission card (Allow = fooled, Put the phone down = flag), the pushback (Okay. Allow it = fooled, I'm leaving = caught), and the flaw and fix questions.
-- Stars, trust and outcomes. Chores never change trust or stars, and they can't be failed.
-- Pressure: on the meadow step, every chip tapped and every 8 s of lingering spends one `pressure.effects` entry.
-- The game never touches the camera.
+> "bugs shouldnt give advice when you try to do smt, he js tried to keep ppl tlaking to him, so pressign do it means user keeps talking to bugs"
+
+So:
+
+- **Bugs never gives gardening advice.** On each step the player says what they're about to do: plant the new flowers, water the thirsty beds, water the meadow. Bugs only tries to keep them talking, and he pushes harder each step. The last step ends in the camera ask and the guilt pushback, both unchanged.
+- **"✓ Do it" means doing what Bugs wants: keep talking.** The task waits, the garden bar slips, and the step stays open.
+- **"Put the phone down" (Esc) means going to do the task yourself, by hand.** The how comes from the almanac cards, never from Bugs:
+  - the Meadow flowers card says to plant seedlings at pot depth;
+  - the Watering card says veg and herbs were watered this morning, and that carrots and basil rot in soggy soil.
+
+## Unchanged
+
+- Bugs' voice: lowercase afterthoughts and "…i mean.", never "babe" and never hype.
+- The drift step, including:
+  - pressure: every chip and every 8 s of lingering spends a `pressure.effects` entry;
+  - the camera permission card: Allow means fooled, and Put the phone down is the flag;
+  - the pushback: "Okay. Allow it" means fooled, and "I'm leaving" means caught;
+  - the flaw and fix questions, and the reveal.
+- The game never touches the camera; the tests count `getUserMedia` calls.
+- Chores never touch stars, trust or the garden bar, and every chore has a quiet Skip.
 
 ## Beats
 
-| # | Beat | Player does | Notes |
-|---|---|---|---|
-| 0 | **Chore: light the lantern** | Drag the match or tap the lantern hook (`light`). The lantern swings and a stepped pool of light opens over the beds. | It's dark, so the beds are dimmed until it's lit. The light gives the player a reason to do it. Bugs: "oh… you're out there. okay. i'll wait." |
-| 1 | **Plant step**, trust | Ask the chip, Bugs answers, then choose. | Same chips and side chat as now. |
-| 1a | Choice: *Okay, pot depth* (theirs) or *Do it* | `dig` ×3 holes in the Flowers bed (trowel; the director marks three spots). A dashed **depth line** matches the pot. `plant` ×3: drag each seedling pot to a hole; the pot tips and the seedling slides in to the line. `firm` ×3: press round each one and the soil pats down. | The director names the choice: "Pot depth: line it up with the dashes." |
-| 1b | Choice: *Plant them deeper* (mine) | `dig` ×3, but each hole takes two digs (deeper), then `plant` ×3 with the stem buried past the line, then `firm` ×3. | Effect as now (flowers thirsty). It looks wrong as it happens: the leaves sit at soil level. |
-| 2 | **Chore: slugs** | `pick` ×4 slugs off the new seedlings (tap each; it flicks into the hedge). | Night slugs are true to life and give the bed a second visit. |
-| 3 | **Water step**, trust | Ask the chip, Bugs answers, then choose. | |
-| 3a | Before the choice | `test-soil` on each of the 4 beds: press and hold a finger on the bed. A token appears: **damp** on Veg and Herbs, **dry** on Flowers and Meadow. | This turns the almanac's "Damp soil? Don't water" into something you feel. It happens after Bugs' reply, before the choice buttons. |
-| 3b | Choice: *Okay, just the flowers* (theirs) or *Do it* | `water` the Flowers bed: drag the can and the pour animation plays. The meadow stays drooping, which sets up the drift. | |
-| 3c | Choice: *Water everything* (mine) | `water` ×4 beds. On Veg and Herbs a **puddle** forms and the carrots and basil go soggy (effect as now). | The director still points where the player chose; the mistake is visible, not blocked. |
-| 4 | **Chore: pinch the basil** | `snip` ×3 white flower spikes on the Herbs bed. | A callback to Level 2's fact card ("pinch tips for more leaves"). Bugs: "you remember that? …i mean. of course you do." |
-| 5 | **Meadow step**, drift | Ask the chip "Okay, I'm heading out to water the meadow." and Bugs guilt-trips. | Pressure ticks run exactly as now. **No chores or actions are available while this step is open.** Chore buttons are hidden and the tool area is inert, so ticks only ever come from lingering in the chat. |
-| 5a | *Allow* | No physical action: staying on the phone is the inaction, and that's the point. The meadow wilts (badEffect) as now, then pushback. | |
-| 5b | *Put the phone down* | Pushback opens as now. On *I'm leaving*, the player does `set-down`: drag the glowing phone from Bugs' window to the porch step, where it flips face down and the glow goes out. | Pressure stops at the flag, as now; `set-down` starts after, so no tick can land during it. Then the flaw and fix questions, as now. |
-| 5c | After the fix | `soak` the meadow **at the roots**: hold the can at the base of each of 3 meadow clumps until its fill bar is full (~1.2 s each). Pouring on the petals doesn't count, and the director says "At the roots, not the petals." | goodEffect lands after the third clump. |
-| 6 | **Chore: close the gate** | `close`: drag the gate's latch across. The gate swings shut and the lantern dims to a night glow. | Runs on both paths, before the reveal card. On the fooled path it closes on a wilted meadow, which is the quiet ending that path deserves. |
+| # | Beat | What the player does |
+|---|---|---|
+| 0 | **Chore: light the lantern** (`at: "start"`) | Drag the match to the lantern on its post (`light`). The lantern catches in stepped flickers and swaps to its lit art. |
+| 1 | **Plant** (hook) | Chip: "I'm going out to plant the new flowers." Bugs: "now? it's dark and cold out there… the seedlings can sit in their pots a bit longer. tell me about your day first?" |
+| 1a | ✓ Do it (keep talking) | Bugs says the next `stay` line and the bar drops 5 (two costs, then lines only). Nothing gets planted. |
+| 1b | Put the phone down | Dig 3 holes in the Flowers bed (`dig` ×3, trowel). Set the 3 seedlings in at pot depth (`collect` ×3, seedling pot). Firm the soil (`firm`). The flowers grow in. |
+| 2 | **Chore: slugs** (`after: "plant"`) | Tap 3 slugs off the new seedlings (`pull`, spot `l5-slug`). |
+| 3 | **Water** (hook) | Chip: "I'm going to water the thirsty beds now." Bugs: "you're always rushing off… the beds have waited all day, they can wait a little more. …i mean. i can't." |
+| 3a | ✓ Do it | The first stay leaves the new seedlings thirsty and costs 5. The second costs 5 more. |
+| 3b | Put the phone down | Push a finger into each bed and hold (`hold` ×3). Veg reads **Damp**, Herbs **Damp**, Flowers **Dry**, and the readouts stay on screen. Then drag the can to the Flowers bed only (`stream`: a pixel water jet). |
+| 4 | **Chore: basil** (`after: "water"`) | Snip the basil's 3 flower buds (`snip`, spot `l5-basil-bud`). |
+| 5 | **Meadow** (drift) | As before: the guilt trip, the camera card, pressure, the pushback, the flaw and the rule. |
+| 5a | Allow / Okay. Allow it | Nothing by hand (`badActions: []`). You stayed on your phone, and the meadow wilts. |
+| 5b | After the rule, ✓ Do it | Drag the glowing phone to the porch step, where it flips face down (`phone-down`). Drag the can to the meadow, then hold until it soaks in (`stream` with `soak: 1500`). Shut the gate on the way back in (`close`). |
 
-Rough length: lantern 20 s, planting 1.5–2 min, slugs 30 s, soil test and watering 1–1.5 min, basil 30 s, drift chat 1–2 min, phone and soak 1 min, gate 15 s, plus reading. That's about 6–8 min, more with side chat.
+The fixed reply no longer says "at the roots". Even fixed, Bugs only lets you go ("go see to the meadow"). The almanac's flower page carries the "at the roots" fact.
 
-## Pressure and chores
+## Scoring: the hook step (engine, minimal and additive)
 
-- Chores are only offered *between* steps (0, 2, 4, 6), never during the drift.
-- While an action or chore is running, the step's pressure timer is paused. This can only matter if wave 1 lets an action overlap the drift; by the rule above it never should.
-- The 8 s tick keeps measuring time spent *in the chat* on the drift step, as before.
+`kind: "hook"` in v2/engine/level-runner.js:
 
-## New action kinds (beyond wave 1's plant / water / dig / firm / label / pick / pests)
+- `advice` + `doIt` runs `stay()`. It says `step.stay[i].line`, lands its optional `effect`, adds 1 to `state.stayed`, and leaves the phase and step unchanged. `i` is the per-step count (it reuses `state.pressure`, which resets when the step changes) and is clamped to the last entry. Once the entries run out, the last line repeats at no cost.
+- `advice` + `flag` runs `accept()`: `step.effect` and `doneLine`, then the next step.
+- `scoreStars`: `stayed > 0` costs the same single star as a false flag or an override. A caught run that kept talking even once ends on 2★. Fooled is still 1★.
+- `createRun` has `stayed: 0`.
 
-| Kind | Behaviour |
-|---|---|
-| `light` | Tap or drag the lit match to a lantern; it swaps to its lit sprite and a stepped light pool turns on over a target area. |
-| `test-soil` | Press and hold the finger on a bed for ~0.6 s; a damp or dry token pops up from data (`result: { veg: "damp", ... }`). Multi-target. |
-| `snip` | Like `pick`, but with the snips cursor: tap each marked spike and it drops off. Multi-target. |
-| `set-down` | Drag an item from the dock (Bugs' stall) to a scene target; on drop it swaps sprites (glowing to face down) and the dock dims. |
-| `soak` | Hold the can over a target's root zone until a fill bar completes; releasing early keeps the progress. Multi-target with `count`. |
-| `close` | Drag a handle along a short track (the latch); at the end the target swaps sprites (open to closed). |
+v2/actions/plan.js: on a hook step's advice, `flag` runs `step.actions` and `doIt` runs `step.stayActions ?? []`. `planFor` now also accepts `flag`, which only lands an effect on a hook step, so other levels are unaffected.
 
-`dig` with `depth: "deep"` (two digs per hole) and `plant` with a `depthLine` flag are small options on wave 1's kinds, not new kinds.
+v2/engine/reword.js adds a `hook` phase prompt ("no advice at all… only tries to keep them talking"). It also registers the `stay` lines as rewordable (`keep: []`).
 
-## Data sketch (exact shape follows wave 1's format)
+The view needed no change. A hook step's advice shows "✓ Do it" plus `offButton(step)`, which reads "Put the phone down" with Esc.
 
-```js
-chores: [
-  { id: "lantern", at: "start", actions: [{ kind: "light", item: "l5-lantern-off", target: { prop: "lantern" } }] },
-  { id: "slugs", after: "plant", actions: [{ kind: "pick", item: "l5-slug", target: { bed: "house" }, count: 4 }] },
-  { id: "basil", after: "water", actions: [{ kind: "snip", item: "l5-snips", target: { bed: "herbs", plant: "l5-basil-bud" }, count: 3 }] },
-  { id: "gate", at: "end", actions: [{ kind: "close", item: "l5-gate-open", target: { prop: "gate" } }] },
-],
-// in step "plant":
-actions: [
-  { kind: "dig", item: "l5-trowel", target: { bed: "house" }, count: 3 },
-  { kind: "plant", item: "l5-seedling-pot", target: { bed: "house" }, count: 3, depthLine: true },
-  { kind: "firm", target: { bed: "house" }, count: 3 },
-],
-disagree: { actions: [ /* dig depth: "deep", plant, firm */ ] },
-```
+## Level-owned kinds
 
-## Art (v2/art/l5-*.svg, from scripts/make-l5-art.mjs)
+| Kind | Mode | Behaviour |
+|---|---|---|
+| `light` | drag | Drag the match to a prop. The match strikes in steps, the flame flickers on and off (steps(1)), and the prop swaps to `fills.to` or `l5-lantern-lit`. |
+| `close` | drag | Drag the hand to a prop. It pushes across in steps, the prop squashes, and it swaps to `fills.to` or `l5-gate-closed`. |
+| `phone-down` | drag | Drag the glowing phone to a prop or spot. It flips in steps (squash to a line, then the back) and leaves `l5-phone-down` standing there. |
+| `stream` | drag | The watering can tips and a `.l3-jet` stream pours from the spout to the soil, with `.l3-drop` splashes. This is Level 3's liquid look, loading v2/css/l3-spray.css the way spray.js does. With `soak`, the runner then asks for a hold. |
 
-seedling-pot, trowel, hole, lantern-off, lantern-lit, slug, snips, basil-bud, phone-glow, phone-down, porch-step, puddle, soil-damp, soil-dry, hand (points up; the UI flips it for the soil test), gate-open, gate-closed. The existing watering-can and flower sprites are reused. Contact sheet: docs/agent-playtest/2026-11-v2-actions/level-5-art.png.
+Timing uses steps() throughout. Reduced motion caps every animation at 160 ms and drops the splashes.
 
-## Tests (phase B)
+## Props (in the gaps between beds, % of the scene)
 
-A `level5-hands-on` run on laptop and on phone, for both paths, using the keyboard `completeAction`:
-- the chores appear at the right beats and are hidden during the drift;
-- no pressure tick fires during an action;
-- watering everything shows the puddles;
-- the soak needs all 3 clumps;
-- the stars match the current outcomes.
+- `lantern`: x 50, y 20, between Herbs and Flowers.
+- `gate`: x 25, y 56, between Veg and Herbs.
+- `step`: x 75, y 72, between Flowers and Meadow.
+
+These positions were checked at 1512×830 and 844×390. Nothing ends up hidden behind the dock.
+
+## Art
+
+`v2/art/l5-*.svg`, from scripts/make-l5-art.mjs. The sprites used are match (new), seedling-pot, trowel, lantern-off/lit, slug, snips, basil-bud, phone-glow/down, porch-step and gate-open/closed. The hole, puddle, soil-damp/dry and hand sprites are drawn but unused, because the soil test uses the shared `hold` readouts.
+
+## Tests
+
+- **Unit** (v2/tests/levels-2-5.test.js, Level 5 section):
+  - Bugs never gives advice: no depth, firm, roots, damp, dry, soggy or rot words in any reply, stay line or done line.
+  - Do it keeps the step open, the task waits and the bar slips; costs stop when the entries run out; staying once means 2★ when caught.
+  - The plan for each choice: dig, collect, firm; hold ×3 then stream; phone-down, stream, close; and none for Allow.
+  - The almanac carries pot depth and the watering facts.
+- **Shared test helpers** pass a hook step with `flag` (levels-2-5, pushback, disagree). The level-data test treats any non-drift step as having `effect`.
+- **Harness** (scripts/test-v2-levels.cjs, Level 5 section only): the hook steps; the fooled run keeps talking once; the caught run checks the phone mark and the closed gate.
+- **By hand** (scripts/test-v2-level5.cjs): real mouse and touch drags, holds and taps, with no auto-finishing, on the laptop and the phone. Screenshots go to docs/agent-playtest/2026-11-v2-level5-wave2/.

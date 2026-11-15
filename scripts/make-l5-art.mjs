@@ -66,6 +66,23 @@ const ART = {
     ".....kkkkkk.....",
     E, E],
 
+  // A lit match, for the lantern chore: a pixel flame on a short stick.
+  "l5-match": [E,
+    "..........kk....",
+    ".........kYYk...",
+    "........kYXXYk..",
+    "........kYXdYk..",
+    ".........kYYk...",
+    ".........kNNk...",
+    "........knnk....",
+    ".......knnk.....",
+    "......knnk......",
+    ".....knnk.......",
+    "....knnk........",
+    "...knnk.........",
+    "...kkk..........",
+    E, E],
+
   // Trowel for digging the planting holes.
   "l5-trowel": [E,
     "............kk..",

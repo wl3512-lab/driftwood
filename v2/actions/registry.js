@@ -46,3 +46,7 @@ import measure from "./measure.js"; register(measure);
 import furrow from "./furrow.js"; register(furrow);
 import sowRow from "./sow-row.js"; register(sowRow);
 import waterRow from "./water-row.js"; register(waterRow);
+import light from "./light.js"; register(light);
+import close from "./close.js"; register(close);
+import phoneDown from "./phone-down.js"; register(phoneDown);
+import stream from "./stream.js"; register(stream);
