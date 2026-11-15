@@ -95,6 +95,8 @@
   background: var(--ink, #2b1d14); color: #fff7e2;
   font: 700 0.75rem/1 var(--font-ui); text-align: center;
 }
+/* hung under its target when the space above is taken: the sprite turns to point up */
+.act__arrow--up > :first-child { transform: rotate(180deg); }
 @keyframes act-bob { to { transform: translate(-50%, calc(-100% - 10px)); } }
 .act__spot {
   position: absolute;

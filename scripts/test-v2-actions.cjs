@@ -71,6 +71,7 @@ async function level(page, id) {
   // A level can open on a chore (Level 1 clears stones first): skip it.
   await page.waitForSelector("main.level .chip, main.level .act [data-act-skip]");
   while (!(await page.locator("main.level .chip").count())) {
+    if (await page.locator(".act__spot").count()) await assertSpotsFit(page, `${id} opening chore`);
     await skipChore(page);
     await page.waitForSelector("main.level .chip, main.level .act [data-act-skip]");
   }
@@ -150,6 +151,7 @@ async function weedChore(page, size, { shots = true } = {}) {
   assert.equal(await page.locator(".chip").count(), 0, "no questions until the chore is done");
   assert.equal(await page.locator(".act__spot").count(), 3);
   await page.waitForTimeout(400);
+  await assertSpotsFit(page, `${size.name} weeds`);
   if (shots) await shot(page, size, "chore");
   const g = await garden(page);
   for (let i = 0; i < 3; i++) {
@@ -162,6 +164,26 @@ async function weedChore(page, size, { shots = true } = {}) {
   assert.match(await page.locator(".bubble__text").first().textContent(), /Look at them GO/, "Mango's line stays put");
   assert.equal(await garden(page), g, "chores never change the score");
   await page.waitForSelector('.chip[data-fid="chip-0"]');
+}
+
+// Every tap spot is whole: inside the window, the garden, and the bed it is
+// in (a ring round Level 1's South bed once started off the left edge on
+// phones and spilled into the East bed). 25px is the wiggling button's reach.
+async function assertSpotsFit(page, name) {
+  const bad = await page.evaluate(() => {
+    const scene = document.querySelector("main.level .scene").getBoundingClientRect();
+    return [...document.querySelectorAll(".act__spot")].flatMap((s) => {
+      const c = s.getBoundingClientRect(); const x = c.left + c.width / 2; const y = c.top + c.height / 2;
+      const r = { left: x - 25, right: x + 25, top: y - 25, bottom: y + 25 };
+      const bed = document.querySelector(`main.level [data-bed="${s.dataset.spot.replace(/-\d+$/, "")}"]`)?.getBoundingClientRect();
+      const inside = (o) => r.left >= o.left - 1 && r.right <= o.right + 1 && r.top >= o.top - 1 && r.bottom <= o.bottom + 1;
+      const fails = [];
+      if (!inside({ left: 0, top: 0, right: innerWidth, bottom: innerHeight }) || !inside(scene)) fails.push(`${s.dataset.spot} off screen ${JSON.stringify(r)}`);
+      if (bed && !inside(bed)) fails.push(`${s.dataset.spot} outside its bed ${JSON.stringify({ r, bed })}`);
+      return fails;
+    });
+  });
+  assert.deepEqual(bad, [], `${name}: tap spots fit`);
 }
 
 const RUNS = [];
@@ -208,6 +230,7 @@ for (const size of [MAC, PHONE]) {
     await t.page.waitForSelector('.act[data-kind="pick"]');
     assert.equal(await t.page.locator(".act__spot").count(), 4);
     await t.page.waitForTimeout(400);
+    await assertSpotsFit(t.page, `${size.name} berries`);
     await shot(t.page, size, "multi-pick");
     for (let i = 0; i < 4; i++) {
       assert.equal(await t.page.locator("main.level").getAttribute("data-phase"), "advice", "applied only after the last berry");

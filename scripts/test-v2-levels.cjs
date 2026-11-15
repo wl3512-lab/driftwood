@@ -192,7 +192,31 @@ async function shot(page, size, label) {
   await page.waitForTimeout(1300); // let the stepped drift transition settle
   if (!size.touch) await assertLevelFills(page, name);
   await assertBedsFull(page, name);
+  await assertSignsClear(page, name);
   await page.screenshot({ path: path.join(OUT, `${size.name}-${name}.png`) });
+}
+
+// Every bed's sign is readable: on screen, and not under the Map button, the
+// goal, the meter or a tool button (at 568×320 the top bar once hid three of
+// them; at 844×390 the almanac button sat on "Shady corner").
+async function assertSignsClear(page, name) {
+  const hits = await page.evaluate(() => {
+    const shown = (el) => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(el).visibility !== "hidden"; };
+    const hud = [...document.querySelectorAll("main.level .scene__top > *, main.level .tools .tool")]
+      .filter((el) => shown(el) && +getComputedStyle(el.closest(".tools") || el).opacity > 0.05);
+    const out = [];
+    for (const sign of document.querySelectorAll("main.level .bed__label")) {
+      if (!shown(sign)) continue;
+      const a = sign.getBoundingClientRect();
+      if (a.left < -1 || a.top < -1 || a.right > innerWidth + 1) out.push(`${sign.textContent} off screen`);
+      for (const el of hud) {
+        const b = el.getBoundingClientRect();
+        if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) out.push(`${sign.textContent} under ${el.className}`);
+      }
+    }
+    return out;
+  });
+  assert.deepEqual(hits, [], `${name}: a bed sign is covered`);
 }
 
 // A planted bed reads as full of its crop (Lucy: one carrot in the side bed
@@ -2093,6 +2117,8 @@ async function cutsceneWatch(browser, size) {
   assert.equal(await page.locator(".cs__claim b").isVisible(), true);
   await assertOnScreen(page, ".cs__claim");
   assert.equal(await page.locator(".cs__off").isVisible(), true, "Something's off shows");
+  const off = await rectOf(page, ".cs__off"), cap = await rectOf(page, ".cs__cap");
+  assert.ok(off.y + off.h <= cap.y, `Rowan's caption leaves "Something's off" uncovered ${JSON.stringify({ off, cap })}`);
   assert.match(await page.textContent(".cs__cap-t"), /checked every season/);
   await cutShot(page, size, "5d-almanac-back");
   await tapNext(page, size, "almanac");

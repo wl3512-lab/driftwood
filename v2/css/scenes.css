@@ -660,3 +660,44 @@
 @media (prefers-reduced-motion: reduce) {
   .level, .level .scene__top > *, .level .dock, .level.is-magnifying .scene__top > *, .level.is-magnifying .dock { transition: none; }
 }
+
+/* ======== bed signs on short landscape screens ========
+   Above the bed, a sign ran up under the Map button, the goal and the meter
+   (568×320) or under the toolbar (844×390). On short landscape screens each
+   sign is staked just inside its bed's top-left corner instead, wrapping within
+   the bed's width, so nothing in the HUD can sit on it and the beds keep their
+   size. (main + .scene__ground outranks the per-level label rules above.) */
+@media (max-height: 500px) and (orientation: landscape) {
+  main.level .scene__ground .beds > .bed > .bed__label {
+    top: 3px; bottom: auto; left: 3px; z-index: 1;
+    max-width: calc(100% - 6px); white-space: normal; line-height: 1.15;
+    --stake: 6px;
+    box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+  }
+}
+/* 568×320: the toolbar sat on the last bed's top, where its sign now is; it
+   drops below the sign (a two-line sign ends ~40px into the bed). */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .tools { top: 106px; }
+  /* the narrowest bed (Level 5's Flowers) still fits its longest word */
+  main.level .scene__ground .beds > .bed > .bed__label { left: 1px; max-width: calc(100% - 2px); padding: 0.1rem 0.25rem; }
+}
+/* 844×390: hanging under the button, the first-visit note now covered the last
+   bed's sign. The lawn left of the toolbar is clear (the signs are inside the
+   beds), so the note sits there again, its arrow pointing right at the button. */
+@media (max-height: 500px) and (orientation: landscape) and (min-width: 701px) {
+  .tool-hint { position: relative; top: auto; right: auto; margin: 0 6px 0 0; width: auto; max-width: 11rem; }
+  .tool-hint::after,
+  .tools:has(.tool ~ .tool) .tool-hint::after {
+    right: -10px; top: 50%; margin-top: -7px;
+    border: 7px solid transparent; border-right: 0; border-left: 10px solid #fff0d6;
+  }
+}
+/* 568×320, Level 5: the night sky is only the top bar's height here, so the
+   moon (and the lantern on its post) hung over the signs inside the beds. The
+   lantern stands a little lower on its post, between the beds' signs and their
+   crops; the moon sets (the meadow's wilting still shows the pressure). */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .level[data-scene="meadow-night"] .prop--moon { display: none; }
+  .level[data-scene="meadow-night"] .prop[data-prop="lantern"] { top: 41% !important; }
+}

@@ -34,6 +34,10 @@ const DRAG_START = 5; // px before a press becomes a drag
 
 const HOLD_MS = 1200;
 const SPOT = 56; // a named spot's box, px
+// Half a tap spot's reach: the 44px button (css/actions.css .act__spot) turned
+// 8° in its wiggle spans ~50px, plus a pixel to spare.
+const SPOT_REACH = 26;
+const ARROW_H = 28; // the director arrow's sprite
 
 // plan: normalized actions. scene: the element the beds and props live in.
 // names: { target(tg), list(targets), item(id), thing(id, n), plant(id) }.
@@ -179,9 +183,16 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       const b = box(tg);
       if (!b) return;
       const small = b.h <= 120;
-      // Inside the top of a big bed; just above a small prop or spot.
-      const top = small ? b.y - b.h / 2 - 16 : b.y - b.h / 2 + Math.min(44, b.h * 0.4);
-      const arrow = h("div", { class: "act__arrow", style: `left:${b.x}px; top:${top}px`, "data-target": keyOf(tg) },
+      // Inside the top of a big bed (below its sign, when the sign is staked
+      // inside the bed on a phone); just above a small prop or spot.
+      const sign = signBottom(tg);
+      let top = small ? b.y - b.h / 2 - 16
+        : Math.max(b.y - b.h / 2 + Math.min(44, b.h * 0.4), sign == null ? -Infinity : sign - layer.getBoundingClientRect().top + 40);
+      // Above a small target, the arrow could land on a bed's sign or a HUD
+      // button (phones): then it hangs under the target, pointing up.
+      const up = small && arrowBlocked(b.x, top);
+      if (up) top = b.y + b.h / 2 + 16 + ARROW_H;
+      const arrow = h("div", { class: `act__arrow${up ? " act__arrow--up" : ""}`, style: `left:${b.x}px; top:${top}px`, "data-target": keyOf(tg) },
         sprite("arrow", { size: 28 }),
         a.targets.length > 1 && h("span", { class: "act__num" }, String(i + 1)));
       const ring = h("div", { class: `act__ring${tg.spot ? " act__ring--spot" : ""}`, style: `left:${b.x - b.w / 2}px; top:${b.y - b.h / 2}px; width:${b.w}px; height:${b.h}px` });
@@ -189,6 +200,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       if (soaking === i || (k.mode === "hold" && soaking < 0)) return layer.append(holdRing(i, b));
       if (k.mode === "tap") {
         const n = a.count || 1;
+        const fit = spotBounds(tg);
         for (let s = 0; s < left[i]; s++) {
           const j = n - left[i] + s; // stable position for each spot
           let px; let py;
@@ -200,6 +212,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
             px = b.x - b.w * 0.32 + (b.w * 0.64) * ((j + 0.5) / n);
             py = b.y - b.h * 0.08 + ((j % 2) ? b.h * 0.16 : -b.h * 0.06);
           }
+          px = fit.x(px); py = fit.y(py);
           const spot = h("button", {
             class: "act__spot", type: "button", style: `left:${px}px; top:${py}px`,
             "data-spot": `${keyOf(tg)}-${j}`, tabindex: -1, "aria-hidden": "true",
@@ -209,6 +222,48 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
         }
       }
     });
+  }
+
+  // Would an arrow whose foot is at (x, top), in layer px, sit on a bed's sign
+  // or on the top bar / a tool button? (The arrow is 28px and bobs 10px up.)
+  function arrowBlocked(x, top) {
+    const l = layer.getBoundingClientRect();
+    const a = { left: l.left + x - 16, right: l.left + x + 16, top: l.top + top - ARROW_H - 10, bottom: l.top + top };
+    return [...scene.querySelectorAll(".bed__label, .scene__top > *, .tools .tool")].some((el) => {
+      const q = el.getBoundingClientRect();
+      return q.width && Math.min(a.right, q.right) - Math.max(a.left, q.left) > 2 && Math.min(a.bottom, q.bottom) - Math.max(a.top, q.top) > 2;
+    });
+  }
+  // The bottom of a bed target's sign when the sign stands inside the bed
+  // (short landscape screens, css/scenes.css), in viewport px; else null.
+  function signBottom(tg) {
+    const bedId = tg.prop ? null : tg.bed || spots[tg.spot]?.bed;
+    const bed = bedId && bedEl(bedId);
+    const sign = bed?.querySelector(":scope > .bed__label");
+    if (!sign) return null;
+    const sr = sign.getBoundingClientRect();
+    return sr.top >= bed.getBoundingClientRect().top ? sr.bottom : null;
+  }
+  // Where a tap spot's centre may go: the whole wiggling button stays inside
+  // its bed (a ring round a narrow bed used to spill into the next bed and off
+  // the garden's left edge on phones) and inside the visible scene. A target
+  // that is not in a bed (a prop) only keeps its spots on screen.
+  function spotBounds(tg) {
+    const lr = layer.getBoundingClientRect();
+    let left = Math.max(lr.left, 0); let top = Math.max(lr.top, 0);
+    let right = Math.min(lr.right, innerWidth); let bottom = Math.min(lr.bottom, innerHeight);
+    const bedId = tg.bed || spots[tg.spot]?.bed;
+    const bed = bedId && !tg.prop ? bedEl(bedId) : null;
+    if (bed) {
+      const r = bed.getBoundingClientRect();
+      left = Math.max(left, r.left); top = Math.max(top, r.top, (signBottom(tg) ?? -Infinity) + 2);
+      right = Math.min(right, r.right); bottom = Math.min(bottom, r.bottom);
+    }
+    const axis = (lo, hi, off) => (v) => {
+      const a = lo + SPOT_REACH - off; const z = hi - SPOT_REACH - off;
+      return a > z ? (a + z) / 2 : Math.min(z, Math.max(a, v));
+    };
+    return { x: axis(left, right, lr.left), y: axis(top, bottom, lr.top) };
   }
 
   // ---- press and hold ----
