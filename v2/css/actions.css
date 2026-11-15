@@ -55,6 +55,9 @@
 .act__back { align-self: start; }
 /* A chore's Skip: plain small text in the card's top-right corner (gold stays the main call to action). */
 .act__skip {
+  /* Above the tool: on narrow docks the two share a corner, and a tap on
+     Skip must never pull a stone instead. */
+  position: relative; z-index: 1;
   align-self: start; justify-self: end;
   min-height: 32px; padding: 4px 6px; margin: 0;
   background: none; border: 0; box-shadow: none;

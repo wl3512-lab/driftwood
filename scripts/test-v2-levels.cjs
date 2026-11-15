@@ -2407,7 +2407,14 @@ async function aiLiveLevel1(browser, size) {
   }
   await speak(page.getByRole("button", { name: "✓ Do it" }), sun.doneLine);
   await speak(page.getByRole("button", { name: water.chip }), water.reply);
-  await speak(page.getByRole("button", { name: "✓ Do it" }), water.doneLine);
+  // A chore with its own line (Level 1's lettuce harvest) can follow the
+  // watering; its line is written, not reworded, so it shows word for word.
+  const after = (level.chores || []).find((c) => c.before === tom.id && c.doneLine);
+  if (after) {
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    await page.waitForFunction((t) => document.querySelector(".bubble__text")?.textContent.trim() === t, after.doneLine, { timeout: 15000 });
+    await page.waitForSelector(".dock .chip", { timeout: 15000 });
+  } else await speak(page.getByRole("button", { name: "✓ Do it" }), water.doneLine);
   await speak(page.getByRole("button", { name: tom.chip }), tom.reply, "drift");
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
   await phase(page, "name");
