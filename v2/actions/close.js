@@ -1,13 +1,14 @@
-// Close (Level 5): drag the hand to a gate; it pushes the gate shut in stepped
+// Close (Level 5): tap a gate and the hand goes there; it pushes the gate shut in stepped
 // frames and the gate swaps to its closed art.
 //   { kind: "close", item?: "hand", target: { prop }, fills?: { to: "l5-gate-closed" } }
 import { play, spawn, burst } from "./fx.js";
 
 export default {
   kind: "close",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Drag the ${n.item(a.item)} to the ${n.list(a.targets)} to shut it`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to shut it`,
   done: (a, n, tg) => `Shut the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face, el }) {
     const hand = spawn(layer, face(), at.x - Math.max(20, at.w * 0.4), at.y, "act__fx--tool act__fx--small");

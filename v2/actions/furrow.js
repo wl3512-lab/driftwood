@@ -1,4 +1,4 @@
-// Furrow (Level 4): drag the hoe to each mark down the row; it scrapes in
+// Furrow (Level 4): tap each mark down the row and the hoe goes there; it scrapes in
 // pixel steps, clods hop, and an open furrow is left in the soil (the marks
 // join into one furrow running down the bed).
 //   { kind: "furrow", item: "l4-hoe", target: [{ spot, bed }, …] }
@@ -8,9 +8,10 @@ import { fadeMarks, turned } from "./l4-px.js";
 
 export default {
   kind: "furrow",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Drag the ${n.item(a.item)} along the row: ${a.targets.length} marks in the ${n.bed(a.targets[0].bed)}`,
+  say: (a, n) => `Hoe the row: tap the ${a.targets.length} marks in the ${n.bed(a.targets[0].bed)}`,
   done: (a, n, tg) => `Furrow dug at the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const sweep = Math.round(Math.min(at.h, 56) * 0.8);

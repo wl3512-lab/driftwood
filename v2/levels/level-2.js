@@ -56,10 +56,10 @@ export default {
   chores: [
     { id: "glass", at: "start", title: "Chore",
       actions: [{ kind: "wipe", item: "l2-cloth", target: { prop: "glass" }, count: 3,
-        say: "Luna can't see the sun. Drag the cloth over the foggy glass (3 wipes)" }] },
+        say: "Luna can't see the sun. Tap the foggy glass to wipe it (3 wipes)" }] },
     { id: "mist", after: "basil", title: "Chore",
       actions: [{ kind: "mist", item: "l2-mister", target: { bed: "bench", plant: "basil" },
-        say: "Mist the new basil. Lightly. Drag the mister to it" }] },
+        say: "Mist the new basil. Lightly. Tap it" }] },
     { id: "tips", after: "pinch", title: "Chore",
       actions: [{ kind: "collect", item: "l2-basil-tip", target: { prop: "jar" }, count: 3,
         fills: { from: "l2-jar-empty", to: "l2-jar" },
@@ -181,7 +181,7 @@ export default {
       // Its own pot: fill an empty sill pot, set the mint plug in, firm it, mist it.
       goodActions: [
         { kind: "fill", item: "l2-compost-bag", target: { prop: "pot-1" }, fills: { from: "l2-pot-empty", to: "l2-pot-soil" },
-          say: "Drag the compost bag to the first pot to fill it" },
+          say: "Tap the first pot to fill it with compost" },
         { kind: "poke", item: "l2-mint-plug", target: { prop: "pot-1" }, say: "Set the mint plug in the pot" },
         { kind: "firm", item: "hand", target: { prop: "pot-1" } },
         { kind: "mist", item: "l2-mister", target: { prop: "pot-1" } },

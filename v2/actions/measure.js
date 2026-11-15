@@ -1,4 +1,4 @@
-// Measure (Level 4): drag the tape measure onto the bed; the tape runs out
+// Measure (Level 4): tap the start of the row and the tape measure goes there; the tape runs out
 // down it in pixel steps and leaves a dotted guide line where the row goes
 // (down the middle: Level 4's row-a…row-c spots sit on it).
 //   { kind: "measure", item: "l4-tape-measure", target: { bed } }
@@ -7,9 +7,10 @@ import { block } from "./l4-px.js";
 
 export default {
   kind: "measure",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Drag the ${n.item(a.item)} to the ${n.list(a.targets)} to mark the row`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to mark the row`,
   done: (a, n, tg) => `Row marked across the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const run = Math.round(Math.min(at.h * 0.58, 320));

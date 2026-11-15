@@ -96,7 +96,7 @@ export default {
   chores: [
     {
       id: "lantern", at: "start", title: "Chore",
-      actions: [{ kind: "light", item: "l5-match", target: { prop: "lantern" }, say: "It's dark. Drag the match to the lantern" }],
+      actions: [{ kind: "light", item: "l5-match", target: { prop: "lantern" }, say: "It's dark. Tap the lantern to light it" }],
     },
     {
       id: "slugs", after: "plant", title: "Chore",
@@ -166,7 +166,7 @@ export default {
         { kind: "hold", target: { bed: "veg" }, result: "Damp", say: "Push a finger into the Veg bed and hold" },
         { kind: "hold", target: { bed: "herbs" }, result: "Damp", say: "Now the Herbs bed: push a finger in and hold" },
         { kind: "hold", target: { bed: "house" }, result: "Dry", say: "Now the Flowers bed: push a finger in and hold" },
-        { kind: "stream", item: "can", target: { bed: "house", plant: "flower" }, say: "Only the Flowers bed is dry. Drag the can there" },
+        { kind: "stream", item: "can", target: { bed: "house", plant: "flower" }, say: "Only the Flowers bed is dry. Tap it to water it" },
       ],
       effect: { plant: "flower", bed: "house", state: "thriving", garden: 15 },
       doneLine: "you keep putting me down… it's fine. i'm fine. the meadow's still drooping out there… but you don't have to go. stay with me?",
@@ -240,7 +240,7 @@ export default {
       goodActions: [
         { kind: "phone-down", item: "l5-phone-glow", target: { prop: "step" }, say: "Put the phone down: drag it to the porch step" },
         { kind: "stream", item: "can", target: { bed: "meadow", plant: "flower" }, soak: 1500,
-          say: "Water the meadow at the roots: drag the can, then hold until it soaks in" },
+          say: "Water the meadow at the roots: tap it, then hold until it soaks in" },
         { kind: "close", item: "hand", target: { prop: "gate" }, say: "Shut the gate on your way back in" },
       ],
       goodEffect: { plant: "flower", bed: "meadow", state: "thriving", garden: 30, water: true },

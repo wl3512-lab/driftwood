@@ -14,7 +14,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { completeAction, actionIdle, dragTo, skipChore } = require("./v2-actions-helper.cjs");
+const { completeAction, actionIdle, skipChore, tapOn } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8771/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-level1-wave2");
@@ -138,13 +138,28 @@ async function full(browser, size) {
   }
   await page.waitForSelector('main.level .act[data-kind="water"]');
   await shot(page, size, "6-barrel-filled");
-  // The water itself by a real drag, screenshot mid-pour.
+  // The water itself by tapping each bed, screenshot mid-pour.
   log.push(`water: ${(await say(page)).trim()}`);
-  await dragTo(page, "main.level .act__item", '[data-bed="south"]', { touch: !!size.touch });
+  assert.equal(await page.locator("main.level .act").getAttribute("data-mode"), "tap-target", "watering is a tap on the bed");
+  assert.match(await page.locator("main.level .act__how").textContent(), /^Tap each one · or press Enter$/);
+  await tapOn(page, '[data-bed="south"]', { touch: !!size.touch });
   await page.waitForTimeout(650);
   await shot(page, size, "7-water-stream");
   await actionIdle(page);
-  await dragTo(page, "main.level .act__item", '[data-bed="east"]', { touch: !!size.touch });
+  await tapOn(page, '[data-bed="east"]', { touch: !!size.touch });
+  // The finger test's "Top inch: dry" sits on the East bed: it fades while the stream pours.
+  await page.waitForSelector("main.level .act-layer .l3-jet", { timeout: 4000 });
+  await page.waitForTimeout(520);
+  const crossed = await page.evaluate(() => {
+    const jets = [...document.querySelectorAll("main.level .act-layer .l3-jet")].map((j) => j.getBoundingClientRect());
+    return [...document.querySelectorAll("main.level .act-mark--text")].filter((m) => {
+      const r = m.getBoundingClientRect();
+      const over = jets.some((b) => r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top);
+      return over && Number(getComputedStyle(m).opacity) > 0.1;
+    }).map((m) => m.textContent);
+  });
+  assert.deepEqual(crossed, [], "no result label shows through the water stream");
+  await shot(page, size, "7b-water-east");
   await page.waitForSelector('main.level .act[data-kind="water"]', { state: "detached", timeout: 8000 });
   // Harvest chore, then the drift caught and fixed.
   await page.waitForSelector('main.level .act[data-kind="pick"]');

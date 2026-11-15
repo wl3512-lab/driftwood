@@ -27,6 +27,28 @@ export async function burst(nodes, run) {
   try { await run(); } finally { for (const n of nodes) n.remove(); }
 }
 
+// Result labels (a finger test's "Top inch: dry", a probe's readout) that sit
+// where a tool's liquid or sprite will be: they fade out before the pour and
+// back in after, so the stream never runs across their words.
+export function clearLabels(layer, nodes, { reduced = false } = {}) {
+  const scene = layer?.parentElement;
+  const boxes = nodes.filter(Boolean).map((n) => n.getBoundingClientRect()).filter((b) => b.width || b.height);
+  const pad = 8;
+  const hit = !scene ? [] : [...scene.querySelectorAll(":scope > .act-marks > .act-mark--text")].filter((m) => {
+    const r = m.getBoundingClientRect();
+    return boxes.some((b) => r.left < b.right + pad && r.right > b.left - pad && r.top < b.bottom + pad && r.bottom > b.top - pad);
+  });
+  const fade = (from, to) => Promise.all(hit.map((m) => play(m, [{ opacity: from }, { opacity: to }], { duration: reduced ? 0 : 140, easing: "steps(2, end)" })));
+  return {
+    labels: hit,
+    hide: () => fade(1, 0),
+    show: async () => {
+      await fade(0, 1);
+      for (const m of hit) { try { m.getAnimations().forEach((x) => x.cancel()); } catch (_) { /* fine */ } }
+    },
+  };
+}
+
 export const rand = (seed) => { let x = seed * 9301 + 49297; return () => ((x = (x * 9301 + 49297) % 233280) / 233280); };
 
 // A readable name for an item or spot id: "l3-spray-bottle" → "spray bottle".

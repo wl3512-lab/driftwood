@@ -1,8 +1,8 @@
-// Water: drag the can over each bed; it tips and a stream pours onto the soil.
+// Water: tap each bed and the can goes there; it tips and a stream pours onto the soil.
 // The stream is Level 3's hose jet (v2/css/l3-spray.css: .l3-jet, .l3-drop),
 // so every liquid in the game has one pixel look: it reveals from the spout in
 // steps, its chunks scroll down it, and it splashes where it lands.
-import { play, spawn, burst } from "./fx.js";
+import { play, spawn, burst, clearLabels } from "./fx.js";
 
 if (typeof document !== "undefined" && !document.querySelector("link[data-l3-spray-css]")) {
   const link = Object.assign(document.createElement("link"), {
@@ -21,9 +21,10 @@ function div(cls, style = "") {
 
 export default {
   kind: "water",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: () => "watering can",
-  say: (a, n) => `Drag the watering can to the ${n.list(a.targets)}`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to water it`,
   done: (a, n, tg) => `Watered the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const top = at.y - Math.min(70, at.h * 0.3);
@@ -47,6 +48,9 @@ export default {
 
     const T = (ms) => (reduced ? Math.min(ms, 120) : ms);
     const tilt = (deg) => ({ transform: `translate(-50%, -50%) rotate(${deg}deg)` });
+    // A result label in the stream's way fades for the pour.
+    const clear = clearLabels(layer, [can, jet], { reduced });
+    await clear.hide();
     await burst([can, jet, ...drops], async () => {
       // 1. The can tips.
       await play(can, [tilt(0), tilt(40)], { duration: T(240), easing: "steps(3, end)" });
@@ -80,5 +84,6 @@ export default {
         play(can, [{ ...tilt(38), opacity: 1 }, { ...tilt(0), opacity: 0 }], { duration: T(220), easing: "steps(3, end)" }),
       ]);
     });
+    await clear.show();
   },
 };

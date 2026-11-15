@@ -50,11 +50,22 @@ test("targets: a spot can name its bed, $choice included", () => {
 });
 
 test("the eight shared kinds are registered with their modes", () => {
-  const modes = { pull: "tap", fill: "drag", pour: "drag", cover: "drag", collect: "drag", poke: "drag", hold: "hold", snip: "tap" };
+  const modes = { pull: "tap", fill: "tap", pour: "tap", cover: "drag", collect: "drag", poke: "drag", hold: "hold", snip: "tap" };
   for (const [k, mode] of Object.entries(modes)) {
     assert.ok(KINDS.includes(k), k);
     assert.equal(kindOf(k)?.mode, mode, k);
   }
+});
+
+test("repeated jobs tap the target; one-off carry-this-there moves stay drags", () => {
+  // Tap the target (the tool goes there by itself): no spot art of their own.
+  for (const k of ["dig", "firm", "furrow", "measure", "mist", "pour", "spray", "stream", "water", "water-row", "wipe", "fill", "sow-row", "light", "magnifier", "photo", "close"]) {
+    assert.equal(kindOf(k)?.mode, "tap", k);
+    assert.equal(kindOf(k)?.tapTarget, true, k);
+    assert.match(kindOf(k).say({ kind: k, item: "can", targets: [{ bed: "a" }], count: 1 }, { list: () => "A bed", item: () => "can", bed: () => "A bed", target: () => "A bed", plant: () => "x", thing: () => "x" }), /^(Tap|Hoe|Sprinkle)/, k);
+  }
+  for (const k of ["plant", "release", "cover", "label", "poke", "collect", "phone-down"]) assert.equal(kindOf(k)?.mode, "drag", k);
+  for (const k of ["pull", "pick", "pests", "snip"]) assert.equal(!!kindOf(k)?.tapTarget, false, k);
 });
 
 test("defaults: items and counts for the shared kinds", () => {
@@ -86,7 +97,7 @@ test("each shared kind says where to go and what it did, in words", () => {
   const cases = {
     pull: [{ kind: "pull", spot: "l1-stone", target: { bed: "a" }, count: 2 }, /Pull the 2 stones out of the Front bed/],
     fill: [{ kind: "fill", item: "can", target: { prop: "barrel" } }, /barrel/],
-    pour: [{ kind: "pour", item: "l2-mister", target: { bed: "a" }, soak: 1200 }, /mister.*Front bed.*hold/],
+    pour: [{ kind: "pour", item: "l2-mister", target: { bed: "a" }, soak: 1200 }, /Tap the Front bed.*mister.*hold/],
     cover: [{ kind: "cover", item: "l3-net", target: { bed: "b" }, cover: "l3-net" }, /net over the Back bed/],
     collect: [{ kind: "collect", item: "l2-mint-sprig", target: { prop: "jar" }, count: 3 }, /3 mint sprigs into the jar/],
     poke: [{ kind: "poke", item: "l1-cane", target: { spot: "row-1" } }, /cane into the first row/],

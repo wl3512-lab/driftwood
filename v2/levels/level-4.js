@@ -137,7 +137,7 @@ export default {
       effect: { plant: "pumpkin", bed: "back", state: "growing", garden: 15 },
       // Two hills, seeds on each, a label: in the back bed, or wherever "my way" says.
       actions: [
-        { kind: "cover", item: "l4-spade", cover: "l4-mound", target: [{ spot: "hill-1", bed: "back" }, { spot: "hill-2", bed: "back" }], say: "Heap up two hills: drag the spade to both marks" },
+        { kind: "cover", item: "l4-spade", cover: "l4-mound", target: [{ spot: "hill-1", bed: "back" }, { spot: "hill-2", bed: "back" }], tap: true, say: "Heap up two hills: tap both marks with the spade" },
         { kind: "plant", item: "pumpkin", target: [{ spot: "hill-1", bed: "back" }, { spot: "hill-2", bed: "back" }] },
         { kind: "poke", item: "l4-label-pumpkin", target: { spot: "label-pumpkin", bed: "back" }, say: "Push the pumpkin label in" },
       ],
@@ -148,7 +148,7 @@ export default {
         mine: "Side bed instead",
         theirs: "Fine, the back bed",
         actions: [
-          { kind: "cover", item: "l4-spade", cover: "l4-mound", target: [{ spot: "hill-1", bed: "side" }, { spot: "hill-2", bed: "side" }], say: "Heap up two hills: drag the spade to both marks" },
+          { kind: "cover", item: "l4-spade", cover: "l4-mound", target: [{ spot: "hill-1", bed: "side" }, { spot: "hill-2", bed: "side" }], tap: true, say: "Heap up two hills: tap both marks with the spade" },
           { kind: "plant", item: "pumpkin", target: [{ spot: "hill-1", bed: "side" }, { spot: "hill-2", bed: "side" }] },
           { kind: "poke", item: "l4-label-pumpkin", target: { spot: "label-pumpkin", bed: "side" }, say: "Push the pumpkin label in" },
         ],

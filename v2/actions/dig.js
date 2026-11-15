@@ -1,12 +1,13 @@
-// Dig: drag the trowel to the bed; it scoops twice and clods of soil fly up.
+// Dig: tap the bed and the trowel goes there; it scoops twice and clods of soil fly up.
 import { sprite } from "./sprites.js";
 import { play, spawn, burst, rand } from "./fx.js";
 
 export default {
   kind: "dig",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: () => "trowel",
-  say: (a, n) => `Drag the trowel to the ${n.list(a.targets)} to dig`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to dig`,
   done: (a, n, tg) => `Dug the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const tool = spawn(layer, face(), at.x, at.y - Math.min(30, at.h * 0.1), "act__fx--tool");

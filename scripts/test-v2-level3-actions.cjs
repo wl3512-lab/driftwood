@@ -13,7 +13,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { actionIdle, dragTo } = require("./v2-actions-helper.cjs");
+const { actionIdle, useTool } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8773/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-level3-wave2");
@@ -59,12 +59,17 @@ const gone = (page, kind) => page.waitForFunction((k) => {
 }, kind, { timeout: 10000 });
 const FIELD = (bed) => `[data-bed="${bed}"]`;
 
-// Drag the tool onto a target `times` times; optionally screenshot mid-animation.
+// Use the tool on a target `times` times: tap the target (the hose, bug
+// spray, lens and camera go there by themselves) or drag the tool there (the
+// ladybug jar, twine, net, label); optionally screenshot mid-animation.
+const TAP_KINDS = new Set(["spray", "magnifier", "photo"]);
 async function drag(page, size, kind, to, times = 1, snap = null) {
   for (let i = 0; i < times; i++) {
     await card(page, kind);
     await actionIdle(page);
-    await dragTo(page, "main.level .act__item", to, { touch: !!size.touch });
+    const mode = await page.locator("main.level .act").getAttribute("data-mode");
+    assert.equal(mode, TAP_KINDS.has(kind) ? "tap-target" : "drag", `${kind} is a ${TAP_KINDS.has(kind) ? "tap" : "drag"}`);
+    await useTool(page, to, { touch: !!size.touch });
     if (snap && i === 0) { await page.waitForTimeout(snap.ms); await shot(page, size, snap.name); }
     await actionIdle(page, 8000);
   }

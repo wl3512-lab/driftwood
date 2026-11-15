@@ -1,4 +1,4 @@
-// Photo (Level 3): drag the camera to a plant. A stepped pixel flash, and a
+// Photo (Level 3): tap a plant and the camera goes there. A stepped pixel flash, and a
 // polaroid of it stays pinned beside the plant, captioned for the expert.
 //   { kind: "photo", item: "l3-camera", target, result?: "For the garden centre" }
 import { art } from "./sprites.js";
@@ -8,9 +8,10 @@ const caption = (a) => a.result || "For the expert";
 
 export default {
   kind: "photo",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item || "l3-camera"),
-  say: (a, n) => `Drag the camera to the ${n.list(a.targets)} to take a photo`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to take a photo`,
   done: (a, n, tg) => `Took a photo of the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const cam = spawn(layer, face(), at.x, at.y - 30, "act__fx--tool");

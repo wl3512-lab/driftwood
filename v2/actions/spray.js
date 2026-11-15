@@ -1,4 +1,4 @@
-// Spray (Level 3): drag the hose (or a spray bottle) to the plant. The nozzle
+// Spray (Level 3): tap the plant and the hose (or a spray bottle) goes there. The nozzle
 // settles beside it, a pixel water jet shoots out, and one aphid cluster washes
 // off per drop, so `count` drops clear the plant cluster by cluster.
 //   { kind: "spray", item: "l3-hose" | "l3-spray-bottle", target, count }
@@ -9,7 +9,7 @@
 // in v2/css/l3-spray.css (loaded below, like the runner loads actions.css), so
 // other kinds that show liquid can reuse the .l3-jet / .l3-drop classes.
 import { art } from "./sprites.js";
-import { play, spawn, burst } from "./fx.js";
+import { play, spawn, burst, clearLabels } from "./fx.js";
 
 if (typeof document !== "undefined" && !document.querySelector("link[data-l3-spray-css]")) {
   const link = Object.assign(document.createElement("link"), {
@@ -32,14 +32,15 @@ function div(cls, style = "") {
 
 export default {
   kind: "spray",
-  mode: "drag",
-  // Drag kinds don't render spots; the runner still passes spot(a) to animate,
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
+  // Target taps don't render spots; the runner still passes spot(a) to animate,
   // which is how animate learns which tool it is.
   spot: (a) => a.item || "l3-hose",
   noun: (a, n) => n.item(a.item || "l3-hose"),
   say: (a, n) => (isMist(a.item)
-    ? `Drag the spray bottle to the ${n.list(a.targets)} and spray`
-    : `Drag the hose to the ${n.list(a.targets)} and blast the aphids off`),
+    ? `Tap the ${n.list(a.targets)} to spray it`
+    : `Tap the ${n.list(a.targets)} to blast the aphids off with the hose`),
   done: (a, n, tg) => (isMist(a.item) ? `Sprayed the ${n.target(tg)}.` : `Washed the aphids off the ${n.target(tg)}.`),
 
   async animate(layer, at, { reduced, face, spot, el }) {
@@ -79,6 +80,9 @@ export default {
 
     const T = (ms) => (reduced ? Math.min(ms, 160) : ms);
     const aim = `translate(-50%, -50%) scaleX(${flip}) rotate(${side * (mist ? -6 : 14)}deg)`;
+    // A result label in the jet's way fades for the spray.
+    const clear = clearLabels(layer, [tool, jet], { reduced });
+    await clear.hide();
     await burst(all, async () => {
       // 1. The nozzle swings into place.
       await play(tool, [
@@ -125,5 +129,6 @@ export default {
         play(tool, [{ transform: aim, opacity: 1 }, { transform: `${aim} translateY(-12px)`, opacity: 0 }], { duration: T(220), easing: "steps(3, end)" }),
       ]);
     });
+    await clear.show();
   },
 };

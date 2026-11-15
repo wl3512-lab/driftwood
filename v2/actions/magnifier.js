@@ -1,4 +1,4 @@
-// Magnifier (Level 3): drag the magnifying glass over a plant. A pixel lens
+// Magnifier (Level 3): tap a plant and the magnifying glass goes there. A pixel lens
 // shows it up close, with one plain line about what you can (and can't) tell.
 //   { kind: "magnifier", item: "magnifier", target, result?: "No label" }
 // This is a hands-on action, separate from the M-key magnifier tool
@@ -7,10 +7,11 @@ import { play, spawn, burst } from "./fx.js";
 
 export default {
   kind: "magnifier",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   spot: (a) => a.result || "",
   noun: () => "magnifying glass",
-  say: (a, n) => `Drag the magnifying glass over the ${n.list(a.targets)}`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to look closer`,
   done: (a, n, tg) => (a.result ? `${a.result}.` : `You looked at the ${n.target(tg)} up close.`),
   async animate(layer, at, { reduced, el, spot }) {
     const lens = document.createElement("div");
