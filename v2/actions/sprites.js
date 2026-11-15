@@ -88,6 +88,36 @@ const GRIDS = {
     ".EeEeE..",
     "...E....",
   ],
+  leaf: [
+    "....kk..",
+    "...keEk.",
+    "..keeEk.",
+    ".keeEk..",
+    ".keEk...",
+    "keEk....",
+    "kEk.....",
+    ".k......",
+  ],
+  snips: [
+    "k.....k.",
+    "ks...sk.",
+    ".ks.sk..",
+    "..kgk...",
+    "..kgk...",
+    ".krkrk..",
+    "krrkrrk.",
+    ".kk.kk..",
+  ],
+  stone: [
+    "........",
+    "..kkkk..",
+    ".kssggk.",
+    "ksssgggk",
+    "kssggggk",
+    "kgggggk.",
+    ".kkkkk..",
+    "........",
+  ],
   seed: [".k.", "kyk", "kyk", ".k."],
   drop: [".c.", "ccc", "cCc", ".c."],
   clod: [".nn.", "nbbn", "nbnn", ".nn."],
@@ -129,10 +159,12 @@ export const hasSprite = (name) => name in GRIDS;
 
 // A built-in pixel sprite by name, else the level art v2/art/<name>.svg.
 const ALIAS = { can: "watering-can", label: "plant-label", packet: "seed-packet" };
+// v2/art/<name>.svg (aliases above); a path ("./x.svg", "../art/x.svg") is used as given.
+export const artUrl = (name) => (/[/.]/.test(name) ? name : new URL(`../art/${ALIAS[name] || name}.svg`, import.meta.url).href);
 export function art(name, { size = 32, cls = "" } = {}) {
   if (hasSprite(name)) return sprite(name, { size, cls });
   const img = document.createElement("img");
-  img.src = new URL(`../art/${ALIAS[name] || name}.svg`, import.meta.url).href;
+  img.src = artUrl(name);
   img.width = size; img.height = size; img.alt = "";
   if (cls) img.className = cls;
   return img;

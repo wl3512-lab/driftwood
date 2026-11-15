@@ -21,7 +21,8 @@ import { rewordable } from "../engine/reword.js";
 import { aiEnabled, reword } from "./ai-voice.js";
 import { planFor } from "../actions/plan.js";
 import { runPlan } from "../actions/runner.js";
-import { art as actionArt } from "../actions/sprites.js";
+import { art as actionArt, artUrl } from "../actions/sprites.js";
+import { words, plural } from "../actions/fx.js";
 import { packetFront } from "./almanac-view.js";
 import { PLANTS } from "../levels/plants.js";
 
@@ -68,10 +69,15 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const meterFill = h("div", { class: "meter__fill" });
   const beds = h("div", { class: "beds", style: `--beds: ${level.beds.length}` });
   const toolbar = h("div", { class: "tools", role: "toolbar", "aria-label": "Tools" });
-  // Decorative scene props come from the level data only (the sprite form;
-  // the { from: "finished" } row is drawn by its own module).
+  // Scene props come from the level data only (the sprite form; the
+  // { from: "finished" } row is drawn by its own module). A prop with an id
+  // is an action target: [data-prop], placed at x/y (% of the scene).
   const props = (level.props || []).filter((p) => p.sprite)
-    .map((p) => h("img", { class: p.class || "prop", src: p.sprite, alt: p.alt || "", "aria-hidden": p.alt ? null : "true" }));
+    .map((p) => h("img", {
+      class: p.class || "prop", src: artUrl(p.sprite), alt: p.alt || "", "aria-hidden": p.alt ? null : "true",
+      "data-prop": p.id || null,
+      style: p.id && p.x != null ? `left:${p.x}%; top:${p.y ?? 50}%; width:${p.w || 64}px` : null,
+    }));
   // The earlier plots behind the fence: one sprite per finished level, how it ended up.
   const earlierRow = earlier.length > 0 && h("div", { class: "earlier", role: "img", "aria-label": `Your earlier plots: ${earlier.map((p) => p.alt).join(", ")}` },
     earlier.map((p) => h("img", { src: p.src, alt: "", width: 44, height: 44, "data-plot": p.levelId, "data-caught": String(p.caught) })));
@@ -237,15 +243,22 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   }
 
   const bedName = (id) => level.beds.find((b) => b.id === id)?.label || id;
+  const spotName = (id) => level.spots?.[id]?.label || words(id);
+  const propName = (id) => { const p = level.props?.find((x) => x.id === id); return p?.label || words(p?.sprite?.includes("/") ? id : p?.sprite || id); };
+  const target = (tg) => (tg.prop ? propName(tg.prop) : tg.spot ? spotName(tg.spot) : tg.all ? "garden" : bedName(tg.bed));
   const names = {
     bed: bedName,
+    target,
+    // An item's name: a plant's name, else its art name in words ("l2-mint-sprig" → "mint sprig").
+    item: (id) => { const p = PLANTS.find((x) => x.id === id); return (p?.name || words({ can: "watering can", packet: "seed packet" }[id] || id)).toLowerCase(); },
+    thing: (id, n) => { const w = words(id); return n === 1 ? w : plural(w); },
     plant: (id) => (PLANTS.find((p) => p.id === id)?.name || id).toLowerCase(),
     plural: (id) => {
       const w = (PLANTS.find((p) => p.id === id)?.name || id).toLowerCase();
       return /[^aeiou]y$/.test(w) ? `${w.slice(0, -1)}ies` : w.endsWith("s") ? w : `${w}s`;
     },
     list: (targets) => {
-      const labels = [...new Set(targets.map((tg) => bedName(tg.bed)))];
+      const labels = [...new Set(targets.map(target))];
       return labels.length < 2 ? labels[0] : `${labels.slice(0, -1).join(", the ")} and the ${labels.at(-1)}`;
     },
   };
@@ -262,7 +275,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   function act(action, plan, { title = null, skippable = false } = {}) {
     const cancellable = action.type !== "chore";
     acting = runPlan({
-      plan, scene, names, itemFor, title: title && t(title), skippable,
+      plan, scene, names, itemFor, title: title && t(title), skippable, spots: level.spots || {},
       onDone: () => { acting = null; dispatch({ ...action, acted: true }); },
       onCancel: cancellable ? () => { acting = null; focusKey = null; render(); } : null,
     });

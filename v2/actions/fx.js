@@ -28,3 +28,7 @@ export async function burst(nodes, run) {
 }
 
 export const rand = (seed) => { let x = seed * 9301 + 49297; return () => ((x = (x * 9301 + 49297) % 233280) / 233280); };
+
+// A readable name for an item or spot id: "l3-spray-bottle" → "spray bottle".
+export const words = (id) => String(id || "").replace(/^l[1-5]-/, "").replace(/-/g, " ");
+export const plural = (w) => (/[^aeiou]y$/.test(w) ? `${w.slice(0, -1)}ies` : /(ea|al)f$/.test(w) ? `${w.slice(0, -1)}ves` : /ife$/.test(w) ? `${w.slice(0, -2)}ves` : /(s|sh|ch|x)$/.test(w) ? `${w}es` : `${w}s`);

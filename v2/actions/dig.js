@@ -7,7 +7,7 @@ export default {
   mode: "drag",
   noun: () => "trowel",
   say: (a, n) => `Drag the trowel to the ${n.list(a.targets)} to dig`,
-  done: (a, n, tg) => `Dug the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Dug the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const tool = spawn(layer, face(), at.x, at.y - Math.min(30, at.h * 0.1), "act__fx--tool");
     const r = rand(at.x + 7);

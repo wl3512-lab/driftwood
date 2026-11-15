@@ -7,7 +7,7 @@ export default {
   mode: "drag",
   noun: () => "hand",
   say: (a, n) => `Drag your hand to the ${n.list(a.targets)} to firm the soil`,
-  done: (a, n, tg) => `Firmed the soil in the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Firmed the soil in the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const hand = spawn(layer, face(), at.x, at.y - 10, "act__fx--tool");
     const dust = spawn(layer, sprite("clod", { size: 18 }), at.x, at.y + 26);

@@ -1,7 +1,13 @@
 // Runs a plan (actions/plan.js) in the level screen: the tool pops up in the
-// dock, a bouncing arrow marks each target bed, the player drags the tool
-// there (pointer events: mouse, pen and touch) or taps each spot, an animation
-// plays, and only then does `onDone` let the level apply the effect.
+// dock, a bouncing arrow marks each target, the player drags the tool there
+// (pointer events: mouse, pen and touch), taps each spot, or presses and holds
+// until a ring fills; an animation plays, and only then does `onDone` let the
+// level apply the effect.
+//
+// Targets: a bed (or one plant's field in it), a prop ([data-prop] in the
+// scene), a named spot (level.spots, inside a bed or the scene), or the whole
+// garden ({ all: true }). A kind's land() can leave marks that stay in the
+// scene (a stake standing, a net over a bush, a readout) and swap a prop's art.
 //
 // Keyboard: Enter/Space on the tool sends it to the next target; 1…n pick a
 // target; Esc cancels back to the choice (when `cancellable` and nothing is
@@ -12,7 +18,7 @@
 // plan straight away through the same commit path the keyboard uses.
 import { h, announce } from "../ui/dom.js";
 import { kindOf } from "./registry.js";
-import { sprite, art } from "./sprites.js";
+import { sprite, art, artUrl, hasSprite } from "./sprites.js";
 import { play, wait } from "./fx.js";
 
 // The stylesheet ships with the module, so index.html needs no new link.
@@ -26,10 +32,14 @@ if (typeof document !== "undefined" && !document.querySelector("link[data-action
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const DRAG_START = 5; // px before a press becomes a drag
 
-// plan: normalized actions. scene: the element the beds live in.
-// names: { bed(id), plant(id), list(targets) }. itemFor(action) → the tool's face.
+const HOLD_MS = 1200;
+const SPOT = 56; // a named spot's box, px
+
+// plan: normalized actions. scene: the element the beds and props live in.
+// names: { target(tg), list(targets), item(id), thing(id, n), plant(id) }.
+// itemFor(action) → the tool's face. spots: level.spots.
 // skippable: a chore's quiet "Skip" link, which finishes it at once with no animation.
-export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, title = null, skippable = false }) {
+export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, title = null, skippable = false, spots = {} }) {
   const reduced = reducedMotion();
   const layer = h("div", { class: "act-layer", "aria-hidden": "true" });
   scene.append(layer);
@@ -42,29 +52,79 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   let over = false;
   let ghost = null;
   let item = null;
+  let hold = null;       // the ring being held: { i, el, t0, ms, auto, raf }
+  let soaking = -1;      // a drag kind with `soak`: the target waiting for its hold
+  let soaked = null;     // resolves the soak hold
   const timers = new Set();
 
   const action = () => plan[ai];
   const kind = () => kindOf(action().kind);
   const nextTarget = () => done.findIndex((d) => !d);
 
+  const keyOf = (tg) => tg.bed && !tg.spot ? tg.bed : tg.prop || tg.spot || "all";
+  const bedEl = (id) => scene.querySelector(`[data-bed="${id}"]`);
+  // The element a target lives on (a spot has none of its own: its bed, or null).
   function targetEl(tg) {
-    const bed = scene.querySelector(`[data-bed="${tg.bed}"]`);
+    if (tg.prop) return scene.querySelector(`[data-prop="${tg.prop}"]`);
+    if (tg.all) return scene.querySelector(".beds") || scene;
+    if (tg.spot) return null;
+    const bed = bedEl(tg.bed);
     return (tg.plant && bed?.querySelector(`[data-field="${tg.plant}"]`)) || bed;
+  }
+  // A target's viewport rect. A spot is a small box at its x/y (% of its bed, or of the scene).
+  function rectOf(tg) {
+    if (tg.spot) {
+      const s = spots[tg.spot] || {};
+      const base = (tg.bed && bedEl(tg.bed)) || scene;
+      const r = base.getBoundingClientRect();
+      const x = r.left + r.width * (s.x ?? 50) / 100;
+      const y = r.top + r.height * (s.y ?? 50) / 100;
+      return { left: x - SPOT / 2, top: y - SPOT / 2, right: x + SPOT / 2, bottom: y + SPOT / 2, width: SPOT, height: SPOT };
+    }
+    return targetEl(tg)?.getBoundingClientRect() || null;
   }
   // A target's box in layer coordinates, plus its viewport rect.
   function box(tg) {
-    const el = targetEl(tg);
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
+    const r = rectOf(tg);
+    if (!r) return null;
     const l = layer.getBoundingClientRect();
     return { x: r.left - l.left + r.width / 2, y: r.top - l.top + r.height / 2, w: r.width, h: r.height, rect: r };
+  }
+
+  // ---- marks that stay: a kind's land() calls these ----
+  function marks() {
+    let m = scene.querySelector(":scope > .act-marks");
+    if (!m) { m = h("div", { class: "act-marks", "aria-hidden": "true" }); scene.append(m); }
+    return m;
+  }
+  const artNode = (name, size = 52) => art(name, { size });
+  const textNode = (text) => h("span", { class: "act-mark__text" }, text);
+  // Pin node to the target, in % of the scene so it stays put when the beds re-render.
+  function stamp(tg, node, { cls = "", cover = false } = {}) {
+    const r = rectOf(tg);
+    const sr = scene.getBoundingClientRect();
+    if (!r || !sr.width || !sr.height) return null;
+    const pct = (v, of) => `${(v / of) * 100}%`;
+    const style = cover
+      ? `left:${pct(r.left - sr.left, sr.width)}; top:${pct(r.top - sr.top, sr.height)}; width:${pct(r.width, sr.width)}; height:${pct(r.height, sr.height)}`
+      : `left:${pct(r.left - sr.left + r.width / 2, sr.width)}; top:${pct(r.top - sr.top + r.height / 2, sr.height)}`;
+    const m = h("div", { class: `act-mark ${cls}`.trim(), style, "data-mark": keyOf(tg) }, node);
+    marks().append(m);
+    return m;
+  }
+  // A prop shows new art (the jar fills); any other target gets the art stamped on it.
+  function swap(tg, name) {
+    const el = tg.prop && targetEl(tg);
+    if (el?.tagName === "IMG" && !hasSprite(name)) { el.src = artUrl(name); el.dataset.art = name; return; }
+    stamp(tg, artNode(name, 48), { cls: "act-mark--swap" });
   }
 
   function begin() {
     const a = action();
     done = a.targets.map(() => false);
     left = a.targets.map(() => a.count || 1);
+    soaking = -1;
+    if (a.fills?.from) a.targets.forEach((tg) => tg.prop && swap(tg, a.fills.from));
     renderCard();
     renderDirector();
     say(a.say ? a.say : kind().say(a, names));
@@ -80,11 +140,13 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const a = action();
     const k = kind();
     const multi = a.targets.length > 1 || (a.count || 1) > 1;
+    const how = soaking >= 0 || k.mode === "hold" ? "Press and hold · or press Enter"
+      : k.mode === "tap" ? "Tap each one · or press Enter" : "Drag it there · or press Enter";
     const total = a.targets.length * (a.count || 1);
     const count = total - left.reduce((n, x) => n + x, 0);
     item = h("button", {
       class: `act__item act__item--${a.kind}`, type: "button", "data-act-item": a.kind,
-      "aria-label": `${k.noun(a, names)}. Press Enter to use it${a.targets.length > 1 ? `, or 1 to ${a.targets.length} to pick a bed` : ""}.`,
+      "aria-label": `${k.noun(a, names)}. Press Enter to use it${a.targets.length > 1 ? `, or 1 to ${a.targets.length} to pick one` : ""}.`,
       "aria-keyshortcuts": "Enter Space",
     }, itemFor(a));
     item.addEventListener("pointerdown", onPointerDown);
@@ -96,40 +158,51 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       h("div", { class: "act__text" },
         title && h("p", { class: "act__title" }, title),
         h("p", { class: "act__say" }, a.say || k.say(a, names)),
-        h("p", { class: "act__how", "aria-hidden": "true" },
-          k.mode === "tap" ? "Tap each one · or press Enter" : "Drag it there · or press Enter"),
+        h("p", { class: "act__how", "aria-hidden": "true" }, how),
         multi && h("p", { class: "act__count" }, h("span", { class: "sr-only" }, "Done "), `${count}/${total}`),
         plan.length > 1 && h("p", { class: "act__steps", "aria-hidden": "true" }, plan.map((_, i) => h("span", { class: i < ai ? "is-done" : i === ai ? "is-now" : "" })))),
       onCancel && ai === 0 && count === 0 && h("button", { class: "btn btn--off act__back", type: "button", "data-act-back": "", onclick: cancel },
         "Back", h("kbd", { class: "kbd", "aria-hidden": "true" }, "Esc")),
-      skippable && h("button", { class: "btn btn--off act__skip", type: "button", "data-act-skip": "", onclick: skip }, "Skip"),
+      skippable && h("button", { class: "act__skip", type: "button", "data-act-skip": "", onclick: skip }, "Skip"),
       live].filter(Boolean));
   }
 
   // Arrows over every target still to do (numbered when there are several),
-  // and the spots to tap for tap kinds.
+  // the spots to tap for tap kinds, and the rings to hold for hold kinds.
   function renderDirector() {
     layer.replaceChildren();
     const a = action();
     const k = kind();
     a.targets.forEach((tg, i) => {
       if (done[i]) return;
+      if (soaking >= 0 && i !== soaking) return;
       const b = box(tg);
       if (!b) return;
-      const arrow = h("div", { class: "act__arrow", style: `left:${b.x}px; top:${b.y - b.h / 2 + Math.min(44, b.h * 0.4)}px`, "data-target": tg.bed },
+      const small = b.h <= 120;
+      // Inside the top of a big bed; just above a small prop or spot.
+      const top = small ? b.y - b.h / 2 - 16 : b.y - b.h / 2 + Math.min(44, b.h * 0.4);
+      const arrow = h("div", { class: "act__arrow", style: `left:${b.x}px; top:${top}px`, "data-target": keyOf(tg) },
         sprite("arrow", { size: 28 }),
         a.targets.length > 1 && h("span", { class: "act__num" }, String(i + 1)));
-      const ring = h("div", { class: "act__ring", style: `left:${b.x - b.w / 2}px; top:${b.y - b.h / 2}px; width:${b.w}px; height:${b.h}px` });
+      const ring = h("div", { class: `act__ring${tg.spot ? " act__ring--spot" : ""}`, style: `left:${b.x - b.w / 2}px; top:${b.y - b.h / 2}px; width:${b.w}px; height:${b.h}px` });
       layer.append(ring, arrow);
+      if (soaking === i || (k.mode === "hold" && soaking < 0)) return layer.append(holdRing(i, b));
       if (k.mode === "tap") {
+        const n = a.count || 1;
         for (let s = 0; s < left[i]; s++) {
-          const n = a.count || 1;
-          const j = (a.count || 1) - left[i] + s; // stable position for each spot
-          const px = b.x - b.w * 0.32 + (b.w * 0.64) * ((j + 0.5) / n);
-          const py = b.y - b.h * 0.08 + ((j % 2) ? b.h * 0.16 : -b.h * 0.06);
+          const j = n - left[i] + s; // stable position for each spot
+          let px; let py;
+          if (b.w < 52 * n) { // a small target: the spots sit in a ring round it
+            const ang = -Math.PI / 2 + (2 * Math.PI * j) / n;
+            const rad = n > 1 ? Math.max(34, b.w / 2) : 0;
+            px = b.x + Math.cos(ang) * rad; py = b.y + Math.sin(ang) * rad;
+          } else {
+            px = b.x - b.w * 0.32 + (b.w * 0.64) * ((j + 0.5) / n);
+            py = b.y - b.h * 0.08 + ((j % 2) ? b.h * 0.16 : -b.h * 0.06);
+          }
           const spot = h("button", {
             class: "act__spot", type: "button", style: `left:${px}px; top:${py}px`,
-            "data-spot": `${tg.bed}-${j}`, tabindex: -1, "aria-hidden": "true",
+            "data-spot": `${keyOf(tg)}-${j}`, tabindex: -1, "aria-hidden": "true",
           }, art(k.spot(a), { size: 26 }));
           spot.addEventListener("click", (ev) => { ev.preventDefault(); tapSpot(i, spot); });
           layer.append(spot);
@@ -138,10 +211,88 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     });
   }
 
+  // ---- press and hold ----
+  function holdRing(i, b) {
+    const el = h("button", {
+      class: "act__hold", type: "button", style: `left:${b.x}px; top:${b.y}px; --p:0`,
+      "data-hold": keyOf(action().targets[i]), "data-i": String(i), tabindex: -1, "aria-hidden": "true",
+    }, h("span", { class: "act__hold-fill" }));
+    el.addEventListener("pointerdown", (ev) => {
+      if (ev.button > 0) return;
+      ev.preventDefault();
+      try { el.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
+      startHold(i);
+    });
+    const let_go = () => { if (hold && hold.el === el) stopHold(); };
+    el.addEventListener("pointerup", let_go);
+    el.addEventListener("pointercancel", let_go);
+    el.addEventListener("contextmenu", (ev) => ev.preventDefault()); // a long press on touch
+    return el;
+  }
+  const holdMs = () => {
+    const a = action();
+    const ms = soaking >= 0 ? (typeof a.soak === "number" ? a.soak : 1500) : (a.ms || HOLD_MS);
+    return reduced ? 300 : Math.max(300, Math.min(ms, 4000));
+  };
+  // auto: keyboard or a test run; it fills by itself and can't be let go.
+  function startHold(i, { auto = false } = {}) {
+    if (over || hold) return;
+    const el = layer.querySelector(`.act__hold[data-i="${i}"]`);
+    if (!el) return;
+    const ms = holdMs();
+    hold = { i, el, t0: performance.now(), ms, auto, raf: 0 };
+    el.classList.add("is-holding");
+    card.dataset.busy = "true";
+    const me = hold;
+    const tick = (now) => {
+      if (over || hold !== me) return;
+      const p = Math.min(1, (now - me.t0) / me.ms);
+      el.style.setProperty("--p", p.toFixed(3));
+      if (p >= 1) return holdDone();
+      me.raf = requestAnimationFrame(tick);
+    };
+    me.raf = requestAnimationFrame(tick);
+    // rAF stalls in a background tab: the timer finishes it anyway.
+    later(() => { if (hold === me) holdDone(); }, ms + 250);
+  }
+  function stopHold() {
+    if (!hold || hold.auto) return;
+    cancelAnimationFrame(hold.raf);
+    hold.el.classList.remove("is-holding");
+    hold.el.style.setProperty("--p", "0");
+    hold = null;
+    card.dataset.busy = String(busy);
+    nudge("Keep holding until the ring fills");
+  }
+  async function holdDone() {
+    const { i, el, raf } = hold;
+    cancelAnimationFrame(raf);
+    hold = null;
+    el.style.setProperty("--p", "1");
+    el.classList.add("is-full");
+    if (soaked) { const r = soaked; soaked = null; return r(); }
+    busy = true;
+    card.dataset.busy = "true";
+    await play(el, [{ scale: "1" }, { scale: "1.25", opacity: 0 }], { duration: reduced ? 80 : 260 });
+    if (over) return;
+    unit(i, false);
+  }
+
   // ---- pointer drag ----
   let press = null;
   function onPointerDown(ev) {
-    if (busy || over || (ev.button !== undefined && ev.button > 0)) return;
+    if (over || (ev.button !== undefined && ev.button > 0)) return;
+    // Hold kinds: holding the tool fills the next ring too.
+    if (soaking >= 0 || (kind().mode === "hold" && !busy)) {
+      ev.preventDefault();
+      try { item.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
+      startHold(soaking >= 0 ? soaking : nextTarget());
+      const up = () => { item?.removeEventListener("pointerup", up); item?.removeEventListener("pointercancel", up); if (hold && !hold.auto) stopHold(); };
+      item.addEventListener("pointerup", up);
+      item.addEventListener("pointercancel", up);
+      return;
+    }
+    if (busy) return;
     ev.preventDefault();
     item.focus({ preventScroll: true });
     try { item.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
@@ -187,7 +338,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     if (!dragging) {
       // A tap on the tool: tap kinds go to the next spot; drag kinds need the drag.
       if (kind().mode === "tap") return go(nextTarget());
-      return nudge(`Drag it to the ${names.bed(action().targets[nextTarget()].bed)}`);
+      return nudge(`Drag it to the ${names.target(action().targets[nextTarget()])}`);
     }
     const x = ev.clientX;
     const y = ev.clientY - (touch ? 44 : 0);
@@ -195,30 +346,32 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const g = ghost;
     ghost = null;
     if (hit >= 0) return commit(hit, { from: g });
-    const bed = bedAt(x, y);
-    const want = names.bed(action().targets[nextTarget()].bed);
+    const there = labelAt(x, y);
+    const want = names.target(action().targets[nextTarget()]);
     bounceBack(g);
-    nudge(bed && bed !== action().targets[nextTarget()].bed
-      ? `Not the ${names.bed(bed)}. Try the ${want}`
-      : `Drop it on the ${want}`);
+    nudge(there && there !== want ? `Not the ${there}. Try the ${want}` : `Drop it on the ${want}`);
   }
-  // Which undone target is under (x, y), with a little slack round small beds.
+  // Which undone target is under (x, y). Beds get 12px of slack; spots and
+  // small props are grown to at least 64px so a finger can hit them.
   function hitTarget(x, y) {
     const a = action();
     for (let i = 0; i < a.targets.length; i++) {
       if (done[i]) continue;
-      const el = scene.querySelector(`[data-bed="${a.targets[i].bed}"]`);
-      const r = el?.getBoundingClientRect();
-      if (r && x >= r.left - 12 && x <= r.right + 12 && y >= r.top - 12 && y <= r.bottom + 12) return i;
+      const r = rectOf(a.targets[i]);
+      if (!r) continue;
+      const sx = Math.max(12, (64 - r.width) / 2);
+      const sy = Math.max(12, (64 - r.height) / 2);
+      if (x >= r.left - sx && x <= r.right + sx && y >= r.top - sy && y <= r.bottom + sy) return i;
     }
     return -1;
   }
-  function bedAt(x, y) {
-    for (const el of scene.querySelectorAll("[data-bed]")) {
-      const r = el.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return el.dataset.bed;
-    }
-    return null;
+  // The name of whatever is under (x, y): a prop, else a bed.
+  function labelAt(x, y) {
+    const inside = (el) => { const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
+    const prop = [...scene.querySelectorAll("[data-prop]")].find(inside);
+    if (prop) return names.target({ prop: prop.dataset.prop });
+    const bed = [...scene.querySelectorAll("[data-bed]")].find(inside);
+    return bed ? names.target({ bed: bed.dataset.bed }) : null;
   }
   function hover(x, y) {
     const hit = hitTarget(x, y);
@@ -251,7 +404,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
 
   // ---- keyboard ----
   function onItemKey(ev) {
-    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); go(nextTarget()); }
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); if (!ev.repeat) go(nextTarget()); }
   }
   // The level's document keydown calls this first while an action runs.
   function key(ev) {
@@ -259,7 +412,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     if (ev.key === "Escape" && onCancel && ai === 0 && done.every((d) => !d) && !busy && untouched()) { cancel(); return true; }
     const n = Number(ev.key);
     if (Number.isInteger(n) && n >= 1 && n <= action().targets.length && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
-      if (!done[n - 1]) go(n - 1); else nudge(`The ${names.bed(action().targets[n - 1].bed)} is done`);
+      if (!done[n - 1]) go(n - 1); else nudge(`The ${names.target(action().targets[n - 1])} is done`);
       return true;
     }
     // Enter/Space anywhere (focus lost to the page) uses the tool too.
@@ -273,9 +426,12 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
 
   // Send the tool to target i (keyboard, tap on the tool, auto).
   function go(i, opts = {}) {
-    if (busy || over || i < 0) return;
+    if (over) return;
+    if (soaking >= 0) return startHold(soaking, { auto: true });
+    if (busy || i < 0) return;
+    if (kind().mode === "hold") return startHold(i, { auto: true });
     if (kind().mode === "tap") {
-      const spot = layer.querySelector(`.act__spot[data-spot^="${action().targets[i].bed}-"]`);
+      const spot = layer.querySelector(`.act__spot[data-spot^="${keyOf(action().targets[i])}-"]`);
       return tapSpot(i, spot, opts);
     }
     commit(i, opts);
@@ -303,15 +459,40 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       await play(g, [{ transform: start }, { transform: end }],
         { duration: reduced || from ? 160 : 460, easing: "cubic-bezier(.3,.7,.4,1)" });
       g.remove();
-      await kind().animate(layer, b, { reduced, spot: kind().spot?.(a), face: () => itemFor(a) });
+      await kind().animate(layer, b, { reduced, spot: kind().spot?.(a), face: () => itemFor(a), el: targetEl(tg) });
+      if (over) return;
+      item?.classList.remove("is-lifted");
+      // Soak: the player now holds the target until the ring fills.
+      if (a.soak && left[i] === 1) {
+        soaking = i;
+        busy = false; // the hands are free to hold (go and the pointer route to the ring)
+        renderCard();
+        renderDirector();
+        say(`Hold the ${names.target(tg)} until the ring fills`);
+        await new Promise((res) => { soaked = res; });
+        if (over) return;
+        soaking = -1;
+      }
     } else {
       from?.remove();
     }
     if (over) return;
+    unit(i, instant);
+  }
+
+  // One unit of target i is done (one drop, one spot, one hold): the kind
+  // leaves its marks, then the card moves on.
+  function unit(i, instant) {
+    const a = action();
+    const tg = a.targets[i];
     left[i] -= 1;
+    const last = left[i] <= 0;
+    try {
+      kind().land?.({ a, tg, i, last, el: targetEl(tg), rect: rectOf(tg), stamp, swap, artNode, textNode });
+    } catch (err) { console.warn("action land failed", err); }
     busy = false;
     item?.classList.remove("is-lifted");
-    if (left[i] > 0) { renderCard(); renderDirector(); if (!instant) item?.focus({ preventScroll: true }); return; }
+    if (!last) { renderCard(); renderDirector(); if (!instant) item?.focus({ preventScroll: true }); return; }
     done[i] = true;
     say(kind().done(a, names, tg));
     advance(instant);
@@ -327,21 +508,12 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       const l = layer.getBoundingClientRect();
       const r = spot.getBoundingClientRect();
       spot.remove();
-      await kind().animate(layer, { x: r.left - l.left + r.width / 2, y: r.top - l.top + r.height / 2, w: b.w, h: b.h }, { reduced, spot: kind().spot?.(a), face: () => itemFor(a) });
+      await kind().animate(layer, { x: r.left - l.left + r.width / 2, y: r.top - l.top + r.height / 2, w: b.w, h: b.h }, { reduced, spot: kind().spot?.(a), face: () => itemFor(a), el: targetEl(a.targets[i]) });
     } else {
       spot?.remove();
     }
     if (over) return;
-    left[i] -= 1;
-    busy = false;
-    if (left[i] <= 0) {
-      done[i] = true;
-      say(kind().done(a, names, a.targets[i]));
-      return advance(instant);
-    }
-    renderCard();
-    renderDirector();
-    if (!instant) item?.focus({ preventScroll: true });
+    unit(i, instant);
   }
 
   function advance(instant) {
@@ -369,6 +541,12 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     layer.replaceChildren();
     completeAll();
   }
+  function clearHold() {
+    if (hold) cancelAnimationFrame(hold.raf);
+    hold = null;
+    soaked = null;
+    soaking = -1;
+  }
   function cancel() {
     if (over) return;
     over = true;
@@ -383,23 +561,39 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     for (const id of timers) clearTimeout(id);
     timers.clear();
     endPress();
+    clearHold();
     ghost?.remove();
     ghost = null;
     layer.remove();
     window.removeEventListener("resize", onResize);
+    watch?.disconnect();
     if (window.__dwAct === api) delete window.__dwAct;
   }
-  const onResize = () => { if (!over && !busy) renderDirector(); };
+  const onResize = () => { if (!over && !busy && !hold) renderDirector(); };
   window.addEventListener("resize", onResize);
+  // The scene can still be settling (fonts, art, a chore at the very start):
+  // re-place the arrows whenever its box changes.
+  let lastBox = "";
+  const watch = typeof ResizeObserver === "function" ? new ResizeObserver(() => {
+    const r = scene.getBoundingClientRect();
+    const key_ = `${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`;
+    if (key_ !== lastBox) { lastBox = key_; onResize(); }
+  }) : null;
+  watch?.observe(scene);
+  const beds = scene.querySelector(".beds");
+  if (beds) watch?.observe(beds);
 
   // Finish everything now through the commit path (test runs, and a level that unmounts mid-action).
   function completeAll() {
     let guard = 64;
     while (!over && guard-- > 0) {
       busy = false;
+      // A soak or hold in progress: that unit finishes here (its promise is dropped).
+      if (soaking >= 0 || hold) { const s = soaking >= 0 ? soaking : hold.i; clearHold(); unit(s, true); continue; }
       const i = nextTarget();
       if (i < 0) { advance(true); continue; }
       if (kind().mode === "tap") tapSpot(i, null, { instant: true });
+      else if (kind().mode === "hold") unit(i, true);
       else commit(i, { instant: true });
     }
   }
