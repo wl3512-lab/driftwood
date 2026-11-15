@@ -18,6 +18,9 @@ mkdir -p "$OUT/icons"
 cp index.html sw.js manifest.webmanifest README.md "$OUT/"
 cp .nojekyll "$OUT/" 2>/dev/null || true
 cp icons/*.svg icons/*.png "$OUT/icons/"
+# The pets' reaction frames (blink, talk, happy, sad, shock: v2/ui/pet-anim.js).
+mkdir -p "$OUT/icons/pets"
+cp icons/pets/*.svg "$OUT/icons/pets/"
 # v2 (redesign). Tests, the Node-only package.json and the art sheet stay out of the player bundle.
 rsync -a --exclude 'tests' --exclude 'package.json' --exclude 'art/sheet.html' v2/ "$OUT/v2/"
 
