@@ -40,3 +40,5 @@ import spray from "./spray.js"; register(spray);
 import release from "./release.js"; register(release);
 import magnifier from "./magnifier.js"; register(magnifier);
 import photo from "./photo.js"; register(photo);
+import mist from "./mist.js"; register(mist);
+import wipe from "./wipe.js"; register(wipe);

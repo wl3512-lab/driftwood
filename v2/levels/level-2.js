@@ -8,6 +8,16 @@
 // Luna: self-important, says everything as settled fact, talks about herself
 // as "Luna". Every garden fact here is true except the drift line.
 // (Mint spreads hard by underground runners; it's usually grown in a pot.)
+// Dig, plant, firm and water a crop at one spot in the greenhouse bed.
+function plantAt(plant, spot) {
+  return [
+    { kind: "dig", item: "trowel", target: { spot } },
+    { kind: "plant", item: plant, target: { spot } },
+    { kind: "firm", item: "hand", target: { spot } },
+    { kind: "water", item: "can", target: { spot } },
+  ];
+}
+
 export default {
   id: "level-2",
   number: 2,
@@ -15,13 +25,43 @@ export default {
   goal: { title: "Plant herbs", ask: "Ask Luna where the herbs should go." },
   gardenStart: 30,
   scene: "greenhouse",
-  props: [{ sprite: "./art/almanac.svg", class: "prop prop--shelf", alt: "" }],
+  props: [
+    { sprite: "./art/almanac.svg", class: "prop prop--shelf", alt: "" },
+    // Hands-on targets (v2/actions): the fogged pane, Luna's tea jar and three
+    // empty pots on the sill. The pots stay empty unless you catch the drift.
+    { id: "glass", sprite: "./art/l2-fog.svg", x: 62, y: 10, w: 96, label: "foggy glass", alt: "" },
+    { id: "jar", sprite: "./art/l2-jar-empty.svg", x: 91, y: 46, w: 52, label: "tea jar", alt: "" },
+    { id: "pot-1", sprite: "./art/l2-pot-empty.svg", x: 63, y: 84, w: 56, label: "first pot", alt: "" },
+    { id: "pot-2", sprite: "./art/l2-pot-empty.svg", x: 75, y: 84, w: 56, label: "middle pot", alt: "" },
+    { id: "pot-3", sprite: "./art/l2-pot-empty.svg", x: 87, y: 84, w: 56, label: "end pot", alt: "" },
+  ],
+  // Where the director points inside the greenhouse bed (% of the bed).
+  spots: {
+    "warm-middle": { bed: "bench", x: 50, y: 26, label: "warm middle" },
+    "by-door": { bed: "bench", x: 9, y: 26, label: "cool end by the door" },
+    "beside-basil": { bed: "bench", x: 50, y: 66, label: "spot right beside the basil" },
+  },
 
   beds: [
     { id: "bench", label: "Greenhouse bed", light: "sunny" },
     { id: "sill", label: "Windowsill pots", light: "sunny", kind: "pots" },
   ],
   startPlants: {},
+
+  // Chores (no stars, no trust, always skippable). The level ends on the mint
+  // step, so nothing can come after it: the pots get filled on the caught path.
+  chores: [
+    { id: "glass", at: "start", title: "Chore",
+      actions: [{ kind: "wipe", item: "l2-cloth", target: { prop: "glass" }, count: 3,
+        say: "Luna can't see the sun. Drag the cloth over the foggy glass (3 wipes)" }] },
+    { id: "mist", after: "basil", title: "Chore",
+      actions: [{ kind: "mist", item: "l2-mister", target: { bed: "bench", plant: "basil" },
+        say: "Mist the new basil. Lightly. Drag the mister to it" }] },
+    { id: "tips", after: "pinch", title: "Chore",
+      actions: [{ kind: "collect", item: "l2-basil-tip", target: { prop: "jar" }, count: 3,
+        fills: { from: "l2-jar-empty", to: "l2-jar" },
+        say: "Luna wants tea. Drag 3 basil tips into the tea jar" }] },
+  ],
 
   evidence: [
     { id: "basil", title: "Basil", lines: ["Full sun, warm", "Pinch tips for more leaves"] },
@@ -62,8 +102,11 @@ export default {
       keep: { reply: ["greenhouse", "full sun", "warm"], done: [] },
       doneLine: "Obviously. Luna's never wrong.",
       effect: { plant: "basil", bed: "bench", state: "growing", garden: 15 },
+      // Do it / their way: dig, plant, firm and water in the warm middle.
+      actions: plantAt("basil", "warm-middle"),
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
+        actions: plantAt("basil", "by-door"),
         reply: "Somewhere else? It's your greenhouse. Luna won't stop you. But basil wants full sun and warmth, right in the middle of the greenhouse bed. Luna has said this. Luna is right.",
         keep: ["full sun", "warm"],
         mine: "Cool end by the door",
@@ -81,8 +124,13 @@ export default {
       keep: { reply: ["pinch", "tips", "leaves", "bushier"], done: ["bushier"] },
       doneLine: "Bushier. Exactly as Luna said.",
       effect: { plant: "basil", bed: "bench", state: "thriving", garden: 15 },
+      // Pinch the tips by hand; the basil then grows bushier from the top.
+      actions: [{ kind: "snip", item: "hand", spot: "l2-basil-tip", target: { bed: "bench", plant: "basil" }, count: 4,
+        say: "Pinch the 4 tips off the basil, just above a pair of leaves" }],
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
+        // Let it flower: no pinching, just a drink.
+        actions: [{ kind: "water", item: "can", target: { bed: "bench", plant: "basil" } }],
         reply: "Not pinch it? Your basil. Luna can't make you. But leave it and it flowers, and then the leaves go small and bitter. That's not Luna's opinion. That's basil.",
         keep: ["flowers", "bitter"],
         mine: "Let it flower",
@@ -102,6 +150,8 @@ export default {
         plant: "mint", bed: "bench", state: "overrun", garden: -30,
         extra: [{ plant: "basil", bed: "bench", state: "choked" }],
       },
+      // Do it: right where Luna said, beside the basil. No warning.
+      badActions: plantAt("mint", "beside-basil"),
       badOutcome: "By midsummer the mint had sent runners under the whole bed and choked the basil.",
       flawOptions: [
         { id: "made-up", label: "It said something false as if it were a fact" },
@@ -125,6 +175,14 @@ export default {
       },
       fixedReply: "Fine. Luna checked the almanac. Mint DOES spread, fast, by runners under the soil. It would take over the bed. Put it in its own pot. Luna was… not right. Once.",
       goodEffect: { plant: "mint", bed: "sill", state: "thriving", garden: 25 },
+      // Its own pot: fill an empty sill pot, set the mint plug in, firm it, mist it.
+      goodActions: [
+        { kind: "fill", item: "l2-compost-bag", target: { prop: "pot-1" }, fills: { from: "l2-pot-empty", to: "l2-pot-soil" },
+          say: "Drag the compost bag to the first pot to fill it" },
+        { kind: "poke", item: "l2-mint-plug", target: { prop: "pot-1" }, say: "Set the mint plug in the pot" },
+        { kind: "firm", item: "hand", target: { prop: "pot-1" } },
+        { kind: "mist", item: "l2-mister", target: { prop: "pot-1" } },
+      ],
       goodOutcome: "Your mint is bushy and happy in its own pot. The basil has the bed to itself.",
     },
   ],

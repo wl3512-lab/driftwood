@@ -17,7 +17,15 @@ const JAR = (fill) => [E, E,
   ...fill.map((r) => `...ki${r}ik...`),
   "...kiiiiiiiik...", "...kkkkkkkkkk...", E];
 // Condensation: scattered droplet clusters, mostly see-through.
-const FOG = ["..i.....c...i...", ".ici...i.....c..", "..i...c.c..ici..", "......i.....i..."];
+// Condensation: a frosted half-tone (every other pixel) with fat droplets,
+// and two drips that ran down and left clear trails.
+const DROPS = [[2, 2], [9, 1], [13, 4], [5, 7], [11, 9], [3, 12], [8, 13], [14, 14]];
+const TRAILS = [[6, 3, 11], [12, 6, 15]];
+const FOG = Array.from({ length: 16 }, (_, y) => Array.from({ length: 16 }, (_, x) => {
+  if (DROPS.some(([dx, dy]) => (x === dx && Math.abs(y - dy) <= 1) || (y === dy && Math.abs(x - dx) <= 1))) return "i";
+  if (TRAILS.some(([tx, y0, y1]) => x === tx && y >= y0 && y <= y1)) return y === TRAILS.find(([tx]) => tx === x)[2] ? "i" : ".";
+  return (x + y) % 2 ? "." : "c";
+}).join(""));
 
 const ART = {
   "l2-pot-empty": [E, E, E, E, E, E,
@@ -58,7 +66,7 @@ const ART = {
     ".....kkkkkk.....", "....kiiiiiik....", "....kiBBBBik....", "....kiBBBBik....",
     "....kicccBik....", "....kiccccik....", "....kiBBBBik....", "....kiBBBBik....",
     "....kiiiiiik....", "....kkkkkkkk....", E],
-  "l2-fog": Array.from({ length: 16 }, (_, i) => FOG[(i + Math.floor(i / 4)) % 4]),
+  "l2-fog": FOG,
 };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

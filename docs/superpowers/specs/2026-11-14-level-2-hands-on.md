@@ -103,3 +103,32 @@ Contact sheet: docs/agent-playtest/2026-11-v2-actions/level-2-art.png.
 2. Add any of the five new kinds as new files in `v2/actions/`, without touching shared files.
 3. Fill level-2.js.
 4. Add `scripts/test-v2-actions-level-2.cjs`: keyboard path, both choices per step, the fooled and caught mint paths, screenshots at 1512x830 and 844x390.
+
+## As built (Phase B, 2026-11-14)
+
+What changed from the plan above, and why:
+
+- **No chores after the mint step.** Mint is the last step, and a chore after the last step never runs: the level ends at the reveal. So:
+  - the caught path fills the first sill pot as part of the fix;
+  - the other two pots stay empty;
+  - the misting chore moved to straight after the basil.
+- **The tea jar chore runs on both pinch choices.** Chores can't depend on a choice, so it no longer collects the pinched tips. It is "Luna wants tea: drag 3 basil tips into the tea jar".
+- **Pinch uses the shared `snip`** (hand, `l2-basil-tip` spots, 4 taps). The basil then regrows from the top (garden.js).
+- **Basil and mint go in from the seed packet** (shared `plant`), not the plug sprites, so the sprinkle matches every other level. The mint plug is used once, on the caught path: it is poked into the pot and stays standing.
+- **`wipe` is three drags of the cloth,** not a coverage percentage. Each pass thins the fog by a third. It also lands on Skip, so the glass is clear either way.
+- **`mist` and the wipe drips use Level 3's liquid look** (`.l3-jet--mist`, `.l3-drop` from v2/css/l3-spray.css): stepped timing and no glow. Reduced motion caps each step at 160 ms.
+- **Fog is not saved.** After a reload mid-level the glass shows fog again, like every other action mark.
+
+| Beat | By hand |
+|---|---|
+| Start chore: glass | `wipe` ×3: drag the cloth over the foggy pane |
+| Basil (Do it / theirs) | `dig`, `plant`, `firm`, `water` at the warm middle |
+| Basil (mine) | the same four, at the cool end by the door |
+| Chore: mist | `mist` the basil |
+| Pinch (Do it / theirs) | `snip` ×4 tips |
+| Pinch (let it flower) | `water` the basil |
+| Chore: tea jar | `collect` ×3 tips into the jar (it shows full) |
+| Mint, fooled | `dig`, `plant`, `firm`, `water` right beside the basil |
+| Mint, caught | `fill` pot 1 from the compost bag, `poke` the mint plug in, `firm`, `mist` |
+
+The test is scripts/test-v2-level-2-hands.cjs, with evidence in docs/agent-playtest/2026-11-v2-level2-wave2/.
