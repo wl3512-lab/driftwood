@@ -20,6 +20,7 @@
 import { h, finePointer } from "./dom.js";
 import { defineTool } from "./tools.js";
 import { compare } from "../mechanics/magnifier.js";
+import { sfx } from "../audio/index.js";
 
 let panels = 0; // unique ids if a level is ever mounted twice
 
@@ -124,6 +125,7 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
     const subject = subjects[id];
     if (!subject) return;
     focusPlant(img);
+    sfx("magnifier-look");
     shown = id;
     render(id, img.getAttribute("src"));
     if (subject.unlocks) dispatch({ type: "check", id: subject.unlocks });
@@ -132,6 +134,7 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
   // ---- mode ----
   function enter() {
     on = true;
+    sfx("magnifier-on");
     root.classList.add("is-magnifying");
     button.setAttribute("aria-expanded", "true");
     button.setAttribute("aria-pressed", "true");
@@ -141,6 +144,7 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
 
   function leave(returnFocus) {
     if (!on) return;
+    sfx("magnifier-off");
     const inside = panel.contains(document.activeElement) || scene.contains(document.activeElement);
     on = false;
     root.classList.remove("is-magnifying");

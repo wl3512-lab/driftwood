@@ -4,6 +4,7 @@
 import { h, focusFirst, announce } from "./dom.js";
 import { blockText } from "./block-type.js";
 import { stewDinner } from "./stew-dinner.js";
+import { sfx, voice } from "../audio/index.js";
 
 const CAUGHT = "✓";
 const FOOLED = "✗";
@@ -113,5 +114,9 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
           fallback),
         h("button", { class: "btn btn--crt", onclick: onBack }, "← Back to the garden"))));
   focusFirst(root);
-  return () => {};
+  // Sound: Rowan gives his verdict, then the rating bowls fill one by one.
+  const bowls = Number(garden.dataset.bowls) || 0;
+  const verdict = voice("rowan", garden.querySelector(".stew__say")?.textContent || "");
+  const heard = Array.from({ length: 5 }, (_, i) => sfx(i < bowls ? "bowl" : "bowl-empty", { delay: 1.4 + i * 0.28, i }));
+  return () => { verdict.stop(); heard.forEach((x) => x.stop()); };
 }

@@ -9,6 +9,7 @@ import { h } from "./dom.js";
 import { fill } from "./text.js";
 import { memoryVars } from "../mechanics/placement.js";
 import { blockTitle } from "./block-type.js";
+import { sfx, sting } from "../audio/index.js";
 
 // ---------- pure helpers (unit-tested) ----------
 
@@ -217,6 +218,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
   function flip() {
     if (added) return;
     finishIntro();
+    sfx("card-flip");
     flipped = !flipped;
     inner.classList.toggle("is-flipped", flipped);
     hit.setAttribute("aria-pressed", String(flipped));
@@ -261,6 +263,20 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
   const foil = front.querySelector(".rc__foil");
   const sparkles = front.querySelector(".rc__sparkles");
   const fade = (target, delay, duration = 220) => A(target, [{ opacity: 0 }, { opacity: 1 }], { duration, delay, easing: "linear" });
+  // Sound: the caught / fooled sting as the card drops, a slam per star, the
+  // stamp. A press that finishes the intro cuts the slams still to come.
+  const heard = [];
+  const hear = (name, ms, opts) => heard.push(sfx(name, { ...opts, delay: ms / 1000 }));
+  sting(caught ? "caught" : "fooled", { delay: rm ? 0 : 0.15 });
+  {
+    let k = 0;
+    starEls.forEach((s, i) => {
+      if (!s.classList.contains("is-on")) return;
+      hear("star", rm ? 250 + k * 90 : 1000 + i * 250 + 175, { i: k });
+      k += 1;
+    });
+    hear("stamp", rm ? 400 : (caught ? 1800 : 2050) + 210);
+  }
   if (rm) {
     fade(drop, 0, 250);
     starEls.forEach((s) => fade(s, 250));
@@ -302,6 +318,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
   if (rm && foil) foil.style.opacity = "0.35";
   // Finish every intro animation, the block letters' CSS build-in included.
   function finishIntro() {
+    heard.splice(0).forEach((x) => x.stop());
     const css = overlay.getAnimations?.({ subtree: true }) || [];
     for (const a of [...anims, ...css]) {
       if (a.__fly) continue;
@@ -316,6 +333,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
     if (added) return leave(); // a second press skips the rest of the flight
     added = true;
     finishIntro();
+    sfx("card-fly");
     hit.disabled = true;
     tilt.style.transform = "";
     const slot = slotEls[slots.findIndex((s) => s.current)];
@@ -344,6 +362,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
     flight.__fly = true;
     flight.finished.then(() => {
       land();
+      sfx("card-land");
       if (!rm && slot) {
         const bump = book.animate([{ transform: "none" }, { transform: "scale(1.08) rotate(-2deg)" }, { transform: "scale(.97)" }, { transform: "none" }], { duration: 320 });
         bump.__fly = true;

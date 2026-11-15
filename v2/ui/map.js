@@ -3,6 +3,7 @@ import { h, focusFirst } from "./dom.js";
 import { isUnlocked } from "../progress.js";
 import { blockText, blockTitle } from "./block-type.js";
 import { mountWorld, timeFor, BED_X } from "./world.js";
+import { soundToggle } from "../audio/toggle.js";
 
 // The garden's name as a block-letter heading (ink on parchment, a gold shadow).
 export const gardenTitle = (name) => blockText(name ? `${name}'s garden` : "Your garden", { fill: "#3b2a1a", shadow: "#e2b86a" });
@@ -59,7 +60,7 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide, onIntr
     const state = !open[i] ? "locked" : done ? "done" : "open";
     return h("li", { class: "plots__bed", style: `--x: ${BED_X[i] * 100}%` },
       h("button", {
-        class: `plot plot--${state}${isNext ? " plot--next" : ""}`, disabled: !open[i], "data-level": m.id,
+        class: `plot plot--${state}${isNext ? " plot--next" : ""}`, disabled: !open[i], "data-level": m.id, "data-sfx": "map-select",
         "aria-label": `Level ${m.number}: ${m.title}, with ${m.helper}. ${done ? `${done.stars} of 3 stars` : status.replace("▶ ", "")}`,
         onclick: () => onPlay(m.id),
       },
@@ -77,11 +78,12 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide, onIntr
     h("div", { class: "map__head" },
       h("h1", { class: "map__title" }, gardenTitle(progress.name)),
       h("div", { class: "map__actions" },
-        onIntro ? h("button", { class: "btn", onclick: onIntro }, "▸ Watch intro") : null,
-        h("button", { class: "btn", onclick: onGuide }, `Field guide ${progress.guide.length}/${map.length}`))),
+        onIntro ? h("button", { class: "btn", "data-sfx": "ui-tap", onclick: onIntro }, "▸ Watch intro") : null,
+        h("button", { class: "btn", "data-sfx": "ui-tap", onclick: onGuide }, `Field guide ${progress.guide.length}/${map.length}`),
+        soundToggle())),
     h("ol", { class: "plots" }, plots),
     onEnding ? h("p", { class: "map__done" },
-      h("button", { class: "btn btn--gold", onclick: onEnding }, "Your finished garden →")) : null);
+      h("button", { class: "btn btn--gold", "data-sfx": "begin", onclick: onEnding }, "Your finished garden →")) : null);
   root.replaceChildren(main);
 
   // The sky: start where the player last saw it and travel to now.
