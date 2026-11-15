@@ -1,4 +1,4 @@
-/* The opening cutscene (ui/cutscene.js): the garden at golden hour.
+/* The opening cutscene (ui/cutscene.js): Master Rowan's garden at golden hour.
    Ported from Cutscene Option A in
    docs/design-options/2026-11-13-almanac-cutscene/options.html.
    Layers, back to front: banded sky, low sun, drifting clouds and birds, far
@@ -50,26 +50,43 @@
   linear-gradient(100deg, rgba(255, 150, 80, 0) 25%, rgba(255, 170, 90, 0.14) 62%, rgba(255, 196, 120, 0.26)),
   radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(40, 12, 30, 0.42) 100%); }
 
+/* ---------- Master Rowan: the tallest thing on the path ---------- */
+/* Sizes: --sw is a pet sprite's width; Rowan is drawn far bigger than the
+   pets (they're his little helpers). */
+.cutscene { --sw: 104px; --rowan-h: 300px; }
+.cs__rowan { position: absolute; z-index: 12; left: 4%; bottom: 20%; height: var(--rowan-h); aspect-ratio: 192 / 288; transition: opacity 0.3s steps(3); }
+.cs__rowan-img { display: block; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(-14px 6px 0 rgba(60, 25, 30, 0.25)); }
+/* His almanac, held out in his right hand on its beat. */
+.cs__book { position: absolute; left: 82%; top: 50%; width: 34%; height: auto; image-rendering: pixelated; visibility: hidden; }
+.cutscene[data-beat="almanac"] .cs__rowan { z-index: 25; }
+.cutscene[data-beat="almanac"] .cs__book { visibility: visible; animation: cs-pop 0.3s steps(3) both; }
+.at-go .cs__rowan, .ended .cs__rowan { visibility: hidden; }
+
 /* ---------- the helpers ---------- */
-.cs__pets { position: absolute; z-index: 10; left: 13%; right: 13%; bottom: 20%; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; }
+.cs__pets { position: absolute; z-index: 10; left: 24%; right: 6%; bottom: 20%; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; }
 .cs__pet { position: relative; display: grid; justify-items: center; gap: 4px; opacity: 0; transition: opacity 0.3s, filter 0.3s; }
-.cs__pet img { width: 132px; height: auto; image-rendering: pixelated; filter: drop-shadow(-14px 6px 0 rgba(60, 25, 30, 0.25)); }
+.cs__sprite { position: relative; width: var(--sw); }
+.cs__sprite img { display: block; width: 100%; height: auto; image-rendering: pixelated; filter: drop-shadow(-12px 5px 0 rgba(60, 25, 30, 0.25)); }
 .cs__name { padding: 2px 6px; background: var(--parchment); border: 2px solid var(--line); font: 700 0.72rem/1 var(--font-ui); letter-spacing: 0.08em; color: var(--ink); }
-.at-meet .cs__pet { opacity: 1; animation: cs-pop 0.42s steps(4) calc(var(--i) * 0.3s) both; }
+.at-helpers .cs__pet { opacity: 1; animation: cs-pop 0.42s steps(4) calc(var(--i) * 0.3s) both; }
 @keyframes cs-pop { 0% { transform: translateY(40px) scale(0.6); opacity: 0; } 60% { transform: translateY(-10px) scale(1.06); opacity: 1; } 100% { transform: none; opacity: 1; } }
-.at-friendly .cs__pet img { animation: cs-bob 0.8s steps(2) infinite alternate calc(var(--i) * 0.12s); }
+.cutscene[data-beat="helpers"] .cs__sprite img { animation: cs-bob 0.8s steps(2) infinite alternate calc(1.6s + var(--i) * 0.12s); }
 @keyframes cs-bob { to { transform: translateY(-6px); } }
+/* The dinner beat is his: the helpers step out of the picture. */
+.cutscene[data-beat="dinner"] .cs__pet { visibility: hidden; }
 .at-drift .cs__pet:not(.cs__pet--drift) { filter: grayscale(0.7) brightness(0.75); opacity: 0.55; }
-.at-drift .cs__pet--drift img { animation: cs-shake 0.18s steps(2) infinite; }
+.at-drift .cs__pet--drift .cs__sprite img { animation: cs-shake 0.18s steps(2) infinite; }
 @keyframes cs-shake { 50% { transform: translateX(3px); } }
-.cs__bub { position: absolute; bottom: calc(100% + 10px); left: 50%; translate: -50% 0; width: max-content; max-width: 240px; margin: 0; padding: 8px 10px; background: #fff; color: var(--ink); border: 3px solid var(--line); border-radius: 3px; box-shadow: 3px 3px 0 var(--line); font: 700 0.9rem/1.3 var(--font-ui); opacity: 0; transition: opacity 0.2s steps(2); }
-.cs__pet--drift .cs__bub { left: -4px; translate: none; }
-.cs__bub::after { content: ""; position: absolute; left: calc(50% - 7px); bottom: -11px; width: 12px; height: 12px; background: #fff; border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); transform: rotate(45deg); }
-.cs__pet--drift .cs__bub::after { left: 34px; }
-.at-friendly .cs__bub--hi { opacity: 1; }
-.at-drift .cs__bub--hi { opacity: 0; }
+/* A speech bubble sits right over its speaker's head: left-aligned to the
+   sprite (right-aligned for the last pet, so it stays on screen), its tail
+   pointing down at the head, nearly touching. */
+.cs__bub { position: absolute; bottom: calc(100% + 10px); left: 0; width: max-content; max-width: 240px; margin: 0; padding: 8px 10px; background: #fff; color: var(--ink); border: 3px solid var(--line); border-radius: 3px; box-shadow: 3px 3px 0 var(--line); font: 700 0.9rem/1.3 var(--font-ui); opacity: 0; transition: opacity 0.2s steps(2); }
+.cs__pet--end .cs__bub { left: auto; right: 0; }
+.cs__bub-tail { position: absolute; left: calc(var(--sw) * 0.45 - 6px); bottom: -10px; width: 12px; height: 12px; background: inherit; border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); transform: rotate(45deg); }
+.cs__pet--end .cs__bub-tail { left: auto; right: calc(var(--sw) * 0.45 - 6px); }
+.cutscene[data-beat="helpers"] .cs__bub--hi { opacity: 1; transition-delay: 1.5s; }
 .at-drift .cs__bub--drift { opacity: 1; border-color: var(--alarm); background: #fff1e0; }
-.at-drift .cs__bub--drift::after { border-color: var(--alarm); background: #fff1e0; }
+.at-drift .cs__bub--drift .cs__bub-tail { border-color: var(--alarm); }
 .cs__bub--drift.glitch { animation: cs-glitch 0.5s steps(5) 3; }
 @keyframes cs-glitch {
   0% { transform: none; text-shadow: none; clip-path: none; }
@@ -80,6 +97,16 @@
   100% { transform: none; text-shadow: none; }
 }
 .cs__bub-tag { position: absolute; top: -14px; right: -12px; padding: 2px 6px; background: var(--alarm); color: #fff; border: 2px solid var(--line); font: 700 0.62rem/1 var(--font-ui); letter-spacing: 0.14em; }
+
+/* ---------- the dinner beat: his table, set and empty ---------- */
+.cutscene { --cell: 7px; }
+.cs__dinner { position: absolute; z-index: 11; left: 28%; right: 5%; bottom: 20%; height: 40%; visibility: hidden; }
+.cutscene[data-beat="dinner"] .cs__dinner { visibility: visible; animation: cs-fade 0.3s steps(3) both; }
+.cs__table { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; border: 4px solid var(--line); border-top-width: 10px; border-top-color: #7a4f2c;
+  background: repeating-linear-gradient(90deg, #c94a3c 0 22px, #fff6dc 22px 44px); box-shadow: 4px 4px 0 rgba(60, 25, 30, 0.35); }
+.cs__ontable { position: absolute; left: 4%; right: 4%; bottom: calc(32% + 6px); display: flex; justify-content: space-around; align-items: flex-end; }
+.cs__dish svg { display: block; width: calc(var(--cols) * var(--cell)); height: auto; }
+.cs__dish--pot svg { width: calc(var(--cols) * var(--cell) * 1.4); }
 
 /* ---------- the almanac beat: the scene dims, the real button lights up ---------- */
 .cs__dim { position: absolute; inset: 0; z-index: 20; background: rgba(12, 5, 9, 0.84); opacity: 0; transition: opacity 0.3s steps(3); pointer-events: none; }
@@ -133,14 +160,24 @@
 .at-almanac .cs__off { animation: cs-fade 0.3s steps(3) 1s both, cs-pulse 0.7s steps(2) 1.3s infinite alternate; }
 @keyframes cs-pulse { to { transform: scale(1.07); } }
 
-/* ---------- caption, Skip, the beat bars ---------- */
+/* ---------- Rowan's box, Skip, the beat bars ---------- */
+/* His box along the bottom: his name tag, and a tail pointing up at him
+   (--tx is set from where he stands, ui/cutscene.js aimTail). */
 .cs__cap { position: absolute; left: 4%; right: 4%; bottom: 4%; z-index: 30; min-height: 4.6rem; padding: 18px 22px 22px; background: var(--parchment); color: var(--ink); border: 4px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line); }
 .cs__cap-t { margin: 0; font: 700 1.3rem/1.4 var(--font-ui); }
+.cs__cap-tail { position: absolute; top: -10px; left: var(--tx, 120px); width: 14px; height: 14px; background: var(--parchment); border-left: 4px solid var(--line); border-top: 4px solid var(--line); transform: rotate(45deg); }
+.cs__who { position: absolute; top: -15px; left: calc(var(--tx, 120px) + 28px); padding: 3px 8px; background: #6a46a0; color: #ffe9a8; border: 2px solid var(--line); font: 700 0.7rem/1 var(--font-ui); letter-spacing: 0.12em; }
 .cutscene:not(.ended) { cursor: pointer; }
 .cs__cap::after { content: "Next ▸"; position: absolute; right: 14px; bottom: 6px; font: 700 0.8rem/1 var(--font-ui); letter-spacing: 0.06em; visibility: hidden; }
 .is-ready .cs__cap::after { animation: cs-nudge 0.9s steps(2, jump-none) infinite alternate; }
 .is-ready .cs__cap::after { visibility: visible; }
 @keyframes cs-blink { 50% { opacity: 0; } }
+/* The first beat: the name field sits in his box. */
+.cs__name-form { display: none; margin-top: 12px; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+.cutscene[data-beat="name"] .cs__name-form { display: flex; }
+.cs__name-form input { flex: 1 1 12rem; max-width: 20rem; min-height: 44px; padding: 0 12px; font: 700 1.1rem var(--font-ui); color: var(--ink); background: #fff; border: 3px solid var(--line); border-radius: 0; }
+.cs__name-form input:focus-visible, .cs__name-go:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cs__name-go { min-height: 44px; padding: 0 16px; font-size: 0.9rem; cursor: pointer; }
 .at-go .cs__cap, .ended .cs__cap { display: none; }
 /* Top left, because the top right is where the game's own toolbar sits. */
 .cs__bar { position: absolute; z-index: 40; top: 12px; left: 16px; display: flex; align-items: center; gap: 14px; }
@@ -164,7 +201,7 @@
 
 /* ---------- reduced motion: nothing drifts or flies; beats crossfade ---------- */
 .cs--still .cs__world, .cs--still .cs__lay--sway, .cs--still .cs__cloud, .cs--still .cs__bird, .cs--still .cs__bird svg,
-.cs--still .cs__bed img, .cs--still .cs__pet, .cs--still .cs__pet img, .cs--still .cs__bub--drift, .cs--still .cs__almbtn,
+.cs--still .cs__bed img, .cs--still .cs__pet, .cs--still .cs__sprite img, .cs--still .cs__book, .cs--still .cs__dinner, .cs--still .cs__bub--drift, .cs--still .cs__almbtn,
 .cs--still .cs__tag, .cs--still .cs__rays, .cs--still .cs__off, .cs--still .cs__cap::after, .cs--still .cs__claim b { animation: none !important; }
 .cs--still .cs__pet, .cs--still .cs__bub, .cs--still .cs__dim, .cs--still .cs__end { transition: opacity 0.4s linear; }
 .cs--still .cs__pip.on i { transition: none; }
@@ -190,16 +227,26 @@
   .cs__bed { border-width: 2px; }
   .cs__bed img { width: 40px; height: 40px; margin-bottom: 10px; filter: drop-shadow(-4px 2px 0 rgba(60, 25, 30, 0.22)); }
   .cs__path { top: 68%; height: 14%; border-bottom-width: 3px; }
-  .cs__pets { left: 10%; right: 10%; bottom: 25%; }
-  .cs__pet img { width: 56px; filter: drop-shadow(-6px 3px 0 rgba(60, 25, 30, 0.25)); }
+  .cutscene { --sw: 50px; --rowan-h: 140px; --cell: 3.5px; }
+  .cs__rowan { left: 3%; bottom: 25%; }
+  .cs__rowan-img { filter: drop-shadow(-6px 3px 0 rgba(60, 25, 30, 0.25)); }
+  .cs__pets { left: 20%; right: 5%; bottom: 25%; }
+  .cs__sprite img { filter: drop-shadow(-6px 3px 0 rgba(60, 25, 30, 0.25)); }
+  .cs__dinner { left: 22%; right: 3%; bottom: 25%; }
+  .cs__table { border-width: 2px; border-top-width: 6px; background: repeating-linear-gradient(90deg, #c94a3c 0 12px, #fff6dc 12px 24px); }
   .cs__name { font-size: 0.55rem; padding: 1px 4px; }
-  .cs__bub { max-width: 160px; padding: 4px 6px; font-size: 0.68rem; border-width: 2px; box-shadow: 2px 2px 0 var(--line); bottom: calc(100% + 6px); }
-  .cs__bub::after { width: 8px; height: 8px; bottom: -6px; border-width: 2px; left: calc(50% - 4px); }
-  .cs__pet--drift .cs__bub::after { left: 18px; }
+  .cs__bub { max-width: 160px; padding: 4px 6px; font-size: 0.68rem; border-width: 2px; box-shadow: 2px 2px 0 var(--line); bottom: calc(100% + 7px); }
+  .cs__bub-tail { width: 8px; height: 8px; bottom: -6px; border-width: 2px; left: calc(var(--sw) * 0.45 - 4px); }
+  .cs__pet--end .cs__bub-tail { right: calc(var(--sw) * 0.45 - 4px); }
   .cs__bub-tag { top: -11px; right: -8px; padding: 1px 4px; font-size: 0.5rem; }
   .cs__cap { left: 12px; right: 12px; bottom: 8px; min-height: 0; padding: 8px 12px; border-width: 3px; box-shadow: 3px 3px 0 var(--line); }
   .cs__cap-t { font-size: 0.85rem; line-height: 1.3; }
   .cs__cap { padding-right: 64px; }
+  .cs__cap-tail { top: -7px; width: 10px; height: 10px; border-width: 3px; }
+  .cs__who { top: -12px; left: calc(var(--tx, 60px) + 20px); padding: 2px 6px; font-size: 0.58rem; }
+  .cs__name-form { margin-top: 6px; gap: 8px; flex-wrap: nowrap; }
+  .cs__name-form input { flex: 1 1 auto; min-width: 0; font-size: 0.9rem; border-width: 2px; }
+  .cs__name-go { padding: 0 10px; font-size: 0.75rem; white-space: nowrap; }
   .cs__cap::after { right: 10px; bottom: 50%; translate: 0 50%; font-size: 0.7rem; }
   .cs__bar { top: 8px; left: 12px; gap: 10px; }
   .cs__skip { min-height: 44px; padding: 0 12px; font-size: 0.75rem; }

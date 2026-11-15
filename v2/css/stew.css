@@ -1,0 +1,81 @@
+/* The ending's stew dinner (ui/stew-dinner.js). One screen-high stage: a
+   banded sunset, the fence, the table with its striped cloth. Rowan sits
+   behind the pot, much bigger than the pets (his little helpers), his line in
+   a bubble over his head. Sizes come from --cell (one pixel-map cell), so the
+   table scales with the window and nothing scrolls sideways. Pixel only: hard
+   colour bands, no blur, stepped motion. */
+.stew { --cell: min(0.6vw, 1.05dvh); --top: 68%; position: relative; height: 100dvh; min-height: 320px; overflow: hidden; background: #2a1a2e; font-family: var(--font-ui); color: var(--ink); }
+.stew__sky { position: absolute; inset: 0 0 32% 0; background: linear-gradient(#3f3577 0 14%, #5f4190 14% 28%, #8f4c94 28% 42%, #c45e86 42% 56%, #e9786d 56% 70%, #f99a5e 70% 84%, #ffbb62 84% 100%); }
+.stew__sun { position: absolute; left: 68%; top: 34%; width: calc(var(--cell) * 14); aspect-ratio: 1; background: #fff1b0;
+  clip-path: polygon(25% 0, 75% 0, 75% 12.5%, 87.5% 12.5%, 87.5% 25%, 100% 25%, 100% 75%, 87.5% 75%, 87.5% 87.5%, 75% 87.5%, 75% 100%, 25% 100%, 25% 87.5%, 12.5% 87.5%, 12.5% 75%, 0 75%, 0 25%, 12.5% 25%, 12.5% 12.5%, 25% 12.5%); }
+.stew__hills { position: absolute; left: 0; right: 0; top: 52%; height: 12%; background:
+  linear-gradient(#74587f, #74587f) 8% 100% / 26% 70% no-repeat, linear-gradient(#8e6a90, #8e6a90) 52% 100% / 30% 100% no-repeat, linear-gradient(#7d5d8c, #7d5d8c) 92% 100% / 24% 80% no-repeat; }
+.stew__fence { position: absolute; left: 0; right: 0; top: 57%; height: 9%; background:
+  linear-gradient(transparent 22%, #b8773f 22% 34%, transparent 34% 62%, #b8773f 62% 74%, transparent 74%),
+  repeating-linear-gradient(90deg, transparent 0 18px, #d79a5c 18px 34px, #9a5e30 34px 38px, transparent 38px 64px); }
+.stew__lawn { position: absolute; left: 0; right: 0; top: 64%; bottom: 0; background: #74a347; border-top: 6px solid #9cc75e; }
+
+/* ---- the pets, seated behind the table: small next to him ---- */
+.stew__pet { position: absolute; z-index: 2; left: var(--x); bottom: calc(100% - var(--top) - var(--cell) * 2); height: calc(var(--cell) * 14); width: auto; transform: translateX(-50%); image-rendering: pixelated; }
+
+/* ---- Rowan behind the pot, his bubble over his head ---- */
+.stew__rowan { position: absolute; z-index: 2; left: 50%; bottom: calc(100% - var(--top) - var(--cell) * 3); height: calc(var(--cell) * 36); aspect-ratio: 192 / 288; transform: translateX(-50%); }
+.stew__wiz { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.stew__bub { position: absolute; left: 0; bottom: calc(100% + 10px); width: max-content; max-width: min(380px, 44vw); margin: 0; padding: 12px 14px 10px;
+  background: #fff; border: 3px solid var(--line); border-radius: 3px; box-shadow: 3px 3px 0 var(--line); font: 700 1.05rem/1.35 var(--font-ui); }
+.stew__who { position: absolute; top: -13px; left: 10px; padding: 2px 7px; background: #6a46a0; color: #ffe9a8; border: 2px solid var(--line); font: 700 0.62rem/1 var(--font-ui); letter-spacing: 0.12em; }
+.stew__tail { position: absolute; left: calc(var(--cell) * 36 * 0.4 - 6px); bottom: -10px; width: 12px; height: 12px; background: #fff; border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); transform: rotate(45deg); }
+
+/* ---- the table and what's on it ---- */
+.stew__table { position: absolute; z-index: 3; left: 4%; right: 4%; top: var(--top); bottom: 0; border: 4px solid var(--line); border-bottom: 0; border-top: calc(var(--cell) * 2) solid #7a4f2c;
+  background: repeating-linear-gradient(90deg, #c94a3c 0 calc(var(--cell) * 4), #fff6dc calc(var(--cell) * 4) calc(var(--cell) * 8)); }
+.stew__ontable { position: absolute; z-index: 4; left: 0; right: 0; top: 0; height: calc(var(--top) + var(--cell) * 1); pointer-events: none; }
+.stew__dish { position: absolute; left: var(--x); bottom: 0; transform: translateX(-50%); }
+.stew__dish svg { display: block; width: calc(var(--cols) * var(--cell) * var(--k, 1)); height: auto; }
+.stew__dish--pot { --k: 1.25; }
+.stew__dish--vase { --k: 0.85; }
+.stew__dish--salad, .stew__dish--berries { --k: 0.9; }
+.stew__dish--tea { --k: 0.8; }
+.stew__steam { position: absolute; left: 0; right: 0; bottom: 100%; height: calc(var(--cell) * 6); }
+.stew__steam i { position: absolute; left: var(--sx); bottom: 0; width: calc(var(--cell) * 1); height: calc(var(--cell) * 2); background: #fff6dc; opacity: 0; animation: stew-steam 1.6s steps(4) var(--d) infinite; }
+@keyframes stew-steam { 0% { opacity: 0; transform: none; } 30% { opacity: 0.85; } 100% { opacity: 0; transform: translateY(calc(var(--cell) * -5)); } }
+
+/* ---- the menu (top left) and his rating (top right) ---- */
+.stew__menu { position: absolute; z-index: 5; left: 16px; top: 16px; width: min(380px, 31vw); padding: 12px 14px; background: #fff6dc; border: 3px solid var(--line); box-shadow: 4px 4px 0 var(--line); }
+.stew__title { margin: 0 0 6px; font: 700 1.25rem/1.15 var(--font-ui); }
+.stew__title:focus { outline: none; }
+.stew__title:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.stew__menu-row { margin: 0; font: 700 0.82rem/1.4 var(--font-ui); }
+.stew__menu-k { font-weight: 400; color: #6b5a48; }
+.stew__gap { color: #b3261e; text-decoration-thickness: 2px; }
+.stew__why { margin: 6px 0 0; padding: 0; list-style: none; color: #b3261e; font: 700 0.76rem/1.35 var(--font-ui); }
+.stew__rating { position: absolute; z-index: 5; right: 16px; top: 16px; padding: 10px 12px 8px; background: #2e7d32; border: 3px solid var(--line); box-shadow: 4px 4px 0 var(--line); }
+.stew__bowls { display: flex; gap: 6px; }
+.stew__bowl svg { display: block; width: calc(8 * max(4px, var(--cell) * 0.7)); height: auto; }
+.stew__kinds { margin: 6px 0 0; color: #fff6dc; font: 700 0.75rem/1 var(--font-ui); letter-spacing: 0.04em; }
+.stew__down { position: absolute; z-index: 5; left: 16px; bottom: 16px; min-height: 44px; }
+
+/* ---- short laptops ---- */
+@media (max-height: 760px) and (min-height: 501px) {
+  .stew__menu-row { font-size: 0.76rem; }
+  .stew__bub { font-size: 0.95rem; }
+}
+/* ---- phones in landscape ---- */
+@media (max-height: 500px), (max-width: 640px) {
+  .stew { --cell: min(0.6vw, 1.05dvh); }
+  .stew__menu { left: 8px; top: 8px; width: min(260px, 34vw); padding: 6px 8px; border-width: 2px; box-shadow: 3px 3px 0 var(--line); }
+  .stew__title { font-size: 0.8rem; margin-bottom: 3px; }
+  .stew__menu-row { font-size: 0.56rem; line-height: 1.3; }
+  .stew__why { margin-top: 3px; font-size: 0.54rem; }
+  .stew__rating { right: 8px; top: 8px; padding: 5px 6px 4px; border-width: 2px; box-shadow: 3px 3px 0 var(--line); }
+  .stew__bowls { gap: 3px; }
+  .stew__kinds { margin-top: 3px; font-size: 0.55rem; }
+  .stew__bub { padding: 7px 9px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--line); font-size: 0.72rem; max-width: min(260px, 40vw); bottom: calc(100% + 8px); }
+  .stew__who { top: -10px; left: 6px; padding: 1px 5px; font-size: 0.5rem; }
+  .stew__tail { width: 8px; height: 8px; bottom: -6px; border-width: 2px; left: calc(var(--cell) * 36 * 0.4 - 4px); }
+  .stew__table { border-width: 2px; }
+  .stew__down { left: 8px; bottom: 8px; font-size: 0.75rem; padding: 0 12px; }
+  /* Short screens: the rating moves to the bottom right, so his bubble has the top. */
+  .stew__rating { top: auto; bottom: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .stew__steam i { animation: none; opacity: 0.6; } }

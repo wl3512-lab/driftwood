@@ -13,6 +13,10 @@
   // before the actions still pass while performing them. A run that drags by
   // hand sets window.__dwAutoAct = false in a later init script.
   try { if (window.__dwAutoAct === undefined) window.__dwAutoAct = true; } catch (_) {}
+  // Driftwood v2: Rowan's seed handoff at the start of a level's first play
+  // (v2/ui/handoff.js) is off, so flows written before it still pass. A run
+  // that checks it sets window.__dwHandoff = true in a later init script.
+  try { if (window.__dwHandoff === undefined) window.__dwHandoff = false; } catch (_) {}
   // Never test against the service worker's cached bundle: a reload after an
   // edit would otherwise run the previous sketch.js (cache-first) and the
   // results would describe code that no longer exists.

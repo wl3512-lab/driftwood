@@ -1,14 +1,17 @@
 // Driftwood v2 entry: a small screen router.
-// splash → intro (framing + name) → opening cutscene (new players) → level 1
-// → reveal → map → level … The map can replay the cutscene ("Watch intro").
+// splash → opening cutscene (Rowan asks the name; new players) → level 1
+// (Rowan's seed handoff on each level's first play) → reveal → map → level …
+// The map can replay the cutscene ("Watch intro").
 import { LEVELS, MAP } from "./levels/index.js";
-import { loadProgress, saveProgress, recordLevel, allDone, markIntroSeen, needsIntro, startOver } from "./progress.js";
-import { renderSplash, renderIntro } from "./ui/intro.js";
+import { loadProgress, saveProgress, recordLevel, allDone, markIntroSeen, startOver, needsHandoff, markHandoffSeen } from "./progress.js";
+import { renderSplash } from "./ui/intro.js";
 import { renderMap, renderGuide } from "./ui/map.js";
 import { mountLevel } from "./ui/level-view.js";
 import { renderReveal } from "./ui/reveal.js";
 import { renderEnding } from "./ui/ending.js";
 import { renderCutscene } from "./ui/cutscene.js";
+import { mountHandoff } from "./ui/handoff.js";
+import { HANDOFFS } from "./levels/wizard.js";
 import { earlierPlots } from "./ui/finished-garden.js";
 import { reachedLevel } from "./mechanics/shelf.js";
 // Level tool views register themselves with ui/tools.js when loaded.
@@ -35,22 +38,19 @@ const leaving = (show) => (...args) => {
 };
 
 const go = {
-  // A returning player chooses: Continue (to the map) or New game (erase, then name → cutscene).
+  // A returning player chooses: Continue (to the map) or New game (erase, then the cutscene, name first).
   splash: () => { unmount = renderSplash(root, {
     saved: progress.name ? { name: progress.name, done: Object.keys(progress.levels).length, total: MAP.length } : null,
-    onBegin: () => (progress.name ? go.map() : go.intro()),
-    onNew: () => { progress = startOver(storage); go.intro(); },
+    onBegin: () => (progress.name ? go.map() : go.cutscene(true)),
+    onNew: () => { progress = startOver(storage); go.cutscene(true); },
   }); },
-  intro: () => { unmount = renderIntro(root, {
-    onSubmit: (name) => {
-      save({ ...progress, name: name || "friend" });
-      if (needsIntro(progress)) go.cutscene(true); else go.map();
-    },
-  }); },
-  // first: a new player on the way into Level 1; otherwise a rewatch from the map.
+  // first: a new player on the way into Level 1 (Rowan asks the name);
+  // otherwise a rewatch from the map, which skips the name.
   cutscene: (first = false) => {
     unmount = renderCutscene(root, {
       first,
+      name: first ? "" : progress.name || "friend",
+      onName: (name) => save({ ...progress, name: name || "friend" }),
       onSeen: () => save(markIntroSeen(progress)),
       onStart: () => go.level(MAP[0].id),
       onBack: () => go.map(),
@@ -63,7 +63,7 @@ const go = {
     // A level whose props ask for finished plots gets them from saved progress.
     const fin = (LEVELS[id].props || []).find((p) => p.from === "finished");
     const earlier = fin ? earlierPlots(fin.levels, LEVELS, progress) : [];
-    unmount = mountLevel(root, LEVELS[id], {
+    const off = mountLevel(root, LEVELS[id], {
       name: progress.name || "friend",
       earlier,
       // The almanac's seed shelf opens every packet up to the furthest level reached.
@@ -71,6 +71,13 @@ const go = {
       onDone: (state) => { save(recordLevel(progress, LEVELS[id], state)); go.reveal(id, state); },
       onExit: () => go.map(), // leaving mid-level saves nothing
     });
+    // Rowan hands over the level's seeds, over the level, on its first play only.
+    // Test runs turn it off (scripts/test-mute.js sets window.__dwHandoff = false).
+    const hand = HANDOFFS[id];
+    const drop = hand && window.__dwHandoff !== false && needsHandoff(progress, id)
+      ? mountHandoff(root, { levelId: id, ...hand, onSeen: () => save(markHandoffSeen(progress, id)) })
+      : null;
+    unmount = () => { drop?.(); off?.(); };
   },
   // The last level's reveal continues to the ending once every level is done.
   reveal: (id, state) => renderReveal(root, LEVELS[id], state, {
@@ -84,7 +91,7 @@ const go = {
 for (const key of Object.keys(go)) go[key] = leaving(go[key]);
 function finished() { return allDone(progress, MAP.map((m) => m.id)); }
 
-// ?screen=map|guide|intro|cutscene|ending, or ?screen=level&level=level-1, jumps straight there (testing, demos).
+// ?screen=map|guide|cutscene|ending (intro = the cutscene, name first), or ?screen=level&level=level-1, jumps straight there (testing, demos).
 // Anything unrecognised lands on the map rather than leaving "Loading Driftwood…" up.
 function route() {
   const params = new URLSearchParams(location.search);
@@ -93,7 +100,8 @@ function route() {
   if (!screen) go.splash();
   else if (screen === "level" && id && Object.hasOwn(LEVELS, id)) go.level(id);
   else if (screen === "cutscene") go.cutscene(params.get("first") === "1");
-  else if (["intro", "map", "guide", "ending"].includes(screen)) go[screen]();
+  else if (screen === "intro") go.cutscene(true);
+  else if (["map", "guide", "ending"].includes(screen)) go[screen]();
   else go.map();
 }
 

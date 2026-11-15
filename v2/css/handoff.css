@@ -1,0 +1,85 @@
+/* Rowan's seed handoff (ui/handoff.js): an overlay on the level's first play.
+   He stands bottom left, his line in a bubble right over his head; on a tap
+   the pouch arcs up to the almanac button and bursts into seeds. Pixel only:
+   flat dim, hard borders, stepped motion. */
+.ho { --rowan-h: 280px; position: fixed; inset: 0; z-index: 200; font-family: var(--font-ui); color: var(--ink); cursor: pointer; }
+.ho:focus { outline: none; }
+.ho__dim { position: absolute; inset: 0; background: rgba(20, 10, 18, 0.62); }
+
+/* ---- Rowan and his bubble ---- */
+.ho__rowan { position: absolute; left: 3%; bottom: 3%; height: var(--rowan-h); aspect-ratio: 192 / 288; animation: ho-in 0.36s steps(4) both; }
+.ho__wiz { display: block; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(-10px 5px 0 rgba(0, 0, 0, 0.35)); }
+/* The pouch in his right hand, waiting. */
+.ho__hand { position: absolute; left: 86%; top: 50%; width: 24%; }
+.ho__hand svg, .ho__rest svg { display: block; width: 100%; height: auto; }
+@keyframes ho-in { from { opacity: 0; transform: translateY(24px); } }
+/* Left-aligned over his head, the tail pointing down at it. */
+.ho__bub { position: absolute; left: 0; bottom: calc(100% + 12px); width: max-content; max-width: min(480px, calc(100vw - 6vw - 16px));
+  padding: 16px 18px 14px; background: var(--parchment); border: 4px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line); cursor: default; }
+.ho__tail { position: absolute; left: calc(var(--rowan-h) * 0.4); bottom: -12px; width: 14px; height: 14px; background: var(--parchment); border-right: 4px solid var(--line); border-bottom: 4px solid var(--line); transform: rotate(45deg); }
+.ho__who { position: absolute; top: -14px; left: 14px; padding: 3px 8px; background: #6a46a0; color: #ffe9a8; border: 2px solid var(--line); font: 700 0.7rem/1 var(--font-ui); letter-spacing: 0.12em; }
+.ho__line { margin: 0; max-width: 26em; font: 700 1.2rem/1.35 var(--font-ui); }
+
+/* ---- the seed packets: what you're getting ---- */
+.ho__pks { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.ho__pk { display: grid; justify-items: center; gap: 2px; width: 66px; padding: 6px 4px 4px; background: #fff6dc; border: 3px solid var(--line); border-top: 8px solid var(--c); box-shadow: 2px 2px 0 var(--line); }
+.ho__pk img { width: 36px; height: 36px; image-rendering: pixelated; }
+.ho__pk-n { font: 700 0.62rem/1.1 var(--font-ui); text-align: center; letter-spacing: 0.02em; }
+.ho__btns { display: flex; gap: 10px; margin-top: 12px; }
+.ho__next, .ho__skip { min-height: 44px; padding: 0 16px; font-size: 0.85rem; cursor: pointer; }
+.ho__next:focus-visible, .ho__skip:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* ---- Level 5: the note he left out, with the pouch on it ---- */
+.ho__note { position: absolute; left: 4%; bottom: 5%; width: min(440px, calc(100vw - 8%)); padding: 22px 20px 14px; background: #fff3c4;
+  border: 4px solid var(--line); box-shadow: 4px 4px 0 var(--line); cursor: default; animation: ho-in 0.36s steps(4) both; }
+.ho__note .ho__who { background: #3d2566; }
+.ho__note .ho__line { font-family: var(--font-pixel, var(--font-ui)); font-size: 1.35rem; }
+.ho__sig { margin: 6px 0 0; text-align: right; font: 700 0.9rem var(--font-pixel, var(--font-ui)); color: #6a46a0; }
+.ho__rest { position: absolute; right: -14px; top: -30px; width: 54px; }
+
+/* ---- the toss ---- */
+.ho--tossing { cursor: default; }
+.ho--tossing .ho__tail { visibility: hidden; }
+.ho__fx { position: absolute; inset: 0; pointer-events: none; }
+.ho__seed { position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--c); box-shadow: 0 0 0 2px var(--line); }
+/* A four-point pixel spark. */
+.ho__spark { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  background: linear-gradient(#fff6a8, #fff6a8) center / 6px 100% no-repeat, linear-gradient(#fff6a8, #fff6a8) center / 100% 6px no-repeat; }
+.ho__add { position: absolute; margin: 0; padding: 4px 8px; background: var(--gold); color: #2a1600; border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line);
+  font: 700 0.85rem/1 var(--font-ui); letter-spacing: 0.06em; visibility: hidden; }
+.ho__add.is-on { visibility: visible; }
+/* Reduced motion: no flight, everything fades together. */
+.ho--fade .ho__dim, .ho--fade .ho__rowan, .ho--fade .ho__note { transition: opacity 0.6s linear; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .ho__rowan, .ho__note { animation: none; }
+}
+
+/* ---- laptops that are short ---- */
+@media (max-height: 760px) and (min-height: 501px) {
+  .ho { --rowan-h: 220px; }
+  .ho__line { font-size: 1.05rem; }
+}
+/* ---- phones in landscape ---- */
+@media (max-height: 500px), (max-width: 640px) {
+  .ho { --rowan-h: 140px; }
+  .ho__rowan { left: 2%; bottom: 3%; }
+  .ho__bub { bottom: calc(100% + 9px); padding: 10px 12px 8px; border-width: 3px; box-shadow: 3px 3px 0 var(--line); max-width: calc(100vw - 4vw - 12px); }
+  .ho__tail { width: 10px; height: 10px; bottom: -8px; border-width: 3px; }
+  .ho__who { top: -11px; padding: 2px 6px; font-size: 0.58rem; }
+  .ho__line { font-size: 0.85rem; max-width: 30em; }
+  .ho__pks { gap: 6px; margin-top: 6px; }
+  .ho__pk { width: 48px; padding: 3px 2px 2px; border-width: 2px; border-top-width: 6px; }
+  .ho__pk img { width: 24px; height: 24px; }
+  .ho__pk-n { font-size: 0.5rem; }
+  .ho__words { display: grid; grid-template-columns: auto auto; column-gap: 10px; align-items: end; justify-content: start; }
+  .ho__line, .ho__words .sr-only { grid-column: 1 / -1; }
+  .ho__btns { margin-top: 6px; gap: 8px; }
+  .ho__next, .ho__skip { padding: 0 10px; font-size: 0.72rem; }
+  .ho__note { left: 3%; bottom: 4%; padding: 14px 12px 8px; border-width: 3px; }
+  .ho__note .ho__line { font-size: 1rem; }
+  .ho__sig { margin-top: 2px; font-size: 0.75rem; }
+  .ho__rest { width: 36px; top: -22px; right: -8px; }
+}
+@media (max-width: 700px) and (max-height: 500px) {
+  .ho { --rowan-h: 112px; }
+}
