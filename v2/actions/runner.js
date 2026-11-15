@@ -394,6 +394,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     item.addEventListener("pointermove", onPointerMove);
     item.addEventListener("pointerup", onPointerUp);
     item.addEventListener("pointercancel", onPointerCancel);
+    item.addEventListener("lostpointercapture", onPointerCancel);
   }
   function lift(x, y) {
     ghost = h("div", { class: "act__ghost", "aria-hidden": "true" });
@@ -421,10 +422,13 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     item?.removeEventListener("pointermove", onPointerMove);
     item?.removeEventListener("pointerup", onPointerUp);
     item?.removeEventListener("pointercancel", onPointerCancel);
+    item?.removeEventListener("lostpointercapture", onPointerCancel);
     press = null;
     layer.querySelectorAll(".act__ring.is-hot").forEach((r) => r.classList.remove("is-hot"));
   }
-  function onPointerCancel() { const g = ghost; endPress(); bounceBack(g); }
+  // Capture lost (the card re-rendered, the window lost focus) counts as a cancel:
+  // the tool flies home instead of staying stuck on screen.
+  function onPointerCancel() { if (!press) return; const g = ghost; ghost = null; endPress(); bounceBack(g); }
   function onPointerUp(ev) {
     if (!press) return;
     const { dragging, touch } = press;
@@ -544,7 +548,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   }
 
   async function commit(i, { from = null, instant = false } = {}) {
-    if (busy || over || done[i]) return;
+    if (busy || over || done[i]) { from?.remove(); return; }
     busy = true;
     card.dataset.busy = "true";
     const a = action();
