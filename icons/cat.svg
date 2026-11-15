@@ -1,126 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="224" viewBox="0 0 192 224" shape-rendering="crispEdges">
-  <rect x="16" y="0" width="16" height="16" fill="#f0a032"/>
-  <rect x="160" y="0" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="16" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="16" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="16" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="16" width="16" height="16" fill="#f0a032"/>
-  <rect x="160" y="16" width="16" height="16" fill="#f0a032"/>
-  <rect x="176" y="16" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="32" width="16" height="16" fill="#ffb478"/>
-  <rect x="32" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="48" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="64" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="80" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="96" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="112" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="128" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="160" y="32" width="16" height="16" fill="#ffb478"/>
-  <rect x="176" y="32" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="48" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="48" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="48" width="16" height="16" fill="#f0a032"/>
-  <rect x="48" y="48" width="16" height="16" fill="#ffc864"/>
-  <rect x="64" y="48" width="16" height="16" fill="#ffc864"/>
-  <rect x="80" y="48" width="16" height="16" fill="#ffc864"/>
-  <rect x="96" y="48" width="16" height="16" fill="#ffc864"/>
-  <rect x="112" y="48" width="16" height="16" fill="#ffc864"/>
-  <rect x="128" y="48" width="16" height="16" fill="#ffc864"/>
-  <rect x="144" y="48" width="16" height="16" fill="#f0a032"/>
-  <rect x="160" y="48" width="16" height="16" fill="#f0a032"/>
-  <rect x="176" y="48" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="64" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="32" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="48" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="64" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="80" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="96" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="112" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="128" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="144" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="160" y="64" width="16" height="16" fill="#ffc864"/>
-  <rect x="176" y="64" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="80" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="32" y="80" width="16" height="16" fill="#282828"/>
-  <rect x="48" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="64" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="80" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="96" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="112" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="128" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="144" y="80" width="16" height="16" fill="#282828"/>
-  <rect x="160" y="80" width="16" height="16" fill="#ffc864"/>
-  <rect x="176" y="80" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="96" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="32" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="48" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="64" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="80" y="96" width="16" height="16" fill="#ffb478"/>
-  <rect x="96" y="96" width="16" height="16" fill="#ffb478"/>
-  <rect x="112" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="128" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="144" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="160" y="96" width="16" height="16" fill="#ffc864"/>
-  <rect x="176" y="96" width="16" height="16" fill="#f0a032"/>
-  <rect x="0" y="112" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="112" width="16" height="16" fill="#ffc864"/>
-  <rect x="32" y="112" width="16" height="16" fill="#ffc864"/>
-  <rect x="48" y="112" width="16" height="16" fill="#ffc864"/>
-  <rect x="64" y="112" width="16" height="16" fill="#ffe6b4"/>
-  <rect x="80" y="112" width="16" height="16" fill="#ffe6b4"/>
-  <rect x="96" y="112" width="16" height="16" fill="#ffe6b4"/>
-  <rect x="112" y="112" width="16" height="16" fill="#ffe6b4"/>
-  <rect x="128" y="112" width="16" height="16" fill="#ffc864"/>
-  <rect x="144" y="112" width="16" height="16" fill="#ffc864"/>
-  <rect x="160" y="112" width="16" height="16" fill="#ffc864"/>
-  <rect x="176" y="112" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="128" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="128" width="16" height="16" fill="#ffc864"/>
-  <rect x="48" y="128" width="16" height="16" fill="#ffc864"/>
-  <rect x="64" y="128" width="16" height="16" fill="#ffc864"/>
-  <rect x="80" y="128" width="16" height="16" fill="#ffe6b4"/>
-  <rect x="96" y="128" width="16" height="16" fill="#ffe6b4"/>
-  <rect x="112" y="128" width="16" height="16" fill="#ffc864"/>
-  <rect x="128" y="128" width="16" height="16" fill="#ffc864"/>
-  <rect x="144" y="128" width="16" height="16" fill="#ffc864"/>
-  <rect x="160" y="128" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="48" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="64" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="80" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="96" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="112" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="128" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="144" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="160" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="160" width="16" height="16" fill="#c8781e"/>
-  <rect x="48" y="160" width="16" height="16" fill="#f0a032"/>
-  <rect x="64" y="160" width="16" height="16" fill="#c8781e"/>
-  <rect x="80" y="160" width="16" height="16" fill="#f0a032"/>
-  <rect x="96" y="160" width="16" height="16" fill="#f0a032"/>
-  <rect x="112" y="160" width="16" height="16" fill="#c8781e"/>
-  <rect x="128" y="160" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="160" width="16" height="16" fill="#c8781e"/>
-  <rect x="160" y="160" width="16" height="16" fill="#f0a032"/>
-  <rect x="16" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="48" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="64" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="80" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="96" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="112" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="128" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="160" y="176" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="192" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="192" width="16" height="16" fill="#f0a032"/>
-  <rect x="32" y="208" width="16" height="16" fill="#f0a032"/>
-  <rect x="48" y="208" width="16" height="16" fill="#f0a032"/>
-  <rect x="128" y="208" width="16" height="16" fill="#f0a032"/>
-  <rect x="144" y="208" width="16" height="16" fill="#f0a032"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="224" viewBox="0 0 160 224" shape-rendering="crispEdges">
+<path fill="#0d0a18" d="M44 12h4v4h-4zM120 12h4v4h-4zM44 16h12v4h-12zM116 16h8v4h-8zM44 20h4v4h-4zM56 20h4v4h-4zM108 20h8v4h-8zM120 20h4v4h-4zM44 24h4v4h-4zM60 24h4v4h-4zM104 24h4v4h-4zM120 24h4v4h-4zM44 28h4v4h-4zM64 28h4v4h-4zM100 28h4v4h-4zM120 28h4v4h-4zM44 32h4v4h-4zM68 32h32v4h-32zM120 32h4v4h-4zM44 36h4v4h-4zM64 36h8v4h-8zM96 36h8v4h-8zM124 36h4v4h-4zM44 40h4v4h-4zM56 40h8v4h-8zM104 40h8v4h-8zM124 40h4v4h-4zM44 44h4v4h-4zM52 44h4v4h-4zM112 44h4v4h-4zM124 44h4v4h-4zM44 48h8v4h-8zM116 48h4v4h-4zM124 48h4v4h-4zM44 52h4v4h-4zM120 52h8v4h-8zM44 56h4v4h-4zM120 56h8v4h-8zM44 60h4v4h-4zM120 60h4v4h-4zM44 64h4v4h-4zM120 64h4v4h-4zM40 68h4v4h-4zM120 68h4v4h-4zM40 72h4v4h-4zM120 72h4v4h-4zM40 76h4v4h-4zM124 76h4v4h-4zM40 80h4v4h-4zM36 84h4v4h-4zM128 84h4v4h-4zM40 88h8v4h-8zM120 88h8v4h-8zM48 92h8v4h-8zM116 92h4v4h-4zM56 96h8v4h-8zM84 96h8v4h-8zM104 96h12v4h-12zM64 100h20v4h-20zM92 100h12v4h-12zM64 104h4v4h-4zM104 104h4v4h-4zM56 116h4v4h-4zM112 116h4v4h-4zM56 120h4v4h-4zM112 120h4v4h-4zM56 124h4v4h-4zM112 124h4v4h-4zM28 128h8v4h-8zM56 128h4v4h-4zM112 128h4v4h-4zM20 132h8v4h-8zM36 132h4v4h-4zM56 132h4v4h-4zM112 132h4v4h-4zM12 136h8v4h-8zM32 136h4v4h-4zM52 136h4v4h-4zM116 136h4v4h-4zM8 140h4v4h-4zM28 140h4v4h-4zM52 140h4v4h-4zM116 140h4v4h-4zM8 144h4v4h-4zM24 144h4v4h-4zM52 144h4v4h-4zM116 144h4v4h-4zM8 148h4v4h-4zM20 148h4v4h-4zM52 148h4v4h-4zM116 148h4v4h-4zM8 152h4v4h-4zM20 152h4v4h-4zM48 152h4v4h-4zM120 152h4v4h-4zM8 156h4v4h-4zM20 156h4v4h-4zM44 156h8v4h-8zM120 156h4v4h-4zM4 160h4v4h-4zM20 160h4v4h-4zM36 160h8v4h-8zM48 160h4v4h-4zM120 160h4v4h-4zM4 164h4v4h-4zM20 164h4v4h-4zM32 164h4v4h-4zM48 164h4v4h-4zM120 164h4v4h-4zM4 168h4v4h-4zM20 168h4v4h-4zM28 168h4v4h-4zM44 168h4v4h-4zM124 168h4v4h-4zM8 172h4v4h-4zM24 172h8v4h-8zM44 172h4v4h-4zM124 172h4v4h-4zM8 176h4v4h-4zM28 176h4v4h-4zM44 176h4v4h-4zM124 176h4v4h-4zM8 180h4v4h-4zM24 180h4v4h-4zM44 180h4v4h-4zM124 180h4v4h-4zM12 184h4v4h-4zM24 184h4v4h-4zM44 184h4v4h-4zM124 184h4v4h-4zM12 188h4v4h-4zM24 188h4v4h-4zM48 188h4v4h-4zM120 188h4v4h-4zM12 192h4v4h-4zM28 192h4v4h-4zM48 192h4v4h-4zM120 192h4v4h-4zM16 196h4v4h-4zM28 196h4v4h-4zM52 196h4v4h-4zM116 196h4v4h-4zM16 200h16v4h-16zM52 200h4v4h-4zM116 200h4v4h-4zM28 204h8v4h-8zM56 204h8v4h-8zM112 204h4v4h-4zM36 208h4v4h-4zM64 208h4v4h-4zM108 208h4v4h-4zM32 212h4v4h-4zM60 212h4v4h-4zM68 212h4v4h-4zM112 212h4v4h-4zM28 216h4v4h-4zM56 216h4v4h-4zM68 216h4v4h-4zM76 216h4v4h-4zM88 216h8v4h-8zM100 216h4v4h-4zM112 216h4v4h-4zM32 220h24v4h-24zM72 220h16v4h-16zM96 220h16v4h-16z"/>
+<path fill="#6a5e9a" d="M48 20h8v4h-8zM48 24h4v4h-4zM56 24h4v4h-4zM108 24h4v4h-4zM48 28h4v4h-4zM60 28h4v4h-4zM104 28h4v4h-4zM48 32h4v4h-4zM64 32h4v4h-4zM100 32h4v4h-4zM48 36h4v4h-4zM72 36h24v4h-24zM48 52h4v4h-4zM48 56h4v4h-4zM56 56h8v4h-8zM100 56h8v4h-8zM48 60h4v4h-4zM48 64h4v4h-4zM44 68h4v4h-4zM44 72h4v4h-4zM44 76h4v4h-4zM44 80h4v4h-4zM124 80h4v4h-4zM40 84h4v4h-4zM68 104h4v4h-4zM60 116h4v4h-4zM60 120h4v4h-4zM60 124h4v4h-4zM60 128h4v4h-4zM28 132h8v4h-8zM60 132h4v4h-4zM20 136h8v4h-8zM56 136h4v4h-4zM12 140h8v4h-8zM56 140h4v4h-4zM12 144h4v4h-4zM56 144h4v4h-4zM12 148h4v4h-4zM56 148h4v4h-4zM12 152h4v4h-4zM52 152h4v4h-4zM12 156h4v4h-4zM8 160h4v4h-4zM44 160h4v4h-4zM8 164h4v4h-4zM36 164h8v4h-8zM8 168h4v4h-4zM32 168h4v4h-4zM12 172h4v4h-4zM12 176h4v4h-4zM24 176h4v4h-4zM12 180h4v4h-4zM16 184h4v4h-4zM16 188h4v4h-4zM16 192h4v4h-4zM20 196h4v4h-4zM40 208h4v4h-4zM36 212h4v4h-4zM72 212h4v4h-4zM32 216h4v4h-4zM72 216h4v4h-4z"/>
+<path fill="#d88aa0" d="M116 20h4v4h-4zM52 24h4v4h-4zM112 24h8v4h-8zM52 28h8v4h-8zM112 28h8v4h-8zM52 32h12v4h-12zM108 32h12v4h-12zM52 36h12v4h-12zM104 36h16v4h-16zM48 40h8v4h-8zM112 40h8v4h-8zM48 44h4v4h-4zM116 44h4v4h-4z"/>
+<path fill="#3b3459" d="M108 28h4v4h-4zM104 32h4v4h-4zM80 40h20v4h-20zM80 44h24v4h-24zM52 48h4v4h-4zM80 48h24v4h-24zM52 52h4v4h-4zM76 52h24v4h-24zM52 56h4v4h-4zM68 56h32v4h-32zM52 60h44v4h-44zM52 64h4v4h-4zM80 64h16v4h-16zM80 68h16v4h-16zM48 72h4v4h-4zM76 72h24v4h-24zM48 76h36v4h-36zM48 80h32v4h-32zM44 84h32v4h-32zM84 104h8v4h-8zM84 108h8v4h-8zM64 116h4v4h-4zM64 120h16v4h-16zM64 124h20v4h-20zM64 128h20v4h-20zM64 132h16v4h-16zM60 136h20v4h-20zM60 140h16v4h-16zM16 144h4v4h-4zM60 144h16v4h-16zM60 148h16v4h-16zM56 152h16v4h-16zM52 156h16v4h-16zM76 156h8v4h-8zM100 156h8v4h-8zM12 160h4v4h-4zM52 160h16v4h-16zM72 160h8v4h-8zM96 160h8v4h-8zM12 164h4v4h-4zM52 164h16v4h-16zM72 164h8v4h-8zM96 164h8v4h-8zM12 168h4v4h-4zM48 168h20v4h-20zM72 168h8v4h-8zM96 168h8v4h-8zM16 172h4v4h-4zM48 172h20v4h-20zM72 172h8v4h-8zM96 172h8v4h-8zM16 176h4v4h-4zM32 176h4v4h-4zM48 176h20v4h-20zM72 176h8v4h-8zM96 176h8v4h-8zM16 180h8v4h-8zM28 180h16v4h-16zM52 180h16v4h-16zM72 180h8v4h-8zM96 180h8v4h-8zM20 184h4v4h-4zM28 184h16v4h-16zM56 184h12v4h-12zM72 184h8v4h-8zM96 184h8v4h-8zM20 188h4v4h-4zM28 188h20v4h-20zM72 188h8v4h-8zM96 188h8v4h-8zM20 192h8v4h-8zM36 192h8v4h-8zM72 192h8v4h-8zM96 192h8v4h-8zM72 196h8v4h-8zM96 196h8v4h-8zM72 200h8v4h-8zM96 200h8v4h-8zM76 204h4v4h-4zM100 204h4v4h-4zM76 208h4v4h-4zM100 208h4v4h-4z"/>
+<path fill="#29243f" d="M120 36h4v4h-4zM100 40h4v4h-4zM120 40h4v4h-4zM104 44h8v4h-8zM120 44h4v4h-4zM104 48h12v4h-12zM120 48h4v4h-4zM100 52h16v4h-16zM108 56h8v4h-8zM96 60h20v4h-20zM112 64h8v4h-8zM112 68h8v4h-8zM108 72h12v4h-12zM108 76h8v4h-8zM112 80h4v4h-4zM48 88h32v4h-32zM56 92h24v4h-24zM104 116h4v4h-4zM96 120h12v4h-12zM100 124h4v4h-4zM104 128h4v4h-4zM28 136h4v4h-4zM20 140h8v4h-8zM16 148h4v4h-4zM16 152h4v4h-4zM16 156h4v4h-4zM16 160h4v4h-4zM80 160h4v4h-4zM104 160h4v4h-4zM16 164h4v4h-4zM80 164h4v4h-4zM104 164h4v4h-4zM16 168h4v4h-4zM80 168h4v4h-4zM104 168h4v4h-4zM20 172h4v4h-4zM80 172h4v4h-4zM104 172h4v4h-4zM20 176h4v4h-4zM80 176h4v4h-4zM104 176h4v4h-4zM48 180h4v4h-4zM80 180h4v4h-4zM104 180h4v4h-4zM48 184h8v4h-8zM80 184h4v4h-4zM88 184h4v4h-4zM104 184h4v4h-4zM52 188h16v4h-16zM80 188h4v4h-4zM88 188h4v4h-4zM104 188h4v4h-4zM32 192h4v4h-4zM44 192h4v4h-4zM52 192h16v4h-16zM80 192h4v4h-4zM88 192h4v4h-4zM104 192h4v4h-4zM24 196h4v4h-4zM32 196h20v4h-20zM56 196h12v4h-12zM80 196h4v4h-4zM88 196h4v4h-4zM104 196h4v4h-4zM32 200h20v4h-20zM60 200h8v4h-8zM80 200h4v4h-4zM104 200h4v4h-4zM40 204h8v4h-8zM80 204h4v4h-4zM104 204h4v4h-4zM80 208h4v4h-4zM104 208h4v4h-4z"/>
+<path fill="#544a7c" d="M64 40h16v4h-16zM56 44h24v4h-24zM56 48h24v4h-24zM56 52h20v4h-20zM64 56h4v4h-4zM72 64h8v4h-8zM48 68h8v4h-8zM72 68h8v4h-8zM52 72h8v4h-8zM68 72h8v4h-8zM80 108h4v4h-4zM72 156h4v4h-4zM96 156h4v4h-4zM44 164h4v4h-4zM36 168h8v4h-8zM32 172h12v4h-12zM36 176h8v4h-8z"/>
+<path fill="#1c1830" d="M116 52h4v4h-4zM116 56h4v4h-4zM116 60h4v4h-4zM116 76h8v4h-8zM116 80h8v4h-8zM116 84h12v4h-12zM112 88h8v4h-8zM112 92h4v4h-4zM64 96h20v4h-20zM84 100h8v4h-8zM72 104h12v4h-12zM92 104h12v4h-12zM108 116h4v4h-4zM108 120h4v4h-4zM104 124h8v4h-8zM108 128h4v4h-4zM108 132h4v4h-4zM108 136h8v4h-8zM112 140h4v4h-4zM20 144h4v4h-4zM112 144h4v4h-4zM112 148h4v4h-4zM72 152h12v4h-12zM96 152h12v4h-12zM112 152h8v4h-8zM68 156h4v4h-4zM84 156h4v4h-4zM92 156h4v4h-4zM108 156h12v4h-12zM68 160h4v4h-4zM84 160h4v4h-4zM92 160h4v4h-4zM108 160h12v4h-12zM68 164h4v4h-4zM84 164h4v4h-4zM92 164h4v4h-4zM108 164h12v4h-12zM68 168h4v4h-4zM84 168h4v4h-4zM92 168h4v4h-4zM108 168h16v4h-16zM68 172h4v4h-4zM84 172h4v4h-4zM92 172h4v4h-4zM108 172h16v4h-16zM68 176h4v4h-4zM84 176h4v4h-4zM92 176h4v4h-4zM108 176h16v4h-16zM68 180h4v4h-4zM84 180h4v4h-4zM92 180h4v4h-4zM108 180h16v4h-16zM68 184h4v4h-4zM84 184h4v4h-4zM92 184h4v4h-4zM108 184h16v4h-16zM68 188h4v4h-4zM84 188h4v4h-4zM92 188h4v4h-4zM108 188h12v4h-12zM68 192h4v4h-4zM84 192h4v4h-4zM92 192h4v4h-4zM108 192h12v4h-12zM68 196h4v4h-4zM84 196h4v4h-4zM92 196h4v4h-4zM108 196h8v4h-8zM56 200h4v4h-4zM68 200h4v4h-4zM84 200h12v4h-12zM108 200h8v4h-8zM36 204h4v4h-4zM48 204h8v4h-8zM64 204h12v4h-12zM84 204h16v4h-16zM108 204h4v4h-4zM44 208h20v4h-20zM68 208h8v4h-8zM84 208h16v4h-16zM56 212h4v4h-4z"/>
+<path fill="#2a1b2e" d="M56 64h16v4h-16zM96 64h16v4h-16zM60 68h4v4h-4zM100 68h4v4h-4z"/>
+<path fill="#4aa8ff" d="M56 68h4v4h-4zM68 68h4v4h-4zM96 68h4v4h-4zM108 68h4v4h-4zM60 72h8v4h-8zM100 72h8v4h-8z"/>
+<path fill="#ffffff" d="M64 68h4v4h-4zM104 68h4v4h-4z"/>
+<path fill="#c8c0e8" d="M32 76h4v4h-4zM132 76h4v4h-4zM36 80h4v4h-4zM128 80h4v4h-4zM32 88h8v4h-8zM128 88h8v4h-8z"/>
+<path fill="#463e66" d="M84 76h20v4h-20zM80 80h12v4h-12zM100 80h4v4h-4zM76 84h20v4h-20zM80 88h8v4h-8zM92 124h8v4h-8zM84 128h4v4h-4zM92 128h8v4h-8zM80 132h24v4h-24zM80 136h24v4h-24zM76 140h28v4h-28zM76 144h24v4h-24zM76 148h24v4h-24zM84 152h12v4h-12zM88 156h4v4h-4zM40 212h12v4h-12zM76 212h8v4h-8zM96 212h12v4h-12zM36 216h8v4h-8zM96 216h4v4h-4z"/>
+<path fill="#332c4c" d="M104 76h4v4h-4zM104 80h8v4h-8zM100 84h12v4h-12zM92 88h8v4h-8zM104 88h4v4h-4zM80 92h12v4h-12zM100 128h4v4h-4zM104 132h4v4h-4zM104 136h4v4h-4zM104 140h4v4h-4zM100 144h8v4h-8zM100 148h8v4h-8zM88 160h4v4h-4zM88 164h4v4h-4zM88 168h4v4h-4zM88 172h4v4h-4zM52 212h4v4h-4zM84 212h4v4h-4zM108 212h4v4h-4zM44 216h8v4h-8zM80 216h8v4h-8zM104 216h8v4h-8z"/>
+<path fill="#d87a9a" d="M92 80h8v4h-8z"/>
+<path fill="#a0506e" d="M96 84h4v4h-4z"/>
+<path fill="#26203a" d="M112 84h4v4h-4zM108 88h4v4h-4zM100 92h12v4h-12zM92 96h12v4h-12zM108 140h4v4h-4zM108 144h4v4h-4zM108 148h4v4h-4zM108 152h4v4h-4zM88 176h4v4h-4zM88 180h4v4h-4zM88 212h8v4h-8zM52 216h4v4h-4z"/>
+<path fill="#7a6eaa" d="M88 88h4v4h-4zM100 88h4v4h-4zM92 92h8v4h-8z"/>
+<path fill="#2a0e42" d="M56 104h4v4h-4zM112 104h4v4h-4zM52 108h4v4h-4zM60 108h20v4h-20zM92 108h20v4h-20zM116 108h4v4h-4zM56 112h12v4h-12zM80 112h12v4h-12zM104 112h12v4h-12zM68 116h12v4h-12zM96 116h8v4h-8zM80 120h4v4h-4z"/>
+<path fill="#bc7cff" d="M56 108h4v4h-4zM112 108h4v4h-4zM68 112h12v4h-12zM92 112h12v4h-12z"/>
+<path fill="#9446d6" d="M80 116h4v4h-4z"/>
+<path fill="#8a5a10" d="M84 116h4v4h-4zM92 120h4v4h-4zM84 124h4v4h-4z"/>
+<path fill="#ffd84a" d="M88 116h8v4h-8zM84 120h8v4h-8zM88 124h4v4h-4zM88 128h4v4h-4z"/>
 </svg>
