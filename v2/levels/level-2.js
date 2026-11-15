@@ -30,10 +30,13 @@ export default {
     // Hands-on targets (v2/actions): the fogged pane, Luna's tea jar and three
     // empty pots on the sill. The pots stay empty unless you catch the drift.
     { id: "glass", sprite: "./art/l2-fog.svg", x: 62, y: 10, w: 96, label: "foggy glass", alt: "" },
-    { id: "jar", sprite: "./art/l2-jar-empty.svg", x: 91, y: 46, w: 52, label: "tea jar", alt: "" },
-    { id: "pot-1", sprite: "./art/l2-pot-empty.svg", x: 63, y: 84, w: 56, label: "first pot", alt: "" },
-    { id: "pot-2", sprite: "./art/l2-pot-empty.svg", x: 75, y: 84, w: 56, label: "middle pot", alt: "" },
-    { id: "pot-3", sprite: "./art/l2-pot-empty.svg", x: 87, y: 84, w: 56, label: "end pot", alt: "" },
+    // On the windowsill: a seed packet, three pots and Luna's tea jar, all
+    // standing on the sill line (y = the line; css/l2-greenhouse.css sizes them).
+    { id: "packet", sprite: "./art/seed-packet.svg", x: 54, y: 85.5, label: "seed packet", alt: "" },
+    { id: "pot-1", sprite: "./art/l2-pot-empty.svg", x: 63, y: 85.5, label: "first pot", alt: "" },
+    { id: "pot-2", sprite: "./art/l2-pot-empty.svg", x: 74.5, y: 85.5, label: "middle pot", alt: "" },
+    { id: "pot-3", sprite: "./art/l2-pot-empty.svg", x: 86, y: 85.5, label: "end pot", alt: "" },
+    { id: "jar", sprite: "./art/l2-jar-empty.svg", x: 94.5, y: 85.5, label: "tea jar", alt: "" },
   ],
   // Where the director points inside the greenhouse bed (% of the bed).
   spots: {

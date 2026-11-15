@@ -117,6 +117,7 @@ What changed from the plan above, and why:
 - **Basil and mint go in from the seed packet** (shared `plant`), not the plug sprites, so the sprinkle matches every other level. The mint plug is used once, on the caught path: it is poked into the pot and stays standing.
 - **`wipe` is three drags of the cloth,** not a coverage percentage. Each pass thins the fog by a third. It also lands on Skip, so the glass is clear either way.
 - **`mist` and the wipe drips use Level 3's liquid look** (`.l3-jet--mist`, `.l3-drop` from v2/css/l3-spray.css): stepped timing and no glow. Reduced motion caps each step at 160 ms.
+- **The windowsill reads as a sill** (v2/css/l2-greenhouse.css, scoped to the greenhouse scene and loaded by wipe.js). The glass is behind, with a wooden lip and front board. The seed packet, three big pots (15% of the scene each, about a third of the bed) and the tea jar all stand on the sill line. The bench's corner trowel sits above the dock.
 - **Fog is not saved.** After a reload mid-level the glass shows fog again, like every other action mark.
 
 | Beat | By hand |

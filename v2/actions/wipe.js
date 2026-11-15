@@ -12,6 +12,14 @@ if (typeof document !== "undefined" && !document.querySelector("link[data-l3-spr
   link.dataset.l3SprayCss = "";
   document.head.append(link);
 }
+// Level 2's greenhouse dressing (the sill the pots stand on), scoped to that scene.
+if (typeof document !== "undefined" && !document.querySelector("link[data-l2-css]")) {
+  const link = Object.assign(document.createElement("link"), {
+    rel: "stylesheet", href: new URL("../css/l2-greenhouse.css", import.meta.url).href,
+  });
+  link.dataset.l2Css = "";
+  document.head.append(link);
+}
 const drop = () => Object.assign(document.createElement("div"), { className: "l3-drop" });
 
 export default {
