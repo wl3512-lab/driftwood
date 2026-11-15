@@ -42,3 +42,7 @@ import magnifier from "./magnifier.js"; register(magnifier);
 import photo from "./photo.js"; register(photo);
 import mist from "./mist.js"; register(mist);
 import wipe from "./wipe.js"; register(wipe);
+import measure from "./measure.js"; register(measure);
+import furrow from "./furrow.js"; register(furrow);
+import sowRow from "./sow-row.js"; register(sowRow);
+import waterRow from "./water-row.js"; register(waterRow);
