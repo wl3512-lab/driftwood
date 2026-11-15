@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Test page for the actions harness: resolves every path from v2/. Not shipped. -->
+  <base href="../">
+  <title>Actions fixture</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/crt.css">
+  <link rel="stylesheet" href="css/level.css">
+  <link rel="stylesheet" href="css/scenes.css">
+  <link rel="stylesheet" href="css/almanac.css">
+  <link rel="stylesheet" href="css/voice.css">
+  <script type="module">
+    import { mountLevel } from "./ui/level-view.js";
+    import { fixture } from "./tests/fixtures/actions-level.js";
+    const kind = new URLSearchParams(location.search).get("kind") || "pull";
+    mountLevel(document.getElementById("app"), fixture(kind), { onDone: () => { document.body.dataset.done = "1"; }, onExit: () => {} });
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="sr-live" class="sr-only" aria-live="polite"></div>
+</body>
+</html>

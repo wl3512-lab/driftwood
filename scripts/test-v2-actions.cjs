@@ -265,6 +265,165 @@ run("568x320/touch", async (browser) => {
   return t;
 });
 
+// ---- wave 1.5: one run per shared kind, on the test level (v2/tests/fixtures/actions-level.js) ----
+// Dev server only: the build leaves v2/tests/ out.
+const FIXTURE = (kind) => `${BASE}tests/actions-fixture.html?kind=${kind}`;
+async function fixtureKind(browser, size, kind) {
+  const t = await open(browser, size);
+  await t.page.goto(FIXTURE(kind));
+  const card = kind === "mixed" ? ".act[data-kind=\"fill\"]" : `.act[data-kind="${kind}"]`;
+  await t.page.waitForSelector(card, { timeout: 10000 }).catch(async (e) => {
+    throw new Error(`${kind}: no chore card. Page errors: ${JSON.stringify(t.errors)}. App: ${(await t.page.locator("#app").innerText().catch(() => "?")).slice(0, 200)}\n${e.message}`);
+  });
+  await t.page.waitForTimeout(300);
+  return t;
+}
+// Press and hold an element for ms (mouse, or a CDP touch for touch sizes).
+async function holdOn(page, sel, ms) {
+  const b = await page.locator(sel).first().boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(ms);
+  await page.mouse.up();
+}
+const marks = (page, sel) => page.locator(`.act-marks ${sel}`).count();
+const gone = (page) => page.waitForSelector(".act", { state: "detached", timeout: 8000 });
+const KIND_RUNS = {
+  async pull(page, size) {
+    assert.match(await say(page), /Pull the 3 weeds out of the Front bed/);
+    for (let i = 0; i < 3; i++) {
+      await press(page, size, ".act__spot");
+      if (i === 0) { await page.waitForTimeout(180); await shot(page, size, "fixture-pull"); }
+      await actionIdle(page);
+    }
+  },
+  async snip(page, size) {
+    assert.match(await say(page), /Snip the 2 basil tips on the Front bed/);
+    for (let i = 0; i < 2; i++) {
+      await press(page, size, ".act__spot");
+      if (i === 0) { await page.waitForTimeout(200); await shot(page, size, "fixture-snip"); }
+      await actionIdle(page);
+    }
+  },
+  async fill(page, size) {
+    assert.match(await page.locator('[data-prop="pot"]').getAttribute("src"), /l2-pot-empty/);
+    assert.match(await say(page), /trowel to the sill pot/);
+    await dragTo(page, ".act__item", '[data-prop="basket"]', { touch: size.touch });
+    await actionIdle(page);
+    assert.match(await say(page), /Not the basket\. Try the sill pot/, "a wrong drop names both");
+    await dragTo(page, ".act__item", '[data-prop="pot"]', { touch: size.touch });
+    await page.waitForTimeout(450);
+    await shot(page, size, "fixture-fill");
+    await gone(page);
+    assert.match(await page.locator('[data-prop="pot"]').getAttribute("src"), /l2-pot-soil/, "the pot shows its filled art");
+  },
+  async pour(page, size) {
+    assert.match(await say(page), /then hold to soak it/);
+    await dragTo(page, ".act__item", '[data-bed="back"]', { touch: size.touch });
+    await page.waitForSelector(".act__hold", { timeout: 6000 });
+    await holdOn(page, ".act__hold", 150);
+    assert.match(await say(page), /Keep holding/, "letting go early resets the ring");
+    await page.waitForTimeout(100);
+    const b = await page.locator(".act__hold").boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(420);
+    await shot(page, size, "fixture-pour-soak");
+    await page.waitForTimeout(500);
+    await page.mouse.up();
+  },
+  async cover(page, size) {
+    await dragTo(page, ".act__item", '[data-bed="back"]', { touch: size.touch });
+    await page.waitForTimeout(500);
+    await shot(page, size, "fixture-cover");
+    await gone(page);
+    assert.equal(await marks(page, ".act-mark--cover"), 1, "the net stays over the bed");
+  },
+  async collect(page, size) {
+    assert.match(await say(page), /Drag 2 berry ripes into the basket|Drag 2 .* into the basket/);
+    for (let i = 0; i < 2; i++) {
+      await dragTo(page, ".act__item", '[data-prop="basket"]', { touch: size.touch });
+      if (i === 0) { await page.waitForTimeout(300); await shot(page, size, "fixture-collect"); }
+      await actionIdle(page);
+    }
+  },
+  async poke(page, size) {
+    assert.match(await say(page), /cane into the first row/);
+    await dragTo(page, ".act__item", ".act__ring", { touch: size.touch });
+    await gone(page);
+    assert.equal(await marks(page, ".act-mark--stand"), 1, "the cane stays standing");
+    assert.match(await page.locator(".act-marks").textContent(), /Dry 2 cm down/);
+    await shot(page, size, "fixture-poke");
+  },
+  async hold(page, size) {
+    assert.match(await say(page), /Press and hold the porch step/);
+    await holdOn(page, ".act__hold", 120);
+    assert.match(await say(page), /Keep holding/);
+    const b = await page.locator(".act__hold").boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(380);
+    await shot(page, size, "fixture-hold");
+    await page.waitForTimeout(500);
+    await page.mouse.up();
+    await gone(page);
+    assert.match(await page.locator(".act-marks").textContent(), /Damp: leave it/);
+  },
+};
+for (const kind of Object.keys(KIND_RUNS)) {
+  run(`1512x830/kind-${kind}`, async (browser) => {
+    const t = await fixtureKind(browser, MAC, kind);
+    const g = await garden(t.page);
+    await KIND_RUNS[kind](t.page, MAC);
+    await gone(t.page);
+    assert.equal(await garden(t.page), g, "a chore never moves the garden bar");
+    await t.page.waitForSelector(".chip");
+    return t;
+  });
+}
+// Keyboard and auto runs reach the same end state, soak and hold included.
+run("1512x830/kind-keyboard", async (browser) => {
+  for (const kind of ["pour", "hold", "poke", "fill"]) {
+    const t = await fixtureKind(browser, MAC, kind);
+    await completeAction(t.page);
+    await gone(t.page);
+    if (kind === "hold") assert.match(await t.page.locator(".act-marks").textContent(), /Damp/);
+    if (kind === "fill") assert.match(await t.page.locator('[data-prop="pot"]').getAttribute("src"), /l2-pot-soil/);
+    assert.deepEqual(t.errors, [], `${kind}: no JS errors`);
+    await t.ctx.close();
+  }
+  const t = await fixtureKind(browser, MAC, "mixed");
+  await completeAction(t.page);
+  assert.match(await t.page.locator('[data-prop="jar"]').getAttribute("src"), /l2-jar\.svg/);
+  return t;
+});
+// Skip lands the end state too (a filled pot, a standing cane), and is plain text, not a gold button.
+run("1512x830/kind-skip", async (browser) => {
+  const t = await fixtureKind(browser, MAC, "poke");
+  const look = await t.page.locator("[data-act-skip]").evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { bg: cs.backgroundColor, border: cs.borderTopWidth, deco: cs.textDecorationLine };
+  });
+  assert.equal(look.bg, "rgba(0, 0, 0, 0)", `Skip has no fill ${JSON.stringify(look)}`);
+  assert.equal(look.deco, "underline");
+  await shot(t.page, MAC, "fixture-skip-quiet");
+  await skipChore(t.page);
+  assert.equal(await marks(t.page, ".act-mark--stand"), 1);
+  return t;
+});
+// Phone landscape, touch: the small prop and spot targets take a finger.
+run("844x390/kind-touch", async (browser) => {
+  const t = await fixtureKind(browser, PHONE, "fill");
+  await dragTo(t.page, ".act__item", '[data-prop="pot"]', { touch: true });
+  await gone(t.page);
+  await t.ctx.close();
+  const u = await fixtureKind(browser, PHONE, "poke");
+  await dragTo(u.page, ".act__item", ".act__ring", { touch: true });
+  await gone(u.page);
+  await shot(u.page, PHONE, "fixture-poke");
+  return u;
+});
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, args: ["--use-angle=metal"] });

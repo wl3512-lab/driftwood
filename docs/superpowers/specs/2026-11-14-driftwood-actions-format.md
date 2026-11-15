@@ -38,17 +38,61 @@ Action lists can go in the following places in a level file. An entry higher in 
 Each entry has this shape:
 
 ```js
-{ kind, item?, target, count?, say?, spot? }
+{ kind, item?, target, count?, say?, spot?, fills?, soak?, cover?, readout?, result?, ms? }
+```
+
+The last six fields belong to the shared kinds (see "The shared kinds" below); normalize passes them through as written.
+
+| Field | Meaning |
+|---|---|
+| `kind` | A registered kind (v2/actions/registry.js): `plant`, `water`, `dig`, `firm`, `label`, `pick`, `pests`, and the shared `pull`, `fill`, `pour`, `cover`, `collect`, `poke`, `hold`, `snip`. |
+| `item` | The tool. For `plant` it is the plant id, which picks the seed packet from v2/levels/plants.js. Otherwise it is a built-in sprite (`can`, `trowel`, `hand`, `spray`, `label`) or any art name, which loads v2/art/<item>.svg (e.g. `l5-trowel`). If you leave it out, each kind uses its own tool: plant → its target's plant, water → can, dig → trowel, firm → hand, label → label, pick → hand, pests → spray. |
+| `target` | One target, or an array of them (see "Targets" below). |
+| `count` | For tap kinds: spots per target (defaults to 3). For drag kinds: drops per target (defaults to 1). Clamped to 1–6. |
+| `say` | Replaces the instruction line. Keep it short and imperative: "Pull the 3 weeds out of the East bed". |
+| `spot` | For tap kinds: the sprite to tap, a built-in (`berry`, `fruit`, `weed`, `bug`) or an art name (`l5-slug`). |
+
+### Targets
+
+| Shape | Points at |
+|---|---|
+| `{ bed, plant? }` | A bed. `bed` is a bed id, `"@item"` or `"@other:item"` (resolved like effects), or `"$choice"`, the bed the player picked on a `place` step. `plant` puts the director on that crop's field when one is already growing, and names the fruit for `pick`. |
+| `{ prop: "<id>" }` | A scene prop with that id in `level.props` (a pot, a jar, the rain barrel, a gate, a lantern). |
+| `{ spot: "<name>", bed? }` | A named spot in `level.spots` (the porch step, row 1). `bed` overrides the spot's own bed and may be `"$choice"`. |
+| `{ all: true }` | Every plant on screen (the whole `.beds` area). |
+
+Unknown beds, props and spots are dropped; an action left with no targets is dropped too. The unit test checks every level's targets against its beds, props and spots.
+
+**Props.** A level adds an element to aim at by giving a prop an `id`:
+
+```js
+props: [
+  { id: "barrel", sprite: "l1-rain-barrel", x: 82, y: 64, w: 64, label: "rain barrel", alt?: "" },
+  { sprite: "./art/moon.svg", class: "prop prop--moon" }, // no id: decorative, placed by its class, never a target
+]
 ```
 
 | Field | Meaning |
 |---|---|
-| `kind` | One of `plant`, `water`, `dig`, `firm`, `label`, `pick`, `pests` (v2/actions/registry.js). |
-| `item` | The tool. For `plant` it is the plant id, which picks the seed packet from v2/levels/plants.js. Otherwise it is a built-in sprite (`can`, `trowel`, `hand`, `spray`, `label`) or any art name, which loads v2/art/<item>.svg (e.g. `l5-trowel`). If you leave it out, each kind uses its own tool: plant → its target's plant, water → can, dig → trowel, firm → hand, label → label, pick → hand, pests → spray. |
-| `target` | `{ bed, plant? }`, or an array of them for several targets. `bed` is a bed id, `"@item"` or `"@other:item"` (resolved like effects), or `"$choice"`, which means the bed the player picked on a `place` step. `plant` puts the director on that crop's field when one is already growing, and names the fruit for `pick`. |
-| `count` | For tap kinds: spots per target (defaults to 3). For drag kinds: drops per target (defaults to 1). Clamped to 1–6. |
-| `say` | Replaces the instruction line. Keep it short and imperative: "Pull the 3 weeds out of the East bed". |
-| `spot` | For tap kinds: the sprite to tap, a built-in (`berry`, `fruit`, `weed`, `bug`) or an art name (`l5-slug`). |
+| `id` | Makes the prop a target: it renders as `img.prop[data-prop=id]`. |
+| `sprite` | An art name (`l1-rain-barrel` → v2/art/l1-rain-barrel.svg) or a path (`./art/moon.svg`). |
+| `x`, `y` | Its centre, in % of the scene. Needed for a prop with an id unless its `class` places it. |
+| `w` | Width in px (default 64). |
+| `label` | What instructions call it ("Drag the can to the **rain barrel**"). Defaults to the sprite name in words. |
+| `class`, `alt` | As before. |
+
+**Spots.** A named place with no element of its own:
+
+```js
+spots: {
+  "row-1": { bed: "east", x: 30, y: 60, label: "first row" }, // % of that bed
+  step: { x: 50, y: 92, label: "porch step" },                // no bed: % of the scene
+}
+```
+
+The director rings a 56 px circle there; drops within 64 px count.
+
+**What lasts.** A kind can leave marks in the scene after it finishes: a cane standing, a net over a bush, a readout, a prop's new art. They sit in `.scene > .act-marks` (positioned in % of the scene) for as long as the level is on screen. They are not saved: after a reload the level shows its normal state. Anything that must persist belongs in the effect.
 
 An explicit `actions: []` means nothing is done by hand, even where a default would exist. Leave the list out to get the default.
 
@@ -100,11 +144,38 @@ chores: [
 How chores behave:
 
 - A chore starts by itself once the helper's previous line has been shown, and the question chips wait until it's done.
-- A chore can't be backed out of, but it can be skipped. Every chore is `skippable: true` by default (set `skippable: false` to opt out); the card then shows a small "Skip" button in its top-right corner. Skipping finishes the chore at once: its end state lands with no animation and the level carries on to the next beat. Conversation steps (trust and drift) are never skippable.
+- A chore can't be backed out of, but it can be skipped. Every chore is `skippable: true` by default (set `skippable: false` to opt out); the card then shows a quiet "Skip" in its top-right corner: plain small underlined text, not a button shape, so gold stays the main call to action. Skipping finishes the chore at once: its end state (and any marks or prop art its kinds leave) lands with no animation and the level carries on to the next beat. Conversation steps (trust and drift) are never skippable.
 - Done or skipped, a chore never changes stars, trust or the garden bar. A chore `effect` may change plants, but its `garden` value is ignored.
 - A chore after the last step never runs (the level ends at the reveal), so there is no `at: "end"`.
 - In the engine, `pendingChore(level, state)` (in engine/level-runner.js) returns the chore that is due, and `{ type: "chore", id }` marks it done in `state.chores`. The reducer never blocks on a chore; the view does the gating.
 - Level 1 has one sample chore (`weeds`, before `water`).
+
+### The shared kinds
+
+Built in wave 1.5 because more than one level needs them. `mode` is how the player does it: **drag** the tool onto each target, **tap** each spot, or **hold** a ring until it fills.
+
+| Kind | Mode | Fields | What happens |
+|---|---|---|---|
+| `pull` | tap | `spot` (default `weed`), `count` (3), `item` (hand) | Tap each weed, stone or unripe fruit; it is yanked up and out. L1, L3, L4. |
+| `fill` | drag | `item` (can), `fills: { from?, to }`, `count` (1) | Drag the source onto each container; it tips in, the container bounces, and a prop swaps to `fills.to` (from `fills.from` at the start). L1 rain barrel, L2 sill pots, L5. |
+| `pour` | drag | `item` (can, or any liquid), `soak?` (ms, or `true` = 1500) | Like water. With `soak`, the player then presses and holds the target until the ring fills. L4, L5. |
+| `cover` | drag | `item`, `cover` (art name) | The item sweeps across; the target then shows `cover` stretched over it. L3, L4. |
+| `collect` | drag | `item` (the loose thing), `count` (3), `fills?: { to }` | Drag each item into the container; it plops in, and the container swaps to `fills.to` on the last one. L2 jar, L4 basket. |
+| `poke` | drag | `item`, `readout?` | Push the item into the soil; it stays standing. `readout` appears beside it and is the done line ("Dry 2 cm down"). Also tie and stake. L1, L4. |
+| `hold` | hold | `ms` (1200), `result?`, `item` (hand) | Press and hold the target until the ring fills; `result` appears beside it and is the done line. L5 test-soil. |
+| `snip` | tap | `item` (snips), `spot` (leaf), `count` (3) | Tap each marked spot with the tool; a piece pops off and falls. L2 pinch, L5 snip. |
+
+Holding: letting go early resets the ring ("Keep holding until the ring fills"). Enter fills it by itself. Holding the tool in the dock fills the next ring too. Reduced motion: 300 ms holds.
+
+Examples:
+
+```js
+{ kind: "fill", item: "can", target: { prop: "barrel" }, fills: { to: "l1-rain-barrel-full" } }
+{ kind: "collect", item: "l2-mint-sprig", target: { prop: "jar" }, count: 3, fills: { to: "l2-jar" } }
+{ kind: "poke", item: "l1-cane", target: { spot: "row-1" }, readout: "Dry 2 cm down" }
+{ kind: "hold", target: { spot: "test-hole" }, result: "Damp: leave it" }
+{ kind: "pour", item: "l4-bucket", target: { all: true }, soak: 1500 }
+```
 
 ## Keyboard and access
 
@@ -128,21 +199,52 @@ How chores behave:
 - Every WAAPI wait is raced against a timeout.
 - v2/css/actions.css is linked by the runner module itself.
 
-## Adding a kind
+## Adding a kind (one module, one registry line)
 
-1. Write `v2/actions/<kind>.js` exporting:
+The shared kinds above are the only ones in shared files. A level that needs its own (L2 wipe, mist; L3 spray, release, magnifier, photo; L4 measure, furrow, sow-row; L5 light, close, phone-down) adds exactly two things and touches nothing else:
+
+1. **One module**, `v2/actions/<kind>.js`:
 
    ```js
-   { kind, mode: "drag" | "tap", noun(a, n), say(a, n), done(a, n, target), spot?(a),
-     animate(layer, at, { reduced, face, spot }) }
+   import { play, spawn, burst } from "./fx.js";
+   import { art } from "./sprites.js";
+
+   export default {
+     kind: "mist",
+     mode: "drag",                       // "drag" | "tap" | "hold"
+     noun: (a, n) => n.item(a.item),     // the tool's accessible name
+     say: (a, n) => `Drag the ${n.item(a.item)} to the ${n.list(a.targets)}`,
+     done: (a, n, tg) => `Misted the ${n.target(tg)}.`,
+     spot: (a) => a.spot || "leaf",      // tap kinds only: the sprite on each spot
+     async animate(layer, at, { reduced, face, spot, el }) {
+       const tool = spawn(layer, face(), at.x, at.y, "act__fx--tool");
+       await burst([tool], () => play(tool, [{ opacity: 1 }, { opacity: 0 }], { duration: reduced ? 120 : 600 }));
+     },
+     // optional: leave something in the scene when a unit finishes
+     land({ a, tg, last, stamp, swap, artNode, textNode }) {
+       if (last) stamp(tg, artNode("l2-fog"), { cover: true, cls: "act-mark--cover" });
+     },
+   };
    ```
 
-   `at` is the target's centre and size in layer coordinates. `face()` returns a fresh copy of the tool's picture. `n` holds the naming helpers: `bed(id)`, `plant(id)`, `plural(id)` and `list(targets)`.
-2. Import it in v2/actions/registry.js and add it to the `register` list. Registering also adds the name to `KINDS` in plan.js, so level data can use it. Targets other than beds (`{ prop }`, `{ spot }`, `{ all: true }`) are not supported yet: a new kind that needs them extends `normalize` and the runner's `box()`.
+   - `at`: the target's centre and size in layer coordinates (`x, y, w, h`). `el`: the target element (a bed, a field, a prop img), or null for a spot.
+   - `face()`: a fresh copy of the tool's picture. Always use `burst()`/`play()` from fx.js: they time out and remove sprites.
+   - `n`: naming helpers. `target(tg)` (a bed, prop, spot or "garden"), `list(targets)`, `item(id)` ("l2-mint-sprig" → "mint sprig"), `thing(id, count)` (plural when count ≠ 1), `plant(id)`, `bed(id)`.
+   - `land` runs after every unit (each drop, spot or hold) in every mode, keyboard and auto included; `last` is true on the target's final unit. `stamp(tg, node, { cls, cover })` pins a node there; `swap(tg, art)` changes a prop's art; `artNode(name)` and `textNode(text)` make the nodes. Mark classes: `act-mark--stand`, `act-mark--cover`, `act-mark--text`, `act-mark--swap`.
+   - Kind-specific fields: normalize passes `fills`, `soak`, `cover`, `readout`, `result` and `ms` through. A level kind that needs another field reads it from `a.say` or reuses one of these; adding a field means editing plan.js, which is shared, so ask first.
+   - Sprites: an art name loads v2/art/<name>.svg. Built-ins live in sprites.js (shared; don't add there).
+
+2. **One line** at the end of v2/actions/registry.js, under "Level-owned kinds":
+
+   ```js
+   import mist from "./mist.js"; register(mist);
+   ```
+
+   Registering adds the name to `KINDS`, so level data can use it. Don't edit plan.js, runner.js, fx.js, sprites.js or actions.css; level CSS for a kind goes in that level's own stylesheet.
 
 ## Tests
 
-- **Unit tests:** v2/tests/actions.test.js. It also checks every level's action lists and chores: known kinds, known beds, and `before` set to a real step.
+- **Unit tests:** v2/tests/actions.test.js, and v2/tests/actions-kinds.test.js for the shared kinds (normalize, targets, fields, say/done, land). It also checks every level's action lists and chores: known kinds, known beds, and `before` set to a real step.
 - **Existing browser flows:** scripts/test-mute.js sets `window.__dwAutoAct = true`, so every action finishes the moment it opens, through the runner's own commit path. The old flows keep passing while the actions still run.
 - **Hand-run flows:** set `window.__dwAutoAct = false` and use the helpers in scripts/v2-actions-helper.cjs: `completeAction(page)` for the keyboard, `skipChore(page)` to press a chore's Skip, and `dragTo(page, from, to, { touch })` for a mouse or CDP touch drag.
-- **The action flows themselves:** scripts/test-v2-actions.cjs.
+- **The action flows themselves:** scripts/test-v2-actions.cjs. The `kind-*` runs use a test level, v2/tests/fixtures/actions-level.js, loaded by v2/tests/actions-fixture.html?kind=<kind> (one chore per shared kind, plus `mixed`). They run on the dev server only, since the build leaves v2/tests/ out. A level kind can add its own chore there to test in isolation.
