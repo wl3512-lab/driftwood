@@ -18,8 +18,12 @@ import { reachedLevel } from "./mechanics/shelf.js";
 import "./ui/almanac-view.js";
 import "./ui/magnifier-view.js";
 import "./ui/log-view.js";
+// Sound: a small WebAudio synth (audio/); each screen names its music here.
+import { initAudio, music } from "./audio/index.js";
+import { LEVEL_TRACK } from "./audio/music.js";
 
 const root = document.getElementById("app");
+initAudio();
 const storage = (() => { try { return window.localStorage; } catch { return null; } })();
 let progress = loadProgress(storage);
 
@@ -39,7 +43,7 @@ const leaving = (show) => (...args) => {
 
 const go = {
   // A returning player chooses: Continue (to the map) or New game (erase, then the cutscene, name first).
-  splash: () => { unmount = renderSplash(root, {
+  splash: () => { music("title"); unmount = renderSplash(root, {
     saved: progress.name ? { name: progress.name, done: Object.keys(progress.levels).length, total: MAP.length } : null,
     onBegin: () => (progress.name ? go.map() : go.cutscene(true)),
     onNew: () => { progress = startOver(storage); go.cutscene(true); },
@@ -47,6 +51,7 @@ const go = {
   // first: a new player on the way into Level 1 (Rowan asks the name);
   // otherwise a rewatch from the map, which skips the name.
   cutscene: (first = false) => {
+    music("cutscene");
     unmount = renderCutscene(root, {
       first,
       name: first ? "" : progress.name || "friend",
@@ -56,10 +61,11 @@ const go = {
       onBack: () => go.map(),
     });
   },
-  map: () => { unmount = renderMap(root, { progress, map: MAP, levels: LEVELS, onPlay: go.level, onGuide: go.guide, onIntro: () => go.cutscene(false),
+  map: () => { music("title"); unmount = renderMap(root, { progress, map: MAP, levels: LEVELS, onPlay: go.level, onGuide: go.guide, onIntro: () => go.cutscene(false),
     onEnding: finished() ? go.ending : null }); },
-  guide: () => { unmount = renderGuide(root, { progress, map: MAP, levels: LEVELS, onBack: go.map }); },
+  guide: () => { music("title"); unmount = renderGuide(root, { progress, map: MAP, levels: LEVELS, onBack: go.map }); },
   level: (id) => {
+    music(LEVEL_TRACK[id] || "level-1");
     // A level whose props ask for finished plots gets them from saved progress.
     const fin = (LEVELS[id].props || []).find((p) => p.from === "finished");
     const earlier = fin ? earlierPlots(fin.levels, LEVELS, progress) : [];
@@ -80,11 +86,12 @@ const go = {
     unmount = () => { drop?.(); off?.(); };
   },
   // The last level's reveal continues to the ending once every level is done.
-  reveal: (id, state) => renderReveal(root, LEVELS[id], state, {
+  reveal: (id, state) => { music(null); renderReveal(root, LEVELS[id], state, {
     onContinue: id === MAP.at(-1).id && finished() ? go.ending : go.map, name: progress.name || "friend",
-    guide: progress.guide, order: MAP.map((m) => m.id) }),
+    guide: progress.guide, order: MAP.map((m) => m.id) }); },
   ending: () => {
     if (!finished()) { go.map(); return; }
+    music("stew");
     unmount = renderEnding(root, { progress, map: MAP, levels: LEVELS, onBack: go.map, name: progress.name || "friend" });
   },
 };

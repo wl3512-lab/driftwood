@@ -5,6 +5,7 @@ import { h, focusFirst } from "./dom.js";
 import { blockText } from "./block-type.js";
 import { mountWorld, BED_X } from "./world.js";
 import { MAP } from "../levels/index.js";
+import { soundToggle } from "../audio/toggle.js";
 
 // Sunset over the garden (world.js time 3), the five pets waiting on the path.
 const SCENE_TIME = 3;
@@ -27,20 +28,20 @@ export function renderSplash(root, { onBegin, onNew = () => {}, saved = null }) 
   const showChoices = () => {
     choices.replaceChildren(
       h("div", { class: "splash__row" },
-        h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, onclick: onBegin }, "Continue ▸"),
-        h("button", { class: "btn btn--crt splash__new", onclick: confirmNew }, "New game")),
+        h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, "data-sfx": "begin", onclick: onBegin }, "Continue ▸"),
+        h("button", { class: "btn btn--crt splash__new", "data-sfx": "ui-tap", onclick: confirmNew }, "New game")),
       h("p", { class: "splash__save" }, `${saved.name}'s garden · ${saved.done} of ${saved.total} levels`));
   };
   const confirmNew = () => {
     choices.replaceChildren(
       h("p", { class: "splash__save splash__warn", id: "splash-warn" }, "Start over? Your garden and field guide get erased."),
       h("div", { class: "splash__row" },
-        h("button", { class: "btn btn--crt btn--gold", "aria-describedby": "splash-warn", onclick: onNew }, "Yes, start over"),
-        h("button", { class: "btn btn--crt splash__new", "data-autofocus": true, onclick: () => { showChoices(); focusFirst(choices); } }, "Keep my garden")));
+        h("button", { class: "btn btn--crt btn--gold", "aria-describedby": "splash-warn", "data-sfx": "begin", onclick: onNew }, "Yes, start over"),
+        h("button", { class: "btn btn--crt splash__new", "data-autofocus": true, "data-sfx": "ui-back", onclick: () => { showChoices(); focusFirst(choices); } }, "Keep my garden")));
     focusFirst(choices);
   };
   if (saved) showChoices();
-  else choices.append(h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, onclick: onBegin }, "Begin ▸"));
+  else choices.append(h("button", { class: "btn btn--crt btn--gold", "data-autofocus": true, "data-sfx": "begin", onclick: onBegin }, "Begin ▸"));
   const main = h("main", { class: "world splash" },
     h("div", { class: "splash__sign" },
       h("h1", { class: "crt__title crt__title--block" }, blockText("DRIFTWOOD", {
@@ -49,7 +50,8 @@ export function renderSplash(root, { onBegin, onNew = () => {}, saved = null }) 
       })),
       h("p", { class: "crt__line" }, "A short game about the AI helpers we trust."),
       choices),
-    pets());
+    pets(),
+    soundToggle({ className: "snd--float" }));
   root.replaceChildren(main);
   splashShown = true;
   const stop = sky(main, SCENE_TIME);

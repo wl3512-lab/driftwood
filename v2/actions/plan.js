@@ -32,7 +32,9 @@ export const DEFAULT_ITEM = { plant: "packet", water: "can", dig: "trowel", firm
 // Tap kinds put `count` spots on the target (berries, bugs); this many if unset.
 export const DEFAULT_COUNT = { pick: 3, pests: 3, pull: 3, snip: 3, collect: 3 };
 // Fields a kind reads, passed through as written (see the format spec).
-const EXTRA = ["fills", "soak", "cover", "readout", "result", "ms"];
+// `tap: true` makes a drag kind tap its targets instead (runner.js), for a
+// repeated job done with a carry-this-there kind (Level 4's spade heaping hills).
+const EXTRA = ["fills", "soak", "cover", "readout", "result", "ms", "tap"];
 
 // Which list in the level data answers this action.
 export function sourceFor(level, state, action) {

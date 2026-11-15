@@ -25,6 +25,9 @@ import { art as actionArt, artUrl } from "../actions/sprites.js";
 import { words, plural } from "../actions/fx.js";
 import { packetFront } from "./almanac-view.js";
 import { PLANTS } from "../levels/plants.js";
+import { cues as playCues, voice, setTension, sfx } from "../audio/index.js";
+import { decisionCues, driftOnScreen } from "../audio/cues.js";
+import { soundToggle } from "../audio/toggle.js";
 
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
@@ -56,6 +59,11 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // A hands-on action in progress (actions/runner.js): the choice's effect
   // waits until the player has dragged the tool to the bed.
   let acting = null;
+  // Sound: the line last babbled, a pause before the next one (after a pet
+  // stinger), and whether the running chore was skipped.
+  let voiced = null;
+  let voiceDelay = 0;
+  let skipped = false;
   // AI voice: the lines it may reword (keyed by written text), and the
   // thinking bubble in flight (a counter, so a stale answer is dropped).
   const aiOn = aiEnabled();
@@ -106,12 +114,14 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // The helper has its own stall beside the conversation, so it never stands
   // on the beds (players read a sprite on the soil as a plant). The sprite and
   // the talk column are siblings; only the talk column is re-rendered per step.
-  const stall = h("div", { class: "stall", "aria-hidden": "true" },
-    h("div", { class: "stall__window" },
+  // The sound switch sits in the stall's corner (the stall's art stays hidden from screen readers).
+  const stall = h("div", { class: "stall" },
+    h("div", { class: "stall__window", "aria-hidden": "true" },
       h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 })),
-    h("div", { class: "stall__plate" },
+    h("div", { class: "stall__plate", "aria-hidden": "true" },
       h("strong", { class: "stall__name" }, level.helper.name.toUpperCase()),
-      h("span", { class: "stall__role" }, level.helper.role || "your helper")));
+      h("span", { class: "stall__role" }, level.helper.role || "your helper")),
+    soundToggle({ className: "snd--stall" }));
   const talk = h("div", { class: "dock__talk" });
   const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
   const main = h("main", { class: "level", "data-scene": level.scene || "yard" }, scene, dock);
@@ -198,12 +208,19 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     list.find((s) => s.id === id).run();
   }
   document.addEventListener("keydown", onKey);
+  // Sound for the hands-on card: picking the tool up, Skip, Back.
+  dock.addEventListener("pointerdown", (ev) => { if (ev.target.closest?.("[data-act-item]")) sfx("act-lift"); });
+  dock.addEventListener("click", (ev) => {
+    if (ev.target.closest?.("[data-act-skip]")) skipped = true;
+    else if (ev.target.closest?.("[data-act-back]")) sfx("ui-back");
+  }, true);
 
   let mounted = true;
   function unmount() {
     forgetPrefetched();
     if (!mounted) return;
     mounted = false;
+    setTension(0);
     document.removeEventListener("keydown", onKey);
     acting?.destroy();
     acting = null;
@@ -215,12 +232,22 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (acting && !action.acted && action.type !== "check" && action.type !== "tick") return; // hands busy
     const out = reduce(level, state, action);
     if (out.state === state && out.effects.length === 0) return;
+    // Sound (audio/cues.js): the choice sounds on the tap; the pet's reaction
+    // and the garden's sound once it has landed (after any hands-on part).
+    const heard = decisionCues(currentStep(level, state), state, action, out, { pet: level.helper.id });
     // A choice that changes the garden is done by hand first: the effect
     // lands only once the action is finished (it is reduced again then).
     if (!action.acted) {
       const plan = planFor(level, state, action, out);
-      if (plan.length > 0) return act(action, plan);
+      if (plan.length > 0) {
+        if (action.type !== "chore") playCues(heard.filter((c) => !c.react));
+        return act(action, plan);
+      }
     }
+    if (action.acted && action.type !== "chore") playCues([{ name: "chore-done" }, ...heard.filter((c) => c.react)]);
+    else playCues(heard);
+    const petCue = heard.find((c) => c.opts?.pet && c.delay > 0);
+    voiceDelay = petCue ? petCue.delay + 0.45 : 0;
     const prev = state;
     state = out.state;
     hint = null;
@@ -278,9 +305,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // Start the hands-on part of a choice; the choice itself is dispatched when it ends.
   function act(action, plan, { title = null, skippable = false } = {}) {
     const cancellable = action.type !== "chore";
+    skipped = false;
     acting = runPlan({
       plan, scene, names, itemFor, title: title && t(title), skippable, spots: level.spots || {},
-      onDone: () => { acting = null; dispatch({ ...action, acted: true }); },
+      onDone: () => { acting = null; dispatch({ ...action, acted: true, ...(skipped ? { skipped: true } : {}) }); },
       onCancel: cancellable ? () => { acting = null; focusKey = null; render(); } : null,
     });
     render();
@@ -326,6 +354,16 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     scene.style.setProperty("--pressure", String(pressureLevel(step, state)));
     clock.sync(step, state.phase);
     if (grown) { celebrate(grown); grown = null; }
+    // Sound: the drift layer under a drift on screen; the helper babbles each new line.
+    setTension(driftOnScreen(step, state) ? 1 : 0);
+    if (!thinking && said && said !== voiced) {
+      voiced = said;
+      const line = t(said);
+      const delay = voiceDelay;
+      voiceDelay = 0;
+      if (delay > 0) setTimeout(() => { if (mounted && voiced === said) voice(level.helper.id, line); }, delay * 1000);
+      else voice(level.helper.id, line);
+    }
     // A chore waits before this step's question: it starts once the helper has spoken.
     const chore = !acting && !thinking ? pendingChore(level, state) : null;
     if (chore) {
@@ -462,7 +500,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       const final = state;
       parts.push(h("div", { class: "level-end" },
         outcome && h("p", { class: "outcome" }, t(outcome)),
-        h("button", { class: "btn", "data-fid": "see", onclick: () => onDone(final) }, "See what happened →")));
+        h("button", { class: "btn", "data-fid": "see", "data-sfx": "level-end", onclick: () => onDone(final) }, "See what happened →")));
     }
     return parts;
   }

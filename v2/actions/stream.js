@@ -1,10 +1,10 @@
-// Stream (Level 5): drag the watering can to a bed; it tips and a pixel water
+// Stream (Level 5): tap a bed and the watering can goes there; it tips and a pixel water
 // stream pours from the spout to the soil, splashing at the roots. With
 // `soak`, the player then holds the bed until the ring fills (runner.js).
 // The liquid look is Level 3's (.l3-jet, .l3-drop in v2/css/l3-spray.css),
 // loaded here the way spray.js loads it, so water looks the same everywhere.
 //   { kind: "stream", item?: "can", target, soak?: 1500 }
-import { play, spawn, burst } from "./fx.js";
+import { play, spawn, burst, clearLabels } from "./fx.js";
 
 if (typeof document !== "undefined" && !document.querySelector("link[data-l3-spray-css]")) {
   const link = Object.assign(document.createElement("link"), {
@@ -23,9 +23,10 @@ function div(cls, style = "") {
 
 export default {
   kind: "stream",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item || "can"),
-  say: (a, n) => `Drag the watering can to the ${n.list(a.targets)}${a.soak ? ", then hold to soak it" : ""}`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to water it${a.soak ? ", then hold to soak it" : ""}`,
   done: (a, n, tg) => `Watered the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const T = (ms) => (reduced ? Math.min(ms, 160) : ms);
@@ -43,6 +44,9 @@ export default {
     layer.append(jet);
     const drops = reduced ? [] : Array.from({ length: 10 }, () => spawn(layer, div("l3-drop"), gx, gy, "l3-splash"));
     const tip = "translate(-50%, -50%) rotate(42deg)";
+    // A result label in the stream's way fades for the pour.
+    const clear = clearLabels(layer, [can, jet], { reduced });
+    await clear.hide();
     await burst([can, jet, ...drops], async () => {
       await play(can, [{ transform: "translate(-50%, -50%) rotate(0deg)" }, { transform: tip }],
         { duration: T(260), easing: "steps(3, end)" });
@@ -69,5 +73,6 @@ export default {
           { duration: T(220), easing: "steps(3, end)" }),
       ]);
     });
+    await clear.show();
   },
 };

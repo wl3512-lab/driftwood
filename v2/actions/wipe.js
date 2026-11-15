@@ -1,4 +1,4 @@
-// Wipe (Level 2): drag the cloth over the fogged glass; each pass scrubs
+// Wipe (Level 2): tap the fogged glass and the cloth goes there; each pass scrubs
 // back and forth, a few drips run down, and the fog thins. The last pass
 // clears it. Use count for the number of passes (Level 2 uses 3).
 //   { kind: "wipe", item?: "l2-cloth", target: { prop }, count? }
@@ -24,9 +24,10 @@ const drop = () => Object.assign(document.createElement("div"), { className: "l3
 
 export default {
   kind: "wipe",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item || "l2-cloth"),
-  say: (a, n) => `Drag the ${n.item(a.item || "l2-cloth")} over the ${n.list(a.targets)} to wipe it${a.count > 1 ? ` (${a.count} wipes)` : ""}`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to wipe it${a.count > 1 ? ` (${a.count} wipes)` : ""}`,
   done: (a, n, tg) => `The ${n.target(tg)} is clear.`,
   async animate(layer, at, { reduced, face }) {
     const cloth = spawn(layer, face(), at.x, at.y, "act__fx--tool act__fx--small");

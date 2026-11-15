@@ -17,7 +17,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { completeAction, actionIdle, dragTo, skipChore } = require("./v2-actions-helper.cjs");
+const { completeAction, actionIdle, dragTo, skipChore, tapOn } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8766/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-actions");
@@ -71,6 +71,7 @@ async function level(page, id) {
   // A level can open on a chore (Level 1 clears stones first): skip it.
   await page.waitForSelector("main.level .chip, main.level .act [data-act-skip]");
   while (!(await page.locator("main.level .chip").count())) {
+    if (await page.locator(".act__spot").count()) await assertSpotsFit(page, `${id} opening chore`);
     await skipChore(page);
     await page.waitForSelector("main.level .chip, main.level .act [data-act-skip]");
   }
@@ -91,6 +92,32 @@ async function finishKind(page, kind) {
 }
 // Level 1 plants by hand: dig, then the packet, then firm and a cane.
 const digFirst = (page) => finishKind(page, "dig");
+// Dig by tapping the dirt, as a player does: a tap on the wrong bed says
+// which one, each tap on the South bed sends the trowel there to dig.
+async function digByTap(page, size, { shots = false } = {}) {
+  await page.waitForSelector('main.level .act[data-kind="dig"][data-mode="tap-target"]', { timeout: 6000 });
+  await actionIdle(page);
+  assert.match(await page.locator(".act__how").textContent(), /^Tap the South bed · or press Enter$/, "the hint says to tap");
+  await assertZonesFit(page, `${size.name} dig`);
+  if (shots) { await page.waitForTimeout(300); await shot(page, size, "dig-ready"); }
+  const east = await page.locator('main.level [data-bed="east"]').boundingBox();
+  if (size.touch) await page.touchscreen.tap(east.x + east.width / 2, east.y + east.height * 0.7);
+  else await page.mouse.click(east.x + east.width / 2, east.y + east.height * 0.7);
+  await page.waitForTimeout(120);
+  assert.match(await say(page), /Not the East bed\. Tap the South bed/, "a tap on the wrong bed names both");
+  for (let n = 0; await page.locator('main.level .act[data-kind="dig"]').count(); n++) {
+    assert.ok(n < 4, "two taps dig two holes");
+    await actionIdle(page);
+    if (!(await page.locator('main.level .act[data-kind="dig"]').count())) break;
+    await tapOn(page, 'main.level [data-bed="south"]', { touch: size.touch });
+    if (n === 0) {
+      await page.waitForTimeout(size.touch ? 520 : 560);
+      assert.ok(await page.locator(".act-layer .act__fx").count() > 0, "the trowel went to the bed and digs");
+      if (shots) await shot(page, size, "dig-tap");
+    }
+    await page.waitForTimeout(80);
+  }
+}
 const firmAndStake = async (page) => { await finishKind(page, "firm"); await finishKind(page, "poke"); };
 
 // Level 1, sunflowers: Do it → the packet and the director, a wrong drop,
@@ -98,7 +125,7 @@ const firmAndStake = async (page) => { await finishKind(page, "firm"); await fin
 async function plantSunflowers(page, size, { shots = true } = {}) {
   await press(page, size, '[data-fid="chip-0"]');
   await press(page, size, '[data-fid="do"]');
-  await digFirst(page);
+  await digByTap(page, size, { shots });
   await page.waitForSelector('.act[data-kind="plant"] .act__item .pk[data-plant="sunflower"]');
   assert.match(await say(page), /sunflower packet to the South bed/);
   assert.equal(await page.locator('.act__arrow[data-target="south"]').count(), 1, "the arrow marks the South bed");
@@ -150,6 +177,7 @@ async function weedChore(page, size, { shots = true } = {}) {
   assert.equal(await page.locator(".chip").count(), 0, "no questions until the chore is done");
   assert.equal(await page.locator(".act__spot").count(), 3);
   await page.waitForTimeout(400);
+  await assertSpotsFit(page, `${size.name} weeds`);
   if (shots) await shot(page, size, "chore");
   const g = await garden(page);
   for (let i = 0; i < 3; i++) {
@@ -162,6 +190,45 @@ async function weedChore(page, size, { shots = true } = {}) {
   assert.match(await page.locator(".bubble__text").first().textContent(), /Look at them GO/, "Mango's line stays put");
   assert.equal(await garden(page), g, "chores never change the score");
   await page.waitForSelector('.chip[data-fid="chip-0"]');
+}
+
+// Every tap spot is whole: inside the window, the garden, and the bed it is
+// in (a ring round Level 1's South bed once started off the left edge on
+// phones and spilled into the East bed). 25px is the wiggling button's reach.
+async function assertSpotsFit(page, name) {
+  const bad = await page.evaluate(() => {
+    const scene = document.querySelector("main.level .scene").getBoundingClientRect();
+    return [...document.querySelectorAll(".act__spot")].flatMap((s) => {
+      const c = s.getBoundingClientRect(); const x = c.left + c.width / 2; const y = c.top + c.height / 2;
+      const r = { left: x - 25, right: x + 25, top: y - 25, bottom: y + 25 };
+      const bed = document.querySelector(`main.level [data-bed="${s.dataset.spot.replace(/-\d+$/, "")}"]`)?.getBoundingClientRect();
+      const inside = (o) => r.left >= o.left - 1 && r.right <= o.right + 1 && r.top >= o.top - 1 && r.bottom <= o.bottom + 1;
+      const fails = [];
+      if (!inside({ left: 0, top: 0, right: innerWidth, bottom: innerHeight }) || !inside(scene)) fails.push(`${s.dataset.spot} off screen ${JSON.stringify(r)}`);
+      if (bed && !inside(bed)) fails.push(`${s.dataset.spot} outside its bed ${JSON.stringify({ r, bed })}`);
+      return fails;
+    });
+  });
+  assert.deepEqual(bad, [], `${name}: tap spots fit`);
+}
+
+// Tap-the-target buttons are at least 44px, on screen, and inside their bed.
+async function assertZonesFit(page, name) {
+  const bad = await page.evaluate(() => {
+    const scene = document.querySelector("main.level .scene").getBoundingClientRect();
+    return [...document.querySelectorAll(".act__zone")].flatMap((z) => {
+      const r = z.getBoundingClientRect();
+      const fails = [];
+      if (r.width < 44 || r.height < 44) fails.push(`${z.dataset.zone} is ${Math.round(r.width)}x${Math.round(r.height)}`);
+      const inside = (o) => r.left >= o.left - 1 && r.right <= o.right + 1 && r.top >= o.top - 1 && r.bottom <= o.bottom + 1;
+      if (!inside({ left: 0, top: 0, right: innerWidth, bottom: innerHeight }) || !inside(scene)) fails.push(`${z.dataset.zone} off screen`);
+      const bed = document.querySelector(`main.level [data-bed="${z.dataset.zone}"]`)?.getBoundingClientRect();
+      if (bed && !inside(bed)) fails.push(`${z.dataset.zone} outside its bed`);
+      return fails;
+    });
+  });
+  assert.deepEqual(bad, [], `${name}: tap targets fit`);
+  assert.ok(await page.locator(".act__zone").count() > 0, `${name}: there is a target to tap`);
 }
 
 const RUNS = [];
@@ -208,6 +275,7 @@ for (const size of [MAC, PHONE]) {
     await t.page.waitForSelector('.act[data-kind="pick"]');
     assert.equal(await t.page.locator(".act__spot").count(), 4);
     await t.page.waitForTimeout(400);
+    await assertSpotsFit(t.page, `${size.name} berries`);
     await shot(t.page, size, "multi-pick");
     for (let i = 0; i < 4; i++) {
       assert.equal(await t.page.locator("main.level").getAttribute("data-phase"), "advice", "applied only after the last berry");
@@ -335,11 +403,15 @@ const KIND_RUNS = {
   },
   async fill(page, size) {
     assert.match(await page.locator('[data-prop="pot"]').getAttribute("src"), /l2-pot-empty/);
-    assert.match(await say(page), /trowel to the sill pot/);
-    await dragTo(page, ".act__item", '[data-prop="basket"]', { touch: size.touch });
+    assert.match(await say(page), /Tap the sill pot to fill it with the trowel/);
+    assert.match(await page.locator(".act__how").textContent(), /Tap the sill pot · or press Enter/);
+    const basket = await page.locator('[data-prop="basket"]').boundingBox();
+    if (size.touch) await page.touchscreen.tap(basket.x + basket.width / 2, basket.y + basket.height / 2);
+    else await page.mouse.click(basket.x + basket.width / 2, basket.y + basket.height / 2);
     await actionIdle(page);
-    assert.match(await say(page), /Not the basket\. Try the sill pot/, "a wrong drop names both");
-    await dragTo(page, ".act__item", '[data-prop="pot"]', { touch: size.touch });
+    assert.match(await say(page), /Not the basket\. Tap the sill pot/, "a wrong tap names both");
+    await assertZonesFit(page, `${size.name} fill`);
+    await tapOn(page, '[data-prop="pot"]', { touch: size.touch });
     await page.waitForTimeout(450);
     await shot(page, size, "fixture-fill");
     await gone(page);
@@ -347,7 +419,7 @@ const KIND_RUNS = {
   },
   async pour(page, size) {
     assert.match(await say(page), /then hold to soak it/);
-    await dragTo(page, ".act__item", '[data-bed="back"]', { touch: size.touch });
+    await tapOn(page, '[data-bed="back"]', { touch: size.touch });
     await page.waitForSelector(".act__hold", { timeout: 6000 });
     await holdOn(page, ".act__hold", 150);
     assert.match(await say(page), /Keep holding/, "letting go early resets the ring");
@@ -442,7 +514,8 @@ run("1512x830/kind-skip", async (browser) => {
 // Phone landscape, touch: the small prop and spot targets take a finger.
 run("844x390/kind-touch", async (browser) => {
   const t = await fixtureKind(browser, PHONE, "fill");
-  await dragTo(t.page, ".act__item", '[data-prop="pot"]', { touch: true });
+  await assertZonesFit(t.page, "phone fill");
+  await tapOn(t.page, '[data-prop="pot"]', { touch: true });
   await gone(t.page);
   await t.ctx.close();
   const u = await fixtureKind(browser, PHONE, "poke");

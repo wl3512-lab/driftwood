@@ -1,4 +1,4 @@
-// Fill: drag the source onto each container; it tips in, the container
+// Fill: tap each container and the source goes there; it tips in, the container
 // bounces, and its art swaps to the filled sprite.
 //   { kind: "fill", item, target, fills: { from?, to }, count? }
 import { sprite } from "./sprites.js";
@@ -6,9 +6,10 @@ import { play, spawn, burst } from "./fx.js";
 
 export default {
   kind: "fill",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Drag the ${n.item(a.item)} to the ${n.list(a.targets)} to fill it`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to fill it with the ${n.item(a.item)}`,
   done: (a, n, tg) => `Filled the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face, el }) {
     const top = at.y - Math.max(36, at.h * 0.6);

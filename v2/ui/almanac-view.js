@@ -36,6 +36,7 @@ import { blockTitle } from "./block-type.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
 import { shelfPackets, factCard, repeatsCard } from "../mechanics/shelf.js";
 import { LEVELS } from "../levels/index.js";
+import { sfx } from "../audio/index.js";
 
 let panels = 0; // unique ids if a level is ever mounted twice
 
@@ -312,6 +313,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
   // ---- a locked packet shakes and says when it opens ----
   let toastTimer = null;
   function nope(btn, plant) {
+    sfx("almanac-locked");
     btn.classList.remove("pk--nope");
     void btn.offsetWidth; // restart the shake
     if (!calm()) btn.classList.add("pk--nope");
@@ -343,6 +345,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     clearTimeout(toastTimer);
     toast.hidden = true;
     if (inspecting || panel.hidden) return;
+    sfx("almanac-flip");
     // Turning over a page of the level's book is looking it up (Level 2).
     if (bookIds.has(plant.id) && lockedIds.has(plant.id)) dispatch({ type: "check", id: plant.id });
     const pop = news.has(plant.id) || (bookIds.has(plant.id) && lockedIds.has(plant.id));
@@ -412,6 +415,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     const st = inspecting;
     if (!st || (st.closing && !now)) return;
     st.closing = true;
+    if (!now) sfx("almanac-flip-back");
     const done = () => {
       if (inspecting !== st) return;
       inspecting = null;
@@ -454,6 +458,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     hint.textContent = sheet.hint;
     screen.scrollTop = 0;
     if (sheet.id === "shelf") shelfTab?.classList.remove("almanac__sheet-tab--news");
+    if (fromTab) sfx("almanac-tab");
     if (fromTab) sheetTabs.find((x) => x.dataset.sheet === sheet.id)?.focus({ preventScroll: true });
     if (!quiet) sheet.view?.show(getState());
   }
@@ -462,6 +467,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
   function openBook() {
     if (closing) finishHide(true);
     if (!panel.hidden) { hide(false); return; }
+    sfx("almanac-open");
     panel.hidden = false;
     dialog.classList.remove("almanac-dialog--closing");
     if (!dialog.open) dialog.showModal();
@@ -476,6 +482,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
   // A short fade and shrink (none under reduced motion), then the book is put away.
   function hide(returnFocus, now = false) {
     if (panel.hidden || closing) return;
+    sfx("almanac-close");
     if (now || calm()) { finishHide(returnFocus); return; }
     dockAway(false); // the dock slides back up while the book fades out
     dialog.classList.add("almanac-dialog--closing");

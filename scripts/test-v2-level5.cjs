@@ -15,7 +15,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { completeAction, actionIdle, dragTo } = require("./v2-actions-helper.cjs");
+const { completeAction, actionIdle, useTool, tapOn } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8775/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-level5-wave2");
@@ -41,10 +41,11 @@ async function shot(page, size, label) {
 async function settled(page) {
   await page.waitForSelector(".bubble--thinking", { state: "detached", timeout: 8000 }).catch(() => {});
 }
-// Drag the dock's tool to a target (mouse on the laptop, touch on the phone).
+// Use the dock's tool on a target (mouse on the laptop, touch on the phone):
+// a tap on the target for the match, trowel, can and gate; a drag for the phone.
 async function drag(page, size, to) {
   await actionIdle(page);
-  await dragTo(page, "main.level .act__item", to, { touch: !!size.touch });
+  await useTool(page, to, { touch: !!size.touch });
   await page.waitForTimeout(100);
   await actionIdle(page);
 }
@@ -83,7 +84,7 @@ async function run(browser, size) {
 
   // 0 · Chore: light the lantern (drag the match).
   await page.waitForSelector("main.level .act", { timeout: 10000 });
-  assert.match(await say(page), /match to the lantern/);
+  assert.match(await say(page), /Tap the lantern to light it/);
   assert.equal(await page.locator(".act [data-act-skip]").count(), 1, "every chore can be skipped");
   await page.waitForTimeout(700); // the card slides in
   await shot(page, size, "0-lantern-chore");
@@ -152,8 +153,17 @@ async function run(browser, size) {
   assert.equal(await page.locator(".act-marks .act-mark--text").count(), 3);
   await shot(page, size, "3-soil-tested");
   // The water stream, caught mid-pour.
-  await dragTo(page, "main.level .act__item", '[data-bed="house"]', { touch: !!size.touch });
+  await tapOn(page, '[data-bed="house"]', { touch: !!size.touch });
   await page.waitForTimeout(650);
+  // The soil-test readouts the stream would cross fade for the pour.
+  const crossed = await page.evaluate(() => {
+    const jets = [...document.querySelectorAll("main.level .act-layer .l3-jet")].map((j) => j.getBoundingClientRect());
+    return [...document.querySelectorAll("main.level .act-mark--text")].filter((m) => {
+      const r = m.getBoundingClientRect();
+      return jets.some((b) => r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top) && Number(getComputedStyle(m).opacity) > 0.1;
+    }).map((m) => m.textContent);
+  });
+  assert.deepEqual(crossed, [], "no readout shows through the water stream");
   await shot(page, size, "3-water-stream");
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving', { timeout: 8000 });
   assert.equal(await page.locator('[data-bed="veg"] [data-plant="carrot"].plant--thriving').count() > 0, true, "damp beds left alone");
@@ -190,7 +200,8 @@ async function run(browser, size) {
   await drag(page, size, 'img[data-prop="step"]');
   await page.waitForSelector('.act-marks img[src*="l5-phone-down"], .act-marks [data-mark] svg', { timeout: 5000 });
   assert.match(await say(page), /meadow at the roots/);
-  await dragTo(page, "main.level .act__item", '[data-bed="meadow"]', { touch: !!size.touch });
+  assert.equal(await page.locator("main.level .act").getAttribute("data-mode"), "tap-target", "soaking the meadow starts with a tap");
+  await tapOn(page, '[data-bed="meadow"]', { touch: !!size.touch });
   await page.waitForTimeout(650);
   await shot(page, size, "6-meadow-pour");
   await actionIdle(page);

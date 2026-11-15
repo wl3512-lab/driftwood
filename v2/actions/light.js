@@ -1,4 +1,4 @@
-// Light (Level 5): drag the match to a lantern; the flame catches in a few
+// Light (Level 5): tap a lantern and the match goes there; the flame catches in a few
 // stepped flickers and the lantern swaps to its lit art.
 //   { kind: "light", item?: "l5-match", target: { prop }, fills?: { to: "l5-lantern-lit" } }
 import { play, spawn, burst } from "./fx.js";
@@ -6,9 +6,10 @@ import { art } from "./sprites.js";
 
 export default {
   kind: "light",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Drag the ${n.item(a.item)} to the ${n.list(a.targets)} to light it`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to light it`,
   done: (a, n, tg) => `The ${n.target(tg)} is lit.`,
   async animate(layer, at, { reduced, face }) {
     const tool = spawn(layer, face(), at.x - 10, at.y + 6, "act__fx--tool act__fx--small");

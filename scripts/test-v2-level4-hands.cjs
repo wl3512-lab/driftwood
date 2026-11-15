@@ -18,7 +18,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { actionIdle, dragTo, skipChore } = require("./v2-actions-helper.cjs");
+const { actionIdle, skipChore, useTool } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8774/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-level4-wave2");
@@ -130,7 +130,11 @@ async function playCard(page, size, run, tag, max = Infinity) {
     const ring = page.locator(".act__ring").first();
     const mode = await page.evaluate(() => document.querySelector(".act__item")?.closest(".act")?.dataset.kind);
     if (fresh && !holding && ["measure", "furrow", "sow-row", "water-row", "cover", "plant", "poke", "firm", "dig", "collect"].includes(mode) && await ring.count()) {
-      await dragTo(page, ".act__item", ".act__ring >> nth=0", { touch: !!size.touch });
+      // Repeated jobs (measure, hoe, sow, water, firm, dig, the spade's hills)
+      // are a tap on the target; the packet, label and basket are still drags.
+      const how = await card.getAttribute("data-mode");
+      assert.equal(how, ["plant", "poke", "collect"].includes(mode) ? "drag" : "tap-target", `${run}/${tag}/${mode} is a ${how}`);
+      await useTool(page, ".act__ring >> nth=0", { touch: !!size.touch });
     } else {
       const item = page.locator(".act__item");
       if (!(await item.count())) break;

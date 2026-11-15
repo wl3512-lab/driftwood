@@ -6,7 +6,7 @@
  * a second visit works with no connection at all. Camera models and the
  * optional live-AI proxy are never cached.
  */
-const VERSION = "dw-v30";
+const VERSION = "dw-v31";
 const PRECACHE = [
   "./",
   "./index.html",

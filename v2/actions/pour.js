@@ -5,9 +5,10 @@ import water from "./water.js";
 
 export default {
   kind: "pour",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Drag the ${n.item(a.item)} to the ${n.list(a.targets)}${a.soak ? ", then hold to soak it" : ""}`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} and the ${n.item(a.item)} pours${a.soak ? ", then hold to soak it" : ""}`,
   done: (a, n, tg) => `Soaked the ${n.target(tg)}.`,
   animate: (layer, at, ctx) => water.animate(layer, at, ctx),
 };

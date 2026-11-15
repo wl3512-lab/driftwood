@@ -16,7 +16,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { completeAction, actionIdle, dragTo, skipChore } = require("./v2-actions-helper.cjs");
+const { completeAction, actionIdle, skipChore, useTool } = require("./v2-actions-helper.cjs");
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8772/v2/";
 const OUT = process.env.EVIDENCE_DIR || path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-level2-wave2");
@@ -58,18 +58,19 @@ const act = (page) => page.waitForSelector("main.level .act", { timeout: 8000 })
 const actGone = (page) => page.waitForSelector("main.level .act", { state: "detached", timeout: 8000 });
 const say = (page) => page.textContent("main.level .act__say");
 
-// Drag the tool onto the first ring. The ring can be redrawn between
-// frames, so a drop that found none is tried again.
+// Use the tool on the first ring: tap it (dig, water, mist, wipe, fill…) or
+// drag the tool onto it (plant, collect…). The ring can be redrawn between
+// frames, so a try that found none is tried again.
 async function dropTool(page, size) {
   for (let t = 0; ; t++) {
-    try { return await dragTo(page, "main.level .act__item", "main.level .act__ring", { touch: !!size.touch }); } catch (err) {
-      if (t > 10 || !/missing/.test(String(err))) throw err;
+    try { return await useTool(page, "main.level .act__ring", { touch: !!size.touch }); } catch (err) {
+      if (t > 10 || !/missing|no tap/.test(String(err))) throw err;
       await page.waitForTimeout(150);
     }
   }
 }
 
-// One unit by hand: tap the next spot, or drag the tool onto the first ring.
+// One unit by hand: tap the next spot, or use the tool on the first ring.
 async function oneUnit(page, size) {
   await actionIdle(page, 8000);
   // Between two actions the card can sit for a beat with no target drawn yet.
@@ -110,7 +111,7 @@ async function midShot(page, size, label, ms) {
 
 async function wipeGlass(page, size) {
   await act(page);
-  assert.match(await say(page), /cloth over the foggy glass/);
+  assert.match(await say(page), /Tap the foggy glass to wipe it/);
   assert.equal(await page.locator("main.level .act [data-act-skip]").count(), 1, "chores keep their Skip");
   const before = await meter(page);
   await shot(page, size, "1-glass-fogged");
@@ -161,7 +162,7 @@ async function pinch(page, size, way) {
     await press(page, size, btn(page, "? Something's off"));
     await page.waitForSelector('.bubble__actions [data-choice="mine"]');
     await press(page, size, page.locator('.bubble__actions [data-choice="mine"]'));
-    assert.match(await (await act(page)).textContent(), /watering can/i);
+    assert.match(await (await act(page)).textContent(), /to water it/i);
     await byHand(page, size);
     return;
   }
@@ -233,7 +234,7 @@ async function caught(browser, size) {
   await page.waitForSelector('main.level[data-phase="reanswer"]');
   await press(page, size, btn(page, "✓ Do it"));
   await act(page);
-  assert.match(await say(page), /compost bag to the first pot/);
+  assert.match(await say(page), /Tap the first pot to fill it with compost/);
   await midShot(page, size, "6-caught-fill-pot", 500);
   assert.match(await page.getAttribute('[data-prop="pot-1"]', "src"), /l2-pot-soil/, "the pot is full of compost");
   await act(page);
@@ -267,7 +268,7 @@ async function mineKeyboard(browser, size) {
   await press(page, size, btn(page, "? Something's off"));
   await press(page, size, page.locator('.bubble__actions [data-choice="mine"]'));
   await act(page);
-  assert.match(await say(page), /watering can/);
+  assert.match(await say(page), /to water it/);
   await page.locator("main.level .act__item").focus();
   await page.keyboard.press("Enter"); // one Enter waters the basil
   await page.waitForSelector('main.level .act__say:has-text("tea jar")', { timeout: 8000 });

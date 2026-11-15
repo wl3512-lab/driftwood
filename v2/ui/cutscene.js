@@ -60,6 +60,7 @@ export const totalMs = (beats = BEATS) => beats.reduce((sum, b) => sum + b.ms, 0
 
 import { h, focusFirst, announce, finePointer } from "./dom.js";
 import { blockTitle } from "./block-type.js";
+import { sfx, voice } from "../audio/index.js";
 import { packetFront, packetBack } from "./almanac-view.js";
 import { pixelSvg, potMap, VASES, BERRY_BOWL_EMPTY, SALAD_EMPTY } from "./story-art.js";
 import { MAP } from "../levels/index.js";
@@ -242,9 +243,12 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
   function readyCheck() {
     if (!typing && elapsed && cur < beats.length - 1 && beatId() !== "name") main.classList.add("is-ready");
   }
+  let talking = null; // Rowan's babble while his caption types
   function finishTyping() {
     clearInterval(typing);
     typing = null;
+    talking?.stop();
+    talking = null;
     cap.textContent = typed;
     readyCheck();
   }
@@ -252,7 +256,9 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
     clearInterval(typing);
     typing = null;
     typed = text;
-    if (calm()) { cap.textContent = text; return; }
+    talking?.stop();
+    talking = voice("rowan", text, { maxS: Math.min(4, calm() ? 1.6 : text.length * 0.022) });
+    if (calm()) { cap.textContent = text; talking = null; return; }
     let i = 0;
     cap.textContent = "";
     typing = setInterval(() => {
@@ -304,6 +310,7 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
   }
   // The packet comes out of the toolbar's almanac button and flies to the middle.
   function emerge() {
+    sfx("almanac-open");
     if (calm() || !flip.animate) return;
     const b = almBtn.getBoundingClientRect();
     const r = front.getBoundingClientRect();
@@ -320,6 +327,7 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
   function flipOver(my) {
     if (my !== token || flipping) return;
     flipping = true;
+    sfx("almanac-flip");
     if (calm() || !front.animate) {
       showBack();
       pkt.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
@@ -352,6 +360,7 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
         driftBub.classList.remove("glitch");
         void driftBub.offsetWidth;
         if (!calm()) driftBub.classList.add("glitch");
+        sfx("pet-drift", { pet: "mango" });
         scramble(my);
       }, 500);
     }
@@ -361,8 +370,10 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
       later(() => flipOver(my), calm() ? 600 : 1550);
     }
     if (b.id === last.id) arrive(my);
+    else if (i > 0) sfx("cutscene-next");
   }
   function arrive(my) {
+    sfx("title-hit");
     buildMark();
     end.inert = false;
     markSeen();
@@ -414,6 +425,7 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
   function submitName() {
     if (beatId() !== "name" || main.classList.contains("ended")) return;
     takeName();
+    sfx("name-enter");
     nameInput.blur();
     goTo(cur + 1, token);
     skipBtn.focus({ preventScroll: true });
@@ -430,6 +442,8 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
   }
   function skip() {
     if (main.classList.contains("ended")) return;
+    talking?.stop();
+    talking = null;
     takeName();
     clearAll();
     clearInterval(typing);
@@ -461,6 +475,7 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
 
   return function unmount() {
     token++;
+    talking?.stop();
     clearAll();
     clearInterval(typing);
     document.removeEventListener("keydown", onKey);

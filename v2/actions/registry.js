@@ -21,10 +21,28 @@ import poke from "./poke.js";
 import hold from "./hold.js";
 import snip from "./snip.js";
 import { addKind } from "./plan.js";
+import { sfx } from "../audio/index.js";
+import { actionCue } from "../audio/cues.js";
+
+// Sound: each kind's animate plays its sound as the tool lands (audio/cues.js
+// ACTION_SFX). A kind that borrows another's animate (pour → water) sounds once.
+let animating = 0;
+function withSound(def) {
+  const animate = def.animate;
+  if (animate.__sound) return;
+  const sounding = function (...args) {
+    if (animating === 0) sfx(actionCue(def.kind));
+    animating += 1;
+    try { return animate.apply(this, args); } finally { animating -= 1; }
+  };
+  sounding.__sound = true;
+  def.animate = sounding;
+}
 
 const REGISTRY = new Map();
 export function register(def) {
   if (!def?.kind || !["drag", "tap", "hold"].includes(def.mode) || typeof def.animate !== "function") throw new Error(`bad action kind: ${def?.kind}`);
+  withSound(def);
   REGISTRY.set(def.kind, def);
   addKind(def.kind);
   return def;

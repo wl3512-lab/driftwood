@@ -1,8 +1,9 @@
 // Runs a plan (actions/plan.js) in the level screen: the tool pops up in the
-// dock, a bouncing arrow marks each target, the player drags the tool there
-// (pointer events: mouse, pen and touch), taps each spot, or presses and holds
-// until a ring fills; an animation plays, and only then does `onDone` let the
-// level apply the effect.
+// dock, a bouncing arrow marks each target, the player taps the target (the
+// tool goes there by itself), drags the tool there (a one-off "carry this
+// there" move), taps each spot, or presses and holds until a ring fills
+// (pointer events: mouse, pen and touch); an animation plays, and only then
+// does `onDone` let the level apply the effect.
 //
 // Targets: a bed (or one plant's field in it), a prop ([data-prop] in the
 // scene), a named spot (level.spots, inside a bed or the scene), or the whole
@@ -20,6 +21,7 @@ import { h, announce } from "../ui/dom.js";
 import { kindOf } from "./registry.js";
 import { sprite, art, artUrl, hasSprite } from "./sprites.js";
 import { play, wait } from "./fx.js";
+import { sfx } from "../audio/index.js";
 
 // The stylesheet ships with the module, so index.html needs no new link.
 if (typeof document !== "undefined" && !document.querySelector("link[data-actions-css]")) {
@@ -34,6 +36,11 @@ const DRAG_START = 5; // px before a press becomes a drag
 
 const HOLD_MS = 1200;
 const SPOT = 56; // a named spot's box, px
+// Half a tap spot's reach: the 44px button (css/actions.css .act__spot) turned
+// 8° in its wiggle spans ~50px, plus a pixel to spare.
+const SPOT_REACH = 26;
+const ARROW_H = 28; // the director arrow's sprite
+const ZONE = 56; // a tap-the-target button's least size, px (≥ 44 to touch)
 
 // plan: normalized actions. scene: the element the beds and props live in.
 // names: { target(tg), list(targets), item(id), thing(id, n), plant(id) }.
@@ -60,6 +67,12 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   const action = () => plan[ai];
   const kind = () => kindOf(action().kind);
   const nextTarget = () => done.findIndex((d) => !d);
+  // mode "tap" is either spots to tap (pull, pick…: the kind has spot art) or,
+  // with `tapTarget`, a tap on the target itself: the tool travels there and
+  // does its thing, as a drop would (dig, water, spray…).
+  // An action can ask for it with `tap: true` (Level 4's spade heaping hills).
+  const targetTap = () => (kind().mode === "tap" && !!kind().tapTarget) || (kind().mode === "drag" && action().tap === true);
+  const spotTap = () => kind().mode === "tap" && !kind().tapTarget;
 
   const keyOf = (tg) => tg.bed && !tg.spot ? tg.bed : tg.prop || tg.spot || "all";
   const bedEl = (id) => scene.querySelector(`[data-bed="${id}"]`);
@@ -141,7 +154,8 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const k = kind();
     const multi = a.targets.length > 1 || (a.count || 1) > 1;
     const how = soaking >= 0 || k.mode === "hold" ? "Press and hold · or press Enter"
-      : k.mode === "tap" ? "Tap each one · or press Enter" : "Drag it there · or press Enter";
+      : targetTap() && a.targets.length === 1 ? `Tap the ${names.target(a.targets[0])} · or press Enter`
+      : targetTap() || k.mode === "tap" ? "Tap each one · or press Enter" : "Drag it there · or press Enter";
     const total = a.targets.length * (a.count || 1);
     const count = total - left.reduce((n, x) => n + x, 0);
     item = h("button", {
@@ -152,6 +166,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     item.addEventListener("pointerdown", onPointerDown);
     item.addEventListener("keydown", onItemKey);
     card.dataset.kind = a.kind;
+    card.dataset.mode = soaking >= 0 ? "hold" : targetTap() ? "tap-target" : k.mode;
     card.dataset.busy = String(busy);
     card.replaceChildren(...[
       item,
@@ -179,16 +194,27 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       const b = box(tg);
       if (!b) return;
       const small = b.h <= 120;
-      // Inside the top of a big bed; just above a small prop or spot.
-      const top = small ? b.y - b.h / 2 - 16 : b.y - b.h / 2 + Math.min(44, b.h * 0.4);
-      const arrow = h("div", { class: "act__arrow", style: `left:${b.x}px; top:${top}px`, "data-target": keyOf(tg) },
+      // Inside the top of a big bed (below its sign, when the sign is staked
+      // inside the bed on a phone); just above a small prop or spot.
+      const sign = signBottom(tg);
+      let top = small ? b.y - b.h / 2 - 16
+        : Math.max(b.y - b.h / 2 + Math.min(44, b.h * 0.4), sign == null ? -Infinity : sign - layer.getBoundingClientRect().top + 40);
+      // Above a small target, the arrow could land on a bed's sign or a HUD
+      // button (phones): then it hangs under the target, pointing up.
+      const up = small && arrowBlocked(b.x, top);
+      if (up) top = b.y + b.h / 2 + 16 + ARROW_H;
+      const arrow = h("div", { class: `act__arrow${up ? " act__arrow--up" : ""}`, style: `left:${b.x}px; top:${top}px`, "data-target": keyOf(tg) },
         sprite("arrow", { size: 28 }),
         a.targets.length > 1 && h("span", { class: "act__num" }, String(i + 1)));
       const ring = h("div", { class: `act__ring${tg.spot ? " act__ring--spot" : ""}`, style: `left:${b.x - b.w / 2}px; top:${b.y - b.h / 2}px; width:${b.w}px; height:${b.h}px` });
+      // Tap the target: a clear button over it (before its ring, so hovering
+      // it lights the ring).
+      if (targetTap() && soaking < 0) layer.append(zone(tg, i, b));
       layer.append(ring, arrow);
       if (soaking === i || (k.mode === "hold" && soaking < 0)) return layer.append(holdRing(i, b));
-      if (k.mode === "tap") {
+      if (spotTap()) {
         const n = a.count || 1;
+        const fit = spotBounds(tg);
         for (let s = 0; s < left[i]; s++) {
           const j = n - left[i] + s; // stable position for each spot
           let px; let py;
@@ -200,6 +226,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
             px = b.x - b.w * 0.32 + (b.w * 0.64) * ((j + 0.5) / n);
             py = b.y - b.h * 0.08 + ((j % 2) ? b.h * 0.16 : -b.h * 0.06);
           }
+          px = fit.x(px); py = fit.y(py);
           const spot = h("button", {
             class: "act__spot", type: "button", style: `left:${px}px; top:${py}px`,
             "data-spot": `${keyOf(tg)}-${j}`, tabindex: -1, "aria-hidden": "true",
@@ -209,6 +236,73 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
         }
       }
     });
+  }
+
+  // Would an arrow whose foot is at (x, top), in layer px, sit on a bed's sign
+  // or on the top bar / a tool button? (The arrow is 28px and bobs 10px up.)
+  function arrowBlocked(x, top) {
+    const l = layer.getBoundingClientRect();
+    const a = { left: l.left + x - 16, right: l.left + x + 16, top: l.top + top - ARROW_H - 10, bottom: l.top + top };
+    return [...scene.querySelectorAll(".bed__label, .scene__top > *, .tools .tool")].some((el) => {
+      const q = el.getBoundingClientRect();
+      return q.width && Math.min(a.right, q.right) - Math.max(a.left, q.left) > 2 && Math.min(a.bottom, q.bottom) - Math.max(a.top, q.top) > 2;
+    });
+  }
+  // The bottom of a bed target's sign when the sign stands inside the bed
+  // (short landscape screens, css/scenes.css), in viewport px; else null.
+  function signBottom(tg) {
+    const bedId = tg.prop ? null : tg.bed || spots[tg.spot]?.bed;
+    const bed = bedId && bedEl(bedId);
+    const sign = bed?.querySelector(":scope > .bed__label");
+    if (!sign) return null;
+    const sr = sign.getBoundingClientRect();
+    return sr.top >= bed.getBoundingClientRect().top ? sr.bottom : null;
+  }
+  // Where a target's tap buttons may go, in viewport px: inside its bed (a
+  // ring round a narrow bed used to spill into the next bed and off the
+  // garden's left edge on phones), below the bed's sign when the sign stands
+  // inside it (belowSign), and inside the visible scene. A target that is not
+  // in a bed (a prop) only keeps its buttons on screen.
+  function areaOf(tg, { belowSign = true } = {}) {
+    const lr = layer.getBoundingClientRect();
+    let left = Math.max(lr.left, 0); let top = Math.max(lr.top, 0);
+    let right = Math.min(lr.right, innerWidth); let bottom = Math.min(lr.bottom, innerHeight);
+    const bedId = tg.bed || spots[tg.spot]?.bed;
+    const bed = bedId && !tg.prop ? bedEl(bedId) : null;
+    if (bed) {
+      const r = bed.getBoundingClientRect();
+      left = Math.max(left, r.left); top = Math.max(top, r.top, belowSign ? (signBottom(tg) ?? -Infinity) + 2 : -Infinity);
+      right = Math.min(right, r.right); bottom = Math.min(bottom, r.bottom);
+    }
+    return { left, top, right, bottom, lr };
+  }
+  // Clamp a centre so a box reaching `reach` px each way stays inside lo…hi
+  // (centred when it can't fit).
+  const clampTo = (lo, hi, reach) => (v) => {
+    const a = lo + reach; const z = hi - reach;
+    return a > z ? (a + z) / 2 : Math.min(z, Math.max(a, v));
+  };
+  // Where a tap spot's centre may go: the whole wiggling button stays inside.
+  function spotBounds(tg) {
+    const { left, top, right, bottom, lr } = areaOf(tg);
+    const x = clampTo(left, right, SPOT_REACH); const y = clampTo(top, bottom, SPOT_REACH);
+    return { x: (v) => x(v + lr.left) - lr.left, y: (v) => y(v + lr.top) - lr.top };
+  }
+  // Tap the target: a clear button over target i, at least ZONE px square
+  // (a small prop or spot grows to a finger's size), kept inside its bed.
+  function zone(tg, i, b) {
+    const { left, top, right, bottom, lr } = areaOf(tg, { belowSign: false });
+    const w = Math.max(44, Math.min(Math.max(ZONE, b.w), right - left));
+    const hh = Math.max(44, Math.min(Math.max(ZONE, b.h), bottom - top));
+    const cx = clampTo(left, right, w / 2)(b.rect.left + b.rect.width / 2);
+    const cy = clampTo(top, bottom, hh / 2)(b.rect.top + b.rect.height / 2);
+    const el = h("button", {
+      class: "act__zone", type: "button", tabindex: -1, "aria-hidden": "true",
+      style: `left:${cx - w / 2 - lr.left}px; top:${cy - hh / 2 - lr.top}px; width:${w}px; height:${hh}px`,
+      "data-zone": keyOf(tg), "data-i": String(i),
+    });
+    el.addEventListener("click", (ev) => { ev.preventDefault(); ev.stopPropagation(); commit(i); });
+    return el;
   }
 
   // ---- press and hold ----
@@ -336,8 +430,8 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const { dragging, touch } = press;
     endPress();
     if (!dragging) {
-      // A tap on the tool: tap kinds go to the next spot; drag kinds need the drag.
-      if (kind().mode === "tap") return go(nextTarget());
+      // A tap on the tool: tap kinds go to the next target or spot; drag kinds need the drag.
+      if (targetTap() || kind().mode === "tap") return go(nextTarget());
       return nudge(`Drag it to the ${names.target(action().targets[nextTarget()])}`);
     }
     const x = ev.clientX;
@@ -365,6 +459,17 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     }
     return -1;
   }
+  // Tap-the-target kinds: a tap on the wrong bed or prop says which one is wanted.
+  function onSceneClick(ev) {
+    if (over || busy || hold || soaking >= 0 || !targetTap()) return;
+    if (ev.target?.closest?.(".act__zone, .act, .scene__top, .tools, button, a, input, textarea, [role='button']")) return;
+    const there = labelAt(ev.clientX, ev.clientY);
+    const i = nextTarget();
+    if (!there || i < 0) return;
+    const want = names.target(action().targets[i]);
+    if (there !== want) nudge(`Not the ${there}. Tap the ${want}`);
+  }
+  scene.addEventListener("click", onSceneClick);
   // The name of whatever is under (x, y): a prop, else a bed.
   function labelAt(x, y) {
     const inside = (el) => { const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
@@ -389,6 +494,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       { duration: reduced ? 0 : 260, easing: "cubic-bezier(.3,1.4,.6,1)" }).then(() => g.remove());
   }
   function nudge(text) {
+    sfx("act-wrong");
     item?.classList.remove("is-nudge");
     void item?.offsetWidth;
     item?.classList.add("is-nudge");
@@ -430,7 +536,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     if (soaking >= 0) return startHold(soaking, { auto: true });
     if (busy || i < 0) return;
     if (kind().mode === "hold") return startHold(i, { auto: true });
-    if (kind().mode === "tap") {
+    if (spotTap()) {
       const spot = layer.querySelector(`.act__spot[data-spot^="${keyOf(action().targets[i])}-"]`);
       return tapSpot(i, spot, opts);
     }
@@ -566,6 +672,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     ghost = null;
     layer.remove();
     window.removeEventListener("resize", onResize);
+    scene.removeEventListener("click", onSceneClick);
     watch?.disconnect();
     if (window.__dwAct === api) delete window.__dwAct;
   }
@@ -592,7 +699,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       if (soaking >= 0 || hold) { const s = soaking >= 0 ? soaking : hold.i; clearHold(); unit(s, true); continue; }
       const i = nextTarget();
       if (i < 0) { advance(true); continue; }
-      if (kind().mode === "tap") tapSpot(i, null, { instant: true });
+      if (spotTap()) tapSpot(i, null, { instant: true });
       else if (kind().mode === "hold") unit(i, true);
       else commit(i, { instant: true });
     }

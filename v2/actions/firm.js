@@ -1,12 +1,13 @@
-// Firm: drag your hand to the bed; it pats the soil down twice.
+// Firm: tap the bed and your hand goes there; it pats the soil down twice.
 import { sprite } from "./sprites.js";
 import { play, spawn, burst } from "./fx.js";
 
 export default {
   kind: "firm",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: () => "hand",
-  say: (a, n) => `Drag your hand to the ${n.list(a.targets)} to firm the soil`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to firm the soil`,
   done: (a, n, tg) => `Firmed the soil in the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const hand = spawn(layer, face(), at.x, at.y - 10, "act__fx--tool");

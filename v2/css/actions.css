@@ -95,6 +95,8 @@
   background: var(--ink, #2b1d14); color: #fff7e2;
   font: 700 0.75rem/1 var(--font-ui); text-align: center;
 }
+/* hung under its target when the space above is taken: the sprite turns to point up */
+.act__arrow--up > :first-child { transform: rotate(180deg); }
 @keyframes act-bob { to { transform: translate(-50%, calc(-100% - 10px)); } }
 .act__spot {
   position: absolute;
@@ -112,6 +114,19 @@
 @keyframes act-wiggle { to { transform: translate(-50%, -50%) rotate(8deg); } }
 
 .act__ring--spot { border-radius: 50%; }
+
+/* tap the target: a clear button over it (at least 44px, inside its bed);
+   hovering it lights the target's ring, which follows it in the layer */
+.act__zone {
+  position: absolute; margin: 0; padding: 0;
+  background: transparent; border: 0; border-radius: 4px;
+  pointer-events: auto; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.act__zone:focus { outline: none; }
+.act__zone:hover + .act__ring, .act__zone:active + .act__ring {
+  border-style: solid; background: rgba(246, 201, 69, 0.3); animation: none;
+}
 
 /* press and hold: a ring that fills clockwise (--p 0…1, set per frame) */
 .act__hold {

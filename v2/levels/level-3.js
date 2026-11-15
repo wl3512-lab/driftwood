@@ -102,7 +102,7 @@ export default {
       effect: { plant: "bean", bed: "row", state: "thriving", garden: 15 },
       // Ember's way, by hand: hose the aphids off cluster by cluster, then let the ladybugs out.
       actions: [
-        { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 3, say: "Drag the hose to the beans and blast the aphids off" },
+        { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 3, say: "Tap the beans to blast the aphids off with the hose" },
         { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Next morning: a few came back. Hose them off again" },
         { kind: "release", item: "l3-ladybug-jar", target: { bed: "row" }, say: "Drag the jar of ladybugs to the beans and let them out" },
       ],
@@ -114,7 +114,7 @@ export default {
         theirs: "Fine, the hose",
         effect: { plant: "bean", bed: "row", state: "aphids", garden: -5 },
         // Bug spray: a grey mist that knocks the ladybugs off with the aphids.
-        actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Drag the bug spray to the beans and spray" }],
+        actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Tap the beans to spray them with the bug spray" }],
         outcome: "Spray got the aphids… and the ladybugs. A week later the aphids were back, and nobody was eating 'em, fam.",
       },
     },
@@ -152,8 +152,8 @@ export default {
       badActions: [],
       // Caught: look close, photograph it for an expert, and tag it "Don't eat".
       goodActions: [
-        { kind: "magnifier", item: "magnifier", target: { bed: "hedge" }, result: "No label. You can't tell what it is by looking", say: "Drag the magnifying glass over the hedge" },
-        { kind: "photo", item: "l3-camera", target: { bed: "hedge" }, result: "For the garden centre", say: "Drag the camera to the hedge and take a photo for the garden centre" },
+        { kind: "magnifier", item: "magnifier", target: { bed: "hedge" }, result: "No label. You can't tell what it is by looking", say: "Tap the hedge to look closer with the magnifying glass" },
+        { kind: "photo", item: "l3-camera", target: { bed: "hedge" }, result: "For the garden centre", say: "Tap the hedge to take a photo for the garden centre" },
         { kind: "label", item: "l3-tag", target: { bed: "hedge" }, say: "Push the “Don't eat” tag into the hedge" },
       ],
       badOutcome: "You ate a handful. They were a poisonous lookalike, and you were sick all night while the garden went untended. (In real life: call poison control or emergency services straight away.)",

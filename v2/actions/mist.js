@@ -1,4 +1,4 @@
-// Mist (Level 2): drag the spray bottle to a plant. It squeezes three times;
+// Mist (Level 2): tap a plant and the spray bottle goes there. It squeezes three times;
 // each squeeze throws a short puff of mist (Level 3's .l3-jet--mist) and a fan
 // of pixel droplets (.l3-drop) that bead on the leaves, then wink out.
 // Stepped timing throughout, no glow; reduced motion caps each step at 160 ms.
@@ -27,9 +27,10 @@ function div(cls, style = "") {
 
 export default {
   kind: "mist",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item || "l2-mister"),
-  say: (a, n) => `Drag the ${n.item(a.item || "l2-mister")} to the ${n.list(a.targets)} to mist it`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to mist it`,
   done: (a, n, tg) => `Misted the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const T = (ms) => (reduced ? Math.min(ms, 160) : ms);

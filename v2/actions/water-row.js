@@ -1,11 +1,11 @@
-// Water-row (Level 4): drag the can over the row; it tips, a pixel stream of
+// Water-row (Level 4): tap the row and the can goes there; it tips, a pixel stream of
 // water pours from the spout to the soil, splashes, and a dark wet patch soaks
 // outward in steps. With `soak`, the player then holds until the ring fills.
 //   { kind: "water-row", item?: "can", target, soak?: 1200 }
 // The stream and drops reuse Level 3's liquid look (.l3-jet, .l3-drop in
 // v2/css/l3-spray.css, loaded here the way spray.js loads it), so water looks
 // the same in every level. Reduced motion: no travel, a short still stream.
-import { play, spawn, burst } from "./fx.js";
+import { play, spawn, burst, clearLabels } from "./fx.js";
 import { patch } from "./l4-px.js";
 
 if (typeof document !== "undefined" && !document.querySelector("link[data-l3-spray-css]")) {
@@ -25,9 +25,10 @@ function div(cls, style = "") {
 
 export default {
   kind: "water-row",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: () => "watering can",
-  say: (a, n) => `Drag the watering can to the ${n.list(a.targets)}${a.soak ? ", then hold it there to soak the row" : ""}`,
+  say: (a, n) => `Tap the ${n.list(a.targets)} to water it${a.soak ? ", then hold it to soak the row" : ""}`,
   done: (a, n, tg) => `The ${n.target(tg)} is soaked.`,
   async animate(layer, at, { reduced, face }) {
     const soil = at.y + Math.min(at.h * 0.18, 26);
@@ -46,6 +47,9 @@ export default {
     const splash = reduced ? [] : Array.from({ length: 6 }, () => spawn(layer, div("l3-drop"), sx, soil - 2, "l3-splash"));
     layer.append(wet, stream);
     const ms = reduced ? 220 : 1500;
+    // A result label in the stream's way fades for the pour.
+    const clear = clearLabels(layer, [can, stream, wet], { reduced });
+    await clear.hide();
     await burst([can, stream, wet, ...splash], () => Promise.all([
       play(can, [
         { transform: "translate(-50%, -50%) rotate(0deg)" },
@@ -76,6 +80,7 @@ export default {
         ], { duration: 520, delay: 420 + i * 120, easing: "steps(5, end)" });
       }),
     ]));
+    await clear.show();
   },
   land({ tg, last, stamp }) {
     if (!last) return;

@@ -4,6 +4,12 @@
 // audio path so the CRT cover and pet voices stay quiet too.
 (function () {
   try { localStorage.setItem("dw_audio_muted", "1"); } catch (_) {}
+  // Driftwood v2's synth (v2/audio/index.js) never creates an AudioContext on
+  // a test page, even if a run clicks the sound switch on: cues are only
+  // logged to window.__dwAudioLog. OfflineAudioContext is left alone, so the
+  // trailer stem render (scripts/render-trailer-audio.cjs) still works; it
+  // renders to memory and plays nothing.
+  try { window.__dwAudioSilent = true; } catch (_) {}
   // Driftwood v2: pets speak their written lines, word for word (no AI
   // rewording, no thinking pause), so test runs are deterministic. A run that
   // wants the live AI sets window.__dwAI = true in a later init script.

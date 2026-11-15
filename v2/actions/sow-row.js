@@ -1,4 +1,4 @@
-// Sow-row (Level 4): drag the seed packet along the open furrow; at each mark
+// Sow-row (Level 4): tap each mark down the open furrow; at each mark
 // it tips and walks down the row while seeds drop in, pixel by pixel. The furrow
 // shows its seeds, then closes over as the crop's own row takes the bed.
 //   { kind: "sow-row", item: "seed-packet", target: [{ spot, bed }, …] }
@@ -8,9 +8,10 @@ import { fadeMarks, turned } from "./l4-px.js";
 
 export default {
   kind: "sow-row",
-  mode: "drag",
+  mode: "tap",
+  tapTarget: true, // tap the target itself (runner.js): no dragging
   noun: (a, n) => n.item(a.item),
-  say: (a, n) => `Sprinkle the seeds down the furrow in the ${n.bed(a.targets[0].bed)}: drag the packet to each mark`,
+  say: (a, n) => `Sprinkle the seeds down the furrow in the ${n.bed(a.targets[0].bed)}: tap each mark`,
   done: (a, n, tg) => `Seeds in at the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const sweep = Math.round(Math.min(at.h, 56) * 0.9);

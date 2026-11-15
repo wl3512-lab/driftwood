@@ -10,6 +10,7 @@
 // is up it is modal: the level is inert, and the level's keys never see a
 // key press. When it goes, focus returns to the level.
 import { h, announce } from "./dom.js";
+import { sfx, voice } from "../audio/index.js";
 import { pixelSvg, POUCH } from "./story-art.js";
 import { PLANTS } from "../levels/plants.js";
 import { WIZARD } from "../levels/wizard.js";
@@ -67,6 +68,8 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
   root.append(box);
   nextBtn.focus({ preventScroll: true });
   announce(`${note ? "A note from Rowan" : "Rowan"}: ${line} ${seedList}`);
+  // Sound: Rowan speaks his line (a note at night is read silently).
+  const talking = note ? null : voice("rowan", line);
 
   const onKey = (ev) => {
     if (!box.isConnected) return;
@@ -99,6 +102,7 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
   function toss() {
     if (box.dataset.phase !== "line") { if (box.dataset.phase === "toss") finish(); return; }
     markSeen();
+    talking?.stop();
     box.dataset.phase = "toss";
     box.setAttribute("aria-busy", "true");
     skipBtn.blur();
@@ -109,6 +113,7 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
     if (calm() || !btn || !box.animate) {
       // No flight: the words fade, the tag shows by the button, the overlay fades.
       placeTag(btn);
+      sfx("almanac-catch");
       box.classList.add("ho--fade");
       later(finish, 900);
       return;
@@ -125,6 +130,7 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
         { duration: 380, delay: i * 40, easing: "steps(5, end)" });
     });
     box.classList.add("ho--tossing");
+    sfx("pouch-toss", { delay: 0.4 });
     // 2 · the pouch arcs up to just under the button (0.4–1.3 s).
     const stop = { x: goal.x - Math.min(70, innerWidth * 0.08), y: goal.y + Math.min(80, innerHeight * 0.16) };
     const dx = stop.x - p0.x, dy = stop.y - p0.y;
@@ -139,6 +145,8 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
       play(pouch, [{ opacity: 1, transform: `translate(${dx}px, ${dy}px) scale(1.1)` }, { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(1.6)` }],
         { duration: 120, easing: "steps(2)", composite: "replace" });
       burst(stop, goal);
+      sfx("pouch-burst");
+      sfx("sparkle", { delay: 0.5 });
       play(box.querySelector(".ho__dim"), [{ opacity: 1 }, { opacity: 0 }], { duration: 600, easing: "steps(4)" });
       play(speaker, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: "steps(3)" });
     }, 1300);
@@ -146,6 +154,7 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
     later(() => {
       play(btn, [{ transform: "none" }, { transform: "scale(1.18)" }, { transform: "none" }], { duration: 320, easing: "steps(4)", fill: "none" });
       placeTag(btn);
+      sfx("almanac-catch");
       play(add, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 200, easing: "steps(2)" });
     }, 2300);
     later(finish, TOSS_MS);
@@ -184,6 +193,7 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
   function close() {
     if (closed) return;
     closed = true;
+    talking?.stop();
     for (const id of timers) clearTimeout(id);
     timers.clear();
     anims.forEach((a) => a.cancel());
