@@ -36,3 +36,7 @@ export const kinds = () => [...REGISTRY.keys()];
 // Shared by more than one level (wave 1.5).
 [pull, fill, pour, cover, collect, poke, hold, snip].forEach(register);
 // Level-owned kinds go below, one line each.
+import spray from "./spray.js"; register(spray);
+import release from "./release.js"; register(release);
+import magnifier from "./magnifier.js"; register(magnifier);
+import photo from "./photo.js"; register(photo);

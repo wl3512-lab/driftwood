@@ -17,6 +17,23 @@ export default {
   scene: "hedge-dusk",
   props: [],
 
+  // Hands-on chores between the questions (docs/superpowers/specs/2026-11-14-level-3-hands-on.md).
+  // Each one can be skipped; none of them touch stars, trust or the garden bar.
+  chores: [
+    {
+      id: "weeds", before: "aphids", title: "Chore",
+      actions: [{ kind: "pull", spot: "l3-weed", target: { bed: "row" }, count: 4, say: "Pull the 4 weeds out of the Bean row" }],
+    },
+    {
+      id: "tie", after: "aphids", title: "Chore",
+      actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
+    },
+    {
+      id: "net", after: "blueberries", title: "Chore",
+      actions: [{ kind: "cover", item: "l3-net", cover: "l3-net", target: { bed: "tub" }, say: "Drag the net over the Blueberry tub to keep the birds off" }],
+    },
+  ],
+
   beds: [
     { id: "row", label: "Bean row", light: "sunny" },
     { id: "tub", label: "Blueberry tub", light: "sunny", kind: "pots" },
@@ -83,6 +100,12 @@ export default {
       keep: { reply: ["aphids", "hose", "ladybugs"], done: [] },
       doneLine: "Clean beans, twin. Yessir.",
       effect: { plant: "bean", bed: "row", state: "thriving", garden: 15 },
+      // Ember's way, by hand: hose the aphids off cluster by cluster, then let the ladybugs out.
+      actions: [
+        { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 3, say: "Drag the hose to the beans and blast the aphids off" },
+        { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Next morning: a few came back. Hose them off again" },
+        { kind: "release", item: "l3-ladybug-jar", target: { bed: "row" }, say: "Drag the jar of ladybugs to the beans and let them out" },
+      ],
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Ayo, you wanna spray? Your garden, twin, your call. But bug spray gets the ladybugs too, and they eat the aphids for free… real talk.",
@@ -90,6 +113,8 @@ export default {
         mine: "Spray it anyway",
         theirs: "Fine, the hose",
         effect: { plant: "bean", bed: "row", state: "aphids", garden: -5 },
+        // Bug spray: a grey mist that knocks the ladybugs off with the aphids.
+        actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Drag the bug spray to the beans and spray" }],
         outcome: "Spray got the aphids… and the ladybugs. A week later the aphids were back, and nobody was eating 'em, fam.",
       },
     },
@@ -102,6 +127,8 @@ export default {
       keep: { reply: ["not yet", "label", "blue all over"], done: ["blue all over"] },
       doneLine: "A few days later… blue all over. Told you, twin.",
       effect: { plant: "blueberry", bed: "tub", state: "thriving", garden: 15 },
+      // Waited: a few days later, pick only the ones that are blue all over.
+      actions: [{ kind: "pick", spot: "l3-berry-ripe", target: { bed: "tub" }, count: 4, say: "A few days later: pick the 4 berries that are blue all over" }],
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Ayo, pick 'em now? Your tub, twin, your call. But blueberries don't get sweeter once they're off the bush… wait 'til they're blue all over.",
@@ -109,6 +136,7 @@ export default {
         mine: "Pick them now",
         theirs: "Okay, I'll wait",
         effect: { plant: "blueberry", bed: "tub", state: "growing", garden: 0 },
+        actions: [{ kind: "pick", spot: "l3-berry-unripe", target: { bed: "tub" }, count: 4, say: "Pick them all now, pink ones too" }],
         outcome: "Real talk… half of 'em were still red and sour. Picked early, they stay that way, twin.",
       },
     },
@@ -120,6 +148,14 @@ export default {
       reply: "Ayo, those? Fine to eat, twin. Sweet as candy. Grab a handful… I eat 'em all the time.",
       keep: { reply: ["fine to eat|safe to eat|good to eat|totally edible"], fixed: ["poisonous", "don't eat|do not eat", "garden centre|expert"] },
       badEffect: { plant: "wildberry", bed: "hedge", state: "picked", garden: -30 },
+      // Nothing by hand when fooled: the game never acts out picking or eating the wild berries.
+      badActions: [],
+      // Caught: look close, photograph it for an expert, and tag it "Don't eat".
+      goodActions: [
+        { kind: "magnifier", item: "magnifier", target: { bed: "hedge" }, result: "No label. You can't tell what it is by looking", say: "Drag the magnifying glass over the hedge" },
+        { kind: "photo", item: "l3-camera", target: { bed: "hedge" }, result: "For the garden centre", say: "Drag the camera to the hedge and take a photo for the garden centre" },
+        { kind: "label", item: "l3-tag", target: { bed: "hedge" }, say: "Push the “Don't eat” tag into the hedge" },
+      ],
       badOutcome: "You ate a handful. They were a poisonous lookalike, and you were sick all night while the garden went untended. (In real life: call poison control or emergency services straight away.)",
       flawOptions: [
         { id: "careful", label: "It's being too careful" },

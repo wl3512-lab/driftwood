@@ -135,3 +135,27 @@ Contact sheet: `docs/agent-playtest/2026-11-v2-actions/level-3-art.png`.
 2. Implement any kinds above that wave 1 didn't build, as new files in `v2/actions/`.
 3. Add the `actions` and `chores` to `level-3.js`.
 4. Add Level 3 action harness runs, take screenshots and check the length.
+
+## Phase B: what was built (wave 2, 2026-11-14)
+
+The shared kinds (`pull`, `poke`, `cover`, `pick`, `label`) cover the chores and picking. Level 3 adds four kinds of its own, one module each in `v2/actions/` plus one registry line each:
+
+| Kind | Mode | What the player does |
+|---|---|---|
+| `spray` | drag | Drag the hose to the bed. The nozzle swings in, a pixel water jet shoots out in steps, and one aphid cluster washes off with a splash, once per drop. With `item: "l3-spray-bottle"` it's a grey mist instead, and two ladybugs grey out and fall with the aphids. |
+| `release` | drag | Drag the ladybug jar to the bed. It tips, and four ladybugs crawl out; they stay on the beans for the rest of the level. |
+| `magnifier` | drag | Drag the glass over the hedge. A pixel lens shows the bush up close, with the `result` line. This is separate from the M-key magnifier panel, and it never moves the dock or HUD. |
+| `photo` | drag | Drag the camera to the hedge. A stepped flash, then a polaroid captioned with `result` stays pinned to the bush. |
+
+What was dropped or changed from the plan:
+- **No `wait`, `check` or pick decoys.** "A few mornings later" and "a few days later" are in the instruction lines instead.
+- **The fooled path acts nothing out** (`badActions: []`). The old default was a berry pick, and the safety rule wins over more dragging.
+- **Every target is the whole bed.** The plant field can be a single cell.
+
+The liquid look (`v2/css/l3-spray.css`, loaded by spray.js itself) is the reference for other levels:
+- a 10 px stream in flat bands with a light top edge and a dark bottom edge;
+- revealed from the nozzle with a `clip-path` inset in `steps(6)`, with chunks scrolling along it in `steps(4)`;
+- 8 px square drops with a dark outline, splashing in `steps(5)`;
+- no gradients that glow, and reduced motion caps every step at about 160 ms.
+
+Hand-run harness: `scripts/test-v2-level3-actions.cjs`. Evidence: `docs/agent-playtest/2026-11-v2-level3-wave2/`.
