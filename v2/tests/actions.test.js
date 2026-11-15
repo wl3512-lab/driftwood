@@ -113,10 +113,10 @@ test("registry: every kind is registered with a mode and an animation", () => {
   assert.deepEqual(kinds().sort(), [...KINDS].sort());
   for (const k of KINDS) {
     const def = kindOf(k);
-    assert.ok(["drag", "tap"].includes(def.mode), k);
+    assert.ok(["drag", "tap", "hold"].includes(def.mode), k);
     assert.equal(typeof def.animate, "function");
     const a = normalize([{ kind: k, item: k === "plant" ? "sunflower" : undefined, target: { bed: "sun", plant: "sunflower" } }], { level: LEVEL })[0];
-    const names = { bed: (id) => id, plant: (id) => id, plural: (id) => `${id}s`, list: (ts) => ts.map((t) => t.bed).join(" and the ") };
+    const names = { bed: (id) => id, target: (t) => t.bed, item: (id) => id, thing: (id) => id, plant: (id) => id, plural: (id) => `${id}s`, list: (ts) => ts.map((t) => t.bed).join(" and the ") };
     assert.match(a.say || def.say(a, names), /sun/, `${k} says where`);
     assert.ok(def.done(a, names, a.targets[0]).length > 0);
   }
@@ -184,6 +184,9 @@ test("level data: actions and chores name known kinds, beds and steps", () => {
         assert.ok(KINDS.includes(a.kind), `${level.id} ${where}: kind ${a.kind}`);
         const targets = Array.isArray(a.target) ? a.target : [a.target];
         for (const t of targets) {
+          if (t?.all) continue;
+          if (t?.prop != null) { assert.ok((level.props || []).some((p) => p.id === t.prop), `${level.id} ${where}: prop ${t.prop}`); continue; }
+          if (t?.spot != null) { assert.ok(level.spots?.[t.spot], `${level.id} ${where}: spot ${t.spot}`); if (t.bed == null) continue; }
           const ok = t && (t.bed === "$choice" || String(t.bed).startsWith("@") || level.beds.some((b) => b.id === t.bed));
           assert.ok(ok, `${level.id} ${where}: bed ${t?.bed}`);
         }

@@ -13,7 +13,7 @@ export default {
     const what = a.spot === "weed" ? "weeds" : n.plural(a.targets[0]?.plant || "berry");
     return `Tap the ${a.count} ${what} in the ${n.list(a.targets)} to pick them`;
   },
-  done: (a, n, tg) => `Picked them all in the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Picked them all in the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, spot }) {
     const fruit = spawn(layer, art(spot || "berry", { size: 22 }), at.x, at.y);
     await burst([fruit], () => play(fruit, [

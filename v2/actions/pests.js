@@ -8,7 +8,7 @@ export default {
   spot: (a) => a.spot || "bug",
   noun: (a) => (a.item === "hand" ? "hand" : "spray bottle"),
   say: (a, n) => `Tap the ${a.count} bugs in the ${n.list(a.targets)} to flick them off`,
-  done: (a, n, tg) => `Cleared the bugs off the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Cleared the bugs off the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, spot }) {
     const bug = spawn(layer, art(spot || "bug", { size: 22 }), at.x, at.y);
     const side = at.x % 2 ? 1 : -1;

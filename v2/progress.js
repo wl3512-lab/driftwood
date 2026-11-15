@@ -1,12 +1,13 @@
-// Saved progress: player name, best stars per level, field-guide cards, and
-// whether the opening cutscene has been seen (so it plays once, before Level 1).
+// Saved progress: player name, best stars per level, field-guide cards,
+// whether the opening cutscene has been seen (so it plays once, before Level 1),
+// and which levels' seed handoffs Rowan has given (once each, on first play).
 // Storage is passed in (localStorage in the browser, a fake in tests) and every
 // access is guarded: private windows and blocked storage must not break the game.
 
 const KEY = "dw2_progress";
 
 export function emptyProgress() {
-  return { name: "", levels: {}, guide: [], introSeen: false };
+  return { name: "", levels: {}, guide: [], introSeen: false, handoffSeen: [] };
 }
 
 export function loadProgress(storage) {
@@ -21,6 +22,7 @@ export function loadProgress(storage) {
       levels: saved.levels && typeof saved.levels === "object" && !Array.isArray(saved.levels) ? saved.levels : {},
       guide: Array.isArray(saved.guide) ? saved.guide.filter(isCard) : [],
       introSeen: saved.introSeen === true,
+      handoffSeen: Array.isArray(saved.handoffSeen) ? saved.handoffSeen.filter((id) => typeof id === "string") : [],
     };
   } catch {
     return emptyProgress();
@@ -56,6 +58,17 @@ export function startOver(storage) {
 
 export function markIntroSeen(progress) {
   return progress.introSeen ? progress : { ...progress, introSeen: true };
+}
+
+// Rowan's seed handoff plays on a level's first play only: not once seen, and
+// not on a replay of a level already finished (saved before the handoff existed).
+export function needsHandoff(progress, levelId) {
+  return !(progress?.handoffSeen || []).includes(levelId) && !progress?.levels?.[levelId];
+}
+
+export function markHandoffSeen(progress, levelId) {
+  const seen = progress.handoffSeen || [];
+  return seen.includes(levelId) ? progress : { ...progress, handoffSeen: [...seen, levelId] };
 }
 
 // A brand-new player sees the cutscene before Level 1; anyone who has seen it,

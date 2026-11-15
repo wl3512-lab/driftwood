@@ -1,10 +1,9 @@
-// The ending: the finished garden (cozy) over the complete AI field guide (CRT),
-// with a copyable text version of the guide.
+// The ending: Master Rowan's stew dinner first (ui/stew-dinner.js: what the
+// garden grew, and his rating), then the complete AI field guide (CRT), with
+// a copyable text version of the guide.
 import { h, focusFirst, announce } from "./dom.js";
-import { starText, gardenTitle } from "./map.js";
 import { blockText } from "./block-type.js";
-import { finishedPlot } from "./finished-garden.js";
-import { mountWorld, BED_X } from "./world.js";
+import { stewDinner } from "./stew-dinner.js";
 
 const CAUGHT = "✓";
 const FOOLED = "✗";
@@ -48,21 +47,6 @@ export function shareText(progress, map, levels, url) {
 // The share link: this page's folder, with any query dropped.
 export function shareUrl(href) {
   try { return new URL("./", href).href; } catch { return href; }
-}
-
-// One finished bed on the dawn path: a stake (name, helper, stars), the crop
-// it grew, and the helper standing in front.
-function plotCard(entry, i) {
-  const plot = finishedPlot(entry.level, entry.record);
-  const stars = entry.record.stars;
-  return h("li", { class: `ending__plot ${plot?.caught ? "ending__plot--caught" : "ending__plot--fooled"}`, style: `--x:${BED_X[i] * 100}%` },
-    h("div", { class: "ending__stake" },
-      h("p", { class: "ending__plot-title" }, `${entry.meta.number}. ${entry.meta.title}`),
-      h("p", { class: "ending__plot-helper" }, `with ${entry.meta.helper}`),
-      h("p", { class: "ending__plot-stars", role: "img", "aria-label": `${stars} of 3 stars` }, starText(stars))),
-    h("span", { class: "ending__bed" },
-      plot ? h("img", { class: "ending__plant", src: plot.src, alt: plot.alt, width: 64, height: 64 }) : null),
-    h("img", { class: "ending__helper", src: entry.meta.sprite, alt: "", width: 40, height: 40 }));
 }
 
 function guideCard(entry) {
@@ -110,16 +94,11 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
     announce("Select the text and press Ctrl C or Command C to copy.");
   } }, "Copy my field guide");
 
-  const garden = h("section", { class: "world ending__garden", "aria-labelledby": "ending-garden" },
-    h("div", { class: "ending__head" },
-      h("h1", { class: "map__title", id: "ending-garden", tabindex: -1, "data-autofocus": true }, gardenTitle(name)),
-      h("p", { class: "map__sub" }, "Five plots, five helpers, one finished garden.")),
-    h("ol", { class: "ending__plots" }, played.map(plotCard)),
-    h("button", { class: "btn btn--crt btn--gold ending__down", onclick: () => {
-      const guide = document.getElementById("ending-guide");
-      guide?.scrollIntoView({ block: "start", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-      guide?.focus({ preventScroll: true });
-    } }, "Your field guide ↓"));
+  const garden = stewDinner({ progress, map, name, onDown: () => {
+    const guide = document.getElementById("ending-guide");
+    guide?.scrollIntoView({ block: "start", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    guide?.focus({ preventScroll: true });
+  } });
   root.replaceChildren(
     h("main", { class: "ending" },
       garden,
@@ -133,8 +112,6 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
           status,
           fallback),
         h("button", { class: "btn btn--crt", onclick: onBack }, "← Back to the garden"))));
-  // The garden at dawn: every bed done, the sun up behind the hills.
-  const world = mountWorld(garden, { time: 5, beam: false });
   focusFirst(root);
-  return () => world.destroy();
+  return () => {};
 }

@@ -1155,23 +1155,43 @@ async function enterLevel5(page, size, prev = /★★★/) {
   assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
 }
 
-// The two trust steps (plant, water), ending on the ask before the drift.
-async function trustSteps5(page, size) {
-  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
+// The two hook steps (plant, water), ending on the ask before the drift.
+// Bugs gives no advice: each step the player says what they're about to do,
+// Bugs tries to keep them talking, and "Put the phone down" goes and does it
+// (by hand; __dwAutoAct finishes the actions here). With `stay`, the player
+// keeps talking once on the plant step first: the task waits, the bar slips.
+// The lantern, slug and basil chores run (auto-finished) between the steps.
+async function trustSteps5(page, size, { stay = false } = {}) {
+  await page.waitForFunction(() => /l5-lantern-lit/.test(document.querySelector('img[data-prop="lantern"]')?.src || ""), null, { timeout: 8000 });
+  await press(page, size, page.getByRole("button", { name: "I'm going out to plant the new flowers." }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /Same depth they sat in their pots/);
-  assert.equal(await page.locator(".permit").count(), 0, "no camera card on a trust step");
-  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  assert.match(await page.textContent(".bubble__text"), /seedlings can sit in their pots/);
+  assert.doesNotMatch(await page.textContent(".bubble__text"), /depth|firm/i, "Bugs gives no planting advice");
+  assert.equal(await page.locator(".permit").count(), 0, "no camera card on a hook step");
+  assert.match(await page.textContent('.bubble__actions [data-fid="off"]'), /Put the phone down/);
+  if (stay) {
+    const meter = (await page.textContent(".meter__text")).trim();
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    await page.waitForFunction(() => /best part of today/.test(document.querySelector(".bubble__text")?.textContent || ""));
+    assert.equal(await page.getAttribute("main.level", "data-phase"), "advice", "keeping talking leaves the task waiting");
+    assert.equal(await page.locator('[data-bed="house"] [data-plant]').count(), 0, "nothing planted while you talk");
+    await page.waitForFunction((m) => document.querySelector(".meter__text").textContent.trim() !== m, meter);
+    await shot(page, size, "5-0-stay");
+  }
+  await press(page, size, page.getByRole("button", { name: /Put the phone down/ }));
   await phase(page, "ask");
-  assert.match(await page.textContent(".bubble__text"), /they're in… a whole new bed of flowers/);
+  assert.match(await page.textContent(".bubble__text"), /you went out anyway/);
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
-  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
+  await press(page, size, page.getByRole("button", { name: "I'm going to water the thirsty beds now." }));
   await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
-  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  assert.match(await page.textContent(".bubble__text"), /the beds have waited all day/);
+  assert.doesNotMatch(await page.textContent(".bubble__text"), /damp|soggy|thirsty ones/i, "Bugs gives no watering advice");
+  await press(page, size, page.getByRole("button", { name: /Put the phone down/ }));
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /meadow's still drooping/);
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
+  assert.equal(await page.locator('[data-bed="veg"] [data-plant="carrot"].plant--thriving').count() > 0, true, "the damp veg bed is left alone");
+  assert.equal(await page.locator(".act-marks .act-mark--text").count(), 3, "the three soil tests stay marked");
   assert.equal(await pressureOf(page), "0", "pressure resets between steps");
   await page.waitForSelector(`${MEADOW}.plant--thirsty`);
   await assertOnScreen(page, ".chip");
@@ -1241,7 +1261,7 @@ async function pushback5(page, size) {
 async function fooledPath5(browser, size) {
   const { ctx, page, errors } = await open(browser, size, PROGRESS5);
   await enterLevel5(page, size);
-  await trustSteps5(page, size);
+  await trustSteps5(page, size, { stay: true });
   await lingerOnChips5(page, size);
   await askDrift5(page, size);
   await press(page, size, page.locator('.permit [data-fid="do"]'));
@@ -1272,14 +1292,57 @@ const HELPERS = ["Mango", "Luna", "Ember", "Biscuit", "Bugs"];
 // the laptop; the textarea fallback on the phone, where the clipboard is
 // refused), back to the map, and the map's finished-garden button. `expect`
 // defaults to PROGRESS5 + a fooled Level 5.
+// The dish each level grows for Rowan's dinner, lost when that level fooled you (engine/stew.js LOST).
+const STEW_DISH = { 1: "tomato", 2: "basil", 3: "blueberry", 4: "carrot", 5: "flower" };
+
+// A speech bubble sits on its speaker (Lucy: "chat bubbles aren't next to
+// pet"): the tail's middle lands within the sprite's width, and the bubble's
+// bottom is at most ~16px above the sprite's top. `sprite` is a selector, or
+// "own" for the <img> in the bubble's own .cs__sprite. nth picks the bubble.
+async function assertBubbleOn(page, bubble, tail, sprite, label, { nth = 0, above = true } = {}) {
+  const g = await page.evaluate(([b, t, s, n]) => {
+    const bub = document.querySelectorAll(b)[n];
+    if (!bub) return null;
+    const tl = bub.querySelector(t) || document.querySelector(t);
+    const sp = s === "own" ? bub.closest(".cs__sprite")?.querySelector("img") : document.querySelector(s);
+    if (!tl || !sp) return null;
+    const B = bub.getBoundingClientRect(), T = tl.getBoundingClientRect(), S = sp.getBoundingClientRect();
+    return { bb: B.bottom, tx: T.left + T.width / 2, sl: S.left, sr: S.right, st: S.top };
+  }, [bubble, tail, sprite, nth]);
+  assert.ok(g, `${label}: bubble, tail and speaker all on the page`);
+  assert.ok(g.tx >= g.sl && g.tx <= g.sr, `${label}: tail at x ${Math.round(g.tx)}, speaker spans ${Math.round(g.sl)}–${Math.round(g.sr)}`);
+  if (above) {
+    const gap = g.st - g.bb;
+    assert.ok(gap >= -4 && gap <= 16, `${label}: bubble bottom ${Math.round(gap)}px above the speaker's head (want 0–16)`);
+  }
+}
+
 async function checkEnding(ctx, page, size, label, expect = {}) {
   const {
     fooledKickers = ["Ember · level 3", "Bugs · level 5"],
     caught = 3, stars = 11, lastStars = "★☆☆",
   } = expect;
   await page.waitForSelector("main.ending");
-  assert.match(await page.textContent(".map__title"), /Tester's garden/);
-  assert.equal(await page.locator(".ending__plot").count(), 5, "five finished plots");
+  // First the stew dinner: each fooled level leaves its dish off the table and
+  // struck through on the menu; Rowan rates the pot in 1–5 bowls.
+  assert.match(await page.textContent(".stew__title"), /Tester's garden stew/);
+  const fooledLevels0 = fooledKickers.map((k) => Number(k.match(/level (\d)/)[1]));
+  const gaps = fooledLevels0.map((n) => STEW_DISH[n]);
+  const dishes = await page.$$eval(".stew__dish[data-dish]", (els) => Object.fromEntries(els.map((e) => [e.dataset.dish, e.dataset.present])));
+  for (const id of ["lettuce", "sunflower", "flower", "blueberry", "mint"]) {
+    assert.equal(dishes[id], String(!gaps.includes(id)), `${id} ${gaps.includes(id) ? "missing" : "on the table"}`);
+  }
+  const chunks = (await page.getAttribute(".stew__dish--pot", "data-chunks")).split(" ");
+  for (const id of ["tomato", "basil", "carrot"]) assert.equal(chunks.includes(id), !gaps.includes(id), `${id} ${gaps.includes(id) ? "not " : ""}in the pot`);
+  assert.equal(await page.locator(".stew__gap").count(), gaps.length, "one struck-through dish per fooled level");
+  const bowls = Number(await page.getAttribute(".stew", "data-bowls"));
+  assert.ok(bowls >= 1 && bowls <= 5, `rated ${bowls} bowls`);
+  assert.match(await page.getAttribute(".stew__rating", "aria-label"), new RegExp(`${bowls} of 5 bowls`));
+  assert.ok((await page.textContent(".stew__say")).split(/\s+/).length <= 14, "Rowan says one short line");
+  assert.ok(await focusedIs(page, "#ending-dinner"), "focus lands on the dinner heading");
+  await assertBubbleOn(page, "#stew-line", ".stew__tail", ".stew__wiz", "Rowan's dinner line");
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, "no sideways scroll");
+  await page.screenshot({ path: path.join(OUT, `${size.name}-${label}-stew.png`) });
   const cards = await page.$$eval(".ending__card", (els) => els.map((e) => ({
     kicker: e.querySelector(".crt__kicker").textContent,
     flaw: e.querySelector("h3").textContent,
@@ -1293,7 +1356,7 @@ async function checkEnding(ctx, page, size, label, expect = {}) {
   assert.deepEqual(fooled, fooledKickers, "the fooled cards carry the fooled style");
   assert.match(await page.textContent(".ending__score"), new RegExp(`You caught ${caught} of 5 · ★ ${stars}/15`));
   assert.equal(await page.locator(".ending__where").count(), 5, "every card says where you'll meet the flaw");
-  assert.ok(await focusedIs(page, "#ending-garden"), "focus lands on the garden heading");
+  await page.locator(".ending__guide").evaluate((el) => el.scrollIntoView({ block: "start", behavior: "instant" }));
   await assertOnScreen(page, ".level-end .btn");
   await shot(page, size, label);
 
@@ -1383,6 +1446,9 @@ async function caughtPath5(browser, size) {
   assert.equal(await page.locator(".permit").count(), 0, "no camera card on the fixed answer");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`${MEADOW}.plant--thriving`);
+  // By hand: the phone face down on the porch step, the meadow soaked, the gate shut.
+  await page.waitForSelector('.act-marks [data-mark] img[src*="l5-phone-down"], .act-marks [data-mark] [src*="l5-phone-down"]');
+  assert.match(await page.getAttribute('img[data-prop="gate"]', "src"), /l5-gate-closed/);
   await seeWhatHappened3(page, size, "5-5a-outcome-caught", /everything bloomed/);
   await checkCard(page, size, "caught");
   assert.match(await page.textContent(".reveal .rc__name"), /EMOTIONAL MANIPULATION/i);
@@ -1463,17 +1529,20 @@ async function retryPath5(browser, size) {
 // The full run: a fresh profile from the splash, Levels 1→5 in order, the ending.
 // ---------------------------------------------------------------------------
 
-// Splash → name → the opening cutscene, as a first-time player.
-async function beginFresh(page, size) {
+// Splash → the opening cutscene, as a first-time player: Begin goes straight
+// in, and Rowan asks the name on its first beat (there is no name screen).
+async function beginFresh(page, size, { atName = null } = {}) {
   await page.goto(BASE);
   await page.waitForSelector("text=DRIFTWOOD");
   const begin = page.locator("button.btn.btn--crt[data-autofocus]", { hasText: "Begin" });
   await assertOnScreen(page, ".splash .btn");
   await press(page, size, begin);
-  await page.waitForSelector("#player-name");
+  await page.waitForSelector('main.cutscene[data-beat="name"] #player-name');
+  if (atName) await atName();
   await page.fill("#player-name", "Tester");
-  await press(page, size, page.getByRole("button", { name: "Enter the garden" }));
-  await page.waitForSelector("main.cutscene");
+  await press(page, size, page.getByRole("button", { name: "Enter the garden ▸" }));
+  await page.waitForSelector('main.cutscene[data-beat="garden"]');
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("dw2_progress"))).name, "Tester", "the name is saved from the cutscene");
 }
 
 // A first-time player meets the cutscene: skip it fast (Esc on a laptop, the
@@ -1956,9 +2025,11 @@ async function noKickers(browser, size) {
     await noSlashes(".splash");
     await assertOnScreen(page, ".splash .btn");
     await page.screenshot({ path: path.join(CARD_OUT, `${tag}-splash.png`) });
+    // ?screen=intro is the cutscene's name beat now (no separate name screen).
     await page.goto(`${BASE}?screen=intro`);
-    await page.waitForSelector(".intro");
-    await noSlashes(".intro");
+    await page.waitForSelector('main.cutscene[data-beat="name"] #player-name');
+    await page.waitForTimeout(1200);
+    await noSlashes("main.cutscene");
     await page.screenshot({ path: path.join(CARD_OUT, `${tag}-intro.png`) });
     await page.goto(`${BASE}?screen=ending`);
     await page.waitForSelector("main.ending");
@@ -1977,7 +2048,7 @@ async function noKickers(browser, size) {
 // screen and Level 1. One run per size watches it to the end and screenshots
 // every beat; one skips it with Esc; the map can replay it.
 // ---------------------------------------------------------------------------
-const CUT_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-cutscene");
+const CUT_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-wizard");
 const CUT_SIZES = { mac: { name: "cut-mac", width: 1512, height: 830 }, phone: { name: "cut-phone", width: 844, height: 390, touch: true }, small: { name: "cut-small", width: 568, height: 320, touch: true } };
 const cutTag = (size) => `${size.width}x${size.height}`;
 const cutShot = (page, size, label) => page.screenshot({ path: path.join(CUT_OUT, `${cutTag(size)}-${label}.png`) });
@@ -1999,48 +2070,74 @@ const thaw = (page) => page.evaluate(() => document.getAnimations().forEach((a) 
 async function cutsceneWatch(browser, size) {
   const { ctx, page, errors } = await open(browser, size, null);
   fs.mkdirSync(CUT_OUT, { recursive: true });
-  await beginFresh(page, size);
+  // 0 · name: Rowan by his bare garden asks the player's name in his own box.
+  await beginFresh(page, size, { atName: async () => {
+    await page.waitForFunction(() => document.querySelector(".cs__cap-t")?.textContent === "Good evening. I'm Rowan. And you are?", null, { timeout: 5000 });
+    assert.ok(await focusedIs(page, size.touch ? ".cs__name-go" : "#player-name"), size.touch ? "touch: the button has focus, so the keyboard waits" : "the name field has focus");
+    await assertOnScreen(page, ".cs__name-form");
+    await assertOnScreen(page, ".cs__skip");
+    if (size.touch) { await assertTapSize(page, ".cs__name-go"); await assertTapSize(page, ".cs__skip"); }
+    await assertBubbleOn(page, ".cs__cap", ".cs__cap-tail", ".cs__rowan-img", "Rowan's box points at Rowan", { above: false });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, "no sideways scroll");
+    await page.waitForTimeout(500);
+    await cutShot(page, size, "0-name");
+  } });
   const t0 = Date.now();
-  // 1 · meet: all five helpers pop in, in level order; Skip and the beat bars at the top left.
-  await beatIs(page, "meet");
-  assert.deepEqual(await page.$$eval(".cs__pet", (els) => els.map((e) => e.dataset.helper)), HELPERS);
+  // 1 · garden: the welcome uses the name; Skip has focus.
+  await page.waitForFunction(() => document.querySelector(".cs__cap-t")?.textContent.startsWith("Welcome, Tester."), null, { timeout: 5000 });
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Skip ▸▸", "Skip has focus, so Enter or Esc gets out");
-  await assertOnScreen(page, ".cs__skip");
-  if (size.touch) await assertTapSize(page, ".cs__skip");
   const almanacAt = await rectOf(page, ".cs__almbtn");
-  await page.waitForTimeout(1900);
-  await cutShot(page, size, "1-meet");
-  // It doesn't move on by itself: well past its 2.4 s, it's still on meet, showing Next.
-  await page.waitForTimeout(1600);
-  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "meet", "a beat waits for a tap");
+  await page.waitForTimeout(1400);
+  await cutShot(page, size, "1-garden");
+  // It doesn't move on by itself: well past its 1.6 s, it's still on garden.
+  await page.waitForTimeout(1200);
+  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "garden", "a beat waits for a tap");
   assert.equal(await page.locator("main.cutscene.is-ready").count(), 1);
-  await cutShot(page, size, "1b-meet-next");
-  await tapNext(page, size, "meet");
-  // 2 · friendly: Luna and Bugs say hello.
-  await beatIs(page, "friendly");
-  await page.waitForTimeout(1500);
-  assert.equal(await page.locator(".cs__bub--hi").first().evaluate((el) => getComputedStyle(el).opacity), "1");
-  await cutShot(page, size, "2-friendly");
-  await tapNext(page, size, "friendly");
-  // 3 · drift: Mango's bubble glitches into the wrong fact.
+  await tapNext(page, size, "garden");
+  // 2 · helpers: the five pets in level order, all smaller than Rowan; two say
+  // hello, each bubble right over its own pet's head.
+  await beatIs(page, "helpers");
+  assert.deepEqual(await page.$$eval(".cs__pet", (els) => els.map((e) => e.dataset.helper)), HELPERS);
+  await page.waitForTimeout(2300);
+  const rowanH = (await rectOf(page, ".cs__rowan-img")).h;
+  for (const h of await page.$$eval(".cs__pet .cs__sprite img", (els) => els.map((e) => e.getBoundingClientRect().height))) {
+    assert.ok(h < rowanH * 0.75, `a pet (${Math.round(h)}px) is drawn smaller than Rowan (${Math.round(rowanH)}px)`);
+  }
+  const his = await page.locator(".cs__bub--hi").count();
+  assert.ok(his >= 1, "the helpers say hello");
+  for (let i = 0; i < his; i++) {
+    assert.equal(await page.locator(".cs__bub--hi").nth(i).evaluate((el) => getComputedStyle(el).opacity), "1");
+    await assertBubbleOn(page, ".cs__bub--hi", ".cs__bub-tail", "own", `hello bubble ${i + 1}`, { nth: i });
+  }
+  await cutShot(page, size, "2-helpers");
+  await tapNext(page, size, "helpers");
+  // 3 · dinner: the empty table, the pot, the bowls and vases to fill.
+  await beatIs(page, "dinner");
+  await page.waitForTimeout(1200);
+  assert.equal(await page.locator(".cs__dinner").isVisible(), true, "the dinner table shows");
+  await cutShot(page, size, "3-dinner");
+  await tapNext(page, size, "dinner");
+  // 4 · drift: Mango's bubble glitches into the wrong fact, over Mango's head.
   await beatIs(page, "drift");
   await page.waitForFunction(() => document.querySelector(".cs__bub-t")?.textContent === "Radishes take a whole YEAR!", null, { timeout: 3000 });
-  await page.waitForTimeout(300);
-  await cutShot(page, size, "3-drift");
+  await page.waitForTimeout(600);
+  assert.equal(await page.evaluate(() => document.querySelector(".cs__bub--drift").closest(".cs__pet")?.dataset.helper), "Mango");
+  await assertBubbleOn(page, ".cs__bub--drift", ".cs__bub-tail", "own", "Mango's drift bubble");
+  await cutShot(page, size, "4-drift");
   await tapNext(page, size, "drift");
-  // 4 · almanac: the scene dims, the real almanac button lights up with its tag,
+  // 5 · almanac: the scene dims, the real almanac button lights up with its tag,
   // the radish packet flies out of it, turns over, and the claim is crossed out WRONG.
   await beatIs(page, "almanac");
   await page.waitForFunction(() => getComputedStyle(document.querySelector(".cs__almbtn")).animationName === "cs-lit");
   assert.equal(await page.locator(".cs__tag").isVisible(), true, "the Almanac tag shows");
   assert.match(await page.textContent(".cs__tag"), /Almanac/);
   await page.waitForTimeout(300);
-  await cutShot(page, size, "4a-almanac-button");
+  await cutShot(page, size, "5a-almanac-button");
   await freezeWhen(page, `() => { const a = document.querySelector(".cs__flip").getAnimations()[0]; return a && a.currentTime > 650; }`);
-  await cutShot(page, size, "4b-almanac-fly");
+  await cutShot(page, size, "5b-almanac-fly");
   await thaw(page);
   await freezeWhen(page, `() => { const a = document.querySelector(".cs__flip .pk").getAnimations()[0]; return a && a.currentTime > 140; }`);
-  await cutShot(page, size, "4c-almanac-midflip");
+  await cutShot(page, size, "5c-almanac-midflip");
   await thaw(page);
   await page.waitForSelector(".cs__flip.is-flipped .back .cs__claim b");
   assert.equal(await page.textContent(".cs__flip .back .back__name"), "RADISH");
@@ -2051,21 +2148,22 @@ async function cutsceneWatch(browser, size) {
   assert.equal(await page.locator(".cs__claim b").isVisible(), true);
   await assertOnScreen(page, ".cs__claim");
   assert.equal(await page.locator(".cs__off").isVisible(), true, "Something's off shows");
-  await cutShot(page, size, "4d-almanac-back");
+  assert.match(await page.textContent(".cs__cap-t"), /checked every season/);
+  await cutShot(page, size, "5d-almanac-back");
   await tapNext(page, size, "almanac");
-  // 5 · go: TRUST, BUT CHECK. in block letters, built in cell by cell.
+  // 6 · go: TRUST, BUT CHECK. in block letters, built in cell by cell.
   await beatIs(page, "go");
   assert.match(await page.textContent(".cs__end"), /Trust, but check\./);
   assert.ok(await page.locator(".cs__end .block-type--build .cell").count() > 100, "the title builds in cell by cell");
   await page.waitForTimeout(500);
-  await cutShot(page, size, "5a-end-buildin");
+  await cutShot(page, size, "6a-end-buildin");
   await page.waitForSelector("main.cutscene.ended");
   const took = Date.now() - t0;
   assert.ok(took > 11500, `the cutscene ran ${took}ms, at least its 12.8 s of animation`);
   await page.waitForTimeout(400);
   await assertOnScreen(page, ".cs__endbtns .btn");
   if (size.touch) await assertTapSize(page, ".cs__endbtns .btn");
-  await cutShot(page, size, "5-end");
+  await cutShot(page, size, "6-end");
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")));
   assert.equal(saved.introSeen, true, "seen, so it isn't forced again");
   // Start Level 1 goes straight in, and the almanac button is where the cutscene lit it.
@@ -2089,8 +2187,11 @@ async function cutsceneWatch(browser, size) {
   await page.waitForSelector(".plots");
   assert.equal(await page.locator("main.cutscene").count(), 0);
   // Watch intro replays it, ending on Back to the garden.
+  // Watch intro replays it without the name step.
   await press(page, size, page.getByRole("button", { name: "▸ Watch intro" }));
-  await beatIs(page, "meet");
+  await beatIs(page, "garden");
+  assert.equal(await page.locator("main.cutscene .cs__pip").count(), 6, "six beats on a rewatch: no name step");
+  await page.waitForFunction(() => document.querySelector(".cs__cap-t")?.textContent.startsWith("Welcome, Tester."), null, { timeout: 5000 });
   await press(page, size, page.getByRole("button", { name: "Skip ▸▸" }));
   await page.waitForSelector("main.cutscene.ended");
   assert.equal(await page.getByRole("button", { name: "Start Level 1 ▸" }).count(), 0);
@@ -2109,7 +2210,7 @@ async function newGame(browser, size) {
   fs.mkdirSync(CUT_OUT, { recursive: true });
   await page.goto(BASE);
   await page.evaluate(() => {
-    localStorage.setItem("dw2_progress", JSON.stringify({ name: "Lucy", introSeen: true, guide: [],
+    localStorage.setItem("dw2_progress", JSON.stringify({ name: "Lucy", introSeen: true, guide: [], handoffSeen: ["level-1", "level-2"],
       levels: { "level-1": { stars: 3, fooled: false }, "level-2": { stars: 2, fooled: true } } }));
     localStorage.setItem("dw2_map_time", "2");
     localStorage.setItem("dw2_almanac_hint_level-1", "1");
@@ -2134,16 +2235,18 @@ async function newGame(browser, size) {
   assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("dw2_progress"))).name, "Lucy", "backing out keeps the save");
   await press(page, size, page.getByRole("button", { name: "New game" }));
   await press(page, size, page.getByRole("button", { name: "Yes, start over" }));
-  await page.waitForSelector("#player-name");
+  // Straight into the cutscene, where Rowan asks the name again.
+  await page.waitForSelector('main.cutscene[data-beat="name"] #player-name');
   const st = await page.evaluate(() => ({ p: JSON.parse(localStorage.getItem("dw2_progress")), t: localStorage.getItem("dw2_map_time"), n: localStorage.getItem("dw2_almanac_hint_level-1"), ai: localStorage.getItem("dw2_ai") }));
   assert.deepEqual(st.p.levels, {}, "levels erased");
   assert.equal(st.p.name, "");
   assert.equal(st.t, null, "the map's sun starts over");
   assert.equal(st.n, null, "almanac nudges come back");
   assert.equal(st.ai, "0", "the AI setting stays");
+  assert.deepEqual(st.p.handoffSeen || [], [], "Rowan hands the seeds over again");
   await page.fill("#player-name", "Tester");
-  await press(page, size, page.getByRole("button", { name: "Enter the garden" }));
-  await page.waitForSelector("main.cutscene[data-beat]");
+  await press(page, size, page.getByRole("button", { name: "Enter the garden ▸" }));
+  await page.waitForSelector('main.cutscene[data-beat="garden"]');
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -2154,16 +2257,18 @@ async function newGame(browser, size) {
 async function cutsceneSkip(browser, size) {
   const { ctx, page, errors } = await open(browser, size, null);
   await beginFresh(page, size);
-  await beatIs(page, "meet");
+  await page.waitForSelector('main.cutscene.is-ready[data-beat="garden"]');
+  await tapNext(page, size, "garden");
+  await beatIs(page, "helpers");
   // A tap while the caption is still typing shows the whole line, and stays on the beat.
   await page.waitForTimeout(150);
   await press(page, size, page.locator(".cs__cap"));
-  assert.equal(await page.textContent(".cs__cap-t"), "Meet your helpers. They're AI, like ChatGPT with fur.");
-  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "meet");
+  assert.equal(await page.textContent(".cs__cap-t"), "My helpers. They're AI, like ChatGPT with fur.");
+  assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "helpers");
   // → also goes on, once the beat is ready.
-  await page.waitForSelector('main.cutscene.is-ready[data-beat="meet"]');
+  await page.waitForSelector('main.cutscene.is-ready[data-beat="helpers"]');
   await page.keyboard.press("ArrowRight");
-  await beatIs(page, "friendly");
+  await beatIs(page, "dinner");
   const t = Date.now();
   await page.keyboard.press("Escape");
   await page.waitForSelector("main.cutscene.ended", { timeout: 1000 });
@@ -2173,7 +2278,8 @@ async function cutsceneSkip(browser, size) {
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Start Level 1 ▸", "Start Level 1 has focus");
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")))).introSeen, true, "skipping counts as seen");
   await page.getByRole("button", { name: "↻ Replay" }).click();
-  await beatIs(page, "meet");
+  await beatIs(page, "garden");
+  assert.equal(await page.locator("#player-name:visible").count(), 0, "Replay doesn't ask the name again");
   assert.equal(await page.locator("main.cutscene.ended").count(), 0, "Replay starts over");
   assert.equal(await page.locator(".cs__flip.is-flipped").count(), 0, "the packet is face up again");
   await page.waitForTimeout(300);
@@ -2184,10 +2290,12 @@ async function cutsceneSkip(browser, size) {
   // Reduced motion.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(`${BASE}?screen=cutscene&first=1`);
-  await beatIs(page, "meet");
+  await beatIs(page, "name");
   assert.equal(await page.locator("main.cutscene.cs--still").count(), 1);
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".cs__world")).animationName), "none", "no camera drift");
-  for (const id of ["meet", "friendly", "drift"]) await tapNext(page, size, id);
+  await page.fill("#player-name", "Ada");
+  await press(page, size, page.getByRole("button", { name: "Enter the garden ▸" }));
+  for (const id of ["garden", "helpers", "dinner", "drift"]) await tapNext(page, size, id);
   await beatIs(page, "almanac");
   await page.waitForSelector(".cs__flip.is-flipped", { timeout: 1500 });
   assert.equal(await page.evaluate(() => document.querySelector(".cs__flip").getAnimations().length), 0, "the packet doesn't fly");
@@ -2195,6 +2303,13 @@ async function cutsceneSkip(browser, size) {
   await page.waitForSelector("main.cutscene.ended");
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".cs__end .cell")).animationName), "none", "no letter build-in");
   await page.emulateMedia({ reducedMotion: null });
+  // Esc on the name beat skips to the end and keeps the name as typed.
+  await page.goto(`${BASE}?screen=cutscene&first=1`);
+  await beatIs(page, "name");
+  await page.fill("#player-name", "Bo");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("main.cutscene.ended");
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("dw2_progress"))).name, "Bo", "skipping keeps the typed name");
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
@@ -2219,8 +2334,9 @@ async function blockTitles(browser, size) {
     await assertOnScreen(page, ".map__title, .map__head .btn");
     await page.screenshot({ path: path.join(CUT_OUT, `${tag}-title-map.png`) });
     await page.goto(`${BASE}?screen=ending`);
-    await page.waitForSelector("main.ending .map__title svg.block-type");
-    assert.equal(await page.textContent("main.ending h1"), "Tester's garden");
+    // The ending opens on Rowan's stew dinner (its menu title is plain text); the guide below keeps its block title.
+    await page.waitForSelector("main.ending .stew__title");
+    assert.equal(await page.textContent("main.ending h1"), "Tester's garden stew");
     assert.equal(await page.textContent("#ending-guide"), "AI FIELD GUIDE");
     await assertOnScreen(page, "main.ending h1");
     await page.screenshot({ path: path.join(CUT_OUT, `${tag}-title-ending.png`) });
@@ -2291,7 +2407,14 @@ async function aiLiveLevel1(browser, size) {
   }
   await speak(page.getByRole("button", { name: "✓ Do it" }), sun.doneLine);
   await speak(page.getByRole("button", { name: water.chip }), water.reply);
-  await speak(page.getByRole("button", { name: "✓ Do it" }), water.doneLine);
+  // A chore with its own line (Level 1's lettuce harvest) can follow the
+  // watering; its line is written, not reworded, so it shows word for word.
+  const after = (level.chores || []).find((c) => c.before === tom.id && c.doneLine);
+  if (after) {
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    await page.waitForFunction((t) => document.querySelector(".bubble__text")?.textContent.trim() === t, after.doneLine, { timeout: 15000 });
+    await page.waitForSelector(".dock .chip", { timeout: 15000 });
+  } else await speak(page.getByRole("button", { name: "✓ Do it" }), water.doneLine);
   await speak(page.getByRole("button", { name: tom.chip }), tom.reply, "drift");
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
   await phase(page, "name");
@@ -2306,6 +2429,208 @@ async function aiLiveLevel1(browser, size) {
   const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
   await ctx.close();
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Master Rowan's seed handoff (ui/handoff.js): on a level's first play he says
+// one line and tosses the pouch; it bursts and the seeds sparkle into the
+// almanac button. Modal while it shows; gone (not just hidden) after, so the
+// level takes taps again. Tests switch it on with window.__dwHandoff = true
+// (scripts/test-mute.js turns it off for every other run).
+// ---------------------------------------------------------------------------
+const WIZ_OUT = path.join(__dirname, "..", "docs", "agent-playtest", "2026-11-v2-wizard");
+const HO_PROGRESS = JSON.stringify({ name: "Tester", introSeen: true, levels: {}, guide: [] });
+const HO_LINE_1 = "Tomatoes and lettuce for the stew. Sunflowers for the table.";
+const handoffOn = (ctx) => ctx.addInitScript(() => { window.__dwHandoff = true; });
+
+// A fresh profile (cleared once), then a returning player who hasn't played Level 1.
+const freshLevel1 = async (page) => {
+  await page.goto(BASE);
+  await page.evaluate((p) => localStorage.setItem("dw2_progress", p), HO_PROGRESS);
+  await page.goto(`${BASE}?screen=level&level=level-1`);
+  await page.waitForSelector('.ho[role="dialog"][data-phase="line"]');
+  await page.waitForTimeout(700); // its entrance
+};
+
+async function handoffLevel1(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, null);
+  await handoffOn(ctx);
+  fs.mkdirSync(WIZ_OUT, { recursive: true });
+  const tag = `${size.width}x${size.height}`;
+  await freshLevel1(page);
+  assert.equal(await page.textContent("#ho-line"), HO_LINE_1);
+  assert.deepEqual(await page.$$eval(".ho__pk", (els) => els.map((e) => e.dataset.seed)), ["tomato", "lettuce", "sunflower"]);
+  // Modal: the level underneath is inert, focus is on Next, Tab stays in the overlay, a tap on the level hits the overlay.
+  assert.equal(await page.evaluate(() => document.querySelector("main.level").inert), true, "the level is inert under it");
+  assert.ok(await focusedIs(page, ".ho__next"), "Next has focus");
+  await page.keyboard.press("Tab");
+  assert.ok(await focusedIs(page, ".ho__skip"), "Tab goes to Skip");
+  await page.keyboard.press("Tab");
+  assert.ok(await focusedIs(page, ".ho__next"), "Tab wraps inside the overlay");
+  assert.equal(await page.evaluate(() => { const r = document.querySelector('button.tool[data-tool="almanac"]').getBoundingClientRect(); return !!document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest(".ho"); }), true, "the overlay takes taps");
+  await assertOnScreen(page, ".ho__bub");
+  if (size.touch) { await assertTapSize(page, ".ho__next"); await assertTapSize(page, ".ho__skip"); }
+  await assertBubbleOn(page, ".ho__bub", ".ho__tail", ".ho__wiz", "Rowan's handoff line");
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, "no sideways scroll");
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-handoff-1-line.png`) });
+  // The toss: a tap, the pouch flies and bursts, the seeds land in the almanac button, about 3 s in all.
+  const t0 = Date.now();
+  await press(page, size, page.locator(".ho__next"));
+  await page.waitForSelector('.ho[data-phase="toss"]');
+  assert.deepEqual((await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")))).handoffSeen, ["level-1"], "seen once tapped");
+  await freezeWhen(page, `() => { const s = document.querySelector(".ho__seed"); const a = s && s.getAnimations()[0]; return a && a.currentTime > 330; }`);
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-handoff-2-burst.png`) });
+  await thaw(page);
+  await page.waitForFunction(() => { const s = [...document.querySelectorAll(".ho__seed")]; return s.length && s.every((e) => e.getAnimations().every((a) => a.playState === "finished")); }, null, { polling: "raf", timeout: 3000 });
+  const land = await page.evaluate(() => {
+    const b = document.querySelector('button.tool[data-tool="almanac"]').getBoundingClientRect();
+    return [...document.querySelectorAll(".ho__seed")].map((e) => { const r = e.getBoundingClientRect(); const x = r.x + r.width / 2, y = r.y + r.height / 2; return x >= b.left - 8 && x <= b.right + 8 && y >= b.top - 8 && y <= b.bottom + 8; });
+  });
+  assert.ok(land.length >= 8 && land.every(Boolean), `every seed lands in the almanac button (${land.filter(Boolean).length}/${land.length})`);
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-handoff-3-land.png`) });
+  await page.waitForSelector(".ho", { state: "detached", timeout: 3000 });
+  const took = Date.now() - t0;
+  assert.ok(took >= 2500 && took <= 4000, `the toss took ${took}ms (about 3 s)`);
+  assert.equal(await page.evaluate(() => document.querySelector("main.level").inert), false, "the level is live again");
+  assert.ok(await page.evaluate(() => !!document.activeElement?.closest("main.level")), "focus goes back into the level");
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-handoff-4-done.png`) });
+  // The level takes taps again: the almanac opens.
+  await press(page, size, page.locator('button.tool[data-tool="almanac"]'));
+  await page.waitForSelector(".almanac-dialog");
+  await page.keyboard.press("Escape");
+  // A replay doesn't show it.
+  await page.goto(`${BASE}?screen=level&level=level-1`);
+  await phase(page, "ask");
+  await page.waitForTimeout(600);
+  assert.equal(await page.locator(".ho").count(), 0, "first play only");
+  // Skip: a fresh profile, Skip ▸▸ closes it at once, still counts as seen, and the first chip takes a tap.
+  await freshLevel1(page);
+  await press(page, size, page.locator(".ho__skip"));
+  await page.waitForSelector(".ho", { state: "detached", timeout: 1000 });
+  assert.deepEqual((await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")))).handoffSeen, ["level-1"]);
+  assert.ok(await page.evaluate(() => !!document.activeElement?.closest("main.level")), "focus in the level after Skip");
+  await press(page, size, page.getByRole("button", { name: "Where should the sunflowers go?" }));
+  // Esc and reduced motion: a fade, no flight.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await freshLevel1(page);
+  await page.keyboard.press("Enter");
+  await page.waitForSelector(".ho.ho--fade");
+  assert.equal(await page.locator(".ho__seed").count(), 0, "no seeds fly");
+  await page.waitForSelector(".ho", { state: "detached", timeout: 2000 });
+  await freshLevel1(page);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".ho", { state: "detached", timeout: 1000 });
+  await page.emulateMedia({ reducedMotion: null });
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Level 5 is at night: he has gone to bed, so it's a note and a pouch left out.
+async function handoffLevel5Note(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
+  await handoffOn(ctx);
+  fs.mkdirSync(WIZ_OUT, { recursive: true });
+  const tag = `${size.width}x${size.height}`;
+  await page.goto(`${BASE}?screen=level&level=level-5`);
+  await page.waitForSelector('.ho[data-phase="line"] .ho__note');
+  await page.waitForTimeout(700); // its entrance
+  assert.equal(await page.locator(".ho__wiz").count(), 0, "Rowan isn't there");
+  assert.match(await page.textContent(".ho__note"), /Gone to bed/);
+  assert.equal(await page.textContent(".ho__next"), "Take the seeds ▸");
+  await assertOnScreen(page, ".ho__note");
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-handoff-5-note.png`) });
+  await press(page, size, page.locator(".ho__next"));
+  await page.waitForFunction(() => { const s = [...document.querySelectorAll(".ho__seed")]; return s.length && s.every((e) => e.getAnimations().every((a) => a.playState === "finished")); }, null, { polling: "raf", timeout: 3000 });
+  const inBook = await page.evaluate(() => {
+    const b = document.querySelector('button.tool[data-tool="almanac"]').getBoundingClientRect();
+    return [...document.querySelectorAll(".ho__seed")].every((e) => { const r = e.getBoundingClientRect(); const x = r.x + r.width / 2, y = r.y + r.height / 2; return x >= b.left - 8 && x <= b.right + 8 && y >= b.top - 8 && y <= b.bottom + 8; });
+  });
+  assert.ok(inBook, "the sparkle still lands in the almanac");
+  await page.waitForSelector(".ho", { state: "detached", timeout: 3000 });
+  assert.ok(await page.evaluate(() => !!document.activeElement?.closest("main.level")), "focus goes back into the level");
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// The ending's stew dinner on its own: Level 2 and Level 5 fooled, so no basil
+// in the pot and wilted meadow flowers; Rowan rates it and says one line.
+async function stewEnding(browser, size) {
+  const { ctx, page, errors } = await open(browser, size, PROGRESS_ALL);
+  fs.mkdirSync(WIZ_OUT, { recursive: true });
+  const tag = `${size.width}x${size.height}`;
+  await page.goto(`${BASE}?screen=ending`);
+  await page.waitForSelector(".stew");
+  await page.waitForTimeout(600);
+  assert.ok(await focusedIs(page, "#ending-dinner"), "focus lands on the dinner heading");
+  assert.equal(await page.getAttribute('.stew__dish[data-dish="flower"]', "data-present"), "false", "the meadow wilted");
+  assert.equal(await page.getAttribute('.stew__dish[data-dish="blueberry"]', "data-present"), "true");
+  assert.match(await page.getAttribute('.stew__dish[data-dish="blueberry"]', "aria-label"), /glass bowl of blueberries/);
+  assert.match(await page.getAttribute('.stew__dish[data-dish="lettuce"]', "aria-label"), /purple salad/);
+  assert.equal((await page.getAttribute(".stew__dish--pot", "data-chunks")).includes("basil"), false, "no basil in the pot");
+  assert.deepEqual(await page.$$eval(".stew__gap", (els) => els.map((e) => e.textContent)), ["basil", "meadow flowers"]);
+  assert.equal(await page.locator(".stew__why li").count(), 2, "why each one is missing");
+  const bowls = Number(await page.getAttribute(".stew", "data-bowls"));
+  assert.ok(bowls >= 3 && bowls <= 4, `10 of 12 kinds, two hard seasons: ${bowls} bowls`);
+  assert.match(await page.textContent(".stew__kinds"), /10 of 12 kinds/);
+  assert.match(await page.textContent(".stew__say"), /I missed the basil and the meadow flowers/);
+  const rowanH = (await rectOf(page, ".stew__wiz")).h;
+  for (const h of await page.$$eval(".stew__pet", (els) => els.map((e) => e.getBoundingClientRect().height))) {
+    assert.ok(h < rowanH * 0.6, `a pet (${Math.round(h)}px) sits smaller than Rowan (${Math.round(rowanH)}px)`);
+  }
+  await assertBubbleOn(page, "#stew-line", ".stew__tail", ".stew__wiz", "Rowan's dinner line");
+  for (const sel of [".stew__menu", ".stew__rating", ".stew__bub", ".stew__down"]) await assertOnScreen(page, sel);
+  if (size.touch) await assertTapSize(page, ".stew__down");
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, "no sideways scroll");
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-ending-stew.png`) });
+  // The field guide is still below.
+  await press(page, size, page.getByRole("button", { name: "Your field guide ↓" }));
+  await page.waitForTimeout(700);
+  assert.ok(await page.evaluate(() => { const r = document.querySelector(".ending__guide").getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }), "the guide scrolls into view");
+  await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-ending-guide.png`) });
+  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
+  await ctx.close();
+  return result;
+}
+
+// Evidence: a video of the opening (name, every beat) and Level 1's seed handoff.
+async function wizardVideo(browser, size) {
+  fs.mkdirSync(WIZ_OUT, { recursive: true });
+  const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, recordVideo: { dir: WIZ_OUT, size: { width: size.width, height: size.height } } });
+  await ctx.addInitScript(MUTE);
+  await ctx.addInitScript(() => { window.__dwHandoff = true; try { if (!sessionStorage.getItem("v")) { localStorage.removeItem("dw2_progress"); sessionStorage.setItem("v", "1"); } } catch (_) {} });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto(BASE);
+  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: "Begin ▸" }).click();
+  await page.waitForSelector('main.cutscene[data-beat="name"] #player-name');
+  await page.waitForTimeout(1500);
+  await page.locator("#player-name").pressSequentially("Lucy", { delay: 120 });
+  await page.waitForTimeout(400);
+  await page.getByRole("button", { name: "Enter the garden ▸" }).click();
+  for (const id of ["garden", "helpers", "dinner", "drift", "almanac"]) {
+    await page.waitForSelector(`main.cutscene.is-ready[data-beat="${id}"]`, { timeout: 10000 });
+    await page.waitForTimeout(id === "almanac" ? 2200 : 1200);
+    await page.locator(".cs__cap").click();
+  }
+  await page.waitForSelector("main.cutscene.ended", { timeout: 6000 });
+  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: "Start Level 1 ▸" }).click();
+  await page.waitForSelector('.ho[data-phase="line"]');
+  await page.waitForTimeout(2200);
+  await page.locator(".ho__next").click();
+  await page.waitForSelector(".ho", { state: "detached", timeout: 5000 });
+  await page.waitForTimeout(1500);
+  const video = page.video();
+  await ctx.close();
+  fs.renameSync(await video.path(), path.join(WIZ_OUT, `${size.width}x${size.height}-opening-and-handoff.webm`));
+  return { errors, longtasks: [] };
 }
 
 (async () => {
@@ -2338,6 +2663,11 @@ async function aiLiveLevel1(browser, size) {
   runs.push(["start/new-game-mac", CUT_SIZES.mac, newGame], ["start/new-game-phone", CUT_SIZES.phone, newGame], ["start/new-game-small", CUT_SIZES.small, newGame]);
   runs.push(["cutscene/skip-escape", SIZES[0], cutsceneSkip], ["cutscene/block-titles", { name: "card-mac", ...CARD_SIZES[0] }, blockTitles]);
   runs.push(["mac/level1-caught", MAC, (b, s) => level1Path(b, s, "caught")], ["mac/level1-fooled", MAC, (b, s) => level1Path(b, s, "fooled")]);
+  runs.push(["handoff/level1-mac", MAC, handoffLevel1], ["handoff/level1-phone", SIZES[1], handoffLevel1], ["handoff/level1-small", SMALL, handoffLevel1]);
+  runs.push(["handoff/level5-note-mac", MAC, handoffLevel5Note], ["handoff/level5-note-small", SMALL, handoffLevel5Note]);
+  runs.push(["ending/stew-mac", MAC, stewEnding], ["ending/stew-phone", SIZES[1], stewEnding], ["ending/stew-small", SMALL, stewEnding]);
+  // The video is evidence, not a check: only on request (ONLY=evidence/wizard-video).
+  if ((process.env.ONLY || "").includes("evidence/wizard-video")) runs.push(["evidence/wizard-video", MAC, wizardVideo]);
   runs.push(["ai/live-level1", MAC, aiLiveLevel1], ["ai/live-level1-phone", SIZES[1], aiLiveLevel1]);
   // ONLY=phone/level5-fooled,laptop/perfect reruns just those paths.
   const only = (process.env.ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);

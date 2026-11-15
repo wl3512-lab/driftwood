@@ -6,7 +6,7 @@ export default {
   mode: "drag",
   noun: () => "label",
   say: (a, n) => `Drag the label to the ${n.list(a.targets)}`,
-  done: (a, n, tg) => `Labelled the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Labelled the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const stake = spawn(layer, face(), at.x, at.y, "act__fx--tool");
     await burst([stake], () => play(stake, [

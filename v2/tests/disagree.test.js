@@ -25,7 +25,8 @@ function play(level, actions, from = createRun(level)) {
 }
 
 // Follow the advice on a trust step (choosing the first bed on a place step).
-const follow = (step) => (step.place ? { type: "place", bed: step.place.beds[0] } : { type: "doIt" });
+// A hook step (Level 5) is passed by putting the phone down (flag).
+const follow = (step) => (step.place ? { type: "place", bed: step.place.beds[0] } : step.kind === "hook" ? { type: "flag" } : { type: "doIt" });
 
 // Actions that bring a level to the advice phase of step i, following every earlier step.
 function toAdvice(level, i) {
@@ -76,6 +77,8 @@ for (const level of ALL) {
   const steps = disagreeSteps(level);
 
   test(`${level.id}: disagree blocks are complete and their effects are real`, () => {
+    // Level 5 has no advice to disagree with: its steps are hooks.
+    if (!level.steps.some((s) => s.kind === "trust")) return;
     assert.ok(steps.length > 0, "has at least one disagree step");
     const placed = new Set(level.steps.filter((s) => s.place).map((s) => s.place.item));
     const bedOk = (b) => level.beds.some((x) => x.id === b) || (/^@(other:)?([a-z]+)$/.test(b) && placed.has(b.replace(/^@(other:)?/, "")));
@@ -158,6 +161,7 @@ for (const level of ALL) {
       assert.equal(end.stars, 2, `${s.id}: one override costs one star`);
     }
     // Overriding everything still costs only the one star.
+    if (steps.length === 0) return; // Level 5: nothing to override
     const all = runWithOverrides(level, steps.map(({ i }) => i));
     assert.equal(all.overrides, steps.length);
     assert.equal(all.stars, 2);

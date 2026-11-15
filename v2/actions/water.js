@@ -7,7 +7,7 @@ export default {
   mode: "drag",
   noun: () => "watering can",
   say: (a, n) => `Drag the watering can to the ${n.list(a.targets)}`,
-  done: (a, n, tg) => `Watered the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Watered the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const top = at.y - Math.min(70, at.h * 0.3);
     const can = spawn(layer, face(), at.x, top, "act__fx--tool");

@@ -1,0 +1,121 @@
+/* Level 3 liquids: the hose jet, the bug-spray mist, splash drops, and the
+   ladybug / photo / lens effects of the Level 3 kinds (v2/actions/spray.js,
+   release.js, magnifier.js, photo.js). Loaded by spray.js itself.
+
+   The liquid look, for any kind that shows water (reuse these classes):
+   - .l3-jet: a 10px pixel stream. Flat colour bands (no gradients that blur),
+     1px-ish light top edge and dark bottom edge as box-shadows, chunks that
+     scroll along it with steps() timing. It reveals from the nozzle with a
+     clip-path inset animated in steps, never a smooth grow or glow.
+   - .l3-jet--mist: the same, wider and broken into grey-green puffs.
+   - .l3-drop: a 6px square droplet with a dark outline; splashes move in
+     steps(5).
+   All timing is steps(); prefers-reduced-motion shortens everything in JS. */
+:root {
+  --l3-water: #4aa3df;
+  --l3-water-hi: #cfeeff;
+  --l3-water-lo: #2a6fa8;
+  --l3-ink: #2b1d14;
+  --l3-mist: #a9b4a2;
+  --l3-mist-lo: #7d8a78;
+}
+
+.l3-jet {
+  position: absolute;
+  height: 10px;
+  transform-origin: 0 50%;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    repeating-linear-gradient(90deg,
+      var(--l3-water) 0 10px,
+      var(--l3-water-hi) 10px 14px,
+      var(--l3-water) 14px 20px,
+      var(--l3-water-lo) 20px 24px);
+  background-size: 24px 100%;
+  box-shadow: 0 -2px 0 var(--l3-water-hi), 0 2px 0 var(--l3-water-lo), 0 4px 0 rgba(43, 29, 20, 0.35);
+  clip-path: inset(0 100% 0 0);
+  image-rendering: pixelated;
+}
+.l3-jet--mist {
+  height: 18px;
+  background:
+    repeating-linear-gradient(90deg,
+      var(--l3-mist) 0 6px,
+      transparent 6px 9px,
+      var(--l3-mist-lo) 9px 13px,
+      transparent 13px 18px);
+  background-size: 18px 100%;
+  box-shadow: none;
+  opacity: 0.85;
+}
+
+.l3-splash { z-index: 4; }
+.l3-drop {
+  width: 8px;
+  height: 8px;
+  background: var(--l3-water);
+  box-shadow: inset -2px -2px 0 var(--l3-water-lo), 0 0 0 1px var(--l3-ink);
+}
+.l3-drop--mist { background: var(--l3-mist); box-shadow: 0 0 0 1px var(--l3-mist-lo); }
+.l3-bug { z-index: 4; }
+.l3-nozzle { z-index: 5; }
+
+/* release: the ladybugs that stay on the plant afterwards. */
+.l3-ladies { position: relative; width: 0; height: 0; }
+.l3-ladies > * { position: absolute; transform: translate(-50%, -50%); }
+
+/* magnifier: a pixel lens with the plant big inside it. */
+.l3-lens {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 6px solid var(--l3-ink);
+  box-shadow: inset 0 0 0 4px #cfd6da, 0 4px 0 rgba(43, 29, 20, 0.35);
+  background: #fff8e6;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  z-index: 5;
+}
+.l3-lens img, .l3-lens svg { width: 120px; height: 120px; image-rendering: pixelated; }
+.l3-lens__note {
+  position: absolute;
+  z-index: 6;
+  white-space: nowrap;
+  font: 700 12px/1.2 var(--font-ui, monospace);
+  color: var(--l3-ink);
+  background: #fff8e6;
+  border: 2px solid var(--l3-ink);
+  padding: 3px 6px;
+}
+
+/* photo: a stepped white flash, and the polaroid it leaves. */
+.l3-flash {
+  width: 140px;
+  height: 110px;
+  background: #fffdf4;
+  z-index: 6;
+  opacity: 0;
+}
+.l3-polaroid { display: grid; justify-items: center; gap: 2px; transform: rotate(-6deg); }
+.l3-polaroid img, .l3-polaroid svg { width: 40px; height: 40px; }
+.l3-polaroid span {
+  font: 700 10px/1.1 var(--font-ui, monospace);
+  color: var(--l3-ink);
+  background: #fff8e6;
+  border: 2px solid var(--l3-ink);
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+.act-mark.l3-photo-mark { transform: translate(-50%, -105%); }
+.act-mark.l3-ladies-mark { transform: none; }
+
+/* cover with the l3 net: a fine mesh tiled over the whole bed, not one
+   stretched sprite, so the bushes still read through it. */
+.act-mark--cover:has(img[src$="l3-net.svg"]) {
+  background: url("../art/l3-net.svg") 0 0 / 40px 40px repeat;
+  image-rendering: pixelated;
+  opacity: 0.55;
+}
+.act-mark--cover img[src$="l3-net.svg"] { display: none; }

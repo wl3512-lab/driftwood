@@ -8,7 +8,7 @@ export default {
   mode: "drag",
   noun: (a, n) => `${n.plant(a.item)} packet`,
   say: (a, n) => `Drag the ${n.plant(a.item)} packet to the ${n.list(a.targets)}`,
-  done: (a, n, tg) => `Planted the ${n.plural(a.item)} in the ${n.bed(tg.bed)}.`,
+  done: (a, n, tg) => `Planted the ${n.plural(a.item)} in the ${n.target(tg)}.`,
   async animate(layer, at, { reduced, face }) {
     const r = rand(Math.round(at.x + at.y));
     const top = at.y - Math.min(70, at.h * 0.3);

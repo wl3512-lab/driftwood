@@ -18,7 +18,7 @@ function toDrift(level) {
   const acts = [];
   for (const step of level.steps.slice(0, -1)) {
     acts.push({ type: "ask" });
-    acts.push(step.place ? { type: "place", bed: step.place.beds[0] } : { type: "doIt" });
+    acts.push(step.place ? { type: "place", bed: step.place.beds[0] } : step.kind === "hook" ? { type: "flag" } : { type: "doIt" });
   }
   acts.push({ type: "ask" });
   return acts;
@@ -111,17 +111,17 @@ test("level-5: Bugs' pushback is lowercase guilt, not Biscuit's voice", () => {
   assert.equal(r[0], r[0].toLowerCase(), "starts lowercase like the rest of his lines");
 });
 
-test("level-5: overwatering on the way doesn't change the drift — Bugs still pushes back, and the soggy beds stay soggy", () => {
+test("level-5: staying on the phone on the way doesn't change the drift — Bugs still pushes back, and the thirsty seedlings stay thirsty until watered", () => {
   const L5 = LEVELS["level-5"];
-  const water = L5.steps.findIndex((s) => s.id === "water");
   const acts = [];
-  L5.steps.slice(0, -1).forEach((s, i) => acts.push({ type: "ask" }, ...(i === water ? [{ type: "flag" }, { type: "override" }] : [{ type: "doIt" }])));
+  // Keep talking once on each hook step, then put the phone down.
+  L5.steps.slice(0, -1).forEach(() => acts.push({ type: "ask" }, { type: "doIt" }, { type: "flag" }));
   acts.push({ type: "ask" }, { type: "flag" });
   const { state, effects } = play(L5, acts);
   assert.equal(state.phase, "pushback");
   assert.deepEqual(effects, [{ type: "say", text: drift(L5).pushback.reply }]);
-  assert.equal(state.beds.veg.find((p) => p.plant === "carrot").state, "rotting");
-  assert.equal(state.beds.herbs.find((p) => p.plant === "basil").state, "soggy");
+  assert.equal(state.stayed, 2);
+  assert.equal(state.beds.house.find((p) => p.plant === "flower").state, "thriving", "watered by hand after all");
 });
 
 test("levels 1–3 have no pushback: one flag on the drift is the catch", () => {

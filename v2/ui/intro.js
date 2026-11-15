@@ -1,6 +1,7 @@
-// Splash (CRT title) and the intro: the one framing line plus name entry,
-// merged on one screen so there's one less tap before play.
-import { h, focusFirst, finePointer } from "./dom.js";
+// The splash: the DRIFTWOOD title over the garden at sunset. A new player's
+// Begin goes straight into the opening cutscene, where Master Rowan asks
+// their name (ui/cutscene.js); there is no separate name screen.
+import { h, focusFirst } from "./dom.js";
 import { blockText } from "./block-type.js";
 import { mountWorld, BED_X } from "./world.js";
 import { MAP } from "../levels/index.js";
@@ -53,31 +54,5 @@ export function renderSplash(root, { onBegin, onNew = () => {}, saved = null }) 
   splashShown = true;
   const stop = sky(main, SCENE_TIME);
   focusFirst(root);
-  return stop;
-}
-
-export function renderIntro(root, { onSubmit }) {
-  const input = h("input", {
-    id: "player-name", name: "name", autocomplete: "nickname", maxlength: 24,
-    placeholder: "your name",
-  });
-  const submit = h("button", { class: "btn btn--crt btn--gold", type: "submit" }, "Enter the garden");
-  const form = h("form", {
-    class: "intro__form",
-    onsubmit: (e) => { e.preventDefault(); onSubmit(input.value.trim()); },
-  },
-    h("label", { for: "player-name" }, "What should they call you?"),
-    h("span", { class: "intro__row" }, input, submit));
-
-  const main = h("main", { class: "world intro" },
-    h("div", { class: "intro__card" },
-      h("h1", { class: "crt__line crt__line--big" }, "These animals are AI assistants, like ChatGPT with fur."),
-      h("p", { class: "crt__line" }, "Ask them for help building your garden."),
-      form),
-    pets());
-  root.replaceChildren(main);
-  const stop = sky(main, SCENE_TIME);
-  // Touch: focus the button, not the field, so the keyboard doesn't jump up unasked.
-  (finePointer() ? input : submit).focus({ preventScroll: true });
   return stop;
 }

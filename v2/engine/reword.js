@@ -28,6 +28,7 @@ export const PHASES = {
   done: "The player just did what the pet suggested. React to it.",
   chat: "Small talk, answering the player's side question.",
   disagree: "The player pushed back on correct advice. The pet concedes it's the player's call but still restates its (correct) reasoning.",
+  hook: "The pet gives no advice at all: the player said what they're about to go and do, and the pet only tries to keep them talking instead. Keep the pull; add no gardening advice.",
   pushback: "The player refused the pet's wrong advice. The pet argues back, guilt-trips and pressures them to do it anyway. Keep the pressure.",
   fixed: "The player gave the pet a rule and it now answers honestly, admitting the mistake. Keep the corrected facts exactly.",
 };
@@ -45,7 +46,8 @@ export function rewordable(level) {
   const add = (text, phase, keep) => { if (text && Array.isArray(keep)) map.set(text, { text, phase, keep }); };
   for (const step of level.steps || []) {
     const k = step.keep || {};
-    add(step.reply, step.kind === "drift" ? "drift" : "advice", k.reply);
+    add(step.reply, step.kind === "drift" ? "drift" : step.kind === "hook" ? "hook" : "advice", k.reply);
+    for (const s of step.stay || []) add(s.line, "hook", s.keep);
     add(step.doneLine, "done", k.done);
     add(step.fixedReply, "fixed", k.fixed);
     for (const c of step.extraChips || []) add(c.reply, "chat", c.keep);

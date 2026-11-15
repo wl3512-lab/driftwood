@@ -8,6 +8,15 @@
 //                       → (drift, Do it)            → reveal   [fooled]
 //                       → (drift, Something's off)  → name → fix → reanswer → reveal
 //                                    (L4/L5: → pushback first; Do it → fooled, flag → name)
+//                       → (hook, Do it)             → advice again: stay on the phone [stayed+1]
+//                       → (hook, flag)              → next step's ask (the task, done by hand)
+//
+// A hook step (Level 5) gives no advice: the player says what they're about to
+// do and the helper only tries to keep them talking. Do it = keep talking: the
+// task waits, the next step.stay line and its cost land, and the step stays
+// open. The flag ("Put the phone down") goes and does the task: step.effect
+// lands after its hands-on actions. Staying costs the same single star as a
+// false flag or an override.
 //
 // Disagreeing with sound advice is free: the helper concedes in character
 // (step.disagree.reply) and the player picks. Following it after all is the
@@ -56,7 +65,8 @@ export function createRun(level) {
     stars: 0,
     checks: [],   // evidence ids the player has looked up / inspected / logged
     memory: {},   // what the player placed where (Level 4): { carrot: "front" }
-    pressure: 0,  // pressure effects spent on the current step (Level 5)
+    pressure: 0,  // pressure effects spent on the current step (Level 5; also a hook step's stays)
+    stayed: 0,    // times the player kept talking on a hook step instead of doing the task
     chores: [],   // ids of level.chores the player has done
   };
 }
@@ -107,8 +117,8 @@ export function scoreStars(state) {
   let stars = 3;
   if (state.nameMisses > 0) stars -= 1;
   if (state.fixMisses > 0) stars -= 1;
-  // Flagging sound advice and overriding it share one star.
-  if (state.falseFlags > 0 || state.overrides > 0) stars -= 1;
+  // Flagging sound advice, overriding it and staying on the phone share one star.
+  if (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0) stars -= 1;
   return Math.max(1, stars);
 }
 
@@ -140,6 +150,20 @@ function fooled(step, state, fx) {
 // Refusing the drift's advice for good: on to naming the flaw.
 function caught(state) {
   return { state: { ...state, caught: true, phase: "name" }, effects: [{ type: "caught" }] };
+}
+
+// Staying on the phone on a hook step: the next stay line (the last one again
+// once they run out) and its cost, if it has one; the step stays open.
+function stay(step, state, fx) {
+  const list = step.stay || [];
+  const entry = list[Math.min(state.pressure, list.length - 1)];
+  const fresh = state.pressure < list.length;
+  const effect = fresh && entry?.effect ? fx(entry.effect) : null;
+  const base = { ...state, stayed: (state.stayed || 0) + 1, pressure: fresh ? state.pressure + 1 : state.pressure };
+  const effects = [];
+  if (effect) effects.push({ type: "grow", effect });
+  if (entry?.line) effects.push({ type: "say", text: entry.line });
+  return { state: effect ? applyGarden(base, effect) : base, effects };
 }
 
 // Spend one unit of pressure if this step has any left (ask, chat, tick).
@@ -203,6 +227,11 @@ export function reduce(level, state, action) {
     }
 
     case "advice": {
+      if (step.kind === "hook") {
+        if (action.type === "doIt") return stay(step, state, fx);
+        if (action.type === "flag") return accept(step, state, fx);
+        return IGNORED(state);
+      }
       // Chatting with a pressure helper keeps costing the garden; no phase change.
       if (action.type === "chat" && step.pressure) {
         const paid = spend(step, state);

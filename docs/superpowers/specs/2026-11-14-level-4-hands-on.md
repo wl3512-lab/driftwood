@@ -113,3 +113,41 @@ Contact sheet: docs/agent-playtest/2026-11-v2-actions/level-4-art.png
 - The existing level4 fooled, caught and retry runs must still pass with the same garden numbers and stars.
 - A new run checks that the poked label stays in the {placed:carrot} bed through the drift, and that tapping it opens the carrot evidence.
 - On the fooled path, the label ends up tipped over.
+
+## As built (wave 2, Phase B)
+
+The plan above was mapped onto the shared action system (docs/superpowers/specs/2026-11-14-driftwood-actions-format.md). Level 4 owns four kinds:
+
+- `measure`: the tape runs down the bed and leaves a dotted guide;
+- `furrow`: the hoe goes to each row mark and opens a furrow;
+- `sow-row`: the packet walks down each furrow mark while seeds drop in;
+- `water-row`: the can tips and a pixel water stream pours to the soil, splashes, and a dark wet patch spreads out in steps. With `soak` the player then holds to soak it. The stream and drops are Level 3's `.l3-jet` and `.l3-drop` (v2/css/l3-spray.css), so water looks the same in every level.
+
+All four use steps() timing and no smooth glows; reduced motion shortens them.
+
+| Beat | What the player does by hand |
+|---|---|
+| Arrival chore | Tap 6 weeds (2 per bed) |
+| Carrots (after the bed pick) | Tape down the chosen bed → hoe 3 marks down the row → packet down the 3 marks → pat the soil → push their carrot label in at the head of the row |
+| Chore | Water the carrot row (pixel stream), then hold to soak |
+| Pumpkins (back, or side on "my way") | Spade 2 hills → seed packet on each hill → push the pumpkin label in |
+| Chore | Drag 3 blueberries into the basket |
+| Lettuce, fooled (Do it or "Fine. Dig it over") | Trowel over the labelled carrot bed, 3 passes |
+| Lettuce, caught (reanswer's Do it) | Lettuce packet ×3 into the other bed → lettuce label → water it in (pixel stream) and soak |
+
+Differences from the plan:
+- The carrot row runs **down** the bed. On a phone (844×390) each bed is about 146×256 px, so three 56 px marks only fit one under another. The furrow art is turned to match.
+- The furrow, seed and guide marks fade once the row is sown, because the crop's own sown row takes over the bed. This keeps beds uncrowded. Only the labels stay standing for the rest of the level.
+- The label card with the player's name and date isn't built: `write-label` would need a new view card, and that's shared UI. The player's own label still stands in the bed they chose through the drift. On the fooled path it stays standing over the dug-up bed.
+- These planned items are cut:
+  - `rake`, `stow` and `mulch`: a chore after the last step never runs, and mulch would hide the hills.
+  - `hill`: done with the shared `cover` kind, using a mound as its cover art.
+  - `dig-over`: done with the shared `dig`, three passes.
+  - `transplant`: done with the shared `plant`, three drops.
+- Director arrows never cover the Map button, the goal sign, the garden meter, the almanac button or a bed label, at 1512×830, 844×390 or 568×320; the hand-run test checks this. That's why:
+  - the label spots sit about 40–50% down the bed;
+  - the weeds aim at a mid-bed spot rather than the whole bed;
+  - the basket stands in the gap between the front and side beds, 40% down.
+- Every chore keeps its Skip, and skipping never moves the garden bar. The hand-run test checks both.
+
+Tests: scripts/test-v2-level4-hands.cjs (fooled, caught, skip at 1512×830, 844×390 and 568×320, with real mouse/touch drags). Evidence: docs/agent-playtest/2026-11-v2-level4-wave2/.

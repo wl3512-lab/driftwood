@@ -1,0 +1,41 @@
+/* Level 2 (greenhouse) only: the windowsill bed reads as a real sill.
+   Above the sill line: the glass behind it. On the line: a wooden sill lip
+   that the pots, the seed packet and the tea jar stand on (their bottoms are
+   anchored to the line). Below it: the sill's front board. No terracotta field.
+   The props are % of the scene, so their sizes scale with the bed on a phone
+   and a laptop. Loaded by v2/actions/wipe.js, like l3-spray.css. */
+.level[data-scene="greenhouse"] .bed[data-bed="sill"] {
+  --sill-line: 81%;
+  --bed-detail: none;
+  --bed-light: none;
+  --bed-soil:
+    /* the lip: a light top edge, the plank, a dark shadow line */
+    /* drawn as bands from the line down: a stripe image anchored at the bottom whose top is the line */
+    linear-gradient(#d9ac72 0 4px, #a8784a 4px 18px, #4a2e17 18px 21px, transparent 21px) 0 100% / 100% calc(100% - var(--sill-line)) no-repeat,
+    /* the front board: plank seams */
+    repeating-linear-gradient(90deg, #7d5532 0 46px, #6a4528 46px 48px) 0 100% / 100% calc(100% - var(--sill-line) - 21px) no-repeat,
+    /* the glass: white glazing bars over the pale sky */
+    linear-gradient(90deg, transparent 0 calc(33.3% - 3px), #f4f8f2 calc(33.3% - 3px) 33.3%, transparent 33.3% calc(66.6% - 3px), #f4f8f2 calc(66.6% - 3px) 66.6%, transparent 66.6%) 0 0 / 100% var(--sill-line) no-repeat,
+    linear-gradient(#e3f2ea, #cfe9dd) 0 0 / 100% var(--sill-line) no-repeat,
+    #7d5532;
+  border: 6px solid #5d3a1e;
+  border-image: none;
+}
+
+/* Everything on the sill stands with its bottom on the sill line. */
+.level[data-scene="greenhouse"] .prop[data-prop^="pot-"],
+.level[data-scene="greenhouse"] .prop[data-prop="jar"],
+.level[data-scene="greenhouse"] .prop[data-prop="packet"] {
+  transform: translate(-50%, -100%);
+}
+.level[data-scene="greenhouse"] .prop[data-prop^="pot-"] { width: 15% !important; }
+.level[data-scene="greenhouse"] .prop[data-prop="jar"] { width: 7% !important; }
+.level[data-scene="greenhouse"] .prop[data-prop="packet"] { width: 5% !important; pointer-events: none; }
+/* The mint plug set in pot 1 stands in the pot's soil, at the pot's size. */
+.level[data-scene="greenhouse"] .act-mark--stand img { width: 64px; height: 64px; }
+
+/* The bench's corner trowel sat under the dock on a laptop: lift it clear of
+   the dock, below the basil rows. */
+.level[data-scene="greenhouse"] .bed[data-bed="bench"] {
+  --bed-detail: var(--spr-trowel) right 12px bottom 56px / var(--d) auto no-repeat;
+}

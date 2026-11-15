@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { emptyProgress, loadProgress, saveProgress, recordLevel, isUnlocked, allDone, markIntroSeen, needsIntro } from "../progress.js";
+import { emptyProgress, loadProgress, saveProgress, recordLevel, isUnlocked, allDone, markIntroSeen, needsIntro, needsHandoff, markHandoffSeen, startOver } from "../progress.js";
 
 function fakeStorage() {
   const data = new Map();
@@ -106,4 +106,21 @@ test("only a brand-new player is sent through the cutscene", () => {
   assert.equal(needsIntro({ ...emptyProgress(), name: "Ada" }), true);
   assert.equal(needsIntro(markIntroSeen(emptyProgress())), false);
   assert.equal(needsIntro(recordLevel(emptyProgress(), LEVEL, { stars: 1, fooled: true })), false, "played before the cutscene existed");
+});
+
+test("Rowan's handoff: first play only, remembered in the save, cleared by New game", () => {
+  let p = emptyProgress();
+  assert.equal(needsHandoff(p, "level-1"), true);
+  p = markHandoffSeen(p, "level-1");
+  assert.deepEqual(p.handoffSeen, ["level-1"]);
+  assert.equal(markHandoffSeen(p, "level-1"), p, "marking twice changes nothing");
+  assert.equal(needsHandoff(p, "level-1"), false);
+  assert.equal(needsHandoff({ ...emptyProgress(), levels: { "level-2": { stars: 3, fooled: false } } }, "level-2"), false, "a replay skips it");
+  const s = fakeStorage();
+  saveProgress(s, p);
+  assert.deepEqual(loadProgress(s).handoffSeen, ["level-1"]);
+  s.setItem("dw2_progress", JSON.stringify({ name: "A", handoffSeen: ["level-1", 3, null] }));
+  assert.deepEqual(loadProgress(s).handoffSeen, ["level-1"], "junk entries dropped");
+  assert.deepEqual(startOver(s).handoffSeen, []);
+  assert.deepEqual(loadProgress(s).handoffSeen, []);
 });

@@ -64,3 +64,20 @@ Wave 1's sprites already cover the trowel, hand, weed, seed, drop, clod and arro
 2. Add any of the four kinds that are missing, as new files.
 3. Write my own harness, `scripts/test-v2-level-1-hands-on.cjs`, which plays the trust, mine and drift paths with `completeAction` plus one real mouse drag and one touch drag. It checks that the director target matches the choice and that chores leave stars and trust unchanged.
 4. Screenshots at 1512×830 and 844×390.
+
+## As built (wave 2, shared kinds only)
+
+Wave 2 used no level-owned kinds, so the plan above was mapped onto the shared ones:
+
+| Beat | Built as |
+|---|---|
+| Chore at start: clear the South bed | `pull` ×4, spot `l1-stone` (the rake strokes were dropped) |
+| Sunflowers (South, or Shady corner on "my way") | `dig` ×2 → `plant` sunflower → `firm` → `poke` `l1-cane` (the stake moved in here, because a chore can't follow the sunflowers to the bed the player chose: L1 has no place step, so `@sunflower` doesn't resolve) |
+| Chore before water: weeds | `pull` ×3 weeds, East bed |
+| Water, trust | `hold` the East bed ("Top inch: dry") → `hold` the rain barrel ("Can's full") → `water` South + East |
+| Water, "every day" | `hold` the barrel → `water` the East bed ×3 ("Day 1, Day 2, Day 3") |
+| Chore before tomatoes: harvest | `pick` ×4 `l1-lettuce-leaf`, with a Mango done line |
+| Tomatoes, fooled | `dig` ×2 → `plant` → `firm` → `poke` cane, Shady corner |
+| Tomatoes, fixed | the same in the South bed, then `water` them in |
+
+The rain barrel is a prop (`id: "barrel"`, `./art/l1-rain-barrel.svg`) at the right edge of the scene. Sunflowers still take only half the South bed; the other half stays free for the tomatoes. Every chore keeps Skip, and stars, trust and the garden bar ignore chores. The harness is scripts/test-v2-level-1-hands-on.cjs.
