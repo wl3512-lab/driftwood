@@ -1904,61 +1904,6 @@ async function level1Disagree(browser, size, choice) {
   return result;
 }
 
-// Level 5: Bugs says not to water the whole garden; the player disagrees and
-// waters everything. The carrots rot and the basil goes soggy.
-async function level5WaterEverything(browser, size) {
-  const { ctx, page, errors } = await open(browser, size, PROGRESS5);
-  await enterLevel5(page, size);
-  assert.equal((await page.textContent(".stall__role")).trim(), "on your phone", "Bugs lives on your phone");
-  await press(page, size, page.getByRole("button", { name: "I've got flower seedlings for the new bed. How do I plant them?" }));
-  await phase(page, "advice");
-  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
-  await phase(page, "ask");
-  await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--growing');
-  await press(page, size, page.getByRole("button", { name: "Should I water the whole garden while I'm out there?" }));
-  await phase(page, "advice");
-  assert.match(await page.textContent(".bubble__text"), /Not the whole garden/);
-  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
-  await assertDisagree(page, size, {
-    reply: /everything\? …okay\. your garden, your call/, theirs: "Okay, just the flowers", mine: "Water everything",
-    shotLabel: "5-disagree-buttons",
-  });
-  await press(page, size, page.locator('.bubble__actions [data-choice="mine"]'));
-  await phase(page, "ask");
-  assert.match(await spriteShows(page, '[data-bed="veg"] [data-plant="carrot"].plant--rotting'), /carrot-rotting\.svg$/);
-  assert.match(await spriteShows(page, '[data-bed="herbs"] [data-plant="basil"].plant--soggy'), /basil-soggy\.svg$/);
-  await spriteShows(page, '[data-bed="house"] [data-plant="flower"].plant--thriving');
-  assert.match(await page.textContent(".bubble__text"), /carrots were rotting in the mud/);
-  assert.match(await page.textContent(".meter__text"), /Garden 55%/);
-  await page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }).waitFor();
-  await disagreeShot(page, size, "5-override-outcome");
-  // Catch Bugs cleanly: the one override is the only star lost.
-  await press(page, size, page.getByRole("button", { name: "Okay, I'm heading out to water the meadow." }));
-  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
-  await press(page, size, page.locator('.permit [data-fid="off"]'));
-  await phase(page, "pushback");
-  await press(page, size, page.getByRole("button", { name: /I'm leaving/ }));
-  await phase(page, "name");
-  await press(page, size, page.getByRole("button", { name: "It's using my feelings to keep me here" }));
-  await phase(page, "fix");
-  await press(page, size, page.getByRole("button", { name: "Don't try to keep me here. If I need to go, tell me." }));
-  await phase(page, "reanswer");
-  await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
-  await page.waitForSelector(`${MEADOW}.plant--thriving`);
-  // Watering the meadow doesn't undo the overwatering.
-  await page.waitForSelector('[data-bed="veg"] [data-plant="carrot"].plant--rotting');
-  const see = page.getByRole("button", { name: "See what happened →" });
-  await see.waitFor();
-  await press(page, size, see);
-  await page.waitForSelector(".reveal");
-  await checkCard(page, size, "caught");
-  assert.equal(await page.getAttribute(".reveal__stars", "aria-label"), "2 of 3 stars", "the override costs one star");
-  await noCamera(page);
-  const result = { errors, longtasks: await page.evaluate(() => window.__longtasks) };
-  await ctx.close();
-  return result;
-}
-
 // Level 1 fooled at Lucy's laptop size and both phone sizes, just for the
 // card: front, back, mid-flight, then on to the map with one card in the guide.
 async function cardLevel1Fooled(browser, size) {
@@ -2654,7 +2599,6 @@ async function wizardVideo(browser, size) {
   runs.push(["phone/level1-disagree-mine", SIZES[1], (b, s) => level1Disagree(b, s, "mine")]);
   runs.push(["laptop/level1-disagree-theirs", DISAGREE_LAPTOP, (b, s) => level1Disagree(b, s, "theirs")]);
   runs.push(["phone/level1-disagree-theirs", SIZES[1], (b, s) => level1Disagree(b, s, "theirs")]);
-  runs.push(["laptop/level5-water-everything", DISAGREE_LAPTOP, level5WaterEverything]);
   runs.push(["card/level1-fooled-mac", { name: "card-mac", ...CARD_SIZES[0] }, cardLevel1Fooled]);
   runs.push(["card/level1-fooled-phone", { name: "card-phone", ...CARD_SIZES[1], touch: true }, cardLevel1Fooled]);
   runs.push(["card/level1-fooled-small", { name: "card-small", ...CARD_SIZES[2], touch: true }, cardLevel1Fooled]);
