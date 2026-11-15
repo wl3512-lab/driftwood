@@ -21,8 +21,28 @@ export function aiEnabled() {
   return typeof fetch === "function";
 }
 
+// Asked ahead: when the question chips appear, the game asks the AI for each
+// chip's answer straight away, so by the time the player taps one the
+// rewording is usually back and the helper only thinks for a moment. Each
+// prefetched answer is used once, so asking again gets a fresh wording.
+const ahead = new Map();
+const keyOf = (helper, line, asked) => `${helper?.id}|${line.text}|${asked || ""}`;
+export function prefetch(helper, line, opts = {}) {
+  const key = keyOf(helper, line, opts.asked);
+  if (!ahead.has(key)) ahead.set(key, fetchReword(helper, line, opts));
+}
+// Drop answers asked ahead for chips that weren't tapped (a new step, a new screen).
+export function forgetPrefetched() { ahead.clear(); }
+
 // Resolves to { text, ai } where ai says whether the line is the model's.
-export async function reword(helper, line, { asked, timeoutMs = TIMEOUT_MS } = {}) {
+export function reword(helper, line, opts = {}) {
+  const key = keyOf(helper, line, opts.asked);
+  const early = ahead.get(key);
+  if (early) { ahead.delete(key); return early; }
+  return fetchReword(helper, line, opts);
+}
+
+async function fetchReword(helper, line, { asked, timeoutMs = TIMEOUT_MS } = {}) {
   const fallback = { text: line.text, ai: false };
   const ctrl = typeof AbortController === "function" ? new AbortController() : null;
   const timer = setTimeout(() => ctrl?.abort(), timeoutMs);

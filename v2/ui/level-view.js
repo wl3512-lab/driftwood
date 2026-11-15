@@ -18,7 +18,7 @@ import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
 import { toolView, pageView } from "./tools.js";
 import { labelToken } from "./placement-view.js";
 import { rewordable } from "../engine/reword.js";
-import { aiEnabled, reword } from "./ai-voice.js";
+import { aiEnabled, reword, prefetch, forgetPrefetched } from "./ai-voice.js";
 import { planFor } from "../actions/plan.js";
 import { runPlan } from "../actions/runner.js";
 import { art as actionArt, artUrl } from "../actions/sprites.js";
@@ -29,9 +29,12 @@ import { PLANTS } from "../levels/plants.js";
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
 const ALMANAC = { id: "almanac", label: "Almanac", key: "/", sprite: ALMANAC_SPRITE };
-// The helper "thinks" at least this long before a reworded line appears (the
-// AI answer usually takes ~3 s; ai-voice.js gives up at 5 s and uses the written line).
-const THINK_MS = 1500;
+// The helper "thinks" at least this long before a reworded line appears. The
+// AI takes ~2–3 s, so each chip's answer is asked for as soon as the chips
+// show (askAhead): by the tap it's usually back, and the dots last ~0.75 s
+// (Lucy: "make animals think for less time, cut it in half"). ai-voice.js
+// still gives up at 5 s and uses the written line.
+const THINK_MS = 750;
 const isTyping = (el) => !!el && (el.matches?.("input, textarea, select") || el.isContentEditable);
 
 // `earlier`: finished plots from saved progress ({ src, alt, helper, caught }, see
@@ -198,6 +201,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
 
   let mounted = true;
   function unmount() {
+    forgetPrefetched();
     if (!mounted) return;
     mounted = false;
     document.removeEventListener("keydown", onKey);
@@ -520,8 +524,20 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       actions.length > 0 && h("div", { class: "bubble__actions" }, actions));
   }
 
+  // Ask the AI now for the line a chip would bring, so it's ready by the tap.
+  // The reducer is pure, so running it here changes nothing.
+  function askAhead(action, chipText) {
+    if (!aiOn) return;
+    const out = reduce(level, state, action);
+    const say = [...out.effects].reverse().find((fx) => fx.type === "say");
+    const line = say ? lines.get(say.text) : null;
+    if (line) prefetch(level.helper, line, { asked: fill(chipText, memoryVars(level, out.state.memory)) });
+  }
+
   function askControls(step) {
     const chip = (text, fid, onclick) => h("button", { class: "chip", "data-fid": fid, onclick }, t(text));
+    askAhead({ type: "ask" }, step.chip);
+    (step.extraChips || []).forEach((c) => askAhead({ type: "chat", reply: c.reply }, c.text));
     const chips = [
       chip(step.chip, "chip-0", () => { asked = step.chip; dispatch({ type: "ask" }); }),
       ...(step.extraChips || []).map((c, i) =>
