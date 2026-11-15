@@ -28,6 +28,7 @@ import { PLANTS } from "../levels/plants.js";
 import { cues as playCues, voice, setTension, sfx } from "../audio/index.js";
 import { decisionCues, driftOnScreen } from "../audio/cues.js";
 import { soundToggle } from "../audio/toggle.js";
+import { petAnimator, PET_MOOD } from "./pet-anim.js";
 
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
@@ -124,6 +125,14 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     soundToggle({ className: "snd--stall" }));
   const talk = h("div", { class: "dock__talk" });
   const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
+  // The helper's face: blinks, talks, and reacts to what the player does (ui/pet-anim.js).
+  const pet = petAnimator(stall.querySelector(".helper"));
+  const petReacts = (list) => {
+    for (const c of list) {
+      const mood = PET_MOOD[c.name];
+      if (mood) setTimeout(() => { if (mounted) pet.react(mood); }, (c.delay || 0) * 1000);
+    }
+  };
   const main = h("main", { class: "level", "data-scene": level.scene || "yard" }, scene, dock);
   main.preloaded = preloaded; // keep the Image objects alive while the level is mounted
   root.replaceChildren(main);
@@ -224,6 +233,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     document.removeEventListener("keydown", onKey);
     acting?.destroy();
     acting = null;
+    pet.stop();
     clock.destroy();
     for (const tl of tools) tl.view.destroy?.();
   }
@@ -240,12 +250,13 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (!action.acted) {
       const plan = planFor(level, state, action, out);
       if (plan.length > 0) {
-        if (action.type !== "chore") playCues(heard.filter((c) => !c.react));
+        if (action.type !== "chore") { playCues(heard.filter((c) => !c.react)); petReacts(heard.filter((c) => !c.react)); }
         return act(action, plan);
       }
     }
-    if (action.acted && action.type !== "chore") playCues([{ name: "chore-done" }, ...heard.filter((c) => c.react)]);
-    else playCues(heard);
+    const now_ = action.acted && action.type !== "chore" ? [{ name: "chore-done" }, ...heard.filter((c) => c.react)] : heard;
+    playCues(now_);
+    petReacts(now_);
     const petCue = heard.find((c) => c.opts?.pet && c.delay > 0);
     voiceDelay = petCue ? petCue.delay + 0.45 : 0;
     const prev = state;
@@ -361,8 +372,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       const line = t(said);
       const delay = voiceDelay;
       voiceDelay = 0;
-      if (delay > 0) setTimeout(() => { if (mounted && voiced === said) voice(level.helper.id, line); }, delay * 1000);
-      else voice(level.helper.id, line);
+      if (delay > 0) setTimeout(() => { if (mounted && voiced === said) { voice(level.helper.id, line); pet.talk(line); } }, delay * 1000);
+      else { voice(level.helper.id, line); pet.talk(line); }
     }
     // A chore waits before this step's question: it starts once the helper has spoken.
     const chore = !acting && !thinking ? pendingChore(level, state) : null;

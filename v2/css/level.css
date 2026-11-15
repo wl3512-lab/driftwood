@@ -320,7 +320,7 @@
     /* sky over grass seen through the window */
     linear-gradient(var(--sky) 0 62%, var(--grass-dark) 62% 70%, var(--grass) 70% 100%);
 }
-.stall .helper { width: 5rem; height: auto; margin-bottom: 14px; image-rendering: auto; }
+.stall .helper { width: 5rem; height: auto; margin-bottom: 8px; }
 .stall__plate { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.35rem 0.4rem 0.4rem; text-align: center; }
 .stall__name { font-size: 0.78rem; letter-spacing: 0.15em; color: #2e7d32; }
 .stall__role { font-size: 0.65rem; letter-spacing: 0.05em; color: #6b5a3e; }

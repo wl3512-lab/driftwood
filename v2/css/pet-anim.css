@@ -1,0 +1,26 @@
+/* The helper reacts (ui/pet-anim.js swaps the face; this moves the body).
+   Pixel-stepped like the rest of the game; transform only. */
+.stall .helper { image-rendering: pixelated; transform-origin: 50% 100%; }
+.helper.is-happy { animation: pet-hop 0.5s steps(6) 2; }
+.helper.is-shock { animation: pet-jolt 0.36s steps(4) 1; }
+.helper.is-sad { animation: pet-droop 0.9s steps(5) 1 forwards; }
+@keyframes pet-hop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  20% { transform: translateY(0) scale(1.06, 0.92); }
+  50% { transform: translateY(-14%) scale(0.96, 1.05); }
+  80% { transform: translateY(0) scale(1.04, 0.95); }
+}
+@keyframes pet-jolt {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-4%, -8%); }
+  50% { transform: translate(4%, -8%); }
+  75% { transform: translate(-2%, -3%); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes pet-droop {
+  0% { transform: scale(1, 1); }
+  100% { transform: scale(1.03, 0.94); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .helper.is-happy, .helper.is-shock, .helper.is-sad { animation: none; }
+}
