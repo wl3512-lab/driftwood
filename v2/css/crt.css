@@ -98,7 +98,7 @@ main.ending { min-height: 100dvh; font-family: var(--font-ui); }
 }
 .ending__plot--fooled { border-color: #6b2f1a; }
 .ending__plant { width: 64px; height: 64px; image-rendering: pixelated; }
-.ending__helper { width: 40px; height: 40px; margin-top: -0.4rem; }
+.ending__helper { width: auto; height: 48px; margin-top: -0.4rem; image-rendering: pixelated; }
 .ending__plot-title { font-weight: 700; }
 .ending__plot-helper { font-size: 0.75rem; opacity: 0.9; }
 .ending__plot-stars { color: #ffd54f; letter-spacing: 0.15em; font-size: 1.1rem; }

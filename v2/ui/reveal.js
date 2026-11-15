@@ -43,10 +43,17 @@ export function guideSlots(order, guide = [], currentId) {
 // Two fixed layouts drawn at design size, then scaled to fit the window.
 export const LAYOUTS = {
   wide: { cw: 440, ch: 616, gap: 80, side: 260, sideTalk: 380 },
-  compact: { cw: 252, ch: 352, gap: 28, side: 236, sideTalk: 300 },
+  // sideTalk: the helper's line is drawn bigger when the stage shrinks (it
+  // must read at 16px on screen), so a talking side is wider.
+  compact: { cw: 252, ch: 352, gap: 28, side: 236, sideTalk: 340 },
+  // Phones held upright: the big card on top, the field guide and the button
+  // in a row under it (side by side, the card would shrink to a stamp). A
+  // helper's line gets its own full-width row above them.
+  tall: { cw: 440, ch: 616, gap: 22, side: 440, sideTalk: 440, under: 170, underTalk: 300 },
 };
 export function stageSize(name, talk) {
   const L = LAYOUTS[name];
+  if (L.under) return { w: L.cw, h: L.ch + L.gap + (talk ? L.underTalk : L.under) };
   return { w: L.cw + L.gap + (talk ? L.sideTalk : L.side), h: L.ch };
 }
 // The wide card unless it would have to shrink below 80%; the compact one
@@ -56,6 +63,7 @@ export function pickLayout(vw, vh, talk, pad = 16) {
     const s = stageSize(name, talk);
     return Math.min((vw - 2 * pad) / s.w, (vh - 2 * pad) / s.h);
   };
+  if (vw <= 640 && vh > 500 && vh >= vw * 1.3) return { name: "tall", scale: Math.min(1, fit("tall")) };
   const wide = fit("wide");
   if (wide >= 0.8) return { name: "wide", scale: Math.min(1, wide) };
   return { name: "compact", scale: Math.max(0.5, Math.min(1.35, fit("compact"))) };
@@ -208,6 +216,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
     stage.style.setProperty("--k", String(scale));
     const L = LAYOUTS[pick.name];
     stage.style.setProperty("--side", `${talk ? L.sideTalk : L.side}px`);
+    if (L.under) stage.style.setProperty("--under", `${talk ? L.underTalk : L.under}px`);
   }
   layout();
   window.addEventListener("resize", layout);

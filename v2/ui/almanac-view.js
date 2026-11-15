@@ -353,21 +353,14 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     btn.classList.remove("pk--fresh", "pk--found");
     const back = backFor(plant, pop);
     const dim = h("div", { class: "inspect__dim", onclick: () => turnBack() });
-    // The packet is a 3D object: the back is its face, with two paper sheets
-    // stacked behind it (its thickness). .pkt turns (the flip), .pkt__tilt leans (rest + mouse).
+    // The packet: the back is its face, straight on so it reads; paper sheets
+    // behind it give it thickness. .pkt turns (the flip).
     const pkt = h("div", { class: "pkt" }, h("div", { class: "pkt__tilt" },
       h("i", { class: "pkt__rear", "aria-hidden": "true" }),
       h("i", { class: "pkt__rear pkt__rear--2", "aria-hidden": "true" }),
       back,
       h("i", { class: "pkt__sheen", "aria-hidden": "true" })));
     const layer = h("div", { class: "inspect" }, dim, pkt);
-    if (!calm() && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches) {
-      layer.addEventListener("pointermove", (ev) => {
-        const r = layer.getBoundingClientRect();
-        pkt.style.setProperty("--mx", ((ev.clientX - r.left) / r.width - 0.5).toFixed(3));
-        pkt.style.setProperty("--my", ((ev.clientY - r.top) / r.height - 0.5).toFixed(3));
-      });
-    }
     head.inert = true;
     screen.inert = true;
     panel.append(layer);
