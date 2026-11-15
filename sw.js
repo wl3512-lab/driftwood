@@ -1,12 +1,12 @@
 /* Driftwood service worker — offline + installable.
  *
  * Strategy: precache the static bundle on install; serve local files
- * cache-first (they only change when a new build ships, which bumps VERSION);
+ * network-first, falling back to the stored copy offline;
  * fetch CDN libraries (p5, fonts, face-api) network-first and keep a copy so
  * a second visit works with no connection at all. Camera models and the
  * optional live-AI proxy are never cached.
  */
-const VERSION = "dw-v31";
+const VERSION = "dw-v32";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -57,17 +57,15 @@ self.addEventListener("fetch", (event) => {
   if (!sameOrigin && !runtime) return;
 
   if (sameOrigin) {
-    // Cache-first, refreshed in the background so the next load has the latest.
-    // The refresh must revalidate: a plain fetch() can be answered from the
-    // HTTP cache, which would keep rewriting the same stale copy forever.
+    // Network-first, the stored copy only when offline. Cache-first served
+    // last visit's modules next to this visit's (ES modules are many files),
+    // so an update could run old and new code together: stuck drag ghosts,
+    // leftover sprites. `no-cache` revalidates instead of trusting the HTTP cache.
     event.respondWith(
-      caches.match(req).then((hit) => {
-        const refresh = fetch(req, { cache: "no-cache" }).then((res) => {
-          if (res && res.ok) caches.open(VERSION).then((c) => c.put(req, res.clone()));
-          return res;
-        }).catch(() => hit);
-        return hit || refresh;
-      })
+      fetch(req, { cache: "no-cache" }).then((res) => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
+        return res;
+      }).catch(() => caches.match(req))
     );
     return;
   }
