@@ -94,9 +94,11 @@
   .stew__why { font-size: 0.78rem; }
   .stew { --top: 72%; }
   /* his bubble centres over him, so a long line never runs off the right edge */
-  .stew__bub { left: 50%; translate: -50% 0; font-size: 0.95rem; max-width: min(300px, calc(100vw - 32px)); }
+  .stew__bub { left: 50%; translate: -50% 0; font-size: 1rem; max-width: min(300px, calc(100vw - 32px)); }
   .stew__tail { left: calc(50% - 4px); }
-  .stew__kinds { font-size: 0.7rem; }
+  .stew__kinds { font-size: 0.75rem; }
+  /* His rating sits above the button row: side by side at 360px they overlapped. */
+  .stew__rating { bottom: 60px; }
 
   /* ---------- the opening cutscene ----------
      The helpers stand in a row across the whole width, in front of Rowan
@@ -161,4 +163,35 @@
     --stake: 6px; box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
   }
   .scene__ground { padding-top: 1.2rem; }
+}
+
+/* ---------- phones on their side ---------- */
+@media (max-height: 500px) {
+  /* Every tap target at least 44px tall. */
+  .map__actions .btn, .guide__back, .map__done .btn, .ending__down { min-height: 44px; }
+  .intro .intro__form input, .intro .intro__form .btn { min-height: 44px; }
+  .level .act__back { min-height: 44px; }
+  .level .act__skip { min-width: 44px; min-height: 44px; }
+  /* The tool card's instruction reads at 16px; its hint line at 13px. */
+  .level .act__say { font-size: 1rem; }
+  .level .act__how { font-size: 0.8125rem; }
+  /* Rowan's verdict at the dinner reads at 16px. */
+  .stew__bub { font-size: 1rem; max-width: min(300px, 46vw); }
+  .stew__kinds { font-size: 0.7rem; }
+}
+
+/* Small phones on their side (568×320): every question visible without
+   scrolling. The bubble drops the name line (the stall right above names
+   the helper), and the questions are tighter left-aligned buttons. */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .dock { padding: 6px 8px; gap: 0.35rem; }
+  .dock .bubble { padding: 0.4rem 0.6rem; }
+  .dock .bubble__who { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .chips { gap: 0.35rem; }
+  .dock .chip { flex: 1 1 100%; min-height: 44px; padding: 0.3rem 0.55rem; font-size: 0.875rem; line-height: 1.25; text-align: left; }
+  .level .act__face { width: 48px; height: 48px; }
+  /* A chore's Skip moves to the card's bottom corner, beside the count, so
+     the instruction keeps the card's full width. */
+  .level .act__skip { top: auto; bottom: 2px; }
+  .level .act:has(.act__skip) .act__text { padding-right: 0; padding-bottom: 18px; }
 }

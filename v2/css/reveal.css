@@ -181,8 +181,26 @@
 
 .reveal__go { min-height: var(--btnH); padding: 0 20px; font-size: var(--fs-btn); white-space: nowrap; }
 
+/* The stage is scaled by --k to fit the window. On phones that shrinks the
+   helper's words and the button below what reads and taps comfortably, so
+   they are drawn larger in step: at least 16px words, a 12px name and a 44px
+   button once scaled. On a laptop (--k = 1) these are the sizes above. */
+.reveal__handoff-line { font-size: max(var(--fs-bub), calc(16px / var(--k, 1))); }
+.reveal__handoff-name { font-size: max(var(--fs-lab), calc(12px / var(--k, 1))); }
+.reveal__go { min-height: max(var(--btnH), calc(44px / var(--k, 1))); font-size: max(var(--fs-btn), calc(15px / var(--k, 1))); }
+
+/* Compact (phones on their side) with a helper talking: the line takes the
+   full width of the side, the guide and the button share the row under it. */
+.reveal[data-layout="compact"] .reveal__side:has(.reveal__handoff) {
+  --bw: 140px; --bh: 115px;
+  display: grid; grid-template-columns: var(--bw) minmax(0, 1fr); grid-template-rows: auto auto;
+  align-content: center; align-items: end; gap: 14px;
+}
+.reveal[data-layout="compact"] .reveal__side:has(.reveal__handoff) .reveal__handoff { grid-column: 1 / -1; }
+.reveal[data-layout="compact"] .reveal__side:has(.reveal__handoff) .reveal__go { width: 100%; padding: 6px 10px; white-space: normal; line-height: 1.2; }
+
 /* ---------- phones held upright: the card on top, the guide and button under it ---------- */
-.reveal[data-layout="tall"] { --gap: 26px; --fs-bub: 19px; --btnH: 60px; --fs-btn: 1.2rem; --bw: 170px; --bh: 156px; --bubPet: 60px; }
+.reveal[data-layout="tall"] { --gap: 22px; --fs-bub: 19px; --btnH: 60px; --fs-btn: 1.2rem; --bw: 170px; --bh: 156px; --bubPet: 60px; }
 .reveal[data-layout="tall"] .reveal__dim::before,
 .reveal[data-layout="tall"] .reveal__dim::after { left: 50%; top: 36%; }
 .reveal[data-layout="tall"] .reveal__stage { flex-direction: column; align-items: stretch; }
@@ -196,3 +214,17 @@
 .reveal[data-layout="tall"] .reveal__handoff-line { max-width: 100%; }
 .reveal[data-layout="tall"] .reveal__handoff-line::before { left: 18px; top: -9px; bottom: auto; transform: rotate(135deg); }
 .reveal[data-layout="tall"] .reveal__go { grid-column: 2; grid-row: 2; width: 100%; padding: 6px 12px; white-space: normal; line-height: 1.2; }
+/* Upright with a helper talking: the line runs the full width under the card
+   (beside the guide it covered the card's foot), and the helper stands below
+   it, between the guide and the button. */
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) {
+  --bw: 120px; --bh: 100px;
+  grid-template-columns: var(--bw) auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: 14px; row-gap: 12px;
+}
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__handoff { display: contents; }
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__handoff-line { grid-column: 1 / -1; grid-row: 1; align-self: end; max-width: 100%; }
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__handoff-line::before { left: 150px; top: auto; bottom: -9px; transform: rotate(-45deg); }
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__handoff-pet { grid-column: 2; grid-row: 2; align-self: end; }
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .fg { grid-column: 1; grid-row: 2; }
+.reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__go { grid-column: 3; grid-row: 2; align-self: end; }

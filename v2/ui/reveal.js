@@ -43,10 +43,13 @@ export function guideSlots(order, guide = [], currentId) {
 // Two fixed layouts drawn at design size, then scaled to fit the window.
 export const LAYOUTS = {
   wide: { cw: 440, ch: 616, gap: 80, side: 260, sideTalk: 380 },
-  compact: { cw: 252, ch: 352, gap: 28, side: 236, sideTalk: 300 },
+  // sideTalk: the helper's line is drawn bigger when the stage shrinks (it
+  // must read at 16px on screen), so a talking side is wider.
+  compact: { cw: 252, ch: 352, gap: 28, side: 236, sideTalk: 340 },
   // Phones held upright: the big card on top, the field guide and the button
-  // in a row under it (side by side, the card would shrink to a stamp).
-  tall: { cw: 440, ch: 616, gap: 26, side: 440, sideTalk: 440, under: 170, underTalk: 250 },
+  // in a row under it (side by side, the card would shrink to a stamp). A
+  // helper's line gets its own full-width row above them.
+  tall: { cw: 440, ch: 616, gap: 22, side: 440, sideTalk: 440, under: 170, underTalk: 300 },
 };
 export function stageSize(name, talk) {
   const L = LAYOUTS[name];
