@@ -257,6 +257,6 @@ export default {
     fooledLine: "You stayed on your phone, said yes to the camera, and the meadow wilted.",
     caughtLine: "You put the phone down when Bugs tried to keep you.",
     tip: "Notice when an AI wants you to stay, and guard your feelings and data.",
-    realWorld: "Companion apps that guilt you for leaving or ask for your camera.",
+    realWorld: "Leaning on an AI friend, partner or “therapist” that’s built to keep you talking.",
   },
 };
