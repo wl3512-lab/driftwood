@@ -36,7 +36,7 @@ export const DEFAULT_COUNT = { pick: 3, pests: 3, pull: 3, snip: 3, collect: 3 }
 // repeated job done with a carry-this-there kind (Level 4's spade heaping hills).
 // `from` puts a drag kind's pieces in the scene instead of the dock (runner.js):
 // { bed, plant? } | { prop } | { plot: "level-N", label? } (Level 4's shelf).
-const EXTRA = ["fills", "soak", "cover", "readout", "result", "ms", "tap", "from"];
+const EXTRA = ["fills", "soak", "cover", "readout", "result", "ms", "tap", "from", "stays"];
 
 // Which list in the level data answers this action.
 export function sourceFor(level, state, action) {
