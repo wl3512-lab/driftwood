@@ -248,6 +248,9 @@
   position: absolute; flex: none; min-height: 0; pointer-events: auto;
   background-size: 100% auto; background-position: 50% 0; background-repeat: no-repeat;
 }
+/* Level 3: waiting for the blueberries, they ripen slowly in the tub, step by
+   step, over the pick chore's wait (levels/level-3.js chores.pick.wait). */
+.bed[data-bed="tub"] .field--regrow.field--new::after { animation-duration: 3.4s; }
 .field--potted.field--new { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 
 .packets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }

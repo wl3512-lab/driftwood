@@ -40,7 +40,10 @@
 // effect lands, its doneLine is said). The view shows a pending chore in place
 // of the question chips; the reducer itself never blocks on one. Chores are
 // skippable unless `skippable: false`; skipped or done, they never change
-// stars, trust or the garden bar.
+// stars, trust or the garden bar. `when: { bed, plant, state }` holds a chore
+// back unless that plant is in that state (Level 3's ripe-berry pick only
+// follows the wait, not picking them early). `wait: { ms, line }` is for the
+// view: it shows the line and a progress cue for ms before the chore opens.
 
 import { resolveEffect } from "../mechanics/placement.js";
 import { nextPressureEffect } from "../mechanics/pressure.js";
@@ -80,7 +83,14 @@ export function pendingChore(level, state) {
   if (state.phase !== "ask") return null;
   const step = currentStep(level, state);
   if (!step) return null;
-  return (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id)) || null;
+  return (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id) && choreReady(state, c)) || null;
+}
+
+// A chore with `when` waits for its plant to be in that state.
+export function choreReady(state, chore) {
+  const w = chore.when;
+  if (!w) return true;
+  return (state.beds[w.bed] || []).some((p) => p.plant === w.plant && (!w.state || p.state === w.state));
 }
 
 // The step a chore comes before: `before: id`, `after: id` (the next step), or `at: "start"`.

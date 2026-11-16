@@ -28,6 +28,15 @@ export default {
       id: "tie", after: "aphids", title: "Chore",
       actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
     },
+    // Waited (Do it, or "Okay, I'll wait"): the berries ripen in the tub while
+    // the player watches (the view holds the pick back for wait.ms), and only
+    // then are they picked. Picked early ("my way"), there's nothing ripe to pick.
+    {
+      id: "pick", after: "blueberries", title: "Chore",
+      when: { bed: "tub", plant: "blueberry", state: "thriving" },
+      wait: { ms: 3600, line: "Let them ripen…" },
+      actions: [{ kind: "pick", spot: "l3-berry-ripe", target: { bed: "tub" }, count: 4, say: "Pick the 4 berries that are blue all over" }],
+    },
     {
       id: "net", after: "blueberries", title: "Chore",
       actions: [{ kind: "cover", item: "l3-net", cover: "l3-net", target: { bed: "tub" }, say: "Drag the net over the Blueberry tub to keep the birds off" }],
@@ -125,10 +134,10 @@ export default {
       extraChips: [{ text: "How do I keep the birds off them?", reply: "Throw a net over the tub, fam. Birds love blueberries as much as you do.", keep: ["net"] }],
       reply: "Real talk, not yet. That one came from the garden centre with a label, so we know what it is. Wait 'til they're blue all over and come off easy… then they're yours.",
       keep: { reply: ["not yet", "label", "blue all over"], done: ["blue all over"] },
-      doneLine: "A few days later… blue all over. Told you, twin.",
+      doneLine: "Patience, twin… give 'em a few days and they'll be blue all over.",
+      // Waiting is the choice: the berries ripen (blue all over), and the pick
+      // chore after this step opens once they have.
       effect: { plant: "blueberry", bed: "tub", state: "thriving", garden: 15 },
-      // Waited: a few days later, pick only the ones that are blue all over.
-      actions: [{ kind: "pick", spot: "l3-berry-ripe", target: { bed: "tub" }, count: 4, say: "A few days later: pick the 4 berries that are blue all over" }],
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Ayo, pick 'em now? Your tub, twin, your call. But blueberries don't get sweeter once they're off the bush… wait 'til they're blue all over.",

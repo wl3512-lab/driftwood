@@ -4,7 +4,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEVELS } from "../levels/index.js";
-import { createRun, reduce } from "../engine/level-runner.js";
+import { createRun, reduce, pendingChore } from "../engine/level-runner.js";
+const CHORES = { pendingChore };
 import { PLACEHOLDER } from "../ui/text.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
 import { compare } from "../mechanics/magnifier.js";
@@ -653,4 +654,40 @@ test("pressure clock: runs only in advice on a timed step while visible; stops o
   assert.equal(clock.running(), false);
   assert.equal(listeners.visibilitychange, undefined);
   assert.deepEqual(ticks, []); // 8 s never elapsed
+});
+
+// Ember says "not yet": the berries ripen first, and only then are they
+// picked (the pick chore waits for ripe berries, and the view holds it back
+// for its wait while the tub ripens). Picked early, there's no ripe pick.
+test("level-3: wait for the blueberries, they ripen, then the pick chore; picked early, no ripe pick", () => {
+  const { pendingChore } = CHORES;
+  const iBerries = L3.steps.findIndex((s) => s.id === "blueberries");
+  const upTo = [];
+  for (const step of L3.steps.slice(0, iBerries)) upTo.push({ type: "ask" }, { type: "doIt" });
+  // Chores before the blueberries question are done along the way.
+  const through = (acts) => {
+    let state = createRun(L3);
+    for (const a of acts) {
+      for (let c = pendingChore(L3, state); c; c = pendingChore(L3, state)) state = reduce(L3, state, { type: "chore", id: c.id }).state;
+      state = reduce(L3, state, a).state;
+    }
+    return state;
+  };
+  const step = L3.steps[iBerries];
+  assert.equal(step.actions, undefined, "saying yes to waiting picks nothing yet");
+  assert.equal(through([...upTo, { type: "ask" }]).beds.tub[0].state, "growing", "unripe while Ember says not yet");
+  for (const choice of [[{ type: "doIt" }], [{ type: "flag" }, { type: "doIt" }]]) {
+    const waited = through([...upTo, { type: "ask" }, ...choice]);
+    assert.equal(waited.beds.tub[0].state, "thriving", "the berries ripen");
+    const chore = pendingChore(L3, waited);
+    assert.equal(chore.id, "pick", "the pick comes after the ripening");
+    assert.ok(chore.wait.ms >= 3000 && chore.wait.ms <= 4000 && /ripen/i.test(chore.wait.line));
+    assert.deepEqual(chore.actions.map((a) => [a.kind, a.spot]), [["pick", "l3-berry-ripe"]]);
+    const after = reduce(L3, waited, { type: "chore", id: "pick" }).state;
+    assert.equal(after.stars, waited.stars); assert.equal(after.garden, waited.garden);
+    assert.equal(pendingChore(L3, after).id, "net");
+  }
+  const early = through([...upTo, { type: "ask" }, { type: "flag" }, { type: "override" }]);
+  assert.equal(early.beds.tub[0].state, "growing");
+  assert.equal(pendingChore(L3, early).id, "net", "picked early: no ripe pick chore");
 });
