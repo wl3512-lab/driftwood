@@ -98,6 +98,9 @@
 /* Every level done: the finished-garden button waits at the end of the path. */
 .map__done { position: absolute !important; right: 22px; bottom: 3%; margin: 0; z-index: 3; }
 .map__done .btn { font-size: 1.05rem; padding: 0.9rem 1.3rem; }
+/* The helper's "Trained" bar on its stake (ui/train-bar.js). */
+.plot__train { width: 100%; min-width: 5.5rem; margin-top: 0; font-size: 0.6rem; }
+.plot--locked .plot__train { display: none; }
 
 /* Phones on their side, and small phones. */
 @media (max-height: 500px) {
@@ -111,6 +114,8 @@
   .plot__title { font-size: 0.68rem; }
   .plot__stars { font-size: 0.8rem; }
   .plot__status { font-size: 0.68rem; }
+  .plot__train { min-width: 4.5rem; font-size: 0.52rem; }
+  .plot__train .train__bar { height: 6px; border-width: 1px; }
   .plot__box { border-width: 2px; }
   .map__done { right: 12px; bottom: 2%; }
   .map__done .btn { font-size: 0.85rem; padding: 0.55rem 0.8rem; min-height: 40px; }

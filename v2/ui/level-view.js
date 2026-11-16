@@ -7,7 +7,8 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep, pendingChore } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore, training } from "../engine/level-runner.js";
+import { trainBar } from "./train-bar.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
 import { memoryVars } from "../mechanics/placement.js";
@@ -116,12 +117,15 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // on the beds (players read a sprite on the soil as a plant). The sprite and
   // the talk column are siblings; only the talk column is re-rendered per step.
   // The sound switch sits in the stall's corner (the stall's art stays hidden from screen readers).
+  // How trained the helper is this play (engine/level-runner.js training()).
+  const train = trainBar(level.helper.name, 0);
   const stall = h("div", { class: "stall" },
     h("div", { class: "stall__window", "aria-hidden": "true" },
       h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 })),
-    h("div", { class: "stall__plate", "aria-hidden": "true" },
-      h("strong", { class: "stall__name" }, level.helper.name.toUpperCase()),
-      h("span", { class: "stall__role" }, level.helper.role || "your helper")),
+    h("div", { class: "stall__plate" },
+      h("strong", { class: "stall__name", "aria-hidden": "true" }, level.helper.name.toUpperCase()),
+      h("span", { class: "stall__role", "aria-hidden": "true" }, level.helper.role || "your helper"),
+      train.el),
     soundToggle({ className: "snd--stall" }));
   const talk = h("div", { class: "dock__talk" });
   const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
@@ -250,6 +254,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   fitWatch?.observe(scene);
   if (fitted.length) window.addEventListener("resize", fitProps);
 
+  const calmMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   let mounted = true;
   function unmount() {
     fitWatch?.disconnect();
@@ -377,6 +382,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     main.dataset.phase = state.phase;
     meterText.textContent = `Garden ${state.garden}%`;
     meterFill.style.width = `${state.garden}%`;
+    // The training bar fills in steps; the helper hops when it is full.
+    if (train.set(training(state)) && !calmMotion()) pet.react("happy");
     beds.replaceChildren(...renderBeds(level, state));
     fitProps();
     const step = currentStep(level, state);

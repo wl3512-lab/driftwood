@@ -514,3 +514,17 @@
   .stall__window { width: 3.6rem; height: 44px; }
   .stall .helper { height: 36px; margin-bottom: 8px; }
 }
+
+/* The helper's "Trained" bar (ui/train-bar.js), under its name plate: the
+   garden meter's look, smaller. It fills a step at a time. */
+.train { display: block; width: 100%; margin-top: 0.25rem; font: 600 0.62rem var(--font-ui); text-align: left; color: var(--ink); }
+.train__bar { display: block; height: 8px; margin-top: 0.15rem; border: 2px solid var(--ink); background: #e8dcc0; }
+.train__fill { display: block; height: 100%; width: 0; background: var(--do); transition: width 0.6s steps(6); }
+.train[data-trained="100"] .train__fill { background: #f6c945; }
+@media (prefers-reduced-motion: reduce) { .train__fill { transition: none; } }
+/* Small screens: the strip has no room for "your helper"; the bar takes its place. */
+@media (max-height: 500px), (max-width: 640px) {
+  .stall__role { display: none; }
+  .stall .train { margin-top: 0.15rem; max-width: 7.5rem; font-size: 0.6rem; }
+  .stall .train__bar { height: 7px; }
+}

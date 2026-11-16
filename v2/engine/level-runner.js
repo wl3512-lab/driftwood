@@ -122,6 +122,26 @@ export function scoreStars(state) {
   return Math.max(1, stars);
 }
 
+// How trained the helper is, 0…1 in thirds, built on the star logic so the
+// bar never disagrees with the stars. Live, during a level: a step each for
+// catching the drift, naming the flaw right and picking the right rule. A
+// step finished after a wrong pick earns nothing (that wrong pick is the star
+// it costs), and a false flag, an override or staying on the phone takes a
+// step back (their shared star). Once the level ends it is stars / 3, so
+// being fooled leaves it at a third.
+export const TRAIN_STEPS = 3;
+export function training(state) {
+  if (state.phase === "reveal") return state.stars / TRAIN_STEPS;
+  let steps = 0;
+  if (state.caught) steps += 1;
+  const named = state.caught && ["fix", "reanswer"].includes(state.phase);
+  const fixed = state.caught && state.phase === "reanswer";
+  if (named && state.nameMisses === 0) steps += 1;
+  if (fixed && state.fixMisses === 0) steps += 1;
+  if (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0) steps -= 1;
+  return Math.max(0, Math.min(TRAIN_STEPS, steps)) / TRAIN_STEPS;
+}
+
 function finish(state) {
   return { ...state, phase: "reveal", stars: scoreStars(state) };
 }
