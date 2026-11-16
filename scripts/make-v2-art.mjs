@@ -61,6 +61,7 @@ const PALETTE = {
   A: "#2f5d2b", // spinach leaf (deep green, so it never reads as lettuce)
   C: "#1b3d1c", // spinach shade / midrib
   I: "#4f8a3c", // spinach leaf shine
+  L: "#ecd9a0", // garden twine (pale straw, reads on the brown cane)
 };
 
 const E = "................";
@@ -552,6 +553,25 @@ const ART = {
     "..gGg...nGg.l...",
     ".....gGGnGgg....",
     "........n.......",
+    ...SOIL],
+
+  // Tied to the cane with twine (Level 3's chore): upright, fuller, darker
+  // leaves the whole height of the cane, three pale twine ties across it.
+  "bean-staked": [
+    ".......LnL......",
+    "......GgnGG.....",
+    ".....GGgnGgG....",
+    "....GgGGnGGgG...",
+    "......GgnGg.....",
+    "...GGg.LnL.gGG..",
+    "..GgGGGGnGGGGgG.",
+    "...GGg.GnG.gGG..",
+    ".....GGgnGgG....",
+    "...GgG.LnL.GgG..",
+    "..GgGGGGnGGGgGG.",
+    "...GG.GgnGg.GG..",
+    ".....GGgnGgG....",
+    "......GGnGG.....",
     ...SOIL],
 
   // The shop blueberry: unripe (pale green berries).

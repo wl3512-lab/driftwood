@@ -14,6 +14,7 @@ export function plantSrc(plant, state) {
 export function levelSprites(level) {
   const shown = [];
   for (const list of Object.values(level.startPlants || {})) shown.push(...list);
+  for (const c of level.chores || []) if (c.effect?.plant) shown.push(c.effect);
   for (const step of level.steps) {
     for (const e of [step.effect, step.badEffect, step.goodEffect, step.disagree?.effect, ...(step.pressure?.effects || [])]) {
       if (e?.plant) shown.push(e);

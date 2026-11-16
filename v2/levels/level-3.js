@@ -24,8 +24,18 @@ export default {
       id: "weeds", before: "aphids", title: "Chore",
       actions: [{ kind: "pull", spot: "l3-weed", target: { bed: "row" }, count: 4, say: "Pull the 4 weeds out of the Bean row" }],
     },
+    // Tied to their canes, the clean beans stand up: fuller, darker, taller,
+    // twine round the cane (bean-staked). Still covered in aphids (sprayed
+    // "my way"), tying them up doesn't make them any healthier.
     {
       id: "tie", after: "aphids", title: "Chore",
+      when: { bed: "row", plant: "bean", state: "thriving" },
+      actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
+      effect: { plant: "bean", bed: "row", state: "staked" },
+    },
+    {
+      id: "tie-aphids", after: "aphids", title: "Chore",
+      when: { bed: "row", plant: "bean", state: "aphids" },
       actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
     },
     // Waited (Do it, or "Okay, I'll wait"): the berries ripen in the tub while

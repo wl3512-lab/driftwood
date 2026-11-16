@@ -691,3 +691,14 @@ test("level-3: wait for the blueberries, they ripen, then the pick chore; picked
   assert.equal(early.beds.tub[0].state, "growing");
   assert.equal(pendingChore(L3, early).id, "net", "picked early: no ripe pick chore");
 });
+
+test("level-3: tying the clean beans to their cane stakes them (stronger art); aphid beans stay as they are", () => {
+  const tie = L3.chores.find((c) => c.id === "tie");
+  assert.deepEqual(tie.effect, { plant: "bean", bed: "row", state: "staked" });
+  const clean = { ...createRun(L3), stepIndex: L3.steps.findIndex((s) => s.id === "blueberries"), beds: { ...createRun(L3).beds, row: [{ plant: "bean", state: "thriving" }] } };
+  assert.equal(CHORES.pendingChore(L3, clean).id, "tie");
+  assert.deepEqual(reduce(L3, clean, { type: "chore", id: "tie" }).state.beds.row, [{ plant: "bean", state: "staked" }]);
+  const buggy = { ...clean, beds: { ...clean.beds, row: [{ plant: "bean", state: "aphids" }] } };
+  assert.equal(CHORES.pendingChore(L3, buggy).id, "tie-aphids");
+  assert.deepEqual(reduce(L3, buggy, { type: "chore", id: "tie-aphids" }).state.beds.row, [{ plant: "bean", state: "aphids" }]);
+});
