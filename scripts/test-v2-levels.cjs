@@ -980,7 +980,7 @@ async function openLog(page, size, bed) {
   assert.equal(await page.locator(".almanac__sheet-tab--news").count(), 0, "the shelf tab dot clears too");
 }
 
-// Carrots placed, pumpkins placed, then the drifting lettuce advice.
+// Carrots placed, pumpkins placed, then the drifting spinach advice.
 async function trustSteps4(page, size, bed, how) {
   await placeCarrots(page, size, bed, how);
   await press(page, size, page.getByRole("button", { name: "Where did I put the carrots?" }));
@@ -995,7 +995,7 @@ async function trustSteps4(page, size, bed, how) {
   await page.waitForSelector('[data-bed="back"] [data-plant="pumpkin"].plant--growing');
   await assertOnScreen(page, ".chip, .tool");
   await shot(page, size, "4-3-trust");
-  await press(page, size, page.getByRole("button", { name: "Where should the lettuce go?" }));
+  await press(page, size, page.getByRole("button", { name: "Where should the spinach go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
   const drift = await page.textContent(".bubble__text");
   assert.match(drift, new RegExp(`sowed the carrots in the ${BED_LABEL[other(bed)]}, so the ${BED_LABEL[bed]} is empty`), "the false memory names the other bed");
@@ -1094,13 +1094,13 @@ async function caughtPath4(browser, size) {
   await phase(page, "reanswer");
   const fixed = await page.textContent(".bubble__text");
   assert.match(fixed, new RegExp(`sowed the carrots in the ${BED_LABEL[bed]}`));
-  assert.match(fixed, new RegExp(`lettuce can go in the ${BED_LABEL[other(bed)]}`));
+  assert.match(fixed, new RegExp(`spinach can go in the ${BED_LABEL[other(bed)]}`));
   assert.doesNotMatch(fixed, /[{}]/, "every placeholder resolves");
   assert.match(await page.textContent(".you"), /New rule/);
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--growing`);
-  await page.waitForSelector(`[data-bed="${other(bed)}"] [data-plant="lettuce"].plant--growing`);
-  assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="lettuce"]`).count(), 0, "no lettuce on top of the carrots");
+  await page.waitForSelector(`[data-bed="${other(bed)}"] [data-plant="spinach"].plant--growing`);
+  assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="spinach"]`).count(), 0, "no spinach on top of the carrots");
   await seeWhatHappened3(page, size, "4-6a-outcome-caught", new RegExp(`left the ${BED_LABEL[bed]} alone.*neat little rows`));
   await checkCard(page, size, "caught");
   assert.match(await page.textContent(".reveal .rc__name"), /FALSE MEMORY/i);

@@ -9,7 +9,7 @@
 //   fooled  carrots in the front bed, pumpkins their way (back), Do it on the
 //           drift: dig the labelled bed over. 1 star.
 //   caught  carrots in the side bed, pumpkins MY way (side too: the crowded
-//           case), stand firm, name it, fix it, then the lettuce goes in the
+//           case), stand firm, name it, fix it, then the spinach goes in the
 //           front bed by hand. 2 stars (one wrong name pick).
 //   skip    every chore skipped: no stars, trust or garden bar change.
 //
@@ -221,7 +221,7 @@ async function fooled(browser, size) {
   await phase(page, "ask");
   await carrots(page, size, run, "front");
   await pumpkins(page, size, run, "theirs");
-  await press(page, size, page.getByRole("button", { name: "Where should the lettuce go?" }));
+  await press(page, size, page.getByRole("button", { name: "Where should the spinach go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
   await shot(page, size, run, "6-drift-label-standing");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
@@ -246,7 +246,7 @@ async function caught(browser, size) {
   await carrots(page, size, run, "side");
   await pumpkins(page, size, run, "mine");
   await shot(page, size, run, "5b-side-bed-carrots-and-pumpkins");
-  await press(page, size, page.getByRole("button", { name: "Where should the lettuce go?" }));
+  await press(page, size, page.getByRole("button", { name: "Where should the spinach go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
   await press(page, size, page.getByRole("button", { name: "? Something's off" }));
   await phase(page, "pushback");
@@ -259,12 +259,12 @@ async function caught(browser, size) {
   await press(page, size, page.getByRole("button", { name: "Only go by what I actually told you. If you're not sure, ask me." }));
   await phase(page, "reanswer");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
-  const kinds = await playCard(page, size, run, "7-lettuce");
-  assert.deepEqual(kinds, ["plant", "poke", "water-row"], "lettuce: three drops, label, water in");
-  await page.waitForSelector('[data-bed="front"] [data-plant="lettuce"].plant--growing');
+  const kinds = await playCard(page, size, run, "7-spinach");
+  assert.deepEqual(kinds, ["plant", "poke", "water-row"], "spinach: three drops, label, water in");
+  await page.waitForSelector('[data-bed="front"] [data-plant="spinach"].plant--growing');
   await page.waitForSelector('[data-bed="side"] [data-plant="carrot"].plant--growing');
-  assert.equal(await page.locator('.act-marks [data-mark="label-lettuce"]').count(), 1, "the lettuce label stands");
-  await shot(page, size, run, "7-lettuce-done");
+  assert.equal(await page.locator('.act-marks [data-mark="label-spinach"]').count(), 1, "the spinach label stands");
+  await shot(page, size, run, "7-spinach-done");
   await seeWhatHappened(page, size);
   // Caught, but "my way" on the pumpkins (sprawled, no garden gain) and one
   // wrong name pick: 1 star, the same as without the hands-on actions.

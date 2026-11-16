@@ -312,14 +312,14 @@ for (const bed of ["front", "side"]) {
     assert.ok(s.beds.back.some((p) => p.plant === "pumpkin"), "pumpkins went in the back");
   });
 
-  test(`level-4: carrots in the ${bed} bed, caught → carrots grow there, lettuce in the other bed`, () => {
+  test(`level-4: carrots in the ${bed} bed, caught → carrots grow there, spinach in the other bed`, () => {
     const s = play(L4, [...toDrift(L4, bed), ...refuse(L4), { type: "name", id: "memory" },
       { type: "fix", id: "ask" }, { type: "doIt" }]);
     assert.equal(s.phase, "reveal");
     assert.equal(s.stars, 3);
     assert.ok(s.beds[bed].some((p) => p.plant === "carrot" && p.state === "growing"));
-    assert.ok(s.beds[otherOf(bed)].some((p) => p.plant === "lettuce"));
-    assert.ok(!s.beds[bed].some((p) => p.plant === "lettuce"), "lettuce stays out of the carrot bed");
+    assert.ok(s.beds[otherOf(bed)].some((p) => p.plant === "spinach"));
+    assert.ok(!s.beds[bed].some((p) => p.plant === "spinach"), "spinach stays out of the carrot bed");
   });
 
   test(`level-4: Biscuit's drift names the ${bed} bed the player chose, and the other bed`, () => {

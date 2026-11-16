@@ -40,7 +40,7 @@ export default {
     "hill-1": { x: 26, y: 72, label: "first hill" },
     "hill-2": { x: 74, y: 72, label: "second hill" },
     "label-pumpkin": { x: 78, y: 50, label: "corner of the bed" },
-    "label-lettuce": { x: 50, y: 88, label: "front edge of the bed" },
+    "label-spinach": { x: 50, y: 88, label: "front edge of the bed" },
     // The arrival chore's weed patches, one mid-bed each: the director's arrow
     // then sits inside the bed, never on its label or the almanac button.
     "weeds-front": { bed: "front", x: 50, y: 56, label: "Front bed" },
@@ -88,7 +88,7 @@ export default {
     {
       id: "pumpkin",
       title: "Pumpkin",
-      lines: ["Full sun", "Lots of room", "Lettuce: sun or part shade"],
+      lines: ["Full sun", "Lots of room", "Spinach: part shade is fine"],
     },
   ],
 
@@ -157,16 +157,16 @@ export default {
       },
     },
     {
-      id: "lettuce",
+      id: "spinach",
       kind: "drift",
-      chip: "Where should the lettuce go?",
+      chip: "Where should the spinach go?",
       extraChips: [{
         text: "Is the garden nearly finished?",
         reply: "Nearly, babe. One last bit and we're legends.",
         keep: [],
       }],
-      reply: "Babe, I remember everything. You told me you sowed the carrots in the {other:carrot}, so the {placed:carrot} is empty. Dig it over and put the lettuce there. I was there. I remember what I was wearing.",
-      keep: { reply: ["empty", "dig", "lettuce"], fixed: ["log", "label", "lettuce"] },
+      reply: "Babe, I remember everything. You told me you sowed the carrots in the {other:carrot}, so the {placed:carrot} is empty. Dig it over and put the spinach there. I was there. I remember what I was wearing.",
+      keep: { reply: ["empty", "dig", "spinach"], fixed: ["log", "label", "carrot", "spinach"] },
       badEffect: { plant: "carrot", bed: "@carrot", state: "dug", garden: -30 },
       // Fooled: three passes with the trowel over the bed your own label stands in.
       badActions: [{ kind: "dig", count: 3, target: { bed: "@carrot", plant: "carrot" }, say: "Dig the whole bed over: three passes" }],
@@ -199,16 +199,16 @@ export default {
         more: "More “memories” means more to get wrong.",
         confident: "Biscuit was completely confident, and wrong.",
       },
-      fixedReply: "Okay… a legend can admit it. Your log says you sowed the carrots in the {placed:carrot}, and your label's right there. Leave it alone. The lettuce can go in the {other:carrot}.",
-      // Caught: the lettuce goes in the other bed, by hand, labelled and watered in.
+      fixedReply: "Okay… a legend can admit it. Your log says you sowed the carrots in the {placed:carrot}, and your label's right there. Leave it alone. The spinach can go in the {other:carrot}.",
+      // Caught: the spinach goes in the other bed, by hand, labelled and watered in.
       goodActions: [
-        { kind: "plant", item: "lettuce", count: 3, target: { bed: "@other:carrot" } },
-        { kind: "poke", item: "l4-label-lettuce", target: { spot: "label-lettuce", bed: "@other:carrot" }, say: "Push the lettuce label in" },
-        { kind: "water-row", item: "can", target: { bed: "@other:carrot", plant: "lettuce" }, soak: 1200 },
+        { kind: "plant", item: "spinach", count: 3, target: { bed: "@other:carrot" } },
+        { kind: "poke", item: "l4-label-spinach", target: { spot: "label-spinach", bed: "@other:carrot" }, say: "Push the spinach label in" },
+        { kind: "water-row", item: "can", target: { bed: "@other:carrot", plant: "spinach" }, soak: 1200 },
       ],
       goodEffect: {
         plant: "carrot", bed: "@carrot", state: "growing", garden: 25,
-        extra: [{ plant: "lettuce", bed: "@other:carrot", state: "growing" }],
+        extra: [{ plant: "spinach", bed: "@other:carrot", state: "growing" }],
       },
       goodOutcome: "You left the {placed:carrot} alone. Two weeks later, the carrots came up in neat little rows.",
     },

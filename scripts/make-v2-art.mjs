@@ -58,6 +58,9 @@ const PALETTE = {
   Z: "#a3243b", // radish shade
   K: "#c9b458", // dry seed pod (radish gone to seed)
   D: "#5a2a1a", // split in a woody radish
+  A: "#2f5d2b", // spinach leaf (deep green, so it never reads as lettuce)
+  C: "#1b3d1c", // spinach shade / midrib
+  I: "#4f8a3c", // spinach leaf shine
 };
 
 const E = "................";
@@ -211,6 +214,50 @@ const ART = {
     "...uvvvVVvvvu...",
     "....uvVVVVvu....",
     ".....vVVVVv.....",
+    ...SOIL],
+
+  // Spinach (Level 4's side bed): a rosette of deep green, spade-shaped,
+  // glossy leaves with dark midribs, clearly not the purple lettuce.
+  "spinach-sown": sown(["cAAc", "ACCA", "cAAc"]),
+
+  "spinach-growing": [E, E, E, E, E, E, E, E,
+    "......A...A.....",
+    ".....AIA.AIA....",
+    "....AIAC.CAIA...",
+    ".....ACCACCA....",
+    "......ACCCA.....",
+    ".......CCC......",
+    ...SOIL],
+
+  "spinach-thriving": [E, E, E, E,
+    ".......AA.......",
+    "...AA.AIIA.AA...",
+    "..AIIAAIIAAIIA..",
+    "..AIICAICAACIA..",
+    "...ACCAACAACCA..",
+    ".AA.ACCCCCCA.AA.",
+    "AIIA.ACCCCA.AIIA",
+    "AICCA.ACCA.ACCIA",
+    ".ACCCAACCAACCCA.",
+    "..AACCCCCCCCAA..",
+    ...SOIL],
+
+  // Bolted in the heat: a flower stalk, small leaves up it, green-gold flowers.
+  "spinach-bolted": [
+    ".......l.l......",
+    "......lKlKl.....",
+    ".......lGl......",
+    "......K.G.K.....",
+    ".....lAKGKAl....",
+    "........G.......",
+    "......AAG.......",
+    ".....AIIG.......",
+    "........GAA.....",
+    "........GIIA....",
+    "...AA...G...AA..",
+    "..AICA..G..ACIA.",
+    "...ACCA.G.ACCA..",
+    "....ACCCGCCCA...",
     ...SOIL],
 
   // Bolted in the heat: a tall flower stalk, small bitter leaves up it, yellow flowers.
@@ -958,6 +1005,25 @@ const ART = {
     "..sSsSZZZsSsSs..",
     ".ssssssssssssss.",
   ],
+  // Level 4's spinach label, the same stake as the carrot and pumpkin labels.
+  "l4-label-spinach": [
+    "....kkkkkkkk....",
+    "....kccAAcck....",
+    "....kcAIIAck....",
+    "....kAIICIAk....",
+    "....kAICCIAk....",
+    "....kcACCAck....",
+    "....kccCCcck....",
+    "....kcccccck....",
+    "....kkkkkkkk....",
+    ".......nn.......",
+    ".......nn.......",
+    ".......nn.......",
+    ".......nn.......",
+    ".......nn.......",
+    "......sSSs......",
+    "....ssssssss...."],
+
   "radish-woody": [
     ".......c.c......",
     "......cGc.c.....",
