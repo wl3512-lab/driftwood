@@ -231,7 +231,10 @@ async function assertBedsFull(page, name) {
     const reserved = [...bed.querySelectorAll(".field--empty")].reduce((sum, f) => { const r = f.getBoundingClientRect(); return sum + r.width * r.height; }, 0);
     const fields = [...bed.querySelectorAll(".field:not(.field--empty)")].map((f) => {
       const r = f.getBoundingClientRect(), cs = getComputedStyle(f);
-      return { w: r.width, h: r.height, size: parseFloat(cs.backgroundSize), image: cs.backgroundImage, repeat: cs.backgroundRepeat };
+      const pot = f.dataset.pot && bed.closest(".scene").querySelector(`[data-prop="${f.dataset.pot}"]`);
+      const pr = pot?.getBoundingClientRect();
+      return { x: r.x, y: r.y, w: r.width, h: r.height, size: parseFloat(cs.backgroundSize), image: cs.backgroundImage, repeat: cs.backgroundRepeat,
+        potted: f.classList.contains("field--potted"), pot: pr ? { x: pr.x, y: pr.y, w: pr.width, h: pr.height } : null };
     });
     const b = bed.getBoundingClientRect();
     return { id: bed.dataset.bed, plants: bed.querySelectorAll("img.plant[data-plant]").length, bedArea: b.width * b.height, area: inner.width * inner.height, reserved, fields };
@@ -239,6 +242,19 @@ async function assertBedsFull(page, name) {
   for (const bed of beds) {
     assert.equal(bed.fields.length, bed.plants, `${name}: one field per crop in the ${bed.id} bed`);
     if (!bed.plants) continue;
+    // Windowsill crops grow out of actual pot props; their leaves must be
+    // centred in a pot, above its rim, rather than tiled over the whole bed.
+    if (bed.fields.some((f) => f.potted)) {
+      for (const f of bed.fields) {
+        assert.ok(f.potted && f.pot, `${name}: ${bed.id} potted crop has a pot prop`);
+        assert.match(f.image, /url\(.*\/art\/.*\.svg/, `${name}: ${bed.id} potted crop has its sprite`);
+        assert.ok(f.w >= 16 && f.h >= 16 && f.w < f.pot.w, `${name}: leaves fit their pot ${JSON.stringify(f)}`);
+        assert.ok(Math.abs(f.x + f.w / 2 - f.pot.x - f.pot.w / 2) <= 2, `${name}: leaves are centred on their pot`);
+        const base = f.y + f.h;
+        assert.ok(base >= f.pot.y && base <= f.pot.y + f.pot.h / 2 + 2, `${name}: leaves emerge at the pot rim ${JSON.stringify(f)}`);
+      }
+      continue;
+    }
     const covered = bed.fields.reduce((sum, f) => sum + f.w * f.h, 0) + bed.reserved;
     assert.ok(covered >= bed.area * 0.9 && bed.area >= bed.bedArea * 0.6, `${name}: the ${bed.id} bed is not full of its crop ${JSON.stringify(bed)}`);
     for (const f of bed.fields) {
