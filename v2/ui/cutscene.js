@@ -24,9 +24,9 @@
 export const BEATS = [
   { id: "name", ms: 900, text: "Good evening. I'm Rowan. And you are?" },
   { id: "garden", ms: 1600, text: "Welcome, {name}. My garden. Little grows yet." },
-  { id: "helpers", ms: 2600, text: "My helpers. They're AI, like ChatGPT with fur." },
+  { id: "helpers", ms: 2600, text: "My helpers. They're AI, like ChatGPT with fur. They'll help you." },
   { id: "dinner", ms: 1600, text: "I'm making stew. Grow veg and herbs for the pot, flowers for the table." },
-  { id: "drift", ms: 3200, text: "They mean well. But they can be wrong, and still sound sure." },
+  { id: "drift", ms: 3200, text: "Sometimes they're wrong, and still sound sure. Help me train them." },
   { id: "almanac", ms: 3800, text: "So check my almanac. Forty years of notes, checked every season." },
   { id: "go", ms: 1400, text: "Trust, but check." },
 ];

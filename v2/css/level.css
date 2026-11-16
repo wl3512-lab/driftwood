@@ -242,6 +242,16 @@
   100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .field--new, .field--regrow.field--new::after { animation: none; } }
+/* A crop in a pot prop (garden.js fitPotted places it): one plant, the sprite
+   cut at its soil row, standing behind the pot so the rim hides its base. */
+.field--potted {
+  position: absolute; flex: none; min-height: 0; pointer-events: auto;
+  background-size: 100% auto; background-position: 50% 0; background-repeat: no-repeat;
+}
+/* Level 3: waiting for the blueberries, they ripen slowly in the tub, step by
+   step, over the pick chore's wait (levels/level-3.js chores.pick.wait). */
+.bed[data-bed="tub"] .field--regrow.field--new::after { animation-duration: 3.4s; }
+.field--potted.field--new { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 
 .packets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .packet {
@@ -514,3 +524,26 @@
   .stall__window { width: 3.6rem; height: 44px; }
   .stall .helper { height: 36px; margin-bottom: 8px; }
 }
+
+/* The helper's "Trained" bar (ui/train-bar.js), under its name plate: the
+   garden meter's look, smaller. It fills a step at a time. */
+.train { display: block; width: 100%; margin-top: 0.25rem; font: 600 0.62rem var(--font-ui); text-align: left; color: var(--ink); }
+.train__bar { display: block; height: 8px; margin-top: 0.15rem; border: 2px solid var(--ink); background: #e8dcc0; }
+.train__fill { display: block; height: 100%; width: 0; background: var(--do); transition: width 0.6s steps(6); }
+.train[data-trained="100"] .train__fill { background: #f6c945; }
+@media (prefers-reduced-motion: reduce) { .train__fill { transition: none; } }
+/* Small screens: the strip has no room for "your helper"; the bar takes its place. */
+@media (max-height: 500px), (max-width: 640px) {
+  .stall__role { display: none; }
+  .stall .train { margin-top: 0.15rem; max-width: 7.5rem; font-size: 0.6rem; }
+  .stall .train__bar { height: 7px; }
+}
+
+/* A chore's wait (ui/level-view.js, chore.wait): a short line and a pixel
+   progress bar that fills in steps over --ms; nothing to press meanwhile. */
+.chore-wait { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.6rem; font-family: var(--font-pixel, monospace); }
+.chore-wait__line { margin: 0; font-weight: 700; }
+.chore-wait__bar { flex: 0 1 12rem; height: 12px; border: 2px solid var(--ink); background: #e8dcc0; }
+.chore-wait__bar > span { display: block; height: 100%; width: 0; background: var(--do); animation: chore-wait var(--ms, 3600ms) steps(8) forwards; }
+@keyframes chore-wait { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .chore-wait__bar > span { animation-timing-function: steps(4); } }

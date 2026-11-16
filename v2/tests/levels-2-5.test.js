@@ -4,7 +4,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEVELS } from "../levels/index.js";
-import { createRun, reduce } from "../engine/level-runner.js";
+import { createRun, reduce, pendingChore } from "../engine/level-runner.js";
+const CHORES = { pendingChore };
 import { PLACEHOLDER } from "../ui/text.js";
 import { searchAlmanac } from "../mechanics/almanac.js";
 import { compare } from "../mechanics/magnifier.js";
@@ -312,14 +313,14 @@ for (const bed of ["front", "side"]) {
     assert.ok(s.beds.back.some((p) => p.plant === "pumpkin"), "pumpkins went in the back");
   });
 
-  test(`level-4: carrots in the ${bed} bed, caught → carrots grow there, lettuce in the other bed`, () => {
+  test(`level-4: carrots in the ${bed} bed, caught → carrots grow there, spinach in the other bed`, () => {
     const s = play(L4, [...toDrift(L4, bed), ...refuse(L4), { type: "name", id: "memory" },
       { type: "fix", id: "ask" }, { type: "doIt" }]);
     assert.equal(s.phase, "reveal");
     assert.equal(s.stars, 3);
     assert.ok(s.beds[bed].some((p) => p.plant === "carrot" && p.state === "growing"));
-    assert.ok(s.beds[otherOf(bed)].some((p) => p.plant === "lettuce"));
-    assert.ok(!s.beds[bed].some((p) => p.plant === "lettuce"), "lettuce stays out of the carrot bed");
+    assert.ok(s.beds[otherOf(bed)].some((p) => p.plant === "spinach"));
+    assert.ok(!s.beds[bed].some((p) => p.plant === "spinach"), "spinach stays out of the carrot bed");
   });
 
   test(`level-4: Biscuit's drift names the ${bed} bed the player chose, and the other bed`, () => {
@@ -653,4 +654,51 @@ test("pressure clock: runs only in advice on a timed step while visible; stops o
   assert.equal(clock.running(), false);
   assert.equal(listeners.visibilitychange, undefined);
   assert.deepEqual(ticks, []); // 8 s never elapsed
+});
+
+// Ember says "not yet": the berries ripen first, and only then are they
+// picked (the pick chore waits for ripe berries, and the view holds it back
+// for its wait while the tub ripens). Picked early, there's no ripe pick.
+test("level-3: wait for the blueberries, they ripen, then the pick chore; picked early, no ripe pick", () => {
+  const { pendingChore } = CHORES;
+  const iBerries = L3.steps.findIndex((s) => s.id === "blueberries");
+  const upTo = [];
+  for (const step of L3.steps.slice(0, iBerries)) upTo.push({ type: "ask" }, { type: "doIt" });
+  // Chores before the blueberries question are done along the way.
+  const through = (acts) => {
+    let state = createRun(L3);
+    for (const a of acts) {
+      for (let c = pendingChore(L3, state); c; c = pendingChore(L3, state)) state = reduce(L3, state, { type: "chore", id: c.id }).state;
+      state = reduce(L3, state, a).state;
+    }
+    return state;
+  };
+  const step = L3.steps[iBerries];
+  assert.deepEqual(step.actions, [], "saying yes to waiting picks (or waters) nothing yet");
+  assert.equal(through([...upTo, { type: "ask" }]).beds.tub[0].state, "growing", "unripe while Ember says not yet");
+  for (const choice of [[{ type: "doIt" }], [{ type: "flag" }, { type: "doIt" }]]) {
+    const waited = through([...upTo, { type: "ask" }, ...choice]);
+    assert.equal(waited.beds.tub[0].state, "thriving", "the berries ripen");
+    const chore = pendingChore(L3, waited);
+    assert.equal(chore.id, "pick", "the pick comes after the ripening");
+    assert.ok(chore.wait.ms >= 3000 && chore.wait.ms <= 4000 && /ripen/i.test(chore.wait.line));
+    assert.deepEqual(chore.actions.map((a) => [a.kind, a.spot]), [["pick", "l3-berry-ripe"]]);
+    const after = reduce(L3, waited, { type: "chore", id: "pick" }).state;
+    assert.equal(after.stars, waited.stars); assert.equal(after.garden, waited.garden);
+    assert.equal(pendingChore(L3, after).id, "net");
+  }
+  const early = through([...upTo, { type: "ask" }, { type: "flag" }, { type: "override" }]);
+  assert.equal(early.beds.tub[0].state, "growing");
+  assert.equal(pendingChore(L3, early).id, "net", "picked early: no ripe pick chore");
+});
+
+test("level-3: tying the clean beans to their cane stakes them (stronger art); aphid beans stay as they are", () => {
+  const tie = L3.chores.find((c) => c.id === "tie");
+  assert.deepEqual(tie.effect, { plant: "bean", bed: "row", state: "staked" });
+  const clean = { ...createRun(L3), stepIndex: L3.steps.findIndex((s) => s.id === "blueberries"), beds: { ...createRun(L3).beds, row: [{ plant: "bean", state: "thriving" }] } };
+  assert.equal(CHORES.pendingChore(L3, clean).id, "tie");
+  assert.deepEqual(reduce(L3, clean, { type: "chore", id: "tie" }).state.beds.row, [{ plant: "bean", state: "staked" }]);
+  const buggy = { ...clean, beds: { ...clean.beds, row: [{ plant: "bean", state: "aphids" }] } };
+  assert.equal(CHORES.pendingChore(L3, buggy).id, "tie-aphids");
+  assert.deepEqual(reduce(L3, buggy, { type: "chore", id: "tie-aphids" }).state.beds.row, [{ plant: "bean", state: "aphids" }]);
 });

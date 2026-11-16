@@ -2,11 +2,26 @@
 // capped by a timeout so a dropped animation event can never stall a level.
 export const wait = (ms) => new Promise((ok) => setTimeout(ok, Math.max(0, ms)));
 
-// Animate `el` and resolve when it ends, or after duration + 250 ms at most.
+// Chores run fast (Lucy's playtest: "the animation/cooldown in between take
+// too long"): every animation plays at PACE of the length a kind writes, and
+// no single one (delay and repeats included) runs past MAX_MS. Kinds keep
+// writing their durations in the old, slow units; only this scales them.
+export const PACE = 0.3;
+export const MAX_MS = 250;
+export function paced({ duration = 0, delay = 0, iterations = 1 } = {}) {
+  const n = Number.isFinite(iterations) ? Math.max(1, iterations) : 1;
+  let d = duration * PACE;
+  let w = delay * PACE;
+  const total = w + d * n;
+  if (total > MAX_MS) { const k = MAX_MS / total; d *= k; w *= k; }
+  return { duration: Math.round(d), delay: Math.round(w), ms: Math.round(w + d * n) };
+}
+
+// Animate `el` and resolve when it ends, or after its length + 250 ms at most.
 export function play(el, frames, opts) {
-  const ms = (opts.duration || 0) + (opts.delay || 0);
+  const { duration, delay, ms } = paced(opts);
   let anim = null;
-  try { anim = el.animate(frames, { fill: "forwards", ...opts }); } catch (_) { /* no WAAPI: just wait */ }
+  try { anim = el.animate(frames, { fill: "forwards", ...opts, duration, delay }); } catch (_) { /* no WAAPI: just wait */ }
   const done = anim?.finished?.catch(() => {}) ?? wait(ms);
   return Promise.race([done, wait(ms + 250)]);
 }

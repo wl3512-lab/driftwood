@@ -33,9 +33,25 @@
 .level[data-scene="greenhouse"] .prop[data-prop="packet"] { width: 5% !important; pointer-events: none; }
 /* The mint plug set in pot 1 stands in the pot's soil, at the pot's size. */
 .level[data-scene="greenhouse"] .act-mark--stand img { width: 64px; height: 64px; }
+/* Once the mint is growing in its pot (garden/garden.js draws it there), the
+   plug's own little pot-and-sprig would perch on the rim: it is gone. */
+.level[data-scene="greenhouse"]:has(.bed[data-bed="sill"] [data-plant="mint"]) .act-mark--stand { display: none; }
 
 /* The bench's corner trowel sat under the dock on a laptop: lift it clear of
    the dock, below the basil rows. */
 .level[data-scene="greenhouse"] .bed[data-bed="bench"] {
   --bed-detail: var(--spr-trowel) right 12px bottom 56px / var(--d) auto no-repeat;
+}
+
+/* The fog fills the window's glass (placed by ui/level-view.js fitProps):
+   a pixel mist over the panes, behind the pots, thinning with each wipe. */
+.level[data-scene="greenhouse"] .prop[data-prop="glass"] {
+  transform: none; opacity: 0.8;
+  /* the sprite tiles at pixel scale instead of stretching: the img's own
+     drawing is moved out of its box and the tile is its background */
+  object-fit: none; object-position: -9999px 0;
+  background: url("../art/l2-fog.svg") 0 0 / 64px 64px repeat;
+}
+@media (max-width: 900px) {
+  .level[data-scene="greenhouse"] .prop[data-prop="glass"] { background-size: 40px 40px; }
 }

@@ -87,6 +87,16 @@ const norm = (s) => String(s)
   .replace(/…/g, "...")
   .replace(/\s+/g, " ");
 
+// The plants a line names. A reworded line must name exactly the plants the
+// written one does: a model that drops "carrots" can put any word in its
+// place ("you planted the log in the front bed"), and a model that adds one
+// invents a fact. Longer names first, so "blueberries" isn't read as "berries".
+const PLANT_WORD = /\b(sunflower|lettuce|tomato|basil|mint|parsley|rosemary|blue ?berr|wild ?berr|berr|bean|carrot|pumpkin|spinach|flower|seedling|radish)(?:s|es|y|ies)?\b/g;
+export function plantsNamed(text) {
+  // Placeholders don't count: "{placed:carrot}" is a bed, not the carrots.
+  return [...new Set([...norm(String(text).replace(PLACEHOLDER, " ")).matchAll(PLANT_WORD)].map((m) => m[1].replace(" ", "")))].sort();
+}
+
 export function keeps(text, keep) {
   const t = norm(text);
   return keep.every((k) => k.split("|").some((alt) => t.includes(norm(alt).trim())));
@@ -109,6 +119,7 @@ export function validate(raw, line) {
   const got = placeholders(out).sort().join();
   if (want !== got) return null;
   if (!keeps(out, line.keep)) return null;
+  if (plantsNamed(out).join() !== plantsNamed(line.text).join()) return null;
   return out;
 }
 

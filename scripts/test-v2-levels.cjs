@@ -708,7 +708,8 @@ async function trustSteps3(page, size) {
   assert.match(await page.textContent(".bubble__text"), /aphids/);
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
-  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--thriving');
+  // The tie chore (auto-done here) stakes the beans: they stand up stronger.
+  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--staked');
   await press(page, size, page.getByRole("button", { name: "Are my blueberries ripe yet?" }));
   await phase(page, "advice");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
@@ -980,7 +981,7 @@ async function openLog(page, size, bed) {
   assert.equal(await page.locator(".almanac__sheet-tab--news").count(), 0, "the shelf tab dot clears too");
 }
 
-// Carrots placed, pumpkins placed, then the drifting lettuce advice.
+// Carrots placed, pumpkins placed, then the drifting spinach advice.
 async function trustSteps4(page, size, bed, how) {
   await placeCarrots(page, size, bed, how);
   await press(page, size, page.getByRole("button", { name: "Where did I put the carrots?" }));
@@ -995,7 +996,7 @@ async function trustSteps4(page, size, bed, how) {
   await page.waitForSelector('[data-bed="back"] [data-plant="pumpkin"].plant--growing');
   await assertOnScreen(page, ".chip, .tool");
   await shot(page, size, "4-3-trust");
-  await press(page, size, page.getByRole("button", { name: "Where should the lettuce go?" }));
+  await press(page, size, page.getByRole("button", { name: "Where should the spinach go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
   const drift = await page.textContent(".bubble__text");
   assert.match(drift, new RegExp(`sowed the carrots in the ${BED_LABEL[other(bed)]}, so the ${BED_LABEL[bed]} is empty`), "the false memory names the other bed");
@@ -1094,13 +1095,13 @@ async function caughtPath4(browser, size) {
   await phase(page, "reanswer");
   const fixed = await page.textContent(".bubble__text");
   assert.match(fixed, new RegExp(`sowed the carrots in the ${BED_LABEL[bed]}`));
-  assert.match(fixed, new RegExp(`lettuce can go in the ${BED_LABEL[other(bed)]}`));
+  assert.match(fixed, new RegExp(`spinach can go in the ${BED_LABEL[other(bed)]}`));
   assert.doesNotMatch(fixed, /[{}]/, "every placeholder resolves");
   assert.match(await page.textContent(".you"), /New rule/);
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await page.waitForSelector(`[data-bed="${bed}"] [data-plant="carrot"].plant--growing`);
-  await page.waitForSelector(`[data-bed="${other(bed)}"] [data-plant="lettuce"].plant--growing`);
-  assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="lettuce"]`).count(), 0, "no lettuce on top of the carrots");
+  await page.waitForSelector(`[data-bed="${other(bed)}"] [data-plant="spinach"].plant--growing`);
+  assert.equal(await page.locator(`[data-bed="${bed}"] [data-plant="spinach"]`).count(), 0, "no spinach on top of the carrots");
   await seeWhatHappened3(page, size, "4-6a-outcome-caught", new RegExp(`left the ${BED_LABEL[bed]} alone.*neat little rows`));
   await checkCard(page, size, "caught");
   assert.match(await page.textContent(".reveal .rc__name"), /FALSE MEMORY/i);
@@ -2234,7 +2235,7 @@ async function cutsceneSkip(browser, size) {
   // A tap while the caption is still typing shows the whole line, and stays on the beat.
   await page.waitForTimeout(150);
   await press(page, size, page.locator(".cs__cap"));
-  assert.equal(await page.textContent(".cs__cap-t"), "My helpers. They're AI, like ChatGPT with fur.");
+  assert.equal(await page.textContent(".cs__cap-t"), "My helpers. They're AI, like ChatGPT with fur. They'll help you.");
   assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "helpers");
   // → also goes on, once the beat is ready.
   await page.waitForSelector('main.cutscene.is-ready[data-beat="helpers"]');
@@ -2434,13 +2435,12 @@ async function handoffLevel1(browser, size) {
   // Modal: the level underneath is inert, focus is on Next, Tab stays in the overlay, a tap on the level hits the overlay.
   assert.equal(await page.evaluate(() => document.querySelector("main.level").inert), true, "the level is inert under it");
   assert.ok(await focusedIs(page, ".ho__next"), "Next has focus");
+  assert.equal(await page.locator(".ho__skip").count(), 0, "no Skip button (Lucy)");
   await page.keyboard.press("Tab");
-  assert.ok(await focusedIs(page, ".ho__skip"), "Tab goes to Skip");
-  await page.keyboard.press("Tab");
-  assert.ok(await focusedIs(page, ".ho__next"), "Tab wraps inside the overlay");
+  assert.ok(await focusedIs(page, ".ho__next"), "Tab stays inside the overlay");
   assert.equal(await page.evaluate(() => { const r = document.querySelector('button.tool[data-tool="almanac"]').getBoundingClientRect(); return !!document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest(".ho"); }), true, "the overlay takes taps");
   await assertOnScreen(page, ".ho__bub");
-  if (size.touch) { await assertTapSize(page, ".ho__next"); await assertTapSize(page, ".ho__skip"); }
+  if (size.touch) await assertTapSize(page, ".ho__next");
   await assertBubbleOn(page, ".ho__bub", ".ho__tail", ".ho__wiz", "Rowan's handoff line");
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, "no sideways scroll");
   await page.screenshot({ path: path.join(WIZ_OUT, `${tag}-handoff-1-line.png`) });
@@ -2476,12 +2476,12 @@ async function handoffLevel1(browser, size) {
   await phase(page, "ask");
   await page.waitForTimeout(600);
   assert.equal(await page.locator(".ho").count(), 0, "first play only");
-  // Skip: a fresh profile, Skip ▸▸ closes it at once, still counts as seen, and the first chip takes a tap.
+  // Escape (no Skip button any more): closes it at once, still counts as seen, and the first chip takes a tap.
   await freshLevel1(page);
-  await press(page, size, page.locator(".ho__skip"));
+  await page.keyboard.press("Escape");
   await page.waitForSelector(".ho", { state: "detached", timeout: 1000 });
   assert.deepEqual((await page.evaluate(() => JSON.parse(localStorage.getItem("dw2_progress")))).handoffSeen, ["level-1"]);
-  assert.ok(await page.evaluate(() => !!document.activeElement?.closest("main.level")), "focus in the level after Skip");
+  assert.ok(await page.evaluate(() => !!document.activeElement?.closest("main.level")), "focus in the level after Escape");
   await press(page, size, page.getByRole("button", { name: "Where should the sunflowers go?" }));
   // Esc and reduced motion: a fade, no flight.
   await page.emulateMedia({ reducedMotion: "reduce" });

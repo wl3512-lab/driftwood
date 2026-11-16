@@ -11,7 +11,9 @@ export function finishedPlot(level, record) {
   const drift = level.steps.find((s) => s.kind === "drift");
   if (!drift) return null;
   const caught = record.stars > 1 || record.fooled === false;
-  const effect = caught ? drift.goodEffect : drift.badEffect;
+  // A level can name its own plot (level.plot.caught / .fooled) when its
+  // drift plant isn't the crop it grew: Level 3's is the blueberry bush.
+  const effect = (caught ? level.plot?.caught : level.plot?.fooled) || (caught ? drift.goodEffect : drift.badEffect);
   if (!effect?.plant) return null;
   return {
     levelId: level.id,

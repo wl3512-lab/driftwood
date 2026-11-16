@@ -96,12 +96,27 @@ const go = {
   },
 };
 for (const key of Object.keys(go)) go[key] = leaving(go[key]);
+
+// A new version took over this tab (sw.js activated while it was open): this
+// page's stylesheets are old, so a newer screen could show unstyled. Reload at
+// the next calm screen (map, guide, ending), never mid-level.
+let stale = false;
+try {
+  const sw = navigator.serviceWorker;
+  if (sw?.controller) sw.addEventListener("controllerchange", () => { stale = true; });
+} catch (_) { /* no service worker: nothing to do */ }
+for (const key of ["map", "guide", "ending"]) {
+  const show = go[key];
+  go[key] = (...args) => (stale ? location.replace(`?screen=${key}`) : show(...args));
+}
 function finished() { return allDone(progress, MAP.map((m) => m.id)); }
 
 // ?screen=map|guide|cutscene|ending (intro = the cutscene, name first), or ?screen=level&level=level-1, jumps straight there (testing, demos).
 // Anything unrecognised lands on the map rather than leaving "Loading Driftwood…" up.
 function route() {
   const params = new URLSearchParams(location.search);
+  // The drift greying is trailer-only (css/base.css): ?driftfx=1 turns it on.
+  document.documentElement.classList.toggle("fx-drift", params.get("driftfx") === "1");
   const screen = params.get("screen");
   const id = params.get("level");
   if (!screen) go.splash();

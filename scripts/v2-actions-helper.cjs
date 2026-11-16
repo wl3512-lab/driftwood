@@ -14,7 +14,8 @@
 //                             centre when the button covers it. It checks
 //                             nothing else sits on top of that point.
 //   useTool(page, to, opts)   tapOn for a tap-the-target card, else dragTo the
-//                             dock's tool there (plant, cover, collect…).
+//                             dock's tool there (plant, cover, collect…), or
+//                             a piece off its source in the scene (data-source="scene").
 //
 // Default test runs auto-finish actions (scripts/test-mute.js sets
 // window.__dwAutoAct = true). A run that wants to drag sets it to false:
@@ -106,8 +107,12 @@ async function tapOn(page, to, { touch = false } = {}) {
 }
 
 async function useTool(page, to, opts = {}) {
-  const mode = await page.locator("main.level .act").first().getAttribute("data-mode");
+  const card = page.locator("main.level .act").first();
+  const mode = await card.getAttribute("data-mode");
   if (mode === "tap-target") return tapOn(page, to, opts);
+  // Pieces in the scene (card data-source="scene": basil tips, shelf berries):
+  // drag one off its source; the card's tool is there for the keyboard only.
+  if (await card.getAttribute("data-source") === "scene") return dragTo(page, "main.level .act__pick", to, opts);
   return dragTo(page, "main.level .act__item", to, opts);
 }
 

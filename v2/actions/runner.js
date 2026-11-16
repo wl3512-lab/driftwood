@@ -2,8 +2,10 @@
 // dock, a bouncing arrow marks each target, the player taps the target (the
 // tool goes there by itself), drags the tool there (a one-off "carry this
 // there" move), taps each spot, or presses and holds until a ring fills
-// (pointer events: mouse, pen and touch); an animation plays, and only then
-// does `onDone` let the level apply the effect.
+// (pointer events: mouse, pen and touch). Each move counts the moment it is
+// made and its animation plays on while the player makes the next one (moves
+// overlap, they never queue or get refused); `onDone` lets the level apply
+// the effect once every move is made and the last animation has ended.
 //
 // Targets: a bed (or one plant's field in it), a prop ([data-prop] in the
 // scene), a named spot (level.spots, inside a bed or the scene), or the whole
@@ -35,6 +37,9 @@ const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce
 const DRAG_START = 5; // px before a press becomes a drag
 
 const HOLD_MS = 1200;
+// The longest a move's marks wait for its animation (fx.js paces each one to
+// ≤ 250 ms; a kind that chains a few can run a little over).
+const LAND_MS = 320;
 const SPOT = 56; // a named spot's box, px
 // Half a tap spot's reach: the 44px button (css/actions.css .act__spot) turned
 // 8° in its wiggle spans ~50px, plus a pixel to spare.
@@ -49,18 +54,36 @@ const ZONE = 56; // a tap-the-target button's least size, px (≥ 44 to touch)
 export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, title = null, skippable = false, spots = {} }) {
   const reduced = reducedMotion();
   const layer = h("div", { class: "act-layer", "aria-hidden": "true" });
+  // The director (arrows, rings, spots, tap buttons) lives in its own box, so
+  // redrawing it never cuts short the fx sprites of a move still playing.
+  const dir = h("div", { class: "act-dir" });
+  layer.append(dir);
   scene.append(layer);
   const live = h("p", { class: "sr-only", "aria-live": "polite" });
   const card = h("div", { class: "act", role: "group", "aria-label": "Do it by hand" });
   let ai = 0;            // current action
   let done = [];         // per target of the current action: true once finished
   let left = [];         // tap kinds: spots left per target
-  let busy = false;
+  let taken = [];        // tap kinds: per target, the spot numbers already tapped
+  // Moves never wait for each other: a drop, tap or hold counts at once, and
+  // its animation plays while the player carries on. `flying` holds the moves
+  // still animating; each lands its marks when its animation ends (or at once
+  // on Skip). The card finishes once every action is done and nothing flies.
+  const flying = new Set();
+  let soakBusy = false;  // a soak move on its way: the hold ring comes next
+  let ending = false;    // every action done; waiting for the last moves to land
   let over = false;
   let ghost = null;
   let item = null;
+  let itemAt = -1;       // the action the tool button was made for
   let hold = null;       // the ring being held: { i, el, t0, ms, auto, raf }
   let soaking = -1;      // a drag kind with `soak`: the target waiting for its hold
+  let tapSelected = false; // a draggable tool picked up by tapping, awaiting its destination
+  // A drag kind with `from`: the things to carry sit on something in the
+  // scene (basil tips on the basil, berries on Level 4's shelf bush). The
+  // player drags each one off it; the card keeps only the words and count.
+  let picked = new Set(); // the scene pieces already carried off
+  let armedPick = -1;     // the piece picked up with a tap, waiting for its target
   let soaked = null;     // resolves the soak hold
   const timers = new Set();
 
@@ -136,7 +159,12 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const a = action();
     done = a.targets.map(() => false);
     left = a.targets.map(() => a.count || 1);
+    taken = a.targets.map(() => new Set());
+    itemAt = -1; // a new tool
     soaking = -1;
+    tapSelected = false;
+    picked = new Set();
+    armedPick = -1;
     if (a.fills?.from) a.targets.forEach((tg) => tg.prop && swap(tg, a.fills.from));
     renderCard();
     renderDirector();
@@ -149,30 +177,63 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     announce(text);
   }
 
+  // The scene element the pieces sit on, or null when the action has none or
+  // it is not on screen (the shelf is hidden on a phone): then the dock's tool.
+  function sourceEl() {
+    const f = action()?.from;
+    if (!f || ending) return null;
+    const el = f.plot ? scene.querySelector(`[data-plot="${f.plot}"]`) : targetEl(f);
+    const r = el?.getBoundingClientRect();
+    return r && r.width > 0 && r.height > 0 ? el : null;
+  }
+  const fromScene = () => kind().mode === "drag" && !targetTap() && !!sourceEl();
+  const sourceName = () => { const f = action().from; return f.label || (f.plot ? "bush" : names.target(f)); };
+  const totalMoves = () => action().targets.length * (action().count || 1);
+  const freePick = () => { for (let j = 0; j < totalMoves(); j++) if (!picked.has(j)) return j; return -1; };
+
+  function instruction() {
+    if (soaking >= 0) return `Hold the ${names.target(action().targets[soaking])} until the ring fills`;
+    if (tapSelected) return `Tap the ${names.list(action().targets.filter((_, i) => !done[i]))}`;
+    return action().say || kind().say(action(), names);
+  }
+
   function renderCard() {
     const a = action();
     const k = kind();
     const multi = a.targets.length > 1 || (a.count || 1) > 1;
     const how = soaking >= 0 || k.mode === "hold" ? "Press and hold · or press Enter"
       : targetTap() && a.targets.length === 1 ? `Tap the ${names.target(a.targets[0])} · or press Enter`
-      : targetTap() || k.mode === "tap" ? "Tap each one · or press Enter" : "Drag it there · or press Enter";
+      : targetTap() || k.mode === "tap" ? "Tap each one · or press Enter"
+      : fromScene() ? `Drag one off the ${sourceName()} · or tap it, then the target · Enter`
+      : "Drag · or tap tool, then target · Enter";
     const total = a.targets.length * (a.count || 1);
     const count = total - left.reduce((n, x) => n + x, 0);
-    item = h("button", {
-      class: `act__item act__item--${a.kind}`, type: "button", "data-act-item": a.kind,
-      "aria-label": `${k.noun(a, names)}. Press Enter to use it${a.targets.length > 1 ? `, or 1 to ${a.targets.length} to pick one` : ""}.`,
-      "aria-keyshortcuts": "Enter Space",
-    }, itemFor(a));
-    item.addEventListener("pointerdown", onPointerDown);
-    item.addEventListener("keydown", onItemKey);
+    // The tool stays the same element for the whole action: rebuilding it
+    // mid-drag would drop the pointer capture (and the drag with it).
+    if (!item || itemAt !== ai) {
+      item?.remove();
+      item = h("button", {
+        class: `act__item act__item--${a.kind}`, type: "button", "data-act-item": a.kind,
+        "aria-label": `${k.noun(a, names)}. Press Enter to use it${a.targets.length > 1 ? `, or 1 to ${a.targets.length} to pick one` : ""}.`,
+        "aria-keyshortcuts": "Enter Space",
+      }, itemFor(a));
+      item.addEventListener("pointerdown", onPointerDown);
+      item.addEventListener("keydown", onItemKey);
+      itemAt = ai;
+    }
+    // Pieces in the scene: the tool button stays for the keyboard only.
+    const inScene = fromScene();
+    item.classList.toggle("act__item--scene", inScene);
+    if (inScene) card.dataset.source = "scene"; else delete card.dataset.source;
     card.dataset.kind = a.kind;
-    card.dataset.mode = soaking >= 0 ? "hold" : targetTap() ? "tap-target" : k.mode;
-    card.dataset.busy = String(busy);
-    card.replaceChildren(...[
-      item,
+    card.dataset.mode = soaking >= 0 ? "hold" : targetTap() || tapSelected ? "tap-target" : k.mode;
+    setBusy();
+    for (const el of [...card.children]) if (el !== item) el.remove();
+    if (item.parentNode !== card) card.prepend(item);
+    card.append(...[
       h("div", { class: "act__text" },
         title && h("p", { class: "act__title" }, title),
-        h("p", { class: "act__say" }, a.say || k.say(a, names)),
+        h("p", { class: "act__say" }, instruction()),
         h("p", { class: "act__how", "aria-hidden": "true" }, how),
         multi && h("p", { class: "act__count" }, h("span", { class: "sr-only" }, "Done "), `${count}/${total}`),
         plan.length > 1 && h("p", { class: "act__steps", "aria-hidden": "true" }, plan.map((_, i) => h("span", { class: i < ai ? "is-done" : i === ai ? "is-now" : "" })))),
@@ -181,11 +242,16 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       skippable && h("button", { class: "act__skip", type: "button", "data-act-skip": "", onclick: skip }, "Skip"),
       live].filter(Boolean));
   }
+  // data-busy: a move is still animating (tests wait on it; input never does).
+  function setBusy() { card.dataset.busy = String(flying.size > 0 || soakBusy || !!hold); }
 
   // Arrows over every target still to do (numbered when there are several),
   // the spots to tap for tap kinds, and the rings to hold for hold kinds.
   function renderDirector() {
-    layer.replaceChildren();
+    // A piece being dragged stays the same element (removing it would drop the drag).
+    const keep = press?.pick >= 0 ? press.el : null;
+    for (const c of [...dir.children]) if (c !== keep) c.remove();
+    if (ending) return;
     const a = action();
     const k = kind();
     a.targets.forEach((tg, i) => {
@@ -209,14 +275,14 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       const ring = h("div", { class: `act__ring${tg.spot ? " act__ring--spot" : ""}`, style: `left:${b.x - b.w / 2}px; top:${b.y - b.h / 2}px; width:${b.w}px; height:${b.h}px` });
       // Tap the target: a clear button over it (before its ring, so hovering
       // it lights the ring).
-      if (targetTap() && soaking < 0) layer.append(zone(tg, i, b));
-      layer.append(ring, arrow);
-      if (soaking === i || (k.mode === "hold" && soaking < 0)) return layer.append(holdRing(i, b));
+      if ((targetTap() || tapSelected) && soaking < 0) dir.append(zone(tg, i, b));
+      dir.append(ring, arrow);
+      if (soaking === i || (k.mode === "hold" && soaking < 0)) return dir.append(holdRing(i, b));
       if (spotTap()) {
         const n = a.count || 1;
         const fit = spotBounds(tg);
-        for (let s = 0; s < left[i]; s++) {
-          const j = n - left[i] + s; // stable position for each spot
+        for (let j = 0; j < n; j++) {
+          if (taken[i].has(j)) continue; // each spot keeps its place; a tapped one is gone
           let px; let py;
           if (b.w < 52 * n) { // a small target: the spots sit in a ring round it
             const ang = -Math.PI / 2 + (2 * Math.PI * j) / n;
@@ -232,10 +298,41 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
             "data-spot": `${keyOf(tg)}-${j}`, tabindex: -1, "aria-hidden": "true",
           }, art(k.spot(a), { size: 26 }));
           spot.addEventListener("click", (ev) => { ev.preventDefault(); tapSpot(i, spot); });
-          layer.append(spot);
+          dir.append(spot);
         }
       }
     });
+    if (fromScene()) renderPicks(keep);
+  }
+
+  // The pieces to carry, spread over their source in the scene; fewer as
+  // they are carried off (the source's data-picked counts them, for its art).
+  function renderPicks(keep) {
+    const a = action();
+    const src = sourceEl();
+    const r = src.getBoundingClientRect();
+    const l = layer.getBoundingClientRect();
+    const n = totalMoves();
+    src.dataset.picked = String(picked.size);
+    src.style.setProperty("--picked", String(picked.size));
+    const fx = clampTo(Math.max(l.left, 0), Math.min(l.right, innerWidth), SPOT_REACH);
+    const fy = clampTo(Math.max(l.top, 0), Math.min(l.bottom, innerHeight), SPOT_REACH);
+    for (let j = 0; j < n; j++) {
+      if (picked.has(j) || keep?.dataset.pick === String(j)) continue;
+      // On a big source (a bed of basil) they spread over it; round a small
+      // one (the 44px bush on the shelf) they sit in a ring, a finger apart.
+      const small = r.width < 48 * n;
+      const ang = -Math.PI / 2 + (2 * Math.PI * j) / n;
+      const rad = Math.max(30, r.width / 2);
+      const x = fx(small ? r.left + r.width / 2 + Math.cos(ang) * rad : r.left + r.width * (0.22 + 0.56 * ((j + 0.5) / n))) - l.left;
+      const y = fy(small ? r.top + r.height / 2 + Math.sin(ang) * rad : r.top + r.height * ((j % 2) ? 0.5 : 0.3)) - l.top;
+      const el = h("button", {
+        class: `act__pick${armedPick === j ? " is-armed" : ""}`, type: "button", style: `left:${x}px; top:${y}px`,
+        "data-pick": String(j), tabindex: -1, "aria-hidden": "true",
+      }, art(a.item, { size: 28 }));
+      el.addEventListener("pointerdown", (ev) => onPickDown(ev, el, j));
+      dir.append(el);
+    }
   }
 
   // Would an arrow whose foot is at (x, top), in layer px, sit on a bed's sign
@@ -267,6 +364,10 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const lr = layer.getBoundingClientRect();
     let left = Math.max(lr.left, 0); let top = Math.max(lr.top, 0);
     let right = Math.min(lr.right, innerWidth); let bottom = Math.min(lr.bottom, innerHeight);
+    // In stacked layouts the conversation grows upward over the scene.
+    // Keep controls above that opaque panel so low props/spots remain usable.
+    const dock = scene.closest(".level")?.querySelector(".dock")?.getBoundingClientRect();
+    if (dock && dock.left <= left && dock.right >= right && dock.top > top && dock.top < bottom) bottom = dock.top;
     const bedId = tg.bed || spots[tg.spot]?.bed;
     const bed = bedId && !tg.prop ? bedEl(bedId) : null;
     if (bed) {
@@ -307,8 +408,11 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
 
   // ---- press and hold ----
   function holdRing(i, b) {
+    const { left, top, right, bottom, lr } = areaOf(action().targets[i]);
+    const x = clampTo(left, right, 36)(b.x + lr.left) - lr.left;
+    const y = clampTo(top, bottom, 36)(b.y + lr.top) - lr.top;
     const el = h("button", {
-      class: "act__hold", type: "button", style: `left:${b.x}px; top:${b.y}px; --p:0`,
+      class: "act__hold", type: "button", style: `left:${x}px; top:${y}px; --p:0`,
       "data-hold": keyOf(action().targets[i]), "data-i": String(i), tabindex: -1, "aria-hidden": "true",
     }, h("span", { class: "act__hold-fill" }));
     el.addEventListener("pointerdown", (ev) => {
@@ -330,13 +434,13 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   };
   // auto: keyboard or a test run; it fills by itself and can't be let go.
   function startHold(i, { auto = false } = {}) {
-    if (over || hold) return;
-    const el = layer.querySelector(`.act__hold[data-i="${i}"]`);
+    if (over || ending || hold) return;
+    const el = dir.querySelector(`.act__hold[data-i="${i}"]`);
     if (!el) return;
     const ms = holdMs();
     hold = { i, el, t0: performance.now(), ms, auto, raf: 0 };
     el.classList.add("is-holding");
-    card.dataset.busy = "true";
+    setBusy();
     const me = hold;
     const tick = (now) => {
       if (over || hold !== me) return;
@@ -355,29 +459,28 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     hold.el.classList.remove("is-holding");
     hold.el.style.setProperty("--p", "0");
     hold = null;
-    card.dataset.busy = String(busy);
+    setBusy();
     nudge("Keep holding until the ring fills");
   }
-  async function holdDone() {
+  function holdDone() {
     const { i, el, raf } = hold;
     cancelAnimationFrame(raf);
     hold = null;
     el.style.setProperty("--p", "1");
     el.classList.add("is-full");
-    if (soaked) { const r = soaked; soaked = null; return r(); }
-    busy = true;
-    card.dataset.busy = "true";
-    await play(el, [{ scale: "1" }, { scale: "1.25", opacity: 0 }], { duration: reduced ? 80 : 260 });
-    if (over) return;
-    unit(i, false);
+    if (soaked) { const r = soaked; soaked = null; setBusy(); return r(); }
+    // Out of the director, so redrawing it leaves the ring's pop playing.
+    layer.append(el);
+    move(i, () => play(el, [{ scale: "1" }, { scale: "1.25", opacity: 0 }], { duration: reduced ? 80 : 260 }).then(() => el.remove()));
   }
 
   // ---- pointer drag ----
   let press = null;
   function onPointerDown(ev) {
-    if (over || (ev.button !== undefined && ev.button > 0)) return;
+    // Never refused while an earlier move animates: that one plays on.
+    if (over || ending || press || (ev.button !== undefined && ev.button > 0)) return;
     // Hold kinds: holding the tool fills the next ring too.
-    if (soaking >= 0 || (kind().mode === "hold" && !busy)) {
+    if (soaking >= 0 || kind().mode === "hold") {
       ev.preventDefault();
       try { item.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
       startHold(soaking >= 0 ? soaking : nextTarget());
@@ -386,21 +489,29 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       item.addEventListener("pointercancel", up);
       return;
     }
-    if (busy) return;
     ev.preventDefault();
     item.focus({ preventScroll: true });
-    try { item.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
-    press = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, touch: ev.pointerType === "touch", dragging: false };
-    item.addEventListener("pointermove", onPointerMove);
-    item.addEventListener("pointerup", onPointerUp);
-    item.addEventListener("pointercancel", onPointerCancel);
-    item.addEventListener("lostpointercapture", onPointerCancel);
+    startPress(ev, item, -1);
+  }
+  // A press on one of the pieces in the scene: drag it, or tap to pick it up.
+  function onPickDown(ev, el, j) {
+    if (over || ending || press || soaking >= 0 || (ev.button !== undefined && ev.button > 0)) return;
+    ev.preventDefault();
+    startPress(ev, el, j);
+  }
+  function startPress(ev, el, pick) {
+    try { el.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
+    press = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, touch: ev.pointerType === "touch", dragging: false, el, pick };
+    el.addEventListener("pointermove", onPointerMove);
+    el.addEventListener("pointerup", onPointerUp);
+    el.addEventListener("pointercancel", onPointerCancel);
+    el.addEventListener("lostpointercapture", onPointerCancel);
   }
   function lift(x, y) {
     ghost = h("div", { class: "act__ghost", "aria-hidden": "true" });
     ghost.append(itemFor(action()));
     document.body.append(ghost);
-    item.classList.add("is-lifted");
+    press.el.classList.add("is-lifted");
     moveGhost(x, y);
   }
   function moveGhost(x, y) {
@@ -419,53 +530,74 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     if (press.dragging) { moveGhost(ev.clientX, ev.clientY); hover(ev.clientX, ev.clientY - (press.touch ? 44 : 0)); }
   }
   function endPress() {
-    item?.removeEventListener("pointermove", onPointerMove);
-    item?.removeEventListener("pointerup", onPointerUp);
-    item?.removeEventListener("pointercancel", onPointerCancel);
-    item?.removeEventListener("lostpointercapture", onPointerCancel);
+    const el = press?.el || item;
+    el?.removeEventListener("pointermove", onPointerMove);
+    el?.removeEventListener("pointerup", onPointerUp);
+    el?.removeEventListener("pointercancel", onPointerCancel);
+    el?.removeEventListener("lostpointercapture", onPointerCancel);
     press = null;
-    layer.querySelectorAll(".act__ring.is-hot").forEach((r) => r.classList.remove("is-hot"));
+    dir.querySelectorAll(".act__ring.is-hot").forEach((r) => r.classList.remove("is-hot"));
   }
   // Capture lost (the card re-rendered, the window lost focus) counts as a cancel:
   // the tool flies home instead of staying stuck on screen.
-  function onPointerCancel() { if (!press) return; const g = ghost; ghost = null; endPress(); bounceBack(g); }
+  function onPointerCancel() { if (!press) return; const g = ghost; const home = press.el; ghost = null; endPress(); bounceBack(g, home); }
   function onPointerUp(ev) {
     if (!press) return;
-    const { dragging, touch } = press;
+    const { dragging, touch, el: home, pick } = press;
     endPress();
+    if (!dragging && pick >= 0) {
+      // A tap on a piece picks it up (a second tap puts it back); then tap the target.
+      armedPick = armedPick === pick ? -1 : pick;
+      tapSelected = armedPick >= 0;
+      renderCard();
+      renderDirector();
+      say(instruction());
+      return;
+    }
     if (!dragging) {
-      // A tap on the tool: tap kinds go to the next target or spot; drag kinds need the drag.
+      // A draggable tool also supports picking it up and placing it with two taps.
       if (targetTap() || kind().mode === "tap") return go(nextTarget());
-      return nudge(`Drag it to the ${names.target(action().targets[nextTarget()])}`);
+      tapSelected = true;
+      renderCard();
+      renderDirector();
+      say(instruction());
+      return;
     }
     const x = ev.clientX;
     const y = ev.clientY - (touch ? 44 : 0);
     const hit = hitTarget(x, y);
     const g = ghost;
     ghost = null;
-    if (hit >= 0) return commit(hit, { from: g });
+    if (hit >= 0) return commit(hit, { from: g, pick });
     const there = labelAt(x, y);
     const want = names.target(action().targets[nextTarget()]);
-    bounceBack(g);
+    bounceBack(g, home);
     nudge(there && there !== want ? `Not the ${there}. Try the ${want}` : `Drop it on the ${want}`);
   }
-  // Which undone target is under (x, y). Beds get 12px of slack; spots and
-  // small props are grown to at least 64px so a finger can hit them.
+  // Which undone target the drop at (x, y) is for. Beds get 16px of slack;
+  // spots and small props are grown to at least 96px so a finger dropping a
+  // little short still hits them. Where two grown boxes overlap (two hills
+  // side by side), the nearest target wins.
   function hitTarget(x, y) {
+    if (ending) return -1;
     const a = action();
+    let best = -1;
+    let bestD = Infinity;
     for (let i = 0; i < a.targets.length; i++) {
       if (done[i]) continue;
       const r = rectOf(a.targets[i]);
       if (!r) continue;
-      const sx = Math.max(12, (64 - r.width) / 2);
-      const sy = Math.max(12, (64 - r.height) / 2);
-      if (x >= r.left - sx && x <= r.right + sx && y >= r.top - sy && y <= r.bottom + sy) return i;
+      const sx = Math.max(16, (96 - r.width) / 2);
+      const sy = Math.max(16, (96 - r.height) / 2);
+      if (x < r.left - sx || x > r.right + sx || y < r.top - sy || y > r.bottom + sy) continue;
+      const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+      if (d < bestD) { bestD = d; best = i; }
     }
-    return -1;
+    return best;
   }
   // Tap-the-target kinds: a tap on the wrong bed or prop says which one is wanted.
   function onSceneClick(ev) {
-    if (over || busy || hold || soaking >= 0 || !targetTap()) return;
+    if (over || ending || hold || soaking >= 0 || !(targetTap() || tapSelected)) return;
     if (ev.target?.closest?.(".act__zone, .act, .scene__top, .tools, button, a, input, textarea, [role='button']")) return;
     const there = labelAt(ev.clientX, ev.clientY);
     const i = nextTarget();
@@ -484,14 +616,15 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   }
   function hover(x, y) {
     const hit = hitTarget(x, y);
-    const rings = layer.querySelectorAll(".act__ring");
+    const rings = dir.querySelectorAll(".act__ring");
     let n = 0;
     action().targets.forEach((_, i) => { if (!done[i]) { rings[n]?.classList.toggle("is-hot", i === hit); n++; } });
   }
-  function bounceBack(g) {
+  function bounceBack(g, home = item) {
+    home?.classList.remove("is-lifted");
     item?.classList.remove("is-lifted");
     if (!g) return;
-    const r = item.getBoundingClientRect();
+    const r = (home?.isConnected ? home : item).getBoundingClientRect();
     const x = Number(g.dataset.x); const y = Number(g.dataset.y);
     const to = `translate(${r.left + r.width / 2}px, ${r.top + r.height / 2}px) translate(-50%, -50%)`;
     play(g, [{ transform: `translate(${x}px, ${y}px) translate(-50%, -50%)` }, { transform: to, opacity: 0.4 }],
@@ -508,7 +641,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     later(() => {
       if (!say_ || over) return;
       say_.classList.remove("is-wrong");
-      say_.textContent = action().say || kind().say(action(), names);
+      say_.textContent = instruction();
     }, 2200);
   }
 
@@ -519,7 +652,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   // The level's document keydown calls this first while an action runs.
   function key(ev) {
     if (over) return false;
-    if (ev.key === "Escape" && onCancel && ai === 0 && done.every((d) => !d) && !busy && untouched()) { cancel(); return true; }
+    if (ev.key === "Escape" && onCancel && ai === 0 && done.every((d) => !d) && flying.size === 0 && untouched()) { cancel(); return true; }
     const n = Number(ev.key);
     if (Number.isInteger(n) && n >= 1 && n <= action().targets.length && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
       if (!done[n - 1]) go(n - 1); else nudge(`The ${names.target(action().targets[n - 1])} is done`);
@@ -536,107 +669,160 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
 
   // Send the tool to target i (keyboard, tap on the tool, auto).
   function go(i, opts = {}) {
-    if (over) return;
+    if (over || ending) return;
     if (soaking >= 0) return startHold(soaking, { auto: true });
-    if (busy || i < 0) return;
+    if (soakBusy || i < 0) return;
     if (kind().mode === "hold") return startHold(i, { auto: true });
     if (spotTap()) {
-      const spot = layer.querySelector(`.act__spot[data-spot^="${keyOf(action().targets[i])}-"]`);
+      const spot = dir.querySelector(`.act__spot[data-spot^="${keyOf(action().targets[i])}-"]`);
       return tapSpot(i, spot, opts);
     }
     commit(i, opts);
   }
 
-  async function commit(i, { from = null, instant = false } = {}) {
-    if (busy || over || done[i]) { from?.remove(); return; }
-    busy = true;
-    card.dataset.busy = "true";
+  // A drop or tap on target i: it counts now, and the tool's trip there and
+  // the kind's animation play while the player goes on to the next one.
+  function commit(i, { from = null, instant = false, pick = -1 } = {}) {
+    if (over || ending || soakBusy || soaking >= 0 || done[i] || left[i] <= 0) { from?.remove(); return; }
     const a = action();
+    const k = kind();
     const tg = a.targets[i];
+    // Pieces in the scene: this move carries one off (the one dragged, the
+    // one picked up with a tap, else the next one: keyboard and auto runs).
+    let pieceAt = null;
+    if (a.from) {
+      const j = pick >= 0 ? pick : armedPick >= 0 ? armedPick : freePick();
+      const pieceEl = j >= 0 && dir.querySelector(`.act__pick[data-pick="${j}"]`);
+      if (pieceEl && !from) { const r = pieceEl.getBoundingClientRect(); pieceAt = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+      if (j >= 0) picked.add(j);
+      armedPick = -1;
+      tapSelected = false;
+    }
+    item?.classList.remove("is-lifted");
     const line = card.querySelector(".act__say");
-    if (line) { line.classList.remove("is-wrong"); line.textContent = a.say || kind().say(a, names); }
+    if (line) { line.classList.remove("is-wrong"); line.textContent = a.say || k.say(a, names); }
     const b = box(tg);
-    if (!instant && b) {
-      // The tool travels to the bed (from where it was dropped, or from the dock).
+    if (instant || !b) { from?.remove(); return move(i, null); }
+    // The tool travels to the bed (from where it was dropped, or from the dock).
+    const start = from ? { x: Number(from.dataset.x), y: Number(from.dataset.y) } : pieceAt || (() => {
+      const r = item.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    })();
+    // A tap on the target (dig, water, hoe…) answers at once: the kind's
+    // animation brings its own tool there, so there is no trip to wait for.
+    const trip = from || pieceAt || !targetTap();
+    const run = async () => {
+      if (trip) await travel();
+      await k.animate(layer, b, { reduced, spot: k.spot?.(a), face: () => itemFor(a), el: targetEl(tg) });
+    };
+    const travel = async () => {
       const g = from || h("div", { class: "act__ghost", "aria-hidden": "true" }, itemFor(a));
       if (!from) document.body.append(g);
-      const start = from ? `translate(${from.dataset.x}px, ${from.dataset.y}px) translate(-50%, -50%)` : (() => {
-        const r = item.getBoundingClientRect();
-        return `translate(${r.left + r.width / 2}px, ${r.top + r.height / 2}px) translate(-50%, -50%)`;
-      })();
       const end = `translate(${b.rect.left + b.rect.width / 2}px, ${b.rect.top + b.rect.height / 2 - Math.min(70, b.rect.height * 0.3)}px) translate(-50%, -50%)`;
-      item.classList.add("is-lifted");
-      await play(g, [{ transform: start }, { transform: end }],
-        { duration: reduced || from ? 160 : 460, easing: "cubic-bezier(.3,.7,.4,1)" });
-      g.remove();
-      await kind().animate(layer, b, { reduced, spot: kind().spot?.(a), face: () => itemFor(a), el: targetEl(tg) });
-      if (over) return;
-      item?.classList.remove("is-lifted");
-      // Soak: the player now holds the target until the ring fills.
-      if (a.soak && left[i] === 1) {
-        soaking = i;
-        busy = false; // the hands are free to hold (go and the pointer route to the ring)
-        renderCard();
-        renderDirector();
-        say(`Hold the ${names.target(tg)} until the ring fills`);
-        await new Promise((res) => { soaked = res; });
-        if (over) return;
-        soaking = -1;
-      }
-    } else {
-      from?.remove();
-    }
-    if (over) return;
-    unit(i, instant);
+      try {
+        await play(g, [{ transform: `translate(${start.x}px, ${start.y}px) translate(-50%, -50%)` }, { transform: end }],
+          { duration: reduced || from ? 160 : 460, easing: "cubic-bezier(.3,.7,.4,1)" });
+      } finally { g.remove(); }
+    };
+    if (a.soak && left[i] === 1) return soakMove(i, run);
+    move(i, run);
   }
 
-  // One unit of target i is done (one drop, one spot, one hold): the kind
-  // leaves its marks, then the card moves on.
-  function unit(i, instant) {
+  // Soak (a drag kind with `soak`): after the tool's animation, the player
+  // holds the target until the ring fills; only then does the move count.
+  let soakSeq = 0;
+  async function soakMove(i, run) {
+    const me = ++soakSeq;
+    soakBusy = true;
+    setBusy();
+    try { await run(); } catch (err) { console.warn("action animation failed", err); }
+    if (over || me !== soakSeq) return;
+    soakBusy = false;
+    soaking = i;
+    renderCard();
+    renderDirector();
+    say(`Hold the ${names.target(action().targets[i])} until the ring fills`);
+    await new Promise((res) => { soaked = res; });
+    if (over || me !== soakSeq || soaking !== i) return;
+    soaking = -1;
+    move(i, null);
+  }
+
+  // One move on target i of the current action counts at once: the count
+  // and the arrows update, and the next action opens as soon as this one's
+  // targets are all done. `run` (its animation) plays on; when it ends the
+  // kind leaves its marks (stake, net, readout). No run: the marks land now.
+  function move(i, run) {
     const a = action();
+    const k = kind();
     const tg = a.targets[i];
     left[i] -= 1;
     const last = left[i] <= 0;
-    try {
-      kind().land?.({ a, tg, i, last, el: targetEl(tg), rect: rectOf(tg), stamp, swap, artNode, textNode });
-    } catch (err) { console.warn("action land failed", err); }
-    busy = false;
-    item?.classList.remove("is-lifted");
-    if (!last) { renderCard(); renderDirector(); if (!instant) item?.focus({ preventScroll: true }); return; }
-    done[i] = true;
-    say(kind().done(a, names, tg));
-    advance(instant);
+    const f = { landed: false };
+    f.land = () => {
+      if (f.landed) return;
+      f.landed = true;
+      flying.delete(f);
+      try {
+        k.land?.({ a, tg, i, last, el: targetEl(tg), rect: rectOf(tg), stamp, swap, artNode, textNode });
+      } catch (err) { console.warn("action land failed", err); }
+      setBusy();
+      settle();
+    };
+    if (last) done[i] = true;
+    if (run) {
+      flying.add(f);
+      // Its marks land when the animation ends, LAND_MS at the latest; under
+      // reduced motion at once (the animation, if any, plays on its own).
+      const played = Promise.resolve().then(run).catch((err) => console.warn("action animation failed", err));
+      if (reduced) f.land();
+      else Promise.race([played, wait(LAND_MS)]).then(() => { if (!over) f.land(); });
+    } else {
+      f.land();
+    }
+    if (last) say(k.done(a, names, tg));
+    advance(!run);
   }
 
-  async function tapSpot(i, spot, { instant = false } = {}) {
-    if (busy || over || done[i] || left[i] <= 0) return;
-    busy = true;
-    card.dataset.busy = "true";
+  // A tap on one of target i's spots (a berry, a weed, a tip).
+  function tapSpot(i, spot, { instant = false } = {}) {
+    if (over || ending || soakBusy || done[i] || left[i] <= 0) return;
     const a = action();
-    const b = box(a.targets[i]);
+    const k = kind();
+    const tg = a.targets[i];
+    const n = a.count || 1;
+    const j = spot ? Number(spot.dataset.spot.split("-").pop()) : [...Array(n).keys()].find((x) => !taken[i].has(x));
+    taken[i].add(j);
+    const b = box(tg);
+    let run = null;
     if (!instant && spot && b) {
       const l = layer.getBoundingClientRect();
       const r = spot.getBoundingClientRect();
-      spot.remove();
-      await kind().animate(layer, { x: r.left - l.left + r.width / 2, y: r.top - l.top + r.height / 2, w: b.w, h: b.h }, { reduced, spot: kind().spot?.(a), face: () => itemFor(a), el: targetEl(a.targets[i]) });
-    } else {
-      spot?.remove();
+      const at = { x: r.left - l.left + r.width / 2, y: r.top - l.top + r.height / 2, w: b.w, h: b.h };
+      run = () => k.animate(layer, at, { reduced, spot: k.spot?.(a), face: () => itemFor(a), el: targetEl(tg) });
     }
-    if (over) return;
-    unit(i, instant);
+    spot?.remove();
+    move(i, run);
   }
 
   function advance(instant) {
     if (done.every(Boolean)) {
+      if (ai + 1 >= plan.length) {
+        // Every action done: the card finishes once the last moves land.
+        ending = true;
+        renderCard();
+        renderDirector();
+        return settle();
+      }
       ai += 1;
-      if (ai >= plan.length) return finish();
       begin();
     } else {
       renderCard();
       renderDirector();
     }
-    if (!instant) item?.focus({ preventScroll: true });
+    if (!instant && !press) item?.focus({ preventScroll: true });
   }
+  function settle() { if (ending && !over && flying.size === 0) finish(); }
 
   function finish() {
     if (over) return;
@@ -647,8 +833,6 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   // Skip a chore: the end state lands straight away, then the level carries on.
   function skip() {
     if (over) return;
-    busy = false;
-    layer.replaceChildren();
     completeAll();
   }
   function clearHold() {
@@ -680,7 +864,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     watch?.disconnect();
     if (window.__dwAct === api) delete window.__dwAct;
   }
-  const onResize = () => { if (!over && !busy && !hold) renderDirector(); };
+  const onResize = () => { if (!over && !hold) renderDirector(); };
   window.addEventListener("resize", onResize);
   // The scene can still be settling (fonts, art, a chore at the very start):
   // re-place the arrows whenever its box changes.
@@ -696,15 +880,17 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
 
   // Finish everything now through the commit path (test runs, and a level that unmounts mid-action).
   function completeAll() {
+    // Moves still animating land their marks now.
+    for (const f of [...flying]) f.land();
     let guard = 64;
     while (!over && guard-- > 0) {
-      busy = false;
-      // A soak or hold in progress: that unit finishes here (its promise is dropped).
-      if (soaking >= 0 || hold) { const s = soaking >= 0 ? soaking : hold.i; clearHold(); unit(s, true); continue; }
+      // A soak or hold in progress: dropped here; its target is done below.
+      if (soaking >= 0 || hold || soakBusy) { clearHold(); soakBusy = false; soakSeq += 1; continue; }
+      if (ending) { settle(); break; }
       const i = nextTarget();
       if (i < 0) { advance(true); continue; }
       if (spotTap()) tapSpot(i, null, { instant: true });
-      else if (kind().mode === "hold") unit(i, true);
+      else if (kind().mode === "hold") move(i, null);
       else commit(i, { instant: true });
     }
   }
@@ -716,7 +902,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     destroy: () => { over = true; cleanup(); },
     completeAll,
     // Re-place the arrows after the beds re-render.
-    refresh: () => { if (!over && !busy) renderDirector(); },
+    refresh: () => { if (!over && !hold) renderDirector(); },
     get kind() { return action()?.kind; },
   };
   begin();

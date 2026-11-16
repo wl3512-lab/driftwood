@@ -65,3 +65,9 @@ h1, h2, p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Drift greying (the scene loses colour and scanlines darken while a helper
+   drifts) is for the trailer only. In play the garden keeps its colours
+   (Lucy, 2026-11-15). The trailer recorder turns it on with ?driftfx=1. */
+html:not(.fx-drift) .scene { filter: none; }
+html:not(.fx-drift) .scanlines { opacity: 0; }

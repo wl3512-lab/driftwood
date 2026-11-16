@@ -2,8 +2,8 @@
 // docs/design-options/2026-11-14-wizard/options.html): at the start of a
 // level's first play he says one short line about the level's seeds, and on
 // a tap tosses his pouch at the almanac button; it bursts and the seeds
-// sparkle down into the button. About 3 s after the tap; a tap mid-flight or
-// Skip goes straight to the level. Reduced motion: no flight, just a fade.
+// sparkle down into the button. About 3 s after the tap; a tap mid-flight (or
+// Escape) goes straight to the level. No Skip button (Lucy, 2026-11-15). Reduced motion: no flight, just a fade.
 // Level 5 is at night and he has gone to bed: a note and the pouch, left out.
 //
 // Mounted by main.js over the level screen right after it renders. While it
@@ -37,13 +37,12 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
       h("img", { src: `./art/${id}-thriving.svg`, alt: "", width: 32, height: 32 }),
       h("span", { class: "ho__pk-n" }, plantName(id)))));
   const nextBtn = h("button", { type: "button", class: "btn btn--gold ho__next", onclick: () => toss() }, note ? "Take the seeds ▸" : "Next ▸");
-  const skipBtn = h("button", { type: "button", class: "btn ho__skip", onclick: () => finish() }, "Skip ▸▸");
   const seedList = `Seeds: ${seeds.map(plantName).join(", ")}.`;
   const words = h("div", { class: "ho__words" },
     h("p", { class: "ho__line", id: "ho-line" }, line),
     h("p", { class: "sr-only" }, seedList),
     packets,
-    h("div", { class: "ho__btns" }, nextBtn, skipBtn));
+    h("div", { class: "ho__btns" }, nextBtn));
   // He speaks from a bubble right over his head; the note has no speaker.
   const speaker = note
     ? h("div", { class: "ho__note" },
@@ -73,20 +72,16 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
 
   const onKey = (ev) => {
     if (!box.isConnected) return;
-    if (ev.key === "Tab") { // keep focus on the two buttons
-      const els = box.dataset.phase === "line" ? [nextBtn, skipBtn] : [];
+    if (ev.key === "Tab") { // keep focus on the button
       ev.preventDefault();
-      if (els.length) els[(els.indexOf(document.activeElement) + (ev.shiftKey ? -1 : 1) + els.length) % els.length].focus();
+      if (box.dataset.phase === "line") nextBtn.focus();
       return;
     }
     ev.preventDefault();
     ev.stopImmediatePropagation();
     if (ev.repeat) return;
     if (ev.key === "Escape") finish();
-    else if (ev.key === "Enter" || ev.key === " " || ev.key === "ArrowRight") {
-      if (ev.key !== "ArrowRight" && document.activeElement === skipBtn) finish();
-      else toss();
-    }
+    else if (ev.key === "Enter" || ev.key === " " || ev.key === "ArrowRight") toss();
   };
   window.addEventListener("keydown", onKey, true);
   // A tap anywhere but the buttons goes on: the line, then the toss, then the level.
@@ -105,7 +100,6 @@ export function mountHandoff(root, { levelId, line, seeds = [], note = false, on
     talking?.stop();
     box.dataset.phase = "toss";
     box.setAttribute("aria-busy", "true");
-    skipBtn.blur();
     nextBtn.blur();
     box.tabIndex = -1;
     box.focus({ preventScroll: true });

@@ -40,7 +40,10 @@
 // effect lands, its doneLine is said). The view shows a pending chore in place
 // of the question chips; the reducer itself never blocks on one. Chores are
 // skippable unless `skippable: false`; skipped or done, they never change
-// stars, trust or the garden bar.
+// stars, trust or the garden bar. `when: { bed, plant, state }` holds a chore
+// back unless that plant is in that state (Level 3's ripe-berry pick only
+// follows the wait, not picking them early). `wait: { ms, line }` is for the
+// view: it shows the line and a progress cue for ms before the chore opens.
 
 import { resolveEffect } from "../mechanics/placement.js";
 import { nextPressureEffect } from "../mechanics/pressure.js";
@@ -80,7 +83,14 @@ export function pendingChore(level, state) {
   if (state.phase !== "ask") return null;
   const step = currentStep(level, state);
   if (!step) return null;
-  return (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id)) || null;
+  return (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id) && choreReady(state, c)) || null;
+}
+
+// A chore with `when` waits for its plant to be in that state.
+export function choreReady(state, chore) {
+  const w = chore.when;
+  if (!w) return true;
+  return (state.beds[w.bed] || []).some((p) => p.plant === w.plant && (!w.state || p.state === w.state));
 }
 
 // The step a chore comes before: `before: id`, `after: id` (the next step), or `at: "start"`.
@@ -120,6 +130,26 @@ export function scoreStars(state) {
   // Flagging sound advice, overriding it and staying on the phone share one star.
   if (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0) stars -= 1;
   return Math.max(1, stars);
+}
+
+// How trained the helper is, 0…1 in thirds, built on the star logic so the
+// bar never disagrees with the stars. Live, during a level: a step each for
+// catching the drift, naming the flaw right and picking the right rule. A
+// step finished after a wrong pick earns nothing (that wrong pick is the star
+// it costs), and a false flag, an override or staying on the phone takes a
+// step back (their shared star). Once the level ends it is stars / 3, so
+// being fooled leaves it at a third.
+export const TRAIN_STEPS = 3;
+export function training(state) {
+  if (state.phase === "reveal") return state.stars / TRAIN_STEPS;
+  let steps = 0;
+  if (state.caught) steps += 1;
+  const named = state.caught && ["fix", "reanswer"].includes(state.phase);
+  const fixed = state.caught && state.phase === "reanswer";
+  if (named && state.nameMisses === 0) steps += 1;
+  if (fixed && state.fixMisses === 0) steps += 1;
+  if (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0) steps -= 1;
+  return Math.max(0, Math.min(TRAIN_STEPS, steps)) / TRAIN_STEPS;
 }
 
 function finish(state) {

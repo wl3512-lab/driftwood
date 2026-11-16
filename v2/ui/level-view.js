@@ -7,7 +7,8 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep, pendingChore } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore, training } from "../engine/level-runner.js";
+import { trainBar } from "./train-bar.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
 import { memoryVars } from "../mechanics/placement.js";
@@ -60,6 +61,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // A hands-on action in progress (actions/runner.js): the choice's effect
   // waits until the player has dragged the tool to the bed.
   let acting = null;
+  // A chore with `wait` (Level 3's ripening berries) first shows its line and
+  // a filling bar for wait.ms; `waited` holds the chores whose wait is over.
+  const waited = new Set();
+  let waitCard = null;
   // Sound: the line last babbled, a pause before the next one (after a pet
   // stinger), and whether the running chore was skipped.
   let voiced = null;
@@ -116,12 +121,15 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // on the beds (players read a sprite on the soil as a plant). The sprite and
   // the talk column are siblings; only the talk column is re-rendered per step.
   // The sound switch sits in the stall's corner (the stall's art stays hidden from screen readers).
+  // How trained the helper is this play (engine/level-runner.js training()).
+  const train = trainBar(level.helper.name, 0);
   const stall = h("div", { class: "stall" },
     h("div", { class: "stall__window", "aria-hidden": "true" },
       h("img", { class: "helper", src: level.helper.sprite, alt: "", width: 80, height: 112 })),
-    h("div", { class: "stall__plate", "aria-hidden": "true" },
-      h("strong", { class: "stall__name" }, level.helper.name.toUpperCase()),
-      h("span", { class: "stall__role" }, level.helper.role || "your helper")),
+    h("div", { class: "stall__plate" },
+      h("strong", { class: "stall__name", "aria-hidden": "true" }, level.helper.name.toUpperCase()),
+      h("span", { class: "stall__role", "aria-hidden": "true" }, level.helper.role || "your helper"),
+      train.el),
     soundToggle({ className: "snd--stall" }));
   const talk = h("div", { class: "dock__talk" });
   const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
@@ -224,8 +232,37 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     else if (ev.target.closest?.("[data-act-back]")) sfx("ui-back");
   }, true);
 
+  // A prop with `fit: "<bed>"` covers that bed's glass: the part above its
+  // --sill-line (all of it when unset), below its sign when the sign stands
+  // inside the bed (phones). Level 2's fog fills the windowsill's window, so
+  // the wipe's tap zone (the prop's box, actions/runner.js) traces the glass.
+  const fitted = (level.props || []).filter((p) => p.id && p.fit);
+  function fitProps() {
+    if (!fitted.length || !mounted) return;
+    const sr = scene.getBoundingClientRect();
+    for (const p of fitted) {
+      const el = scene.querySelector(`[data-prop="${p.id}"]`);
+      const bed = beds.querySelector(`[data-bed="${p.fit}"]`);
+      if (!el || !bed) continue;
+      const br = bed.getBoundingClientRect();
+      const left = br.left + bed.clientLeft;
+      let top = br.top + bed.clientTop;
+      const line = parseFloat(getComputedStyle(bed).getPropertyValue("--sill-line")) || 100;
+      const bottom = top + bed.clientHeight * line / 100;
+      const sign = bed.querySelector(":scope > .bed__label")?.getBoundingClientRect();
+      if (sign && sign.height && sign.top >= br.top) top = Math.max(top, sign.bottom + 2);
+      Object.assign(el.style, { left: `${left - sr.left}px`, top: `${top - sr.top}px`, width: `${bed.clientWidth}px`, height: `${Math.max(0, bottom - top)}px` });
+    }
+  }
+  const fitWatch = fitted.length && typeof ResizeObserver === "function" ? new ResizeObserver(fitProps) : null;
+  fitWatch?.observe(scene);
+  if (fitted.length) window.addEventListener("resize", fitProps);
+
+  const calmMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   let mounted = true;
   function unmount() {
+    fitWatch?.disconnect();
+    window.removeEventListener("resize", fitProps);
     forgetPrefetched();
     if (!mounted) return;
     mounted = false;
@@ -349,7 +386,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     main.dataset.phase = state.phase;
     meterText.textContent = `Garden ${state.garden}%`;
     meterFill.style.width = `${state.garden}%`;
+    // The training bar fills in steps; the helper hops when it is full.
+    if (train.set(training(state)) && !calmMotion()) pet.react("happy");
     beds.replaceChildren(...renderBeds(level, state));
+    fitProps();
     const step = currentStep(level, state);
     if (state.phase === "advice" && step?.place && !thinking) {
       // The beds the player may choose from glow until they pick one.
@@ -377,6 +417,17 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }
     // A chore waits before this step's question: it starts once the helper has spoken.
     const chore = !acting && !thinking ? pendingChore(level, state) : null;
+    if (chore?.wait && !waited.has(chore.id)) {
+      if (waitCard?.dataset.chore !== chore.id) {
+        const ms = chore.wait.ms || 3600;
+        waitCard = h("div", { class: "chore-wait", role: "status", "data-chore": chore.id },
+          h("p", { class: "chore-wait__line" }, t(chore.wait.line || "")),
+          h("div", { class: "chore-wait__bar", style: `--ms:${ms}ms`, "aria-hidden": "true" }, h("span")));
+        setTimeout(() => { waited.add(chore.id); waitCard = null; if (mounted && main.isConnected) render(); }, ms);
+      }
+      if (!talk.contains(waitCard)) talk.replaceChildren(bubble(said, { actions: [] }), waitCard);
+      return;
+    }
     if (chore) {
       const action = { type: "chore", id: chore.id };
       const out = reduce(level, state, action);

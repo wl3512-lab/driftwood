@@ -83,13 +83,26 @@ export function recordLevel(progress, level, state) {
   const prev = progress.levels[level.id];
   const levels = {
     ...progress.levels,
-    [level.id]: { stars: Math.max(prev?.stars || 0, state.stars), fooled: prev ? prev.fooled : state.fooled },
+    [level.id]: {
+      stars: Math.max(prev?.stars || 0, state.stars),
+      fooled: prev ? prev.fooled : state.fooled,
+      trained: Math.max(trainedFor(progress, level.id), (state.stars || 0) / 3),
+    },
   };
   const hasCard = progress.guide.some((c) => c.levelId === level.id);
   const guide = hasCard
     ? progress.guide
     : [...progress.guide, { levelId: level.id, flaw: level.reveal.flaw, tip: level.reveal.tip, fooled: state.fooled }];
   return { ...progress, levels, guide };
+}
+
+// How trained a level's helper is, 0…1 (the best play, like stars). Saves
+// from before the bar existed derive it from their stars.
+export function trainedFor(progress, levelId) {
+  const rec = progress?.levels?.[levelId];
+  if (!rec) return 0;
+  const v = typeof rec.trained === "number" ? rec.trained : (rec.stars || 0) / 3;
+  return Math.max(0, Math.min(1, v));
 }
 
 // Level N opens once level N-1 has been finished. orderedIds lists level ids by number.

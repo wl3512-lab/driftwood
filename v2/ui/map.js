@@ -1,6 +1,7 @@
 // Level map (five plots) and the field guide.
 import { h, focusFirst } from "./dom.js";
-import { isUnlocked } from "../progress.js";
+import { isUnlocked, trainedFor } from "../progress.js";
+import { trainBar } from "./train-bar.js";
 import { blockText, blockTitle } from "./block-type.js";
 import { mountWorld, timeFor, BED_X } from "./world.js";
 import { soundToggle } from "../audio/toggle.js";
@@ -67,7 +68,9 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide, onIntr
         h("span", { class: "plot__stake" },
           h("span", { class: "plot__num" }, `LEVEL ${m.number}`),
           unlocked ? h("span", { class: "plot__title" }, m.title) : null,
-          h("span", { class: done ? "plot__stars" : "plot__status" }, status)),
+          h("span", { class: done ? "plot__stars" : "plot__status" }, status),
+          // Each helper's training at a glance, once its plot is open.
+          unlocked && built ? trainBar(m.helper, trainedFor(progress, m.id), { className: "plot__train" }).el : null),
         h("span", { class: "plot__crops", "aria-hidden": "true" },
           (CROPS[m.id] || []).map((c) => h("img", { src: cropArt(c, Boolean(done)), alt: "", width: 32, height: 32 }))),
         h("span", { class: "plot__box", "aria-hidden": "true" }),

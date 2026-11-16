@@ -1,7 +1,9 @@
 // Poke: drag the item into the soil at a spot; it stays standing there. An
 // optional readout appears beside it (a soil probe: "Dry 2 cm down").
-// Also covers tie and stake.
-//   { kind: "poke", item, target, readout?: "text" }
+// Also covers tie and stake. A tool that does its job and goes (twine tying
+// the beans to their cane) leaves nothing behind: `stays: false`, the
+// default for twine (a brown ball was left lying in the soil).
+//   { kind: "poke", item, target, readout?: "text", stays?: boolean }
 import { play, spawn, burst } from "./fx.js";
 
 export default {
@@ -20,7 +22,7 @@ export default {
   },
   land({ a, tg, last, stamp, artNode, textNode }) {
     if (!last) return;
-    stamp(tg, artNode(a.item), { cls: "act-mark--stand" });
+    if (a.stays ?? !/twine|string/.test(a.item || "")) stamp(tg, artNode(a.item), { cls: "act-mark--stand" });
     if (a.readout) stamp(tg, textNode(a.readout), { cls: "act-mark--text" });
   },
 };

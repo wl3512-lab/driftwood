@@ -40,3 +40,12 @@ test("earlierPlots: keeps the order asked for and skips unfinished levels", () =
   assert.deepEqual(earlierPlots(["level-1"], LEVELS, null), []);
   assert.deepEqual(earlierPlots(["level-1"], LEVELS, { levels: {} }), []);
 });
+
+test("finishedPlot: Level 3's plot is its blueberry bush, either way", () => {
+  const L3 = LEVELS["level-3"];
+  const caught = finishedPlot(L3, { stars: 3, fooled: false });
+  const fooled = finishedPlot(L3, { stars: 1, fooled: true });
+  assert.equal(caught.src, plantSrc("blueberry", "thriving"));
+  assert.equal(fooled.src, plantSrc("blueberry", "pecked"));
+  assert.deepEqual([caught.caught, fooled.caught], [true, false]);
+});

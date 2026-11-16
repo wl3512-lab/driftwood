@@ -26,8 +26,8 @@
 .ho__pk img { width: 36px; height: 36px; image-rendering: pixelated; }
 .ho__pk-n { font: 700 0.62rem/1.1 var(--font-ui); text-align: center; letter-spacing: 0.02em; }
 .ho__btns { display: flex; gap: 10px; margin-top: 12px; }
-.ho__next, .ho__skip { min-height: 44px; padding: 0 16px; font-size: 0.85rem; cursor: pointer; }
-.ho__next:focus-visible, .ho__skip:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ho__next { min-height: 44px; padding: 0 16px; font-size: 0.85rem; cursor: pointer; }
+.ho__next:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 /* ---- Level 5: the note he left out, with the pouch on it ---- */
 .ho__note { position: absolute; left: 4%; bottom: 5%; width: min(440px, calc(100vw - 8%)); padding: 22px 20px 14px; background: #fff3c4;
@@ -74,7 +74,7 @@
   .ho__words { display: grid; grid-template-columns: auto auto; column-gap: 10px; align-items: end; justify-content: start; }
   .ho__line, .ho__words .sr-only { grid-column: 1 / -1; }
   .ho__btns { margin-top: 6px; gap: 8px; }
-  .ho__next, .ho__skip { padding: 0 10px; font-size: 0.72rem; }
+  .ho__next { padding: 0 10px; font-size: 0.72rem; }
   .ho__note { left: 3%; bottom: 4%; padding: 14px 12px 8px; border-width: 3px; }
   .ho__note .ho__line { font-size: 1rem; }
   .ho__sig { margin-top: 2px; font-size: 0.75rem; }

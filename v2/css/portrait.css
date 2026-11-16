@@ -22,6 +22,8 @@
   .stall__name { font-size: 0.8rem; }
   .stall__role { font-size: 0.75rem; }
   .stall .snd--stall { top: 50%; right: 4px; translate: 0 -50%; }
+  /* the "Trained" bar sits in the strip beside the name */
+  .stall .train { flex: 1 1 auto; min-width: 0; max-width: 8rem; margin-top: 0; }
 
   .bubble { padding: 0.6rem 0.75rem; }
   .bubble__who { font-size: 0.75rem; }
