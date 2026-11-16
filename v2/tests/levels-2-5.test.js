@@ -674,7 +674,7 @@ test("level-3: wait for the blueberries, they ripen, then the pick chore; picked
     return state;
   };
   const step = L3.steps[iBerries];
-  assert.equal(step.actions, undefined, "saying yes to waiting picks nothing yet");
+  assert.deepEqual(step.actions, [], "saying yes to waiting picks (or waters) nothing yet");
   assert.equal(through([...upTo, { type: "ask" }]).beds.tub[0].state, "growing", "unripe while Ember says not yet");
   for (const choice of [[{ type: "doIt" }], [{ type: "flag" }, { type: "doIt" }]]) {
     const waited = through([...upTo, { type: "ask" }, ...choice]);

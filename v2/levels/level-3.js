@@ -154,8 +154,10 @@ export default {
       keep: { reply: ["not yet", "label", "blue all over"], done: ["blue all over"] },
       doneLine: "Patience, twin… give 'em a few days and they'll be blue all over.",
       // Waiting is the choice: the berries ripen (blue all over), and the pick
-      // chore after this step opens once they have.
+      // chore after this step opens once they have. Nothing to do by hand
+      // (no watering): the ripening is shown by the chore's wait.
       effect: { plant: "blueberry", bed: "tub", state: "thriving", garden: 15 },
+      actions: [],
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
         reply: "Ayo, pick 'em now? Your tub, twin, your call. But blueberries don't get sweeter once they're off the bush… wait 'til they're blue all over.",

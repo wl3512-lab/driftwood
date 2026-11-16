@@ -1,7 +1,7 @@
 // Level 3 hands-on (wave 2): every action done by hand, at laptop size with
 // a mouse and at phone size with real touch drags.
 //   chore weeds (tap ×4) → aphids Do it: hose ×3, hose ×2, ladybug jar →
-//   chore tie (twine) → blueberries Do it: pick the 4 ripe → chore net →
+//   chore tie (twine) → blueberries Do it: they ripen (wait) → chore pick the 4 ripe → chore net →
 //   wildberries caught: magnifier, camera, "Don't eat" tag → reveal.
 // Plus a "my way" run (bug spray, pick them now) and a fooled run, where
 // nothing is acted out by hand. Screenshots, including mid-jet frames of the
@@ -122,6 +122,14 @@ async function aphidsAndBerries(page, size, { mine = false } = {}) {
   await chip(page, size, /blueberries ripe/);
   if (!mine) {
     await doIt(page, size);
+    // Ember said not yet: the berries ripen first (a short wait, no pick on
+    // offer), then the pick chore opens for the ones that are blue all over.
+    await page.waitForSelector('[data-bed="tub"] [data-plant="blueberry"].plant--thriving');
+    await page.waitForSelector("main.level .chore-wait", { timeout: 4000 });
+    assert.match(await page.textContent("main.level .chore-wait"), /ripen/i);
+    assert.equal(await page.locator("main.level .act").count(), 0, "no pick while they ripen");
+    await shot(page, size, "3-ripening");
+    await page.waitForSelector("main.level .chore-wait", { state: "detached", timeout: 6000 });
     await tapSpots(page, size, "pick", 4, "3a-pick-ripe");
   } else {
     await press(page, size, page.getByRole("button", { name: "? Something's off" }));
@@ -182,6 +190,9 @@ async function fooled(browser, size) {
   await doIt(page, size);
   await chip(page, size, /blueberries ripe/);
   await doIt(page, size);
+  // The berries ripen (a short wait), then the pick and net chores run themselves.
+  await page.waitForSelector("main.level .chore-wait", { timeout: 6000 });
+  await page.waitForSelector("main.level .chip >> text=/dark berries/", { timeout: 15000 });
   await page.evaluate(() => { window.__dwAutoAct = false; });
   await chip(page, size, /dark berries/);
   await doIt(page, size);

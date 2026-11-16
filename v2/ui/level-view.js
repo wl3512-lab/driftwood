@@ -61,6 +61,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   // A hands-on action in progress (actions/runner.js): the choice's effect
   // waits until the player has dragged the tool to the bed.
   let acting = null;
+  // A chore with `wait` (Level 3's ripening berries) first shows its line and
+  // a filling bar for wait.ms; `waited` holds the chores whose wait is over.
+  const waited = new Set();
+  let waitCard = null;
   // Sound: the line last babbled, a pause before the next one (after a pet
   // stinger), and whether the running chore was skipped.
   let voiced = null;
@@ -413,6 +417,17 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }
     // A chore waits before this step's question: it starts once the helper has spoken.
     const chore = !acting && !thinking ? pendingChore(level, state) : null;
+    if (chore?.wait && !waited.has(chore.id)) {
+      if (waitCard?.dataset.chore !== chore.id) {
+        const ms = chore.wait.ms || 3600;
+        waitCard = h("div", { class: "chore-wait", role: "status", "data-chore": chore.id },
+          h("p", { class: "chore-wait__line" }, t(chore.wait.line || "")),
+          h("div", { class: "chore-wait__bar", style: `--ms:${ms}ms`, "aria-hidden": "true" }, h("span")));
+        setTimeout(() => { waited.add(chore.id); waitCard = null; if (mounted && main.isConnected) render(); }, ms);
+      }
+      if (!talk.contains(waitCard)) talk.replaceChildren(bubble(said, { actions: [] }), waitCard);
+      return;
+    }
     if (chore) {
       const action = { type: "chore", id: chore.id };
       const out = reduce(level, state, action);

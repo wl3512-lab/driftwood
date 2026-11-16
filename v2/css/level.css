@@ -538,3 +538,12 @@
   .stall .train { margin-top: 0.15rem; max-width: 7.5rem; font-size: 0.6rem; }
   .stall .train__bar { height: 7px; }
 }
+
+/* A chore's wait (ui/level-view.js, chore.wait): a short line and a pixel
+   progress bar that fills in steps over --ms; nothing to press meanwhile. */
+.chore-wait { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.6rem; font-family: var(--font-pixel, monospace); }
+.chore-wait__line { margin: 0; font-weight: 700; }
+.chore-wait__bar { flex: 0 1 12rem; height: 12px; border: 2px solid var(--ink); background: #e8dcc0; }
+.chore-wait__bar > span { display: block; height: 100%; width: 0; background: var(--do); animation: chore-wait var(--ms, 3600ms) steps(8) forwards; }
+@keyframes chore-wait { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .chore-wait__bar > span { animation-timing-function: steps(4); } }
