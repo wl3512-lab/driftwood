@@ -116,6 +116,30 @@
 
 .act__ring--spot { border-radius: 50%; }
 
+/* a piece to carry off something in the scene (a basil tip, a berry): drag it, or tap it then the target */
+.act__pick {
+  position: absolute;
+  width: 44px; height: 44px; padding: 0;
+  display: grid; place-items: center;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 247, 226, 0.55);
+  border: 2px dashed var(--ink, #2b1d14);
+  border-radius: 50%;
+  pointer-events: auto; cursor: grab;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  animation: act-wiggle 900ms steps(3) infinite alternate;
+}
+.act__pick:hover, .act__pick.is-armed { background: #f6c945; border-style: solid; }
+.act__pick.is-armed { animation: none; transform: translate(-50%, -50%) scale(1.15); }
+.act__pick.is-lifted > * { opacity: 0.25; }
+/* its card keeps the words and the count; the tool button stays for the keyboard */
+.act[data-source="scene"] { grid-template-columns: minmax(0, 1fr) auto; }
+.act__item--scene {
+  position: absolute; width: 1px; height: 1px; min-width: 0; min-height: 0; padding: 0;
+  overflow: hidden; clip-path: inset(50%); border: 0;
+}
+.act[data-source="scene"]:has(.act__item:focus-visible) { outline: 3px solid #1e88e5; outline-offset: 3px; }
+
 /* tap the target: a clear button over it (at least 44px, inside its bed);
    hovering it lights the target's ring, which follows it in the layer */
 .act__zone {
@@ -205,6 +229,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .act, .act__item, .act__ring, .act__arrow, .act__spot { animation: none; }
+  .act, .act__item, .act__ring, .act__arrow, .act__spot, .act__pick { animation: none; }
   .act__hold { transition: none; }
 }

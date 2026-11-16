@@ -79,6 +79,11 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   let hold = null;       // the ring being held: { i, el, t0, ms, auto, raf }
   let soaking = -1;      // a drag kind with `soak`: the target waiting for its hold
   let tapSelected = false; // a draggable tool picked up by tapping, awaiting its destination
+  // A drag kind with `from`: the things to carry sit on something in the
+  // scene (basil tips on the basil, berries on Level 4's shelf bush). The
+  // player drags each one off it; the card keeps only the words and count.
+  let picked = new Set(); // the scene pieces already carried off
+  let armedPick = -1;     // the piece picked up with a tap, waiting for its target
   let soaked = null;     // resolves the soak hold
   const timers = new Set();
 
@@ -158,6 +163,8 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     itemAt = -1; // a new tool
     soaking = -1;
     tapSelected = false;
+    picked = new Set();
+    armedPick = -1;
     if (a.fills?.from) a.targets.forEach((tg) => tg.prop && swap(tg, a.fills.from));
     renderCard();
     renderDirector();
@@ -169,6 +176,20 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     live.textContent = text;
     announce(text);
   }
+
+  // The scene element the pieces sit on, or null when the action has none or
+  // it is not on screen (the shelf is hidden on a phone): then the dock's tool.
+  function sourceEl() {
+    const f = action()?.from;
+    if (!f || ending) return null;
+    const el = f.plot ? scene.querySelector(`[data-plot="${f.plot}"]`) : targetEl(f);
+    const r = el?.getBoundingClientRect();
+    return r && r.width > 0 && r.height > 0 ? el : null;
+  }
+  const fromScene = () => kind().mode === "drag" && !targetTap() && !!sourceEl();
+  const sourceName = () => { const f = action().from; return f.label || (f.plot ? "bush" : names.target(f)); };
+  const totalMoves = () => action().targets.length * (action().count || 1);
+  const freePick = () => { for (let j = 0; j < totalMoves(); j++) if (!picked.has(j)) return j; return -1; };
 
   function instruction() {
     if (soaking >= 0) return `Hold the ${names.target(action().targets[soaking])} until the ring fills`;
@@ -182,7 +203,9 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const multi = a.targets.length > 1 || (a.count || 1) > 1;
     const how = soaking >= 0 || k.mode === "hold" ? "Press and hold · or press Enter"
       : targetTap() && a.targets.length === 1 ? `Tap the ${names.target(a.targets[0])} · or press Enter`
-      : targetTap() || k.mode === "tap" ? "Tap each one · or press Enter" : "Drag · or tap tool, then target · Enter";
+      : targetTap() || k.mode === "tap" ? "Tap each one · or press Enter"
+      : fromScene() ? `Drag one off the ${sourceName()} · or tap it, then the target · Enter`
+      : "Drag · or tap tool, then target · Enter";
     const total = a.targets.length * (a.count || 1);
     const count = total - left.reduce((n, x) => n + x, 0);
     // The tool stays the same element for the whole action: rebuilding it
@@ -198,6 +221,10 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       item.addEventListener("keydown", onItemKey);
       itemAt = ai;
     }
+    // Pieces in the scene: the tool button stays for the keyboard only.
+    const inScene = fromScene();
+    item.classList.toggle("act__item--scene", inScene);
+    if (inScene) card.dataset.source = "scene"; else delete card.dataset.source;
     card.dataset.kind = a.kind;
     card.dataset.mode = soaking >= 0 ? "hold" : targetTap() || tapSelected ? "tap-target" : k.mode;
     setBusy();
@@ -221,7 +248,9 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   // Arrows over every target still to do (numbered when there are several),
   // the spots to tap for tap kinds, and the rings to hold for hold kinds.
   function renderDirector() {
-    dir.replaceChildren();
+    // A piece being dragged stays the same element (removing it would drop the drag).
+    const keep = press?.pick >= 0 ? press.el : null;
+    for (const c of [...dir.children]) if (c !== keep) c.remove();
     if (ending) return;
     const a = action();
     const k = kind();
@@ -273,6 +302,37 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
         }
       }
     });
+    if (fromScene()) renderPicks(keep);
+  }
+
+  // The pieces to carry, spread over their source in the scene; fewer as
+  // they are carried off (the source's data-picked counts them, for its art).
+  function renderPicks(keep) {
+    const a = action();
+    const src = sourceEl();
+    const r = src.getBoundingClientRect();
+    const l = layer.getBoundingClientRect();
+    const n = totalMoves();
+    src.dataset.picked = String(picked.size);
+    src.style.setProperty("--picked", String(picked.size));
+    const fx = clampTo(Math.max(l.left, 0), Math.min(l.right, innerWidth), SPOT_REACH);
+    const fy = clampTo(Math.max(l.top, 0), Math.min(l.bottom, innerHeight), SPOT_REACH);
+    for (let j = 0; j < n; j++) {
+      if (picked.has(j) || keep?.dataset.pick === String(j)) continue;
+      // On a big source (a bed of basil) they spread over it; round a small
+      // one (the 44px bush on the shelf) they sit in a ring, a finger apart.
+      const small = r.width < 48 * n;
+      const ang = -Math.PI / 2 + (2 * Math.PI * j) / n;
+      const rad = Math.max(30, r.width / 2);
+      const x = fx(small ? r.left + r.width / 2 + Math.cos(ang) * rad : r.left + r.width * (0.22 + 0.56 * ((j + 0.5) / n))) - l.left;
+      const y = fy(small ? r.top + r.height / 2 + Math.sin(ang) * rad : r.top + r.height * ((j % 2) ? 0.5 : 0.3)) - l.top;
+      const el = h("button", {
+        class: `act__pick${armedPick === j ? " is-armed" : ""}`, type: "button", style: `left:${x}px; top:${y}px`,
+        "data-pick": String(j), tabindex: -1, "aria-hidden": "true",
+      }, art(a.item, { size: 28 }));
+      el.addEventListener("pointerdown", (ev) => onPickDown(ev, el, j));
+      dir.append(el);
+    }
   }
 
   // Would an arrow whose foot is at (x, top), in layer px, sit on a bed's sign
@@ -431,18 +491,27 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     }
     ev.preventDefault();
     item.focus({ preventScroll: true });
-    try { item.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
-    press = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, touch: ev.pointerType === "touch", dragging: false };
-    item.addEventListener("pointermove", onPointerMove);
-    item.addEventListener("pointerup", onPointerUp);
-    item.addEventListener("pointercancel", onPointerCancel);
-    item.addEventListener("lostpointercapture", onPointerCancel);
+    startPress(ev, item, -1);
+  }
+  // A press on one of the pieces in the scene: drag it, or tap to pick it up.
+  function onPickDown(ev, el, j) {
+    if (over || ending || press || soaking >= 0 || (ev.button !== undefined && ev.button > 0)) return;
+    ev.preventDefault();
+    startPress(ev, el, j);
+  }
+  function startPress(ev, el, pick) {
+    try { el.setPointerCapture(ev.pointerId); } catch (_) { /* fine */ }
+    press = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, touch: ev.pointerType === "touch", dragging: false, el, pick };
+    el.addEventListener("pointermove", onPointerMove);
+    el.addEventListener("pointerup", onPointerUp);
+    el.addEventListener("pointercancel", onPointerCancel);
+    el.addEventListener("lostpointercapture", onPointerCancel);
   }
   function lift(x, y) {
     ghost = h("div", { class: "act__ghost", "aria-hidden": "true" });
     ghost.append(itemFor(action()));
     document.body.append(ghost);
-    item.classList.add("is-lifted");
+    press.el.classList.add("is-lifted");
     moveGhost(x, y);
   }
   function moveGhost(x, y) {
@@ -461,20 +530,30 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     if (press.dragging) { moveGhost(ev.clientX, ev.clientY); hover(ev.clientX, ev.clientY - (press.touch ? 44 : 0)); }
   }
   function endPress() {
-    item?.removeEventListener("pointermove", onPointerMove);
-    item?.removeEventListener("pointerup", onPointerUp);
-    item?.removeEventListener("pointercancel", onPointerCancel);
-    item?.removeEventListener("lostpointercapture", onPointerCancel);
+    const el = press?.el || item;
+    el?.removeEventListener("pointermove", onPointerMove);
+    el?.removeEventListener("pointerup", onPointerUp);
+    el?.removeEventListener("pointercancel", onPointerCancel);
+    el?.removeEventListener("lostpointercapture", onPointerCancel);
     press = null;
     dir.querySelectorAll(".act__ring.is-hot").forEach((r) => r.classList.remove("is-hot"));
   }
   // Capture lost (the card re-rendered, the window lost focus) counts as a cancel:
   // the tool flies home instead of staying stuck on screen.
-  function onPointerCancel() { if (!press) return; const g = ghost; ghost = null; endPress(); bounceBack(g); }
+  function onPointerCancel() { if (!press) return; const g = ghost; const home = press.el; ghost = null; endPress(); bounceBack(g, home); }
   function onPointerUp(ev) {
     if (!press) return;
-    const { dragging, touch } = press;
+    const { dragging, touch, el: home, pick } = press;
     endPress();
+    if (!dragging && pick >= 0) {
+      // A tap on a piece picks it up (a second tap puts it back); then tap the target.
+      armedPick = armedPick === pick ? -1 : pick;
+      tapSelected = armedPick >= 0;
+      renderCard();
+      renderDirector();
+      say(instruction());
+      return;
+    }
     if (!dragging) {
       // A draggable tool also supports picking it up and placing it with two taps.
       if (targetTap() || kind().mode === "tap") return go(nextTarget());
@@ -489,10 +568,10 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     const hit = hitTarget(x, y);
     const g = ghost;
     ghost = null;
-    if (hit >= 0) return commit(hit, { from: g });
+    if (hit >= 0) return commit(hit, { from: g, pick });
     const there = labelAt(x, y);
     const want = names.target(action().targets[nextTarget()]);
-    bounceBack(g);
+    bounceBack(g, home);
     nudge(there && there !== want ? `Not the ${there}. Try the ${want}` : `Drop it on the ${want}`);
   }
   // Which undone target the drop at (x, y) is for. Beds get 16px of slack;
@@ -541,10 +620,11 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     let n = 0;
     action().targets.forEach((_, i) => { if (!done[i]) { rings[n]?.classList.toggle("is-hot", i === hit); n++; } });
   }
-  function bounceBack(g) {
+  function bounceBack(g, home = item) {
+    home?.classList.remove("is-lifted");
     item?.classList.remove("is-lifted");
     if (!g) return;
-    const r = item.getBoundingClientRect();
+    const r = (home?.isConnected ? home : item).getBoundingClientRect();
     const x = Number(g.dataset.x); const y = Number(g.dataset.y);
     const to = `translate(${r.left + r.width / 2}px, ${r.top + r.height / 2}px) translate(-50%, -50%)`;
     play(g, [{ transform: `translate(${x}px, ${y}px) translate(-50%, -50%)` }, { transform: to, opacity: 0.4 }],
@@ -602,24 +682,35 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
 
   // A drop or tap on target i: it counts now, and the tool's trip there and
   // the kind's animation play while the player goes on to the next one.
-  function commit(i, { from = null, instant = false } = {}) {
+  function commit(i, { from = null, instant = false, pick = -1 } = {}) {
     if (over || ending || soakBusy || soaking >= 0 || done[i] || left[i] <= 0) { from?.remove(); return; }
     const a = action();
     const k = kind();
     const tg = a.targets[i];
+    // Pieces in the scene: this move carries one off (the one dragged, the
+    // one picked up with a tap, else the next one: keyboard and auto runs).
+    let pieceAt = null;
+    if (a.from) {
+      const j = pick >= 0 ? pick : armedPick >= 0 ? armedPick : freePick();
+      const pieceEl = j >= 0 && dir.querySelector(`.act__pick[data-pick="${j}"]`);
+      if (pieceEl && !from) { const r = pieceEl.getBoundingClientRect(); pieceAt = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+      if (j >= 0) picked.add(j);
+      armedPick = -1;
+      tapSelected = false;
+    }
     item?.classList.remove("is-lifted");
     const line = card.querySelector(".act__say");
     if (line) { line.classList.remove("is-wrong"); line.textContent = a.say || k.say(a, names); }
     const b = box(tg);
     if (instant || !b) { from?.remove(); return move(i, null); }
     // The tool travels to the bed (from where it was dropped, or from the dock).
-    const start = from ? { x: Number(from.dataset.x), y: Number(from.dataset.y) } : (() => {
+    const start = from ? { x: Number(from.dataset.x), y: Number(from.dataset.y) } : pieceAt || (() => {
       const r = item.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     })();
     // A tap on the target (dig, water, hoe…) answers at once: the kind's
     // animation brings its own tool there, so there is no trip to wait for.
-    const trip = from || !targetTap();
+    const trip = from || pieceAt || !targetTap();
     const run = async () => {
       if (trip) await travel();
       await k.animate(layer, b, { reduced, spot: k.spot?.(a), face: () => itemFor(a), el: targetEl(tg) });

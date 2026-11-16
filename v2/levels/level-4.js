@@ -66,7 +66,9 @@ export default {
       id: "harvest",
       after: "pumpkins",
       title: "Chore",
-      actions: [{ kind: "collect", item: "berry", count: 3, target: { prop: "basket" }, say: "Pick 3 blueberries off your old bush into the basket" }],
+      // The berries come off the Level 3 bush on the shelf (runner.js `from`; on
+      // a phone, where the shelf is hidden, they come from the dock instead).
+      actions: [{ kind: "collect", item: "berry", count: 3, target: { prop: "basket" }, from: { plot: "level-3", label: "old bush" }, say: "Pick 3 blueberries off your old bush into the basket" }],
     },
   ],
 

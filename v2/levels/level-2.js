@@ -65,7 +65,8 @@ export default {
       actions: [{ kind: "mist", item: "l2-mister", target: { bed: "bench", plant: "basil" },
         say: "Mist the new basil. Lightly. Tap it" }] },
     { id: "tips", after: "pinch", title: "Chore",
-      actions: [{ kind: "collect", item: "l2-basil-tip", target: { prop: "jar" }, count: 3,
+      // The tips are picked off the basil in the Greenhouse bed itself (runner.js `from`).
+      actions: [{ kind: "collect", item: "l2-basil-tip", target: { prop: "jar" }, count: 3, from: { bed: "bench", plant: "basil" },
         fills: { from: "l2-jar-empty", to: "l2-jar" },
         say: "Luna wants tea. Drag 3 basil tips into the tea jar" }] },
   ],
