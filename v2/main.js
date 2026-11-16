@@ -115,6 +115,8 @@ function finished() { return allDone(progress, MAP.map((m) => m.id)); }
 // Anything unrecognised lands on the map rather than leaving "Loading Driftwood…" up.
 function route() {
   const params = new URLSearchParams(location.search);
+  // The drift greying is trailer-only (css/base.css): ?driftfx=1 turns it on.
+  document.documentElement.classList.toggle("fx-drift", params.get("driftfx") === "1");
   const screen = params.get("screen");
   const id = params.get("level");
   if (!screen) go.splash();
