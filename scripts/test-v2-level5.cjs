@@ -154,7 +154,7 @@ async function run(browser, size) {
   await shot(page, size, "3-soil-tested");
   // The water stream, caught mid-pour.
   await tapOn(page, '[data-bed="house"]', { touch: !!size.touch });
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(120); // mid-pour: chores are quick (v2/actions/fx.js PACE)
   // The soil-test readouts the stream would cross fade for the pour.
   const crossed = await page.evaluate(() => {
     const jets = [...document.querySelectorAll("main.level .act-layer .l3-jet")].map((j) => j.getBoundingClientRect());
@@ -202,7 +202,7 @@ async function run(browser, size) {
   assert.match(await say(page), /meadow at the roots/);
   assert.equal(await page.locator("main.level .act").getAttribute("data-mode"), "tap-target", "soaking the meadow starts with a tap");
   await tapOn(page, '[data-bed="meadow"]', { touch: !!size.touch });
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(120);
   await shot(page, size, "6-meadow-pour");
   await actionIdle(page);
   // The soak: hold the ring until it fills.

@@ -111,7 +111,7 @@ async function digByTap(page, size, { shots = false } = {}) {
     if (!(await page.locator('main.level .act[data-kind="dig"]').count())) break;
     await tapOn(page, 'main.level [data-bed="south"]', { touch: size.touch });
     if (n === 0) {
-      await page.waitForTimeout(size.touch ? 520 : 560);
+      await page.waitForTimeout(60); // chores are quick (fx.js PACE): the dig is mid-way
       assert.ok(await page.locator(".act-layer .act__fx").count() > 0, "the trowel went to the bed and digs");
       if (shots) await shot(page, size, "dig-tap");
     }
@@ -156,7 +156,7 @@ async function plantSunflowers(page, size, { shots = true } = {}) {
   await page.waitForTimeout(80);
   assert.equal(await fields(page, "south", "sunflower"), 0, "the effect waits for the animation");
   assert.equal(await garden(page), "Garden 30%");
-  await page.waitForTimeout(560);
+  await page.waitForTimeout(100);
   if (shots) await shot(page, size, "seed-sprinkle");
   assert.ok(await page.locator(".act__fx").count() > 0, "seeds are falling");
   await page.waitForSelector('.act[data-kind="plant"]', { state: "detached", timeout: 6000 });
@@ -248,7 +248,7 @@ for (const size of [MAC, PHONE]) {
     assert.equal(await t.page.locator(".act__arrow").count(), 2, "an arrow over each bed to water");
     assert.match(await say(t.page), /South bed and the East bed/);
     await t.page.keyboard.press("2");
-    await t.page.waitForTimeout(820);
+    await t.page.waitForTimeout(120); // mid-pour (chores are quick: fx.js PACE)
     await shot(t.page, size, "water-pour");
     await actionIdle(t.page);
     assert.match(await t.page.locator(".act__count").textContent(), /1\/2/);
@@ -389,7 +389,7 @@ const KIND_RUNS = {
     assert.match(await say(page), /Pull the 3 weeds out of the Front bed/);
     for (let i = 0; i < 3; i++) {
       await press(page, size, ".act__spot");
-      if (i === 0) { await page.waitForTimeout(180); await shot(page, size, "fixture-pull"); }
+      if (i === 0) { await page.waitForTimeout(60); await shot(page, size, "fixture-pull"); }
       await actionIdle(page);
     }
   },
@@ -397,7 +397,7 @@ const KIND_RUNS = {
     assert.match(await say(page), /Snip the 2 basil tips on the Front bed/);
     for (let i = 0; i < 2; i++) {
       await press(page, size, ".act__spot");
-      if (i === 0) { await page.waitForTimeout(200); await shot(page, size, "fixture-snip"); }
+      if (i === 0) { await page.waitForTimeout(60); await shot(page, size, "fixture-snip"); }
       await actionIdle(page);
     }
   },
@@ -412,7 +412,7 @@ const KIND_RUNS = {
     assert.match(await say(page), /Not the basket\. Tap the sill pot/, "a wrong tap names both");
     await assertZonesFit(page, `${size.name} fill`);
     await tapOn(page, '[data-prop="pot"]', { touch: size.touch });
-    await page.waitForTimeout(450);
+    await page.waitForTimeout(100);
     await shot(page, size, "fixture-fill");
     await gone(page);
     assert.match(await page.locator('[data-prop="pot"]').getAttribute("src"), /l2-pot-soil/, "the pot shows its filled art");
@@ -434,7 +434,7 @@ const KIND_RUNS = {
   },
   async cover(page, size) {
     await dragTo(page, ".act__item", '[data-bed="back"]', { touch: size.touch });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(100);
     await shot(page, size, "fixture-cover");
     await gone(page);
     assert.equal(await marks(page, ".act-mark--cover"), 1, "the net stays over the bed");
@@ -443,7 +443,7 @@ const KIND_RUNS = {
     assert.match(await say(page), /Drag 2 berry ripes into the basket|Drag 2 .* into the basket/);
     for (let i = 0; i < 2; i++) {
       await dragTo(page, ".act__item", '[data-prop="basket"]', { touch: size.touch });
-      if (i === 0) { await page.waitForTimeout(300); await shot(page, size, "fixture-collect"); }
+      if (i === 0) { await page.waitForTimeout(100); await shot(page, size, "fixture-collect"); }
       await actionIdle(page);
     }
   },

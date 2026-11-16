@@ -12,7 +12,7 @@
   background: var(--parchment, #f4ecd8);
   border: 3px solid var(--ink, #2b1d14);
   box-shadow: 4px 4px 0 var(--ink, #2b1d14);
-  animation: act-in 220ms steps(4) both;
+  animation: act-in 160ms steps(4) both;
 }
 @keyframes act-in { from { transform: translateY(14px); opacity: 0; } }
 
@@ -27,7 +27,7 @@
   cursor: grab;
   touch-action: none; /* the drag owns the gesture, the dock never scrolls under it */
   user-select: none; -webkit-user-select: none;
-  animation: act-pop 360ms cubic-bezier(.3,1.6,.5,1) both;
+  animation: act-pop 200ms cubic-bezier(.3,1.6,.5,1) both;
 }
 .act__item:focus-visible { outline: 3px solid #1e88e5; outline-offset: 3px; }
 .act__item:active { cursor: grabbing; }

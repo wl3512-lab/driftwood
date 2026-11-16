@@ -102,7 +102,8 @@ async function assertArrowsClear(page, label) {
 // Play the open action card to the end. Each new instruction gets a shot;
 // the first unit of a drag kind is a real drag, and named kinds also get a
 // mid-animation shot. Returns the kinds played, in order.
-const MID = { measure: 450, "sow-row": 650, "water-row": 700, furrow: 350, dig: 350, cover: 400 };
+// Mid-animation shot delays: chores are quick now (v2/actions/fx.js PACE, ≤ 250 ms a move).
+const MID = { measure: 120, "sow-row": 120, "water-row": 150, furrow: 90, dig: 90, cover: 100 };
 async function playCard(page, size, run, tag, max = Infinity) {
   const kinds = [];
   let n = 0;

@@ -143,13 +143,13 @@ async function full(browser, size) {
   assert.equal(await page.locator("main.level .act").getAttribute("data-mode"), "tap-target", "watering is a tap on the bed");
   assert.match(await page.locator("main.level .act__how").textContent(), /^Tap each one · or press Enter$/);
   await tapOn(page, '[data-bed="south"]', { touch: !!size.touch });
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(120); // mid-pour: chores are quick (v2/actions/fx.js PACE)
   await shot(page, size, "7-water-stream");
   await actionIdle(page);
   await tapOn(page, '[data-bed="east"]', { touch: !!size.touch });
   // The finger test's "Top inch: dry" sits on the East bed: it fades while the stream pours.
   await page.waitForSelector("main.level .act-layer .l3-jet", { timeout: 4000 });
-  await page.waitForTimeout(520);
+  await page.waitForTimeout(60);
   const crossed = await page.evaluate(() => {
     const jets = [...document.querySelectorAll("main.level .act-layer .l3-jet")].map((j) => j.getBoundingClientRect());
     return [...document.querySelectorAll("main.level .act-mark--text")].filter((m) => {

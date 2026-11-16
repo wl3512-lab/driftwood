@@ -37,6 +37,9 @@ const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce
 const DRAG_START = 5; // px before a press becomes a drag
 
 const HOLD_MS = 1200;
+// The longest a move's marks wait for its animation (fx.js paces each one to
+// ≤ 250 ms; a kind that chains a few can run a little over).
+const LAND_MS = 320;
 const SPOT = 56; // a named spot's box, px
 // Half a tap spot's reach: the 44px button (css/actions.css .act__spot) turned
 // 8° in its wiggle spans ~50px, plus a pixel to spare.
@@ -614,7 +617,14 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       const r = item.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     })();
+    // A tap on the target (dig, water, hoe…) answers at once: the kind's
+    // animation brings its own tool there, so there is no trip to wait for.
+    const trip = from || !targetTap();
     const run = async () => {
+      if (trip) await travel();
+      await k.animate(layer, b, { reduced, spot: k.spot?.(a), face: () => itemFor(a), el: targetEl(tg) });
+    };
+    const travel = async () => {
       const g = from || h("div", { class: "act__ghost", "aria-hidden": "true" }, itemFor(a));
       if (!from) document.body.append(g);
       const end = `translate(${b.rect.left + b.rect.width / 2}px, ${b.rect.top + b.rect.height / 2 - Math.min(70, b.rect.height * 0.3)}px) translate(-50%, -50%)`;
@@ -622,7 +632,6 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
         await play(g, [{ transform: `translate(${start.x}px, ${start.y}px) translate(-50%, -50%)` }, { transform: end }],
           { duration: reduced || from ? 160 : 460, easing: "cubic-bezier(.3,.7,.4,1)" });
       } finally { g.remove(); }
-      await k.animate(layer, b, { reduced, spot: k.spot?.(a), face: () => itemFor(a), el: targetEl(tg) });
     };
     if (a.soak && left[i] === 1) return soakMove(i, run);
     move(i, run);
@@ -672,7 +681,11 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
     if (last) done[i] = true;
     if (run) {
       flying.add(f);
-      Promise.resolve().then(run).catch((err) => console.warn("action animation failed", err)).then(() => { if (!over) f.land(); });
+      // Its marks land when the animation ends, LAND_MS at the latest; under
+      // reduced motion at once (the animation, if any, plays on its own).
+      const played = Promise.resolve().then(run).catch((err) => console.warn("action animation failed", err));
+      if (reduced) f.land();
+      else Promise.race([played, wait(LAND_MS)]).then(() => { if (!over) f.land(); });
     } else {
       f.land();
     }
