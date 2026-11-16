@@ -1587,9 +1587,9 @@ async function checkShelf(page, size, { open: openCount }) {
   await press(page, size, page.locator('button.tool[data-tool="almanac"]'));
   await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   await toShelf(page, size);
-  assert.equal(await page.locator(".almanac .shelf .pk").count(), 14, "a packet for every plant, all five levels");
+  assert.equal(await page.locator(".almanac .shelf .pk").count(), 15, "a packet for every plant, all five levels (Level 4 adds spinach)");
   assert.equal(await page.locator(".almanac .shelf .pk:not(.pk--locked)").count(), openCount, `${openCount} packets open`);
-  assert.match(await page.textContent(".almanac__count"), new RegExp(`${openCount} / 14`));
+  assert.match(await page.textContent(".almanac__count"), new RegExp(`${openCount} / 15`));
   const locked = page.locator(".almanac .shelf .pk--locked").last();
   assert.equal(await locked.getAttribute("aria-disabled"), "true");
   assert.match(await locked.textContent(), /LEVEL 5/);
