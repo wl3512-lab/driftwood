@@ -43,6 +43,14 @@ export default {
     },
   ],
 
+  // On the shelf of earlier plots (ui/finished-garden.js, Level 4 and the
+  // ending): the blueberry bush this level grew, not the wild hedge berry.
+  // Fooled, you were sick all night and the birds got to it.
+  plot: {
+    caught: { plant: "blueberry", state: "thriving" },
+    fooled: { plant: "blueberry", state: "pecked" },
+  },
+
   beds: [
     { id: "row", label: "Bean row", light: "sunny" },
     { id: "tub", label: "Blueberry tub", light: "sunny", kind: "pots" },
