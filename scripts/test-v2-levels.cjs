@@ -2234,7 +2234,7 @@ async function cutsceneSkip(browser, size) {
   // A tap while the caption is still typing shows the whole line, and stays on the beat.
   await page.waitForTimeout(150);
   await press(page, size, page.locator(".cs__cap"));
-  assert.equal(await page.textContent(".cs__cap-t"), "My helpers. They're AI, like ChatGPT with fur.");
+  assert.equal(await page.textContent(".cs__cap-t"), "My helpers. They're AI, like ChatGPT with fur. They'll help you.");
   assert.equal(await page.getAttribute("main.cutscene", "data-beat"), "helpers");
   // → also goes on, once the beat is ready.
   await page.waitForSelector('main.cutscene.is-ready[data-beat="helpers"]');
