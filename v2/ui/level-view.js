@@ -224,8 +224,36 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     else if (ev.target.closest?.("[data-act-back]")) sfx("ui-back");
   }, true);
 
+  // A prop with `fit: "<bed>"` covers that bed's glass: the part above its
+  // --sill-line (all of it when unset), below its sign when the sign stands
+  // inside the bed (phones). Level 2's fog fills the windowsill's window, so
+  // the wipe's tap zone (the prop's box, actions/runner.js) traces the glass.
+  const fitted = (level.props || []).filter((p) => p.id && p.fit);
+  function fitProps() {
+    if (!fitted.length || !mounted) return;
+    const sr = scene.getBoundingClientRect();
+    for (const p of fitted) {
+      const el = scene.querySelector(`[data-prop="${p.id}"]`);
+      const bed = beds.querySelector(`[data-bed="${p.fit}"]`);
+      if (!el || !bed) continue;
+      const br = bed.getBoundingClientRect();
+      const left = br.left + bed.clientLeft;
+      let top = br.top + bed.clientTop;
+      const line = parseFloat(getComputedStyle(bed).getPropertyValue("--sill-line")) || 100;
+      const bottom = top + bed.clientHeight * line / 100;
+      const sign = bed.querySelector(":scope > .bed__label")?.getBoundingClientRect();
+      if (sign && sign.height && sign.top >= br.top) top = Math.max(top, sign.bottom + 2);
+      Object.assign(el.style, { left: `${left - sr.left}px`, top: `${top - sr.top}px`, width: `${bed.clientWidth}px`, height: `${Math.max(0, bottom - top)}px` });
+    }
+  }
+  const fitWatch = fitted.length && typeof ResizeObserver === "function" ? new ResizeObserver(fitProps) : null;
+  fitWatch?.observe(scene);
+  if (fitted.length) window.addEventListener("resize", fitProps);
+
   let mounted = true;
   function unmount() {
+    fitWatch?.disconnect();
+    window.removeEventListener("resize", fitProps);
     forgetPrefetched();
     if (!mounted) return;
     mounted = false;
@@ -350,6 +378,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     meterText.textContent = `Garden ${state.garden}%`;
     meterFill.style.width = `${state.garden}%`;
     beds.replaceChildren(...renderBeds(level, state));
+    fitProps();
     const step = currentStep(level, state);
     if (state.phase === "advice" && step?.place && !thinking) {
       // The beds the player may choose from glow until they pick one.

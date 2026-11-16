@@ -39,3 +39,16 @@
 .level[data-scene="greenhouse"] .bed[data-bed="bench"] {
   --bed-detail: var(--spr-trowel) right 12px bottom 56px / var(--d) auto no-repeat;
 }
+
+/* The fog fills the window's glass (placed by ui/level-view.js fitProps):
+   a pixel mist over the panes, behind the pots, thinning with each wipe. */
+.level[data-scene="greenhouse"] .prop[data-prop="glass"] {
+  transform: none; opacity: 0.8;
+  /* the sprite tiles at pixel scale instead of stretching: the img's own
+     drawing is moved out of its box and the tile is its background */
+  object-fit: none; object-position: -9999px 0;
+  background: url("../art/l2-fog.svg") 0 0 / 64px 64px repeat;
+}
+@media (max-width: 900px) {
+  .level[data-scene="greenhouse"] .prop[data-prop="glass"] { background-size: 40px 40px; }
+}

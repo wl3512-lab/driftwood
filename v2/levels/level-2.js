@@ -29,7 +29,9 @@ export default {
     { sprite: "./art/almanac.svg", class: "prop prop--shelf", alt: "" },
     // Hands-on targets (v2/actions): the fogged pane, Luna's tea jar and three
     // empty pots on the sill. The pots stay empty unless you catch the drift.
-    { id: "glass", sprite: "./art/l2-fog.svg", x: 62, y: 10, w: 96, label: "foggy glass", alt: "" },
+    // The fog covers the windowsill's glass (fit: ui/level-view.js), so the
+    // whole window is the wipe's tap target.
+    { id: "glass", sprite: "./art/l2-fog.svg", x: 62, y: 10, w: 96, fit: "sill", label: "foggy glass", alt: "" },
     // On the windowsill: a seed packet, three pots and Luna's tea jar, all
     // standing on the sill line (y = the line; css/l2-greenhouse.css sizes them).
     { id: "packet", sprite: "./art/seed-packet.svg", x: 54, y: 85.5, label: "seed packet", alt: "" },
