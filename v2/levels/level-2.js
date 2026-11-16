@@ -49,7 +49,9 @@ export default {
 
   beds: [
     { id: "bench", label: "Greenhouse bed", light: "sunny" },
-    { id: "sill", label: "Windowsill pots", light: "sunny", kind: "pots" },
+    // pots: which pot prop each crop grows in (garden/garden.js draws it there,
+    // never as a tiled field across the window).
+    { id: "sill", label: "Windowsill pots", light: "sunny", kind: "pots", pots: { mint: "pot-1" } },
   ],
   startPlants: {},
 

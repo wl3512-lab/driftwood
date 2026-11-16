@@ -33,6 +33,9 @@
 .level[data-scene="greenhouse"] .prop[data-prop="packet"] { width: 5% !important; pointer-events: none; }
 /* The mint plug set in pot 1 stands in the pot's soil, at the pot's size. */
 .level[data-scene="greenhouse"] .act-mark--stand img { width: 64px; height: 64px; }
+/* Once the mint is growing in its pot (garden/garden.js draws it there), the
+   plug's own little pot-and-sprig would perch on the rim: it is gone. */
+.level[data-scene="greenhouse"]:has(.bed[data-bed="sill"] [data-plant="mint"]) .act-mark--stand { display: none; }
 
 /* The bench's corner trowel sat under the dock on a laptop: lift it clear of
    the dock, below the basil rows. */

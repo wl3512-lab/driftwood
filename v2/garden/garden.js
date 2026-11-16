@@ -83,6 +83,24 @@ export function renderBeds(level, state) {
     const order = [...(planned[bed.id] || [])];
     for (const p of here) if (!order.includes(p.plant)) order.push(p.plant);
     const slots = order.map((plant) => here.find((p) => p.plant === plant) || { plant, empty: true });
+    // A windowsill of pot props (bed.pots: { plant: prop id }) gets no tiled
+    // field: each crop grows out of the pot it was planted in (see fitPotted).
+    if (bed.pots) {
+      const el = h("div", { class: ["bed", `bed--${bed.light}`, bed.kind && `bed--${bed.kind}`, "bed--potted"].filter(Boolean).join(" "), "data-bed": bed.id },
+        h("span", { class: "bed__label" }, `${bed.label} ${LIGHT_ICON[bed.light]}`),
+        h("div", { class: "bed__plants" },
+          slots.filter((p) => !p.empty && bed.pots[p.plant]).map((p) => {
+            const src = plantSrc(p.plant, p.state);
+            nowSeen.set(`${bed.id}|${p.plant}`, src);
+            return h("div", {
+              class: `field field--potted field--${p.state}`, "data-field": p.plant, "data-pot": bed.pots[p.plant],
+              style: `background-image: url("${src}")`,
+            },
+            h("img", { class: `plant plant--${p.state}`, "data-plant": p.plant, src, alt: `${p.plant}, ${p.state}, in its pot`, width: 64, height: 64 }));
+          })));
+      fitPotted(el);
+      return el;
+    }
     return h("div", { class: ["bed", `bed--${bed.light}`, bed.kind && `bed--${bed.kind}`].filter(Boolean).join(" "), "data-bed": bed.id },
       h("span", { class: "bed__label" }, `${bed.label} ${LIGHT_ICON[bed.light]}`),
       h("div", { class: "bed__plants" },
@@ -108,4 +126,36 @@ export function renderBeds(level, state) {
   });
   SEEN.set(level, nowSeen);
   return out;
+}
+
+// A potted crop stands in its pot prop: its sprite (a plant drawn over its own
+// little pot, art/<plant>-<state>.svg) is cut at its soil row, so only the
+// leaves show, scaled to ~60% of the pot prop's box (≈80% of the pot's body at
+// full size), with its base just under the big pot's rim. The beds sit a layer
+// below the scene props, so the pot's rim and soil cover the stems: the plant
+// grows up out of the pot. Placed by measuring, after layout, and again
+// whenever the bed changes size.
+export const POT_PLANT = { width: 0.6, rows: 10, soil: 15 / 32 };
+let potWatch = null;
+function fitPotted(bed) {
+  if (typeof window === "undefined" || typeof requestAnimationFrame !== "function") return;
+  if (!potWatch && typeof ResizeObserver === "function") potWatch = new ResizeObserver((es) => es.forEach((e) => placePotted(e.target)));
+  requestAnimationFrame(() => { if (bed.isConnected) { placePotted(bed); potWatch?.observe(bed); } });
+}
+function placePotted(bed) {
+  if (!bed.isConnected) { potWatch?.unobserve(bed); return; }
+  const scene = bed.closest(".scene") || document;
+  const br = bed.getBoundingClientRect();
+  for (const f of bed.querySelectorAll(".field--potted")) {
+    const pot = scene.querySelector(`[data-prop="${f.dataset.pot}"]`);
+    if (!pot) continue;
+    const pr = pot.getBoundingClientRect();
+    const w = Math.round(pr.width * POT_PLANT.width);
+    const hgt = Math.round(w * POT_PLANT.rows / 16);
+    Object.assign(f.style, {
+      left: `${Math.round(pr.left + pr.width / 2 - w / 2 - br.left - bed.clientLeft)}px`,
+      top: `${Math.round(pr.top + pr.height * POT_PLANT.soil - hgt - br.top - bed.clientTop)}px`,
+      width: `${w}px`, height: `${hgt}px`,
+    });
+  }
 }

@@ -242,6 +242,13 @@
   100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .field--new, .field--regrow.field--new::after { animation: none; } }
+/* A crop in a pot prop (garden.js fitPotted places it): one plant, the sprite
+   cut at its soil row, standing behind the pot so the rim hides its base. */
+.field--potted {
+  position: absolute; flex: none; min-height: 0; pointer-events: auto;
+  background-size: 100% auto; background-position: 50% 0; background-repeat: no-repeat;
+}
+.field--potted.field--new { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 
 .packets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .packet {
