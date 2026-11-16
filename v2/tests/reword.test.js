@@ -53,8 +53,13 @@ test("validate accepts a fresh line that keeps the facts", () => {
 });
 
 test("validate strips quotes and a name label, collapses whitespace", () => {
-  assert.equal(validate("\"South bed!  Full sun, baby.\"", line), "South bed! Full sun, baby.");
-  assert.equal(validate("Mango: South bed. Full sun!", line), "South bed. Full sun!");
+  assert.equal(validate("\"Sunflowers: south bed!  Full sun, baby.\"", line), "Sunflowers: south bed! Full sun, baby.");
+  assert.equal(validate("Mango: Sunflowers in the south bed. Full sun!", line), "Sunflowers in the south bed. Full sun!");
+});
+
+test("validate rejects rewording that drops or adds a crop", () => {
+  assert.equal(validate("South bed! Full sun, baby.", line), null, "dropping sunflowers loses the subject");
+  assert.equal(validate("Sunflowers and mint: south bed, full sun!", line), null, "adding mint invents a crop");
 });
 
 test("validate rejects a dropped fact, a long answer, a refusal, empty output", () => {
