@@ -708,7 +708,8 @@ async function trustSteps3(page, size) {
   assert.match(await page.textContent(".bubble__text"), /aphids/);
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
   await phase(page, "ask");
-  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--thriving');
+  // The tie chore (auto-done here) stakes the beans: they stand up stronger.
+  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--staked');
   await press(page, size, page.getByRole("button", { name: "Are my blueberries ripe yet?" }));
   await phase(page, "advice");
   await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
