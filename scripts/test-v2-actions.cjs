@@ -259,9 +259,9 @@ for (const size of [MAC, PHONE]) {
     return t;
   });
 
-  // Level 3's blueberries, Do it: pick the four ripe berries one by one; the
-  // step applies only after the fourth. (The wild-berry drift has no pick:
-  // the game never acts out eating them.)
+  // Level 3's blueberries, Do it: they ripen first, then you pick the four
+  // ripe berries one by one; the pick chore stays open until the fourth.
+  // (The wild-berry drift has no pick: the game never acts out eating them.)
   run(`${size.name}/multi-pick`, async (browser) => {
     const t = await open(browser, size);
     await level(t.page, "level-3");
@@ -272,13 +272,13 @@ for (const size of [MAC, PHONE]) {
     await auto(t.page, false);
     await press(t.page, size, '[data-fid="chip-0"]');
     await press(t.page, size, '[data-fid="do"]');
-    await t.page.waitForSelector('.act[data-kind="pick"]');
+    await t.page.waitForSelector('.act[data-kind="pick"]', { timeout: 15000 }); // after the ~3.6 s ripening
     assert.equal(await t.page.locator(".act__spot").count(), 4);
     await t.page.waitForTimeout(400);
     await assertSpotsFit(t.page, `${size.name} berries`);
     await shot(t.page, size, "multi-pick");
     for (let i = 0; i < 4; i++) {
-      assert.equal(await t.page.locator("main.level").getAttribute("data-phase"), "advice", "applied only after the last berry");
+      assert.equal(await t.page.locator('.act[data-kind="pick"]').count(), 1, "the pick stays open until the last berry");
       await press(t.page, size, ".act__spot");
       await t.page.waitForTimeout(50);
       await actionIdle(t.page);
