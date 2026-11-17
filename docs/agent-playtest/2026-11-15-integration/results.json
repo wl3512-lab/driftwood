@@ -1,0 +1,12 @@
+[
+  {
+    "test": "laptop/full",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/full",
+    "status": "pass",
+    "longtasks": []
+  }
+]

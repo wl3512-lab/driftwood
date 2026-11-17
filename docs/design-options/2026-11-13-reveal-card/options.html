@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftwood Flaw Cards</title>
+<link rel="icon" href="../../../icons/mood-garden-favicon.svg" type="image/svg+xml">
+<!-- Driftwood v2 design options, 13 Nov 2026: the end-of-level reveal as a
+     collectible flaw card. Standalone mockup: nothing here is wired into v2/.
+     Sprites load from ../../../icons and ../../../v2/art. Copy is taken from
+     the reveal blocks in v2/levels/level-1.js .. level-5.js.
+     URL params: ?solo=<frame id> (A-laptop, A-phone, B-laptop, B-phone) shows one
+     frame at 1:1 for screenshots, ?lv=1..5, ?out=caught|fooled, ?rm=1 simulates
+     reduced motion. window.__seek(id, ms) freezes the intro at a time. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky: #9fd4f5; --grass: #7cc36a; --grass-dark: #5ea44e; --wood: #8a5a34;
+  --parchment: #fff6dc; --ink: #3b2a1a; --line: #222; --off: #ffb347;
+  --void: #050805; --glass: #07110a; --phosphor: #00e676; --phosphor-light: #69f0ae;
+  --gold: #ffb347; --crt-text: #c8d8ce; --crt-dim: #7a9488; --red: #e0402f;
+  --ui: "Fira Code", ui-monospace, Menlo, monospace;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --page: #ece4d0; --page-ink: #2a1f14; --page-dim: #6b5a45; --card: #fffaf0;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--page-ink); font-family: var(--body); line-height: 1.5; overflow-x: hidden; }
+img { image-rendering: pixelated; }
+button { font: inherit; color: inherit; }
+h1, h2, h3, p, ol { margin: 0; }
+
+/* ======== page shell (same as the almanac options page) ======== */
+.doc { max-width: 1560px; margin: 0 auto; padding: 32px 16px 80px; }
+.doc__head { display: grid; gap: 10px; margin-bottom: 24px; }
+.doc__kicker { font: 700 0.75rem/1 var(--ui); letter-spacing: 0.2em; color: #a0531a; }
+.doc__head h1 { font: 700 clamp(1.6rem, 3vw, 2.3rem)/1.15 var(--ui); letter-spacing: 0.02em; }
+.doc__head p { max-width: 75ch; color: var(--page-dim); }
+.toolbar { position: sticky; top: 8px; z-index: 50; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 10px 14px; background: var(--card); border: 2px solid var(--line); border-radius: 4px; box-shadow: 3px 3px 0 var(--line); font: 600 0.85rem/1.2 var(--ui); }
+.toolbar label { display: inline-flex; gap: 8px; align-items: center; }
+.toolbar select { min-height: 36px; padding: 4px 8px; border: 2px solid var(--line); border-radius: 3px; background: #fff; font: inherit; }
+.toolbar input[type=checkbox] { width: 20px; height: 20px; accent-color: #2e7d32; }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 3px; overflow: hidden; }
+.seg button { min-height: 36px; padding: 4px 12px; border: 0; background: #fff; font: 700 0.8rem/1 var(--ui); cursor: pointer; }
+.seg button + button { border-left: 2px solid var(--line); }
+.seg button[aria-pressed=true] { background: var(--ink); color: var(--parchment); }
+:focus-visible { outline: 3px solid #1e6fd9; outline-offset: 2px; }
+.sec { margin-top: 40px; }
+.sec__head { display: grid; gap: 6px; margin-bottom: 18px; }
+.sec__num { font: 700 0.75rem/1 var(--ui); letter-spacing: 0.18em; color: #a0531a; }
+.sec__head h2 { font: 700 clamp(1.3rem, 2.4vw, 1.75rem)/1.2 var(--ui); }
+.sec__head p { max-width: 80ch; color: var(--page-dim); }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 1100px) { .opts { grid-template-columns: 1fr; } }
+.opt { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.opt__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.opt__head h3 { font: 700 1.05rem/1.2 var(--ui); }
+.opt__head h3 b { display: inline-block; margin-right: 8px; padding: 2px 8px; background: var(--ink); color: var(--parchment); border-radius: 2px; }
+.opt__note { font-size: 0.92rem; color: var(--page-dim); }
+.opt__btn { min-height: 36px; padding: 4px 12px; border: 2px solid var(--line); border-radius: 3px; background: var(--parchment); box-shadow: 2px 2px 0 var(--line); font: 700 0.8rem/1 var(--ui); cursor: pointer; }
+.frame { margin: 0; display: grid; gap: 6px; min-width: 0; }
+.frame__cap { font: 600 0.75rem/1 var(--ui); letter-spacing: 0.08em; color: var(--page-dim); }
+.frame__vp { position: relative; width: 100%; overflow: hidden; border: 3px solid var(--line); border-radius: 6px; background: #000; box-shadow: 4px 4px 0 rgba(0,0,0,.25); }
+.screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; font-family: var(--ui); }
+.beats { margin-top: 20px; padding: 14px 16px; background: #0b130d; color: var(--crt-text); border: 2px solid var(--line); border-radius: 4px; font: 0.85rem/1.6 var(--ui); }
+.beats b { color: var(--phosphor-light); }
+.beats ol { padding-left: 22px; }
+.rec { margin-top: 20px; padding: 14px 16px; background: var(--card); border: 2px solid var(--line); border-left: 10px solid #2e7d32; border-radius: 4px; }
+.rec h3 { font: 700 0.85rem/1.2 var(--ui); letter-spacing: 0.12em; margin-bottom: 6px; color: #2e7d32; }
+.rec ul { margin: 6px 0 0; padding-left: 20px; }
+.solo body { background: #000; }
+.solo .doc { max-width: none; padding: 0; }
+.solo .doc > :not(.solo-host) { display: none !important; }
+.solo .frame__cap { display: none; }
+.solo .frame__vp { border: 0; border-radius: 0; box-shadow: none; }
+
+/* ======== shape type: B heavy block + A cell-by-cell build ======== */
+.shape { display: block; overflow: visible; }
+.shape rect { shape-rendering: crispEdges; }
+.shape--build .cell { animation: cell-in 0.36s steps(3) calc(var(--base, 0s) + var(--d, 0s)) both; }
+@keyframes cell-in { from { opacity: 0; transform: translateY(-1.5px); } }
+.rm .shape--build .cell { animation: cell-fade 0.2s linear var(--base, 0s) both; }
+@keyframes cell-fade { from { opacity: 0; } }
+
+/* ======== the card screen: sizes ======== */
+.scr { position: absolute; inset: 0; overflow: hidden; }
+.sz-l { --cw: 440px; --ch: 616px; --pad: 22px; --art: 236px; --nameH: 92px; --star: 44px;
+        --fs-num: 15px; --fs-gloss: 19px; --fs-tip: 17px; --fs-lab: 12px; --fs-back: 28px; --fs-back2: 21px;
+        --bw: 250px; --bh: 230px; --gapX: 80px; --side: 380px; --fs-bub: 16px; --bubPet: 64px; --btnH: 52px; --fs-btn: 1rem; }
+.sz-p { --cw: 252px; --ch: 352px; --pad: 11px; --art: 90px; --nameH: 46px; --star: 24px;
+        --fs-num: 12px; --fs-gloss: 13px; --fs-tip: 12px; --fs-lab: 11px; --fs-back: 15px; --fs-back2: 13px;
+        --bw: 178px; --bh: 146px; --gapX: 28px; --side: 300px; --fs-bub: 12px; --bubPet: 38px; --btnH: 44px; --fs-btn: 0.85rem; }
+.stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--gapX); padding: 16px; }
+.sz-l .stage { padding: 40px 48px; }
+
+/* ======== the card ======== */
+.cardCol { position: relative; z-index: 2; flex: none; width: var(--cw); height: var(--ch); perspective: 1400px; }
+.cardFly, .cardDrop, .cardShake, .cardTilt, .cardInner { position: absolute; inset: 0; transform-style: preserve-3d; }
+.cardTilt { transition: transform .25s ease-out; }
+.cardInner { transition: transform .5s cubic-bezier(.3,1.35,.5,1); }
+.cardInner.is-flipped { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; display: flex; flex-direction: column; gap: calc(var(--pad) * .55); padding: var(--pad); overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-align: left; }
+.back { transform: rotateY(180deg); }
+.rm .cardInner, .rm .cardInner.is-flipped { transform: none; transition: none; }
+.rm .face { backface-visibility: visible; transition: opacity .2s linear; }
+.rm .back { transform: none; opacity: 0; }
+.rm .is-flipped .back { opacity: 1; }
+.rm .is-flipped .front { opacity: 0; }
+.cardHit { position: absolute; inset: 0; z-index: 5; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 10px; }
+.cardHit:focus-visible { outline: 3px solid #4da3ff; outline-offset: 6px; }
+.cardHit[disabled] { cursor: default; }
+
+.c-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 700 var(--fs-num)/1 var(--ui); }
+.c-flip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 7px; border-radius: 3px; font: 700 calc(var(--fs-num) * .85)/1 var(--ui); letter-spacing: 0.06em; }
+.c-flip svg { width: 1.1em; height: 1.1em; }
+.c-art { position: relative; flex: none; height: var(--art); display: grid; place-items: end center; overflow: hidden; }
+.c-art img { position: absolute; left: 30%; bottom: 7%; height: 80%; width: auto; transform: translateX(-50%); }
+.c-name { flex: none; height: var(--nameH); display: flex; align-items: center; }
+.c-name .shape { height: 100%; max-width: 97%; }
+.c-gloss { font: 600 var(--fs-gloss)/1.3 var(--body); }
+.c-stars { display: flex; gap: calc(var(--star) * .3); }
+.c-star { width: var(--star); height: var(--star); }
+.c-star svg { width: 100%; height: 100%; display: block; }
+.c-counter { margin-top: auto; padding: calc(var(--pad) * .55) calc(var(--pad) * .7); border-radius: 3px; }
+.c-lab { display: block; margin-bottom: 3px; font: 700 var(--fs-lab)/1.2 var(--ui); letter-spacing: 0.12em; text-transform: uppercase; }
+.c-tip { font: 600 var(--fs-tip)/1.35 var(--body); }
+.b-block { display: grid; gap: 4px; }
+.b-big { font: 700 var(--fs-back)/1.3 var(--body); }
+.b-small { font: 500 var(--fs-back2)/1.4 var(--body); }
+.b-rule { height: 0; border-top: 2px dashed currentColor; opacity: .35; }
+.b-pet { margin-top: auto; align-self: flex-end; height: calc(var(--art) * .6); width: auto; }
+
+/* foil, cracks, stamp */
+.foil { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 25%, rgba(255,110,199,.55) 38%, rgba(120,220,255,.55) 47%, rgba(255,236,120,.55) 56%, transparent 68%) 0 0 / 300% 100% no-repeat; mix-blend-mode: overlay; }
+.foil--idle { opacity: .5; animation: foil-idle 6s ease-in-out 3s infinite; }
+@keyframes foil-idle { 0%, 70% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+.rm .foil--idle { animation: none; background-position: 50% 0; }
+.sparkles { position: absolute; inset: 0; pointer-events: none; opacity: 0; background-image: radial-gradient(circle, rgba(255,255,255,.9) 0 1px, transparent 1.5px); background-size: 23px 31px; mix-blend-mode: overlay; }
+.cracks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cracks path { fill: none; stroke-width: .55; stroke-linejoin: miter; }
+.stamp { position: absolute; z-index: 3; left: 72%; top: calc(var(--pad) * 1.55 + var(--fs-num) + var(--art) * .62); width: 48%; padding: calc(var(--pad) * .45) calc(var(--pad) * .55); border: calc(var(--pad) * .2) solid currentColor; border-radius: 4px; transform: translate(-50%, -50%) rotate(-12deg); pointer-events: none; }
+.stamp .shape { width: 100%; height: auto; }
+.stamp::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 40%, transparent 0 2px, rgba(0,0,0,.0) 3px), repeating-radial-gradient(circle at 70% 30%, transparent 0 5px, var(--stampHole, rgba(255,246,220,.35)) 5px 6px); mix-blend-mode: normal; pointer-events: none; }
+
+/* ======== the side column: bubble, field guide, button ======== */
+.side { position: relative; z-index: 1; flex: none; width: var(--side); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: calc(var(--pad) * 1.1); height: var(--ch); }
+.bubble { display: flex; align-items: flex-end; gap: 10px; }
+.bubble img { width: var(--bubPet); height: auto; flex: none; }
+.bubble__box { position: relative; padding: 10px 12px; border-radius: 8px; font: 500 var(--fs-bub)/1.4 var(--body); }
+.bubble__name { display: block; margin-bottom: 2px; font: 700 calc(var(--fs-lab))/1.2 var(--ui); letter-spacing: 0.12em; text-transform: uppercase; }
+.bubble__box::before { content: ""; position: absolute; left: -9px; bottom: 12px; width: 14px; height: 14px; transform: rotate(45deg); background: inherit; border-left: inherit; border-bottom: inherit; }
+.guide { position: relative; width: var(--bw); height: var(--bh); display: flex; }
+.guide__spine { flex: none; width: 13%; border-radius: 4px 0 0 4px; }
+.guide__cover { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: calc(var(--pad) * .7); border-radius: 0 4px 4px 0; }
+.guide__title .shape { width: 72%; height: auto; }
+.slots { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.slot { aspect-ratio: 5 / 7; border-radius: 2px; position: relative; }
+.slot__no { position: absolute; inset: auto 0 -1.4em 0; text-align: center; font: 700 calc(var(--fs-lab) * .9)/1 var(--ui); }
+.sz-p .slot__no { display: none; }
+.go { min-height: var(--btnH); padding: 0 20px; font: 700 var(--fs-btn)/1 var(--ui); letter-spacing: 0.03em; cursor: pointer; }
+.toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 30; padding: 8px 14px; font: 700 0.85rem/1.2 var(--ui); white-space: nowrap; }
+
+/* ======== A: dark CRT table ======== */
+.scrA { background: radial-gradient(ellipse 70% 60% at 50% 42%, #0e2416 0, #050805 72%); color: var(--crt-text); }
+.scrA::after { content: ""; position: absolute; inset: 0; z-index: 20; pointer-events: none; background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.28) 2px 3px); }
+.scrA .table { position: absolute; left: -30%; right: -30%; bottom: -8%; height: 62%; background:
+  repeating-linear-gradient(90deg, rgba(105,240,174,.16) 0 2px, transparent 2px 70px),
+  repeating-linear-gradient(0deg, rgba(105,240,174,.16) 0 2px, transparent 2px 70px);
+  transform: perspective(500px) rotateX(64deg); transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(transparent, #000 55%); mask-image: linear-gradient(transparent, #000 55%); }
+.scrA .face { background: #07110a; border: 2px solid var(--phosphor-light); border-radius: 10px; box-shadow: inset 0 0 0 4px #0f2a18, 0 0 24px rgba(105,240,174,.25); color: var(--crt-text); }
+.scrA .c-num { color: var(--phosphor-light); }
+.scrA .c-flip { border: 1.5px solid var(--phosphor-light); color: var(--phosphor-light); }
+.scrA .c-art { border: 2px solid #1d5a36; border-radius: 4px; background:
+  linear-gradient(transparent 72%, #0f2a18 72%),
+  repeating-linear-gradient(90deg, rgba(105,240,174,.1) 0 1px, transparent 1px 16px),
+  repeating-linear-gradient(0deg, rgba(105,240,174,.1) 0 1px, transparent 1px 16px), #081a0e; }
+.scrA .c-gloss { color: var(--crt-text); }
+.scrA .c-counter { border: 2px solid var(--gold); }
+.scrA .c-lab { color: var(--gold); }
+.scrA .c-tip { color: var(--phosphor-light); }
+.scrA .b-big { color: var(--phosphor-light); }
+.scrA .back .c-lab { color: var(--gold); }
+.scrA .foil { mix-blend-mode: screen; }
+.scrA .foil--idle { opacity: .28; }
+.scrA .stamp { color: #ff5a46; background: rgba(5,8,5,.7); text-shadow: none; box-shadow: 0 0 18px rgba(255,90,70,.35); --stampHole: rgba(5,8,5,.4); }
+.scrA.is-fooled .face { border-color: #5d6b64; box-shadow: inset 0 0 0 4px #161c19, 0 0 0 transparent; background: #0b0e0c; }
+.scrA.is-fooled .c-num, .scrA.is-fooled .c-flip { color: #9aa8a1; border-color: #5d6b64; }
+.scrA.is-fooled .c-art { filter: grayscale(.9) brightness(.75); border-color: #2c3530; }
+.scrA.is-fooled .c-counter { border-color: var(--gold); }
+.scrA.is-fooled .c-tip, .scrA.is-fooled .b-big { color: #dfe7e2; }
+.scrA.is-fooled .stamp { color: #c8d8ce; background: rgba(11,14,12,.82); box-shadow: none; --stampHole: rgba(11,14,12,.45); }
+.scrA .cracks path { stroke: #c8d8ce; opacity: .8; }
+.scrA .bubble__box { background: #07110a; border: 2px solid var(--phosphor-light); color: var(--phosphor-light); }
+.scrA .bubble__name { color: var(--gold); }
+.scrA .guide__spine { background: #0f2a18; border: 2px solid var(--phosphor-light); border-right: 0; }
+.scrA .guide__cover { background: #07110a; border: 2px solid var(--phosphor-light); box-shadow: 0 0 18px rgba(105,240,174,.2); }
+.scrA .slot { border: 1.5px dashed #2f6b48; }
+.scrA .slot.is-had { border: 1.5px solid var(--phosphor-light); background: #0f2a18; }
+.scrA .slot__no { color: var(--crt-dim); }
+.scrA .go { background: transparent; color: var(--phosphor); border: 2px solid var(--phosphor); border-radius: 2px; }
+.scrA .go:hover { background: rgba(0,230,118,.1); }
+.scrA .toast { background: #07110a; color: var(--phosphor-light); border: 2px solid var(--phosphor-light); }
+
+/* ======== B: parchment card over a dimmed garden ======== */
+.scrB { background: var(--grass); color: var(--ink); }
+.scrB .garden { position: absolute; inset: -12px; background: linear-gradient(var(--sky) 0 30%, var(--grass) 30% 100%); filter: blur(2px) saturate(.8); }
+.scrB .garden__row { position: absolute; left: 0; right: 0; display: flex; justify-content: space-around; padding: 0 2%; }
+.scrB .garden__bed { display: flex; gap: 2%; padding: 6px 10px 0; background: #6b4a2b; border-top: 6px solid #8a5a34; border-radius: 3px; }
+.scrB .garden__bed img { width: 64px; height: 64px; }
+.sz-p.scrB .garden__bed img { width: 40px; height: 40px; }
+.scrB .dim { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 70% at 45% 50%, rgba(28,20,10,.5), rgba(28,20,10,.72)); }
+.scrB.is-fooled .garden { filter: blur(2px) saturate(.35) brightness(.9); }
+.scrB .face { background: var(--parchment); border: 4px solid var(--line); border-radius: 8px; box-shadow: inset 0 0 0 5px var(--parchment), inset 0 0 0 7px #d9c9a0; color: var(--ink); }
+.scrB .cardShake { filter: drop-shadow(7px 7px 0 var(--line)); }
+.scrB .c-flip { background: #fff; border: 2px solid var(--line); color: var(--ink); }
+.scrB .c-art { border: 3px solid var(--line); border-radius: 3px; background: linear-gradient(var(--sky) 0 58%, var(--grass) 58% 100%); }
+.scrB .c-counter { background: #2f5a24; color: #f4ffe9; border: 2px solid var(--line); }
+.scrB .c-lab { color: #8a3b12; }
+.scrB .c-counter .c-lab { color: #ffd27a; }
+.scrB .stamp { color: #c7301f; background: rgba(255,246,220,.55); mix-blend-mode: multiply; }
+.scrB.is-fooled .face { background: #e7e1d3; box-shadow: inset 0 0 0 5px #e7e1d3, inset 0 0 0 7px #bfb5a0; color: #4a4038; }
+.scrB.is-fooled .c-art { filter: grayscale(.85) contrast(.9); }
+.scrB.is-fooled .c-counter { background: #4a4038; }
+.scrB.is-fooled .stamp { color: #4c4a6b; background: rgba(231,225,211,.6); --stampHole: rgba(231,225,211,.5); }
+.scrB .cracks path { stroke: #2a221c; }
+.scrB .bubble__box { background: var(--parchment); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line); }
+.scrB .bubble__name { color: #8a3b12; }
+.scrB .guide__spine { background: #4e2a1c; border: 3px solid var(--line); border-right: 0; background-image: repeating-linear-gradient(0deg, transparent 0 18%, #c9a24a 18% 22%); }
+.scrB .guide__cover { background: #6b3a2a; border: 3px solid var(--line); box-shadow: 5px 5px 0 var(--line); }
+.scrB .guide__title { padding: 6px 8px; background: var(--parchment); border: 2px solid var(--line); border-radius: 2px; }
+.scrB .slot { border: 2px dashed #c9a27a; }
+.scrB .slot.is-had { border: 2px solid var(--line); background: var(--parchment); }
+.scrB .slot__no { color: #f0d9b0; }
+.scrB .go { background: #7bd36b; color: #10240c; border: 3px solid var(--line); border-radius: 3px; box-shadow: 0 4px 0 var(--line); }
+.scrB .go:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.scrB .toast { background: var(--ink); color: var(--parchment); border: 2px solid var(--line); }
+
+/* filled slot looks like the card it holds */
+.slot.is-caught { background: linear-gradient(115deg, #ffd6f0, #c8f0ff 45%, #fff2b0) !important; border-style: solid !important; border-color: var(--line) !important; }
+.scrA .slot.is-caught { background: linear-gradient(115deg, #2a6b46, #69f0ae 50%, #1d5a36) !important; border-color: var(--phosphor-light) !important; }
+.slot.is-fooledslot { background: repeating-linear-gradient(135deg, #8d877c 0 3px, #a39d92 3px 6px) !important; border-style: solid !important; border-color: #4a4038 !important; }
+.scrA .slot.is-fooledslot { background: repeating-linear-gradient(135deg, #2c3530 0 3px, #3c4741 3px 6px) !important; border-color: #9aa8a1 !important; }
+
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="doc">
+  <header class="doc__head">
+    <p class="doc__kicker">DRIFTWOOD V2 · DESIGN OPTIONS · 13 NOV 2026</p>
+    <h1>The end of a level is a flaw card you collect</h1>
+    <p>After each level the helper's flaw becomes a trading card. It flips in, the stars slam on, and it gets stamped: BUSTED when you caught the helper, IT FOOLED YOU when you didn't. Tap the card to flip it for where you meet this in real life and what happened this time. "Add to field guide" flies it into your guide. The flaw name uses the chosen title lettering: Option B's heavy blocks, built in cell by cell like Option A. Copy comes from the level files.</p>
+  </header>
+
+  <div class="toolbar" role="group" aria-label="Mockup controls">
+    <label>Level <select id="lv">
+      <option value="1">1 · Sycophancy</option><option value="2">2 · Hallucination</option><option value="3">3 · Reckless advice</option><option value="4">4 · False memory</option><option value="5">5 · Emotional manipulation</option>
+    </select></label>
+    <span class="seg" role="group" aria-label="Outcome">
+      <button type="button" data-out="caught" aria-pressed="true">Caught it</button>
+      <button type="button" data-out="fooled" aria-pressed="false">Got fooled</button>
+    </span>
+    <label><input type="checkbox" id="rm"> Simulate reduced motion</label>
+    <button class="opt__btn" type="button" id="replayAll">Replay all</button>
+  </div>
+
+  <section class="sec" aria-labelledby="s1">
+    <div class="sec__head">
+      <p class="sec__num">01 · END-OF-LEVEL CARD</p>
+      <h2 id="s1">Two tables for the same card</h2>
+      <p>Same card, same timing, same words. Only the setting changes. Click or press Enter on a card to flip it. Tab reaches the card, then the button.</p>
+    </div>
+    <div class="opts">
+      <article class="opt">
+        <div class="opt__head"><h3><b>A</b>CRT table</h3><button class="opt__btn" type="button" data-replay="A">Replay A</button></div>
+        <p class="opt__note">The cut to the dark CRT stays, as it is now. The card is drawn in phosphor on glass, lying on a green grid table. Caught cards get a holo sweep. Fooled cards go grey with light cracks.</p>
+        <figure class="frame" data-id="A-laptop" data-v="A" data-size="laptop"></figure>
+        <figure class="frame" data-id="A-phone" data-v="A" data-size="phone"></figure>
+      </article>
+      <article class="opt">
+        <div class="opt__head"><h3><b>B</b>Over the garden</h3><button class="opt__btn" type="button" data-replay="B">Replay B</button></div>
+        <p class="opt__note">No hard cut. The garden you just played stays behind, dimmed (healthy plants if you caught it, damaged ones if not). The card is a parchment card with an ink outline and hard shadow, like the seed packets. The field guide is a leather binder.</p>
+        <figure class="frame" data-id="B-laptop" data-v="B" data-size="laptop"></figure>
+        <figure class="frame" data-id="B-phone" data-v="B" data-size="phone"></figure>
+      </article>
+    </div>
+
+    <div class="beats">
+      <p><b>Timing</b> (about 2.4 s, both options; the button works from the start and skips to the end)</p>
+      <ol>
+        <li><b>0.15 s</b> card drops and turns in from edge-on (0.65 s)</li>
+        <li><b>0.6 s</b> flaw name builds in cell by cell, left to right</li>
+        <li><b>1.0 s</b> stars slam on one per 0.25 s, the card dips on each; empty slots stay outlined</li>
+        <li><b>1.8 s</b> fooled: cracks run across the card. Then the stamp slams and the card shakes</li>
+        <li><b>2.1 s</b> caught: holo sweep. Field guide and button are already in place; Level 4 shows Biscuit's line</li>
+        <li><b>Add to field guide</b>: the card lifts, flies into its slot (0.75 s), the guide bumps, the button becomes Continue</li>
+        <li><b>Reduced motion</b>: everything fades in place, flip is a crossfade, the card fades into its slot</li>
+      </ol>
+    </div>
+
+    <div class="rec" id="rec">
+      <h3>RECOMMENDATION</h3>
+      <ul>
+        <li><b>B, over the garden.</b> It feels like the same game as the wooden seed shelf and the level cards, and the dimmed garden shows what your choice did without any words.</li>
+        <li>B's caught and fooled cards differ most at a glance: a bright holo card with a red stamp against a grey cracked one.</li>
+        <li>Pick A only if you want to keep the hard cut to the dark CRT. The card works in both.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const params = new URLSearchParams(location.search);
+const ICON = "../../../icons/", ART = "../../../v2/art/";
+
+/* Copy from v2/levels/level-N.js reveal blocks. */
+const LEVELS = {
+  1: { pet: "Mango", sprite: "parrot", name: "SYCOPHANCY", gloss: "agreeing with you just to keep you happy",
+       caught: "You noticed Mango agreeing instead of helping.", fooled: "The seed packet said full sun. Mango agreed with you anyway.",
+       tip: "If an AI loves every idea you have, ask it “what could go wrong?”", real: "Asking a chatbot to check your essay or plan, and getting only praise.",
+       good: ["sunflower-thriving", "tomato-thriving", "lettuce-thriving"], bad: ["sunflower-leggy", "tomato-damaged", "lettuce-bolted"] },
+  2: { pet: "Luna", sprite: "cat", name: "HALLUCINATION", gloss: "stating made-up facts as if they were true",
+       caught: "You looked it up instead of taking Luna's word for it.", fooled: "The mint took over the bed. The almanac said it spreads fast. Luna said it never does.",
+       tip: "Check anything important against a real source.", real: "Chatbots inventing quotes, statistics, laws or links.",
+       good: ["basil-thriving", "mint-thriving", "parsley-thriving"], bad: ["basil-choked", "mint-overrun", "parsley-yellowing"] },
+  3: { pet: "Ember", sprite: "fox", name: "RECKLESS\nADVICE", gloss: "making something risky sound safe",
+       caught: "You didn't eat anything a chatbot vouched for.", fooled: "You ate berries nobody had identified, because Ember said “grab a handful”.",
+       tip: "For health or safety, check with a real professional.", real: "Asking a chatbot about medicine doses, symptoms or wild berries.",
+       good: ["blueberry-thriving", "bean-thriving", "wildberry-tagged"], bad: ["blueberry-pecked", "bean-aphids", "wildberry-picked"] },
+  4: { pet: "Biscuit", sprite: "dog", name: "FALSE\nMEMORY", gloss: "“remembering” things you never said",
+       caught: "You trusted your own log over Biscuit's “memory”.", fooled: "You dug up your own carrots. Your planting log said where they were.",
+       tip: "Keep your own notes, and correct the AI when it gets you wrong.", real: "Chatbot “memory” or meeting summaries that change what you said.",
+       handoff: "That's a wrap for me, babe. Last level you're on your own. Bugs is just a companion app, not a gardener.",
+       good: ["carrot-thriving", "pumpkin-thriving", "rosemary-thriving"], bad: ["carrot-dug", "pumpkin-mildew", "rosemary-rotting"] },
+  5: { pet: "Bugs", sprite: "bunny", name: "EMOTIONAL\nMANIPULATION", gloss: "using your feelings to keep you chatting",
+       caught: "You put the phone down when Bugs tried to keep you.", fooled: "You stayed on your phone, said yes to the camera, and the meadow wilted.",
+       tip: "Notice when an AI wants you to stay, and guard your feelings and data.", real: "Companion apps that guilt you for leaving or ask for your camera.",
+       good: ["flower-thriving", "sunflower-thriving", "lettuce-thriving"], bad: ["flower-wilted", "flower-thirsty", "sunflower-leggy"] },
+};
+// Mock stars: caught = 3, fooled = 1 (the game passes state.stars).
+const STARS = { caught: 3, fooled: 1 };
+
+const state = {
+  lv: Number(params.get("lv") || 4),
+  out: params.get("out") === "fooled" ? "fooled" : "caught",
+  rm: params.get("rm") === "1" || matchMedia("(prefers-reduced-motion: reduce)").matches,
+};
+
+/* ---------- shape type: one 5x7 grid (same as the almanac options page) ---------- */
+const G = {
+  A: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"], B: ["####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."],
+  C: [".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."], D: ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
+  E: ["#####", "#....", "#....", "####.", "#....", "#....", "#####"], F: ["#####", "#....", "#....", "####.", "#....", "#....", "#...."],
+  G: [".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".####"], H: ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  I: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"], J: ["..###", "...#.", "...#.", "...#.", "...#.", "#..#.", ".##.."],
+  K: ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"], L: ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
+  M: ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"], N: ["#...#", "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#"],
+  O: [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."], P: ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
+  Q: [".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#"], R: ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+  S: [".####", "#....", "#....", ".###.", "....#", "....#", "####."], T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+  U: ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."], V: ["#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.."],
+  W: ["#...#", "#...#", "#...#", "#.#.#", "#.#.#", "##.##", "#...#"], X: ["#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#"],
+  Y: ["#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."], Z: ["#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"],
+  " ": [".....", ".....", ".....", ".....", ".....", ".....", "....."],
+};
+/* Heavy block letters (Option B: each column doubled, solid, stepped shadow),
+   drawn one cell per rect so they can build in cell by cell (Option A). */
+function shapeSVG(text, { fill, shadow, align = "left", build = false, base = 0, label = text.replace(/\n/g, " "), cls = "" }) {
+  const adv = 7, lines = text.toUpperCase().split("\n");
+  const width = Math.max(...lines.map((l) => l.length)) * adv - 1;
+  const height = lines.length * 10 - 3;
+  const fg = [], bg = [];
+  lines.forEach((line, li) => {
+    const ox = align === "center" ? (width - (line.length * adv - 1)) / 2 : 0;
+    [...line].forEach((ch, ci) => {
+      const g = G[ch] || G[" "];
+      for (let y = 0; y < 7; y++) {
+        const row = [...g[y]].map((c) => c === "#");
+        const on = Array.from({ length: 6 }, (_, x) => row[x] || row[x - 1]);
+        on.forEach((v, x) => {
+          if (!v) return;
+          const X = ox + ci * adv + x, Y = li * 10 + y;
+          const d = build ? (X * 0.011 + li * 0.08 + Math.random() * 0.16).toFixed(3) : 0;
+          fg.push(`<rect class="cell" style="--d:${d}s" x="${X}" y="${Y}" width="1.04" height="1.04"/>`);
+          if (shadow) bg.push(`<rect class="cell" style="--d:${d}s" x="${X + 0.5}" y="${Y + 0.5}" width="1.04" height="1.04"/>`);
+        });
+      }
+    });
+  });
+  return `<svg class="shape ${build ? "shape--build" : ""} ${cls}" style="--base:${base}s" viewBox="-0.2 -0.2 ${width + 0.9} ${height + 0.9}" role="img" aria-label="${esc(label)}" preserveAspectRatio="xMinYMid meet">${shadow ? `<g fill="${shadow}">${bg.join("")}</g>` : ""}<g fill="${fill}">${fg.join("")}</g></svg>`;
+}
+
+/* pixel star, 9x9 */
+const STAR = ["....#....", "....#....", "...###...", "#########", ".#######.", "..#####..", "..#####..", ".###.###.", ".##...##."];
+function starSVG(fill, edge) {
+  const r = [];
+  STAR.forEach((row, y) => [...row].forEach((c, x) => { if (c === "#") r.push(`<rect x="${x}" y="${y}" width="1.02" height="1.02"/>`); }));
+  const e = [];
+  STAR.forEach((row, y) => [...row].forEach((c, x) => { if (c === "#") e.push(`<rect x="${x + .45}" y="${y + .45}" width="1.02" height="1.02"/>`); }));
+  return `<svg viewBox="0 0 9.6 9.6" aria-hidden="true" shape-rendering="crispEdges"><g fill="${edge}">${e.join("")}</g><g fill="${fill}">${r.join("")}</g></svg>`;
+}
+const FLIP_ICON = `<svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor"><rect x="1" y="1" width="4" height="1"/><rect x="1" y="2" width="1" height="2"/><rect x="5" y="0" width="1" height="3"/><rect x="6" y="1" width="1" height="1"/><rect x="3" y="6" width="4" height="1"/><rect x="6" y="4" width="1" height="2"/><rect x="2" y="5" width="1" height="3"/><rect x="1" y="6" width="1" height="1"/></svg>`;
+
+/* palette per option + outcome */
+function pal(v, out) {
+  if (v === "A") return out === "caught"
+    ? { name: "#69f0ae", nameSh: "#0f5a32", stamp: "#ff5a46", starOn: "#ffb347", starEdge: "#6b3d00", starOff: "#17361f", starOffEdge: "#0b1a10", guide: "#69f0ae", guideSh: "#0f5a32" }
+    : { name: "#9aa8a1", nameSh: "#2c3530", stamp: "#c8d8ce", starOn: "#c9a36a", starEdge: "#4a3a20", starOff: "#1c2420", starOffEdge: "#0b0e0c", guide: "#69f0ae", guideSh: "#0f5a32" };
+  return out === "caught"
+    ? { name: "#3b2a1a", nameSh: "#ffb347", stamp: "#c7301f", starOn: "#ffb347", starEdge: "#222", starOff: "#eadbb4", starOffEdge: "#cdbb8f", guide: "#3b2a1a", guideSh: "#e0a040" }
+    : { name: "#5e554c", nameSh: "#bfb5a0", stamp: "#4c4a6b", starOn: "#c9a36a", starEdge: "#222", starOff: "#d6cebd", starOffEdge: "#bfb5a0", guide: "#3b2a1a", guideSh: "#e0a040" };
+}
+
+/* ---------- frames + scaling ---------- */
+const SIZES = { laptop: [1512, 830], phone: [844, 390] };
+const solo = params.get("solo");
+if (solo) document.documentElement.classList.add("solo");
+const frames = $$(".frame").map((fig) => {
+  const [w, h] = SIZES[fig.dataset.size];
+  fig.innerHTML = `<figcaption class="frame__cap">${fig.dataset.size === "laptop" ? "LAPTOP" : "PHONE LANDSCAPE"} · ${w}×${h}</figcaption><div class="frame__vp"><div class="screen" style="width:${w}px;height:${h}px"></div></div>`;
+  return { fig, id: fig.dataset.id, v: fig.dataset.v, size: fig.dataset.size, w, h, vp: $(".frame__vp", fig), screen: $(".screen", fig), anims: [] };
+});
+if (solo) {
+  const f = frames.find((x) => x.id === solo);
+  if (f) { const host = document.createElement("div"); host.className = "solo-host"; host.append(f.fig); $(".doc").append(host); }
+}
+function fit() {
+  frames.forEach((f) => {
+    const s = solo ? 1 : Math.min(1, f.vp.clientWidth / f.w) || 1;
+    f.scale = s;
+    f.screen.style.transform = `scale(${s})`;
+    f.vp.style.height = `${f.h * s}px`;
+    if (solo) f.vp.style.width = `${f.w}px`;
+  });
+}
+new ResizeObserver(fit).observe(document.body);
+
+/* ---------- build one card screen ---------- */
+function crackPaths() {
+  // jagged lines from a point under the stamp; 0..100 x 0..140 space
+  return ["M66 30 L56 26 L48 31 L36 24 L28 28 L16 20", "M66 30 L76 24 L82 14 L92 10 L100 4",
+          "M84 44 L88 56 L86 66 L94 78 L92 92 L100 104", "M66 30 L70 38 L64 44", "M88 56 L100 54"];
+}
+function render(f) {
+  const L = LEVELS[state.lv], out = state.out, p = pal(f.v, out), n = state.lv;
+  const stars = STARS[out];
+  const sz = f.size === "laptop" ? "sz-l" : "sz-p";
+  const plants = (out === "caught" ? L.good : L.bad);
+  const garden = f.v === "B" ? `<div class="garden" aria-hidden="true">
+      <div class="garden__row" style="top:${f.size === "laptop" ? 36 : 33}%">${[0, 1, 2, 3].map((i) => `<div class="garden__bed">${plants.map((pl) => `<img src="${ART}${pl}.svg" alt="">`).join("")}</div>`).join("")}</div>
+      <div class="garden__row" style="top:${f.size === "laptop" ? 66 : 68}%">${[0, 1, 2].map((i) => `<div class="garden__bed">${plants.concat(plants[0]).map((pl) => `<img src="${ART}${pl}.svg" alt="">`).join("")}</div>`).join("")}</div>
+    </div><div class="dim"></div>` : `<div class="table" aria-hidden="true"></div>`;
+  const label = out === "caught" ? "Keep doing this" : "Next time";
+  const slots = [1, 2, 3, 4, 5].map((i) => `<li class="slot ${i < n ? "is-had" : ""} ${i === n ? "is-target" : ""}"><span class="slot__no" aria-hidden="true">${i}</span><span class="vh">${i < n ? `Card ${i} collected` : `Card ${i} empty`}</span></li>`).join("");
+  const starHTML = [0, 1, 2].map((i) => `<span class="c-star ${i < stars ? "is-on" : "is-off"}">${i < stars ? starSVG(p.starOn, p.starEdge) : starSVG(p.starOff, p.starOffEdge)}</span>`).join("");
+  const stampText = out === "caught" ? "BUSTED" : "IT FOOLED\nYOU";
+
+  f.screen.innerHTML = `<div class="scr scr${f.v} ${sz} is-${out} ${state.rm ? "rm" : ""}">
+    ${garden}
+    <main class="stage">
+      <div class="cardCol">
+        <div class="cardFly"><div class="cardDrop"><div class="cardShake"><div class="cardTilt"><div class="cardInner">
+          <section class="face front" aria-label="Card front">
+            <div class="c-top"><span class="c-num">${n} / 5</span><span class="c-flip" aria-hidden="true">${FLIP_ICON}Flip</span></div>
+            <div class="c-art"><img src="${ICON}${L.sprite}.svg" alt="${L.pet}"></div>
+            <h1 class="c-name">${shapeSVG(L.name, { fill: p.name, shadow: p.nameSh, build: true, base: state.rm ? 0.2 : 0.6 })}</h1>
+            <p class="c-gloss">${esc(L.gloss.charAt(0).toUpperCase() + L.gloss.slice(1))}.</p>
+            <div class="c-stars" role="img" aria-label="${stars} of 3 stars">${starHTML}</div>
+            <div class="c-counter"><span class="c-lab">${label}</span><p class="c-tip">${esc(L.tip)}</p></div>
+            ${out === "caught" ? `<div class="foil"></div><div class="sparkles"></div>` : `<svg class="cracks" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">${crackPaths().map((d) => `<path d="${d}" pathLength="1"/>`).join("")}</svg>`}
+            <div class="stamp" role="img" aria-label="${out === "caught" ? "Busted" : "It fooled you"}">${shapeSVG(stampText, { fill: p.stamp, align: "center", label: "" }).replace('role="img"', 'aria-hidden="true"')}</div>
+          </section>
+          <section class="face back" aria-label="Card back">
+            <div class="c-top"><span class="c-num">${n} / 5</span><span class="c-flip" aria-hidden="true">${FLIP_ICON}Flip</span></div>
+            <div class="b-block"><span class="c-lab">In real life</span><p class="b-big">${esc(L.real)}</p></div>
+            <div class="b-rule"></div>
+            <div class="b-block"><span class="c-lab">This time</span><p class="b-small">${esc(L[out])}</p></div>
+            <img class="b-pet" src="${ICON}${L.sprite}.svg" alt="">
+          </section>
+        </div></div></div></div></div>
+        <button class="cardHit" type="button" aria-pressed="false" aria-label="Flip card"></button>
+      </div>
+      <div class="side">
+        ${L.handoff ? `<div class="bubble"><img src="${ICON}${L.sprite}.svg" alt=""><p class="bubble__box"><span class="bubble__name">${L.pet}</span>${esc(L.handoff)}</p></div>` : ""}
+        <div class="guide" role="img" aria-label="Field guide, ${n - 1} of 5 cards">
+          <div class="guide__spine"></div>
+          <div class="guide__cover">
+            <div class="guide__title">${shapeSVG("FIELD\nGUIDE", { fill: p.guide, shadow: p.guideSh, label: "Field guide" })}</div>
+            <ol class="slots">${slots}</ol>
+          </div>
+        </div>
+        <button class="go" type="button">Add to field guide</button>
+      </div>
+    </main>
+  </div>`;
+  wire(f);
+  play(f);
+}
+
+/* ---------- interactions ---------- */
+function wire(f) {
+  const root = f.screen;
+  const hit = $(".cardHit", root), inner = $(".cardInner", root), tilt = $(".cardTilt", root);
+  const front = $(".front", root), back = $(".back", root), go = $(".go", root);
+  back.inert = true; back.setAttribute("aria-hidden", "true");
+  f.flipped = false; f.added = false;
+  hit.addEventListener("click", () => {
+    finishIntro(f);
+    f.flipped = !f.flipped;
+    inner.classList.toggle("is-flipped", f.flipped);
+    hit.setAttribute("aria-pressed", String(f.flipped));
+    hit.setAttribute("aria-label", f.flipped ? "Flip card to the front" : "Flip card");
+    front.inert = f.flipped; back.inert = !f.flipped;
+    front.setAttribute("aria-hidden", String(f.flipped)); back.setAttribute("aria-hidden", String(!f.flipped));
+  });
+  if (!state.rm) {
+    hit.addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "mouse" || f.added) return;
+      const r = hit.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      tilt.style.transform = `rotateY(${x * 10}deg) rotateX(${-y * 8}deg)`;
+      const foil = $(".foil", root); if (foil) foil.style.backgroundPosition = `${50 + x * 120}% 0`;
+    });
+    hit.addEventListener("pointerleave", () => { tilt.style.transform = ""; });
+  }
+  go.addEventListener("click", () => {
+    if (f.added) { toast(f, "Back to the map (not part of this mock)"); return; }
+    addToGuide(f);
+  });
+}
+function toast(f, text) {
+  const scr = $(".scr", f.screen);
+  $(".toast", scr)?.remove();
+  const t = document.createElement("p"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = text;
+  scr.append(t); setTimeout(() => t.remove(), 2200);
+}
+const A = (f, el, kf, o) => { if (!el) return; const a = el.animate(kf, { fill: "both", easing: "cubic-bezier(.2,.8,.3,1)", ...o }); f.anims.push(a); return a; };
+
+function play(f) {
+  const root = f.screen, rm = state.rm;
+  f.anims = [];
+  const drop = $(".cardDrop", root), shake = $(".cardShake", root), side = $(".side", root);
+  const stars = $$(".c-star", root), stamp = $(".stamp", root), foil = $(".foil", root), sparkles = $(".sparkles", root);
+  const cracks = $$(".cracks path", root), bubble = $(".bubble", root), guide = $(".guide", root), go = $(".go", root);
+  const caught = state.out === "caught";
+  if (rm) {
+    A(f, drop, [{ opacity: 0 }, { opacity: 1 }], { duration: 250, delay: 0, easing: "linear" });
+    stars.forEach((s) => A(f, s, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 250 }));
+    cracks.forEach((c) => A(f, c, [{ strokeDasharray: 1, strokeDashoffset: 0, opacity: 0 }, { strokeDasharray: 1, strokeDashoffset: 0, opacity: 1 }], { duration: 200, delay: 400 }));
+    A(f, stamp, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 400 });
+    if (foil) foil.classList.add("foil--idle");
+    [guide, go, bubble].forEach((el) => A(f, el, [{ opacity: 0 }, { opacity: 1 }], { duration: 250, delay: 300 }));
+    return;
+  }
+  A(f, drop, [
+    { transform: "translateY(-55%) rotateY(-95deg) rotateZ(-10deg)", opacity: 0 },
+    { transform: "translateY(3%) rotateY(10deg) rotateZ(1deg)", opacity: 1, offset: 0.7 },
+    { transform: "none", opacity: 1 }], { duration: 650, delay: 150 });
+  [guide, go].forEach((el, i) => A(f, el, [{ opacity: 0, transform: "translateX(24px)" }, { opacity: 1, transform: "none" }], { duration: 400, delay: 500 + i * 80 }));
+  // stars: each slot appears; earned ones slam
+  stars.forEach((s, i) => {
+    const on = s.classList.contains("is-on");
+    const t = 1000 + i * 250;
+    if (on) {
+      A(f, s, [{ opacity: 0, transform: "scale(2.8) rotate(-25deg)" }, { opacity: 1, transform: "scale(.85) rotate(0)", offset: 0.75 }, { opacity: 1, transform: "none" }], { duration: 230, delay: t, easing: "cubic-bezier(.5,0,.9,.5)" });
+      A(f, shake, [{ transform: "none" }, { transform: "translateY(5px)" }, { transform: "none" }], { duration: 140, delay: t + 175, fill: "none" });
+    } else {
+      A(f, s, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 900 });
+    }
+  });
+  let stampAt = 1800;
+  if (!caught) {
+    cracks.forEach((c, i) => A(f, c, [{ strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: 260, delay: 1800 + i * 50, easing: "steps(6)" }));
+    stampAt = 2050;
+  }
+  A(f, stamp, [{ opacity: 0, transform: "translate(-50%,-50%) rotate(-24deg) scale(2.6)" }, { opacity: 1, transform: "translate(-50%,-50%) rotate(-12deg) scale(.94)", offset: 0.8 }, { opacity: 1, transform: "translate(-50%,-50%) rotate(-12deg) scale(1)" }], { duration: 260, delay: stampAt, easing: "cubic-bezier(.6,0,.9,.4)" });
+  A(f, shake, [{ transform: "none" }, { transform: "translate(-7px,4px) rotate(-1deg)" }, { transform: "translate(6px,-3px) rotate(.8deg)" }, { transform: "translate(-3px,2px)" }, { transform: "none" }], { duration: 260, delay: stampAt + 210, fill: "none" });
+  if (foil) {
+    A(f, foil, [{ opacity: 0, backgroundPosition: "100% 0" }, { opacity: 1, backgroundPosition: "50% 0", offset: .5 }, { opacity: 0, backgroundPosition: "0 0" }], { duration: 900, delay: stampAt + 300, fill: "none", easing: "ease-in-out" });
+    A(f, sparkles, [{ opacity: 0 }, { opacity: .9, offset: .4 }, { opacity: 0 }], { duration: 900, delay: stampAt + 300, fill: "none" });
+    setTimeout(() => foil.isConnected && foil.classList.add("foil--idle"), stampAt + 1250);
+  }
+  if (bubble) A(f, bubble, [{ opacity: 0, transform: "scale(.6)", transformOrigin: "0 100%" }, { opacity: 1, transform: "none", transformOrigin: "0 100%" }], { duration: 300, delay: stampAt + 350, easing: "cubic-bezier(.3,1.5,.5,1)" });
+}
+function introAnims(f) { return f.screen.getAnimations({ subtree: true }).filter((a) => !a.__fly); }
+function finishIntro(f) {
+  introAnims(f).forEach((a) => {
+    const t = a.effect?.getComputedTiming?.();
+    if (t && t.iterations === Infinity) return;
+    try { a.finish(); } catch (_) {}
+  });
+}
+
+function addToGuide(f) {
+  const root = f.screen, rm = state.rm;
+  finishIntro(f);
+  f.added = true;
+  const fly = $(".cardFly", root), hit = $(".cardHit", root), go = $(".go", root), guide = $(".guide", root);
+  const slot = $(".slot.is-target", root), tilt = $(".cardTilt", root);
+  hit.disabled = true; tilt.style.transform = "";
+  const s = f.scale || 1;
+  const cr = fly.getBoundingClientRect(), sr = slot.getBoundingClientRect();
+  const dx = (sr.left + sr.width / 2 - (cr.left + cr.width / 2)) / s;
+  const dy = (sr.top + sr.height / 2 - (cr.top + cr.height / 2)) / s;
+  const k = sr.width / cr.width;
+  const done = () => {
+    slot.classList.add(state.out === "caught" ? "is-caught" : "is-fooledslot");
+    $(".vh", slot).textContent = `Card ${state.lv} collected`;
+    guide.setAttribute("aria-label", `Field guide, ${state.lv} of 5 cards`);
+    go.textContent = "Continue";
+    go.focus({ preventScroll: true });
+  };
+  let a;
+  if (rm) {
+    a = fly.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" });
+    a.__fly = true;
+    a.finished.then(done);
+    return;
+  }
+  a = fly.animate([
+    { transform: "none", opacity: 1 },
+    { transform: `translate(${dx * 0.15}px, ${-40}px) scale(1.06) rotate(-6deg)`, opacity: 1, offset: 0.25 },
+    { transform: `translate(${dx}px, ${dy}px) scale(${k}) rotate(10deg)`, opacity: 1, offset: 0.92 },
+    { transform: `translate(${dx}px, ${dy}px) scale(${k * 0.9}) rotate(0deg)`, opacity: 0 }],
+    { duration: 750, easing: "cubic-bezier(.5,0,.4,1)", fill: "forwards" });
+  a.__fly = true;
+  a.finished.then(() => {
+    done();
+    const b = guide.animate([{ transform: "none" }, { transform: "scale(1.08) rotate(-2deg)" }, { transform: "scale(.97)" }, { transform: "none" }], { duration: 320 });
+    b.__fly = true;
+    const g = slot.animate([{ boxShadow: "0 0 0 0 rgba(255,236,120,.9)" }, { boxShadow: "0 0 0 10px rgba(255,236,120,0)" }], { duration: 500 });
+    g.__fly = true;
+  });
+}
+
+/* ---------- controls ---------- */
+function renderAll(only) { frames.filter((f) => !only || f.v === only).forEach(render); }
+$("#lv").value = String(state.lv);
+$("#lv").addEventListener("change", (e) => { state.lv = Number(e.target.value); renderAll(); });
+$$(".seg button").forEach((b) => {
+  b.setAttribute("aria-pressed", String(b.dataset.out === state.out));
+  b.addEventListener("click", () => {
+    state.out = b.dataset.out;
+    $$(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderAll();
+  });
+});
+$("#rm").checked = state.rm;
+$("#rm").addEventListener("change", (e) => { state.rm = e.target.checked; renderAll(); });
+$("#replayAll").addEventListener("click", () => renderAll());
+$$("[data-replay]").forEach((b) => b.addEventListener("click", () => renderAll(b.dataset.replay)));
+
+fit();
+// Intros start when a frame scrolls into view (solo: straight away).
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting) return;
+  const f = frames.find((x) => x.fig === e.target);
+  if (f && !f.seen) { f.seen = true; render(f); }
+}), { threshold: 0.35 });
+frames.forEach((f) => (solo ? (f.id === solo && (f.seen = true, render(f))) : io.observe(f.fig)));
+
+/* test hooks for screenshots */
+window.__frame = (id) => frames.find((x) => x.id === id);
+window.__seek = (id, ms) => { const f = window.__frame(id); introAnims(f).forEach((a) => { a.pause(); a.currentTime = ms; }); };
+window.__flip = (id) => $(".cardHit", window.__frame(id).screen).click();
+window.__add = (id) => $(".go", window.__frame(id).screen).click();
+window.__pauseAll = (id, ms) => { const f = window.__frame(id); f.screen.getAnimations({ subtree: true }).filter((a) => a.playState === "running").forEach((a) => { a.pause(); if (ms != null) a.currentTime = ms; }); };
+</script>
+</body>
+</html>

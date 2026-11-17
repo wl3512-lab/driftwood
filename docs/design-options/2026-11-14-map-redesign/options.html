@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map redesign options</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --parchment: #fff6dc; --ink: #3b2a1a; --line: #222; --wood: #7a4f2c; --wood-d: #3d2814; --gold: #ffb347; --ui: "Fira Code", ui-monospace, monospace; --body: "Inter", system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #241a14; color: #f3e6cf; font-family: var(--body); }
+.doc { max-width: 1380px; margin: 0 auto; padding: 32px 24px 80px; }
+.doc > h1 { font: 700 1.6rem/1.2 var(--ui); margin: 0 0 6px; }
+.doc > p { margin: 0 0 28px; color: #cdb89a; max-width: 70ch; }
+.opt { margin: 0 0 56px; padding-top: 22px; border-top: 3px solid #4a3626; }
+.opt h2 { font: 700 1.25rem/1.2 var(--ui); margin: 0 0 4px; }
+.opt h2 .rec { margin-left: 10px; padding: 2px 8px; background: var(--gold); color: var(--ink); font-size: 0.8rem; vertical-align: 3px; }
+.opt .pitch { margin: 0 0 16px; color: #e3d2b6; max-width: 80ch; line-height: 1.45; }
+.row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.cap { font: 600 0.72rem/1 var(--ui); letter-spacing: 0.12em; color: #a8916f; margin: 0 0 6px; }
+.box { overflow: hidden; border: 3px solid #000; box-shadow: 6px 6px 0 #000; position: relative; }
+.box > .f { transform-origin: 0 0; }
+.audit { margin: 0 0 40px; padding: 16px 20px; background: #2f231a; border-left: 6px solid var(--gold); }
+.audit h2 { font: 700 1rem/1 var(--ui); margin: 0 0 10px; }
+.audit li { margin: 4px 0; line-height: 1.4; }
+
+/* ===== shared frame bits ===== */
+.f { position: absolute; left: 0; top: 0; overflow: hidden; font-family: var(--ui); color: var(--ink); }
+.f.L { width: 1512px; height: 830px; }
+.f.P { width: 844px; height: 390px; }
+.f.L2 { width: 1512px; height: 830px; }
+.f img { image-rendering: pixelated; }
+.blk { display: block; height: auto; overflow: visible; }
+.hudbtn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--parchment); border: 3px solid var(--line); box-shadow: 4px 4px 0 var(--line); font: 700 15px/1 var(--ui); color: var(--ink); white-space: nowrap; }
+.P .hudbtn { padding: 6px 9px; font-size: 11px; gap: 5px; box-shadow: 3px 3px 0 var(--line); border-width: 2px; }
+.hudbtn b { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 5px; background: #2e7d32; color: #fff; font-size: 13px; }
+.P .hudbtn b { min-width: 18px; height: 16px; font-size: 10px; }
+.hudbtn img { width: 24px; height: 24px; }
+.P .hudbtn img { width: 16px; height: 16px; }
+.play { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; background: #ffd54f; border: 3px solid var(--line); box-shadow: 4px 4px 0 var(--line); font: 700 18px/1 var(--ui); color: var(--ink); }
+.P .play { padding: 7px 11px; font-size: 12px; box-shadow: 3px 3px 0 var(--line); border-width: 2px; }
+.dim { filter: grayscale(1) brightness(0.55); opacity: 0.55; }
+.sil { filter: brightness(0); opacity: 0.35; }
+@keyframes bob { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+@keyframes pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* ===== A: overworld ===== */
+.A { background:
+  radial-gradient(circle at 30% 40%, #5f9e43 0 2px, transparent 2.5px) 0 0 / 22px 22px,
+  radial-gradient(circle at 70% 70%, #8cc86a 0 2px, transparent 2.5px) 0 0 / 30px 30px,
+  linear-gradient(#78b656, #6aa84a); }
+.A .path { position: absolute; inset: 0; width: 100%; height: 100%; }
+.A .tree { position: absolute; width: var(--s, 90px); height: var(--s, 90px); border-radius: 50%; background: radial-gradient(circle at 38% 34%, #4f9a3a 0 30%, #2f6f2a 31% 62%, #24561f 63%); box-shadow: 6px 10px 0 rgba(20, 40, 10, 0.3); }
+.A .pond { position: absolute; border-radius: 50%; background: radial-gradient(ellipse at 40% 35%, #a9e2f5 0 18%, #5fb6d9 19% 60%, #3d8fb6 61%); border: 6px solid #c8b07a; }
+.A .plot { position: absolute; width: var(--pw); height: var(--ph); transform: translate(-50%, -50%); border-radius: 4px;
+  box-shadow: 0 0 0 5px #8a5a2b, 0 0 0 9px #3d2814, 8px 12px 0 9px rgba(20, 40, 10, 0.28); display: flex; align-items: flex-end; justify-content: space-evenly; padding: 0 8px 10px; }
+.A .plot img.crop { width: calc(var(--pw) / 4.2); }
+.A .plot .pet { position: absolute; left: 50%; bottom: calc(var(--ph) * -0.42); width: calc(var(--pw) / 3.3); transform: translateX(-50%); filter: drop-shadow(4px 5px 0 rgba(0, 0, 0, 0.25)); }
+.A .plot.next .pet { animation: bob 0.6s steps(2) infinite alternate; }
+.A .s-veg { background: repeating-linear-gradient(#8b5a30 0 10px, #6e4424 10px 20px); }
+.A .s-glass { background: linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0)), repeating-linear-gradient(90deg, transparent 0 46px, #e8f6fb 46px 50px), repeating-linear-gradient(transparent 0 38px, #e8f6fb 38px 42px), #9fd2e2; }
+.A .s-hedge { background: radial-gradient(circle at 20% 30%, #3e6b3a 0 18%, transparent 19%), radial-gradient(circle at 70% 25%, #3a5f3c 0 20%, transparent 21%), linear-gradient(#5b4a7a, #3e4f3a 55%, #6e4424 56%); }
+.A .s-day { background: repeating-linear-gradient(90deg, #8b5a30 0 14px, #6e4424 14px 28px); }
+.A .s-night { background: radial-gradient(circle at 80% 18%, #fff7c4 0 7%, transparent 8%), radial-gradient(circle at 20% 20%, #fff 0 1%, transparent 1.5%), radial-gradient(circle at 45% 12%, #fff 0 1%, transparent 1.5%), linear-gradient(#25234d, #2f3b5a 60%, #3a4a3a 61%); }
+.A .plot.locked::after { content: ""; position: absolute; inset: -9px; border-radius: 6px; background:
+  radial-gradient(circle at 20% 40%, #f4f6f8 0 22%, transparent 23%), radial-gradient(circle at 60% 30%, #eef2f5 0 26%, transparent 27%), radial-gradient(circle at 80% 70%, #f4f6f8 0 24%, transparent 25%), radial-gradient(circle at 35% 75%, #e9eef2 0 24%, transparent 25%), rgba(236, 240, 244, 0.9); }
+.A .plot.locked .pet { z-index: 2; }
+.A .lock { position: absolute; z-index: 3; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 34px; }
+.P.A .lock { width: 20px; }
+.A .sign { position: absolute; z-index: 4; display: grid; gap: 4px; padding: 7px 10px 8px; background: #c8925a; border: 3px solid var(--wood-d); box-shadow: 3px 3px 0 var(--wood-d); color: var(--wood-d); font: 700 13px/1.1 var(--ui); white-space: nowrap; }
+.A .sign::after { content: ""; position: absolute; left: 50%; top: 100%; width: 8px; height: 22px; margin-left: -4px; background: #8a5a2b; border: 3px solid var(--wood-d); border-top: 0; z-index: -1; }
+.P.A .sign { padding: 4px 6px 5px; font-size: 9px; gap: 2px; border-width: 2px; }
+.P.A .sign::after { height: 12px; width: 6px; border-width: 2px; }
+.A .sign .n { font-size: 11px; letter-spacing: 0.14em; color: #6b3a14; }
+.P.A .sign .n { font-size: 8px; }
+.A .blooms { display: flex; gap: 2px; }
+.A .blooms img { width: 26px; }
+.P.A .blooms img { width: 13px; }
+.A .here { position: absolute; z-index: 6; transform: translate(-50%, -100%); display: grid; justify-items: center; animation: bob 0.5s steps(2) infinite alternate; }
+.A .here span { padding: 6px 10px; background: #e53935; color: #fff; border: 3px solid var(--line); font: 700 14px/1 var(--ui); letter-spacing: 0.1em; }
+.A .here i { width: 0; height: 0; border: 12px solid transparent; border-top: 14px solid var(--line); }
+.P.A .here span { padding: 3px 6px; font-size: 9px; border-width: 2px; }
+.P.A .here i { border-width: 7px; border-top-width: 9px; }
+.A .ring { position: absolute; z-index: 1; transform: translate(-50%, -50%); border: 5px dashed #fff7c4; border-radius: 10px; animation: pulse 1s steps(2) infinite; }
+.A .hud { position: absolute; z-index: 8; display: flex; gap: 12px; }
+.A .banner { position: absolute; z-index: 8; left: 28px; top: 22px; padding: 14px 20px 16px; background: var(--parchment); border: 4px solid var(--line); box-shadow: 6px 6px 0 var(--line); }
+.P.A .banner { left: 12px; top: 10px; padding: 7px 10px 8px; border-width: 3px; box-shadow: 4px 4px 0 var(--line); }
+.A .house { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; }
+.A .house .roof { width: 0; height: 0; border-left: 70px solid transparent; border-right: 70px solid transparent; border-bottom: 56px solid #b5452f; filter: drop-shadow(0 -4px 0 var(--wood-d)); }
+.A .house .wall { width: 112px; height: 74px; background: #f1d9a8; border: 4px solid var(--wood-d); display: grid; place-items: end center; }
+.A .house .door { width: 30px; height: 44px; background: #7a4f2c; border: 3px solid var(--wood-d); border-bottom: 0; }
+.A .house.shut { filter: grayscale(0.7) brightness(0.8); }
+.A .house small { margin-top: 10px; padding: 4px 8px; background: rgba(61, 40, 20, 0.85); color: #fff6dc; font: 700 12px/1 var(--ui); }
+
+/* ===== B: dawn to night panorama ===== */
+.B { background: #2a2550; }
+.B .sky { position: absolute; inset: 0 0 46% 0; background:
+  linear-gradient(rgba(255,255,255,0.0), rgba(255, 210, 140, 0.35)),
+  linear-gradient(90deg, #8fd0f2 0%, #bfe3f0 14%, #ffe0a0 30%, #ffbb62 44%, #f99a5e 54%, #c45e86 66%, #6f4a96 78%, #3f3577 88%, #241f4a 100%); }
+.B .sky::after { content: ""; position: absolute; inset: 0; background-image:
+  radial-gradient(circle, #fff 0 1.5px, transparent 2px), radial-gradient(circle, #fff 0 1px, transparent 1.5px);
+  background-size: 90px 70px, 53px 41px; background-position: 0 0, 20px 30px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 70%, #000 90%); mask-image: linear-gradient(90deg, transparent 70%, #000 90%); }
+.B .sun { position: absolute; left: 30%; top: 22%; width: 230px; height: 230px; transform: translate(-50%, -50%); background: radial-gradient(circle, #fff7d6 0 22%, #ffe594 22% 30%, rgba(255,222,140,0.5) 30% 44%, rgba(255,205,120,0.2) 44% 62%, transparent 63%); }
+.B .moon { position: absolute; left: 90%; top: 20%; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 70% 35%, transparent 0 34%, #fff3c0 35%); box-shadow: 0 0 40px rgba(255, 243, 192, 0.5); }
+.B .hills { position: absolute; left: 0; right: 0; top: 30%; height: 26%; background:
+  radial-gradient(ellipse 22% 60% at 12% 100%, #6e9a5a 98%, transparent 100%), radial-gradient(ellipse 26% 70% at 40% 100%, #7c9a52 98%, transparent 100%), radial-gradient(ellipse 22% 64% at 68% 100%, #5c5a6e 98%, transparent 100%), radial-gradient(ellipse 24% 70% at 92% 100%, #3a3858 98%, transparent 100%); }
+.B .fence { position: absolute; left: 0; right: 0; top: 47%; height: 7%; background:
+  repeating-linear-gradient(90deg, transparent 0 34px, #7a5232 34px 44px), linear-gradient(transparent 0 30%, #8a5a2b 30% 42%, transparent 42% 66%, #8a5a2b 66% 78%, transparent 78%); }
+.B .ground { position: absolute; left: 0; right: 0; top: 53%; bottom: 0; background:
+  linear-gradient(90deg, rgba(255, 220, 150, 0.18), rgba(255, 140, 80, 0.12) 50%, rgba(20, 20, 70, 0.55) 100%),
+  repeating-linear-gradient(90deg, #6aa84a 0 6px, #62a043 6px 12px); }
+.B .path { position: absolute; left: 0; right: 0; bottom: 6%; height: 13%; background: linear-gradient(90deg, rgba(0,0,0,0) 60%, rgba(10, 10, 50, 0.5)), linear-gradient(#b6824f 0 6px, #d4a46b 6px 100%); border-bottom: 6px solid #a7733f; }
+.B .bed { position: absolute; bottom: 21%; width: var(--bw); transform: translateX(-50%); display: grid; justify-items: center; }
+.B .bed .box { width: 100%; height: var(--bh); background: linear-gradient(#5a381d 0 5px, #7a4f2c 5px); border: 4px solid #3d2814; box-shadow: none; overflow: visible; display: flex; justify-content: space-around; align-items: flex-end; }
+.B .bed .box img { width: calc(var(--bw) / 3.6); margin-bottom: calc(var(--bh) * 0.55); }
+.B .bed .pet { position: absolute; bottom: calc(var(--bh) * -1.25); width: calc(var(--bw) / 2.4); filter: drop-shadow(-8px 4px 0 rgba(40, 20, 30, 0.3)); }
+.B .bed.next .pet { animation: bob 0.6s steps(2) infinite alternate; }
+.B .bed.locked .box img, .B .bed.locked .pet { filter: brightness(0); opacity: 0.45; }
+.B .bed.locked .box { filter: brightness(0.55); }
+.B .stake { position: absolute; bottom: calc(100% + var(--bh) * 0.9 + 10px); display: grid; justify-items: start; gap: 5px; padding: 8px 12px 9px; font-size: 17px !important; background: var(--parchment); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line); font: 700 13px/1.1 var(--ui); white-space: nowrap; }
+.B .stake .n { font-size: 12px; letter-spacing: 0.16em; color: #8a3b12; }
+.B .stars { color: #e0a000; font-size: 20px; letter-spacing: 2px; -webkit-text-stroke: 0.6px #6b4a00; }
+.B .stars .o { color: rgba(0,0,0,0.18); -webkit-text-stroke: 0; }
+.P.B .stake { padding: 3px 5px 4px; font-size: 9px !important; border-width: 2px; gap: 2px; }
+.P.B .stake .n { font-size: 7px; }
+.P.B .stars { font-size: 9px; }
+.B .bed.locked .stake { background: #6d5a48; color: #e6d5bd; }
+.B .bed.locked .stake .n { color: #e6d5bd; }
+.B .beam { position: absolute; bottom: 0; left: 50%; width: 140%; height: 520%; transform: translateX(-50%); background: linear-gradient(rgba(255, 247, 196, 0), rgba(255, 247, 196, 0.38)); clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); pointer-events: none; animation: pulse 1.2s steps(3) infinite; }
+.B .title { position: absolute; left: 36px; top: 30px; }
+.P.B .title { left: 14px; top: 12px; }
+.B .hud { position: absolute; right: 30px; top: 30px; display: flex; gap: 12px; }
+.P.B .hud { right: 12px; top: 12px; gap: 8px; }
+.B .gate { position: absolute; right: 0; bottom: 6%; height: 13%; display: grid; place-items: center end; padding-right: 18px; }
+
+/* ===== C: seed tin ===== */
+.C { background: #3a2716; }
+.C .wall { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #5a3a20 0 120px, #4c311b 120px 124px); }
+.C .stage { position: absolute; border: 5px solid var(--line); box-shadow: 8px 8px 0 #000; overflow: hidden; }
+.C .stage .scene { position: absolute; inset: 0; background: linear-gradient(#5b4a7a 0 20%, #9a5e86 20% 40%, #d8806a 40% 56%, #3e4f3a 56% 72%, #6e4424 72%); }
+.C .stage .scene::before { content: ""; position: absolute; left: 0; right: 0; top: 46%; height: 22%; background: radial-gradient(circle at 10% 60%, #2f4a2e 0 14%, transparent 15%), radial-gradient(circle at 28% 50%, #36553a 0 16%, transparent 17%), radial-gradient(circle at 50% 62%, #2f4a2e 0 15%, transparent 16%), radial-gradient(circle at 74% 50%, #36553a 0 17%, transparent 18%), radial-gradient(circle at 94% 60%, #2f4a2e 0 14%, transparent 15%); }
+.C .stage .crops { position: absolute; left: 6%; right: 40%; bottom: 10%; display: flex; justify-content: space-between; }
+.C .stage .pet { position: absolute; right: 8%; bottom: 8%; filter: drop-shadow(-10px 6px 0 rgba(40, 20, 30, 0.35)); animation: bob 0.6s steps(2) infinite alternate; }
+.C .stage .hd { position: absolute; left: 0; top: 0; right: 0; padding: 22px 26px; background: linear-gradient(rgba(20, 12, 30, 0.75), rgba(20, 12, 30, 0)); color: #fff6dc; }
+.C .stage .hd .n { font: 700 13px/1 var(--ui); letter-spacing: 0.2em; color: #ffd585; margin: 0 0 10px; }
+.C .stage .ft { position: absolute; left: 26px; bottom: 22px; display: flex; gap: 16px; align-items: center; }
+.C .stars { color: #ffd54f; font-size: 26px; letter-spacing: 3px; -webkit-text-stroke: 1px #6b4a00; text-shadow: 2px 2px 0 #000; }
+.C .stars .o { color: rgba(255, 255, 255, 0.25); -webkit-text-stroke: 0; }
+.C .tin { position: absolute; display: flex; gap: var(--gap); align-items: flex-end; padding: 18px 20px 0; }
+.C .tin::after { content: ""; position: absolute; left: 0; right: 0; bottom: -18px; height: 18px; background: linear-gradient(#8a5a2b 0 6px, #6b4426 6px); border: 3px solid var(--wood-d); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.35); }
+.C .pk { position: relative; width: var(--pkw); height: calc(var(--pkw) * 1.42); display: grid; grid-template-rows: auto auto 1fr auto; background: #f3e3c0; border: 3px solid var(--line); box-shadow: 4px 4px 0 rgba(0,0,0,0.45); transform: rotate(var(--t, 0deg)); font-family: var(--ui); }
+.C .pk .cr { height: 8px; background: repeating-linear-gradient(90deg, rgba(59,42,26,0.35) 0 3px, transparent 3px 6px); border-bottom: 2px solid rgba(59,42,26,0.4); }
+.C .pk .band { padding: 4px 0; text-align: center; background: var(--c); color: #fff; font: 700 11px/1 var(--ui); letter-spacing: 0.12em; }
+.C .pk .win { margin: 7px; background: linear-gradient(#bfe3f0 0 62%, #8cc86a 62%); border: 2px solid var(--line); display: grid; place-items: center; }
+.C .pk .win img { width: 70%; }
+.C .pk .nm { padding: 0 4px 7px; text-align: center; font: 700 11px/1.15 var(--ui); }
+.C .pk .st { position: absolute; left: 0; right: 0; bottom: -40px; text-align: center; font-size: 15px; }
+.C .pk.sel { transform: translateY(-26px) rotate(0deg); box-shadow: 0 0 0 4px #ffd54f, 6px 10px 0 rgba(0,0,0,0.5); }
+.C .pk.sel::before { content: "▼"; position: absolute; left: 50%; top: -36px; transform: translateX(-50%); color: #ffd54f; font-size: 22px; animation: bob 0.5s steps(2) infinite alternate; text-shadow: 2px 2px 0 #000; }
+.C .pk.locked { background: #b9a88a; }
+.C .pk.locked .win img { filter: brightness(0); opacity: 0.35; }
+.C .pk.locked .band { background: #6d5a48; }
+.C .pk .stamp { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) rotate(-14deg); padding: 3px 6px; border: 3px solid #b5452f; color: #b5452f; background: rgba(255, 246, 220, 0.85); font: 700 11px/1 var(--ui); letter-spacing: 0.08em; white-space: nowrap; }
+.P.C .pk .band { font-size: 7px; padding: 2px 0; }
+.P.C .pk .nm { font-size: 7px; padding-bottom: 4px; }
+.P.C .pk .cr { height: 5px; }
+.P.C .pk { border-width: 2px; }
+.P.C .pk .win { margin: 4px; }
+.P.C .pk .st { font-size: 9px; bottom: -22px; }
+.P.C .pk .stamp { font-size: 7px; padding: 2px 3px; border-width: 2px; }
+.P.C .pk.sel { transform: translateY(-14px); }
+.P.C .pk.sel::before { top: -24px; font-size: 14px; }
+.C .head { position: absolute; display: flex; align-items: center; justify-content: space-between; }
+.C .hud { display: flex; gap: 12px; }
+.P.C .hud { gap: 7px; }
+.P.C .stage .hd { padding: 10px 12px; }
+.P.C .stage .hd .n { font-size: 8px; margin-bottom: 5px; }
+.P.C .stage .ft { left: 12px; bottom: 10px; gap: 8px; }
+.P.C .stars { font-size: 14px; letter-spacing: 1px; }
+
+/* ===== small "system" frames ===== */
+.name { display: grid; gap: 10px; padding: 18px 20px; background: var(--parchment); border: 4px solid var(--line); box-shadow: 6px 6px 0 var(--line); font: 700 16px/1 var(--ui); }
+.name .in { padding: 12px 14px; background: #fff; border: 3px solid var(--line); color: #9a8a74; font-weight: 400; width: 300px; }
+.score { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; background: #2e7d32; color: #fff; border: 3px solid var(--line); box-shadow: 4px 4px 0 var(--line); font: 700 20px/1 var(--ui); }
+</style>
+</head>
+<body>
+<main class="doc">
+  <h1>Map redesign: three directions</h1>
+  <p>Same functions as today: five levels (done, next, locked), stars, Watch intro, Field guide n/5, your finished garden, your garden's name. Shown mid-game (Levels 1–2 done, Level 3 next). Laptop 1512×830 and phone 844×390, side by side, then the splash and ending in the same style.</p>
+
+  <section class="audit">
+    <h2>Screens that share the bland look</h2>
+    <ul>
+      <li><b>Map:</b> flat sky band over flat green, five identical brown boxes in a row, 60% of the screen empty; on phone Level 5 drops below the fold.</li>
+      <li><b>Splash:</b> black void with a small centred title, one bird and one button.</li>
+      <li><b>Name entry:</b> black void, centred text block and input, nothing to look at.</li>
+      <li><b>Field guide:</b> black CRT screen of identical dashed boxes, centred, repeats the pet name in every card.</li>
+      <li><b>Ending / finished garden:</b> the same flat sky + flat green + brown boxes as the map, so the payoff looks like the menu.</li>
+      <li>Not bland: levels, almanac, reveal card, opening cutscene (these set the bar).</li>
+    </ul>
+  </section>
+
+  <section class="opt" id="A">
+    <h2>A · Overworld map</h2>
+    <p class="pitch">Your garden from above: a dirt path winds through five plots, each drawn as its own level (veg beds, greenhouse, dusk hedge, day beds, night meadow). The pet waits at its gate, stars grow as flowers on its signpost, locked plots sit under fog, and a red pin marks where you are; the path ends at your house, which opens when the garden is done.</p>
+    <div class="row" data-opt="A"></div>
+    <div class="row" data-opt="A" data-sys style="margin-top:20px"></div>
+  </section>
+
+  <section class="opt" id="B">
+    <h2>B · Dawn to night <span class="rec">Recommended</span></h2>
+    <p class="pitch">The cutscene's golden-hour world turned into the menu: five raised beds left to right while the sky runs from morning to moonlight, so the day itself shows your progress (Level 3 sits at dusk, Level 5 under the moon). The next bed glows with a light beam and its pet bounces; locked beds are silhouettes.</p>
+    <div class="row" data-opt="B"></div>
+    <div class="row" data-opt="B" data-sys style="margin-top:20px"></div>
+  </section>
+
+  <section class="opt" id="C">
+    <h2>C · Seed tin</h2>
+    <p class="pitch">Levels are seed packets standing in a wooden tin, the same packets as the almanac shelf. The next packet is lifted, and the big window on the left shows its plot at full size with the pet, stars and a Play button, like a console's world select.</p>
+    <div class="row" data-opt="C"></div>
+    <div class="row" data-opt="C" data-sys style="margin-top:20px"></div>
+  </section>
+</main>
+
+<script>
+const GLYPHS = {"0":[".###.","#...#","#..##","#.#.#","##..#","#...#",".###."],"1":["..#..",".##..","..#..","..#..","..#..","..#..",".###."],"2":[".###.","#...#","....#","...#.","..#..",".#...","#####"],"3":["####.","....#","....#",".###.","....#","....#","####."],"4":["...#.","..##.",".#.#.","#..#.","#####","...#.","...#."],"5":["#####","#....","####.","....#","....#","#...#",".###."],"6":[".###.","#....","#....","####.","#...#","#...#",".###."],"7":["#####","....#","...#.","..#..",".#...",".#...",".#..."],"8":[".###.","#...#","#...#",".###.","#...#","#...#",".###."],"9":[".###.","#...#","#...#",".####","....#","....#",".###."],"A":[".###.","#...#","#...#","#####","#...#","#...#","#...#"],"B":["####.","#...#","#...#","####.","#...#","#...#","####."],"C":[".###.","#...#","#....","#....","#....","#...#",".###."],"D":["####.","#...#","#...#","#...#","#...#","#...#","####."],"E":["#####","#....","#....","####.","#....","#....","#####"],"F":["#####","#....","#....","####.","#....","#....","#...."],"G":[".###.","#...#","#....","#.###","#...#","#...#",".####"],"H":["#...#","#...#","#...#","#####","#...#","#...#","#...#"],"I":["#####","..#..","..#..","..#..","..#..","..#..","#####"],"J":["..###","...#.","...#.","...#.","...#.","#..#.",".##.."],"K":["#...#","#..#.","#.#..","##...","#.#..","#..#.","#...#"],"L":["#....","#....","#....","#....","#....","#....","#####"],"M":["#...#","##.##","#.#.#","#.#.#","#...#","#...#","#...#"],"N":["#...#","#...#","##..#","#.#.#","#..##","#...#","#...#"],"O":[".###.","#...#","#...#","#...#","#...#","#...#",".###."],"P":["####.","#...#","#...#","####.","#....","#....","#...."],"Q":[".###.","#...#","#...#","#...#","#.#.#","#..#.",".##.#"],"R":["####.","#...#","#...#","####.","#.#..","#..#.","#...#"],"S":[".####","#....","#....",".###.","....#","....#","####."],"T":["#####","..#..","..#..","..#..","..#..","..#..","..#.."],"U":["#...#","#...#","#...#","#...#","#...#","#...#",".###."],"V":["#...#","#...#","#...#","#...#","#...#",".#.#.","..#.."],"W":["#...#","#...#","#...#","#.#.#","#.#.#","##.##","#...#"],"X":["#...#","#...#",".#.#.","..#..",".#.#.","#...#","#...#"],"Y":["#...#","#...#",".#.#.","..#..","..#..","..#..","..#.."],"Z":["#####","....#","...#.","..#..",".#...","#....","#####"],"!":["..#..","..#..","..#..","..#..","..#..",".....","..#.."],"?":[".###.","#...#","....#","...#.","..#..",".....","..#.."],".":[".....",".....",".....",".....",".....",".....","..#.."],",":[".....",".....",".....",".....","..#..","..#..",".#..."],":":[".....","..#..",".....",".....",".....","..#..","....."],"'":["..#..","..#..",".....",".....",".....",".....","....."],"-":[".....",".....",".....",".###.",".....",".....","....."]," ":[".....",".....",".....",".....",".....",".....","....."]};
+const ADV = 7;
+function blk(text, { fill = "#3b2a1a", shadow = null, h = 40, cls = "" } = {}) {
+  const lines = text.toUpperCase().split("\n");
+  const W = Math.max(...lines.map((l) => l.length)) * ADV - 1, H = lines.length * 10 - 3;
+  let a = "", b = "";
+  lines.forEach((line, li) => [...line].forEach((ch, ci) => {
+    const g = GLYPHS[ch] || GLYPHS[" "];
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 6; x++) {
+      const on = (g[y][x] === "#") || (x > 0 && g[y][x - 1] === "#");
+      if (!on) continue;
+      const X = ci * ADV + x, Y = li * 10 + y;
+      a += `<rect x="${X}" y="${Y}" width="1.04" height="1.04"/>`;
+      if (shadow) b += `<rect x="${X + 0.5}" y="${Y + 0.5}" width="1.04" height="1.04"/>`;
+    }
+  }));
+  const pad = shadow ? 0.7 : 0.2;
+  const w = h * (W + pad) / (H + pad);
+  return `<svg class="blk ${cls}" viewBox="-0.2 -0.2 ${W + pad} ${H + pad}" width="${w}" height="${h}" aria-hidden="true">${shadow ? `<g fill="${shadow}">${b}</g>` : ""}<g fill="${fill}">${a}</g></svg>`;
+}
+const ICON = "../../../icons/", ART = "../../../v2/art/";
+const LV = [
+  { n: 1, t: "Plan your garden", pet: "parrot", pn: "Mango", c: "#e09a1a", crops: ["lettuce-thriving", "sunflower-thriving", "lettuce-thriving"], stars: 3, st: "done", scene: "s-veg" },
+  { n: 2, t: "Plant herbs", pet: "cat", pn: "Luna", c: "#2e7d32", crops: ["basil-thriving", "mint-thriving", "basil-thriving"], stars: 2, st: "done", scene: "s-glass" },
+  { n: 3, t: "Pests & berries", pet: "fox", pn: "Ember", c: "#7b4fa0", crops: ["blueberry-thriving", "bean-thriving", "wildberry-fruiting"], stars: 0, st: "next", scene: "s-hedge" },
+  { n: 4, t: "Finish the garden", pet: "dog", pn: "Biscuit", c: "#c0602a", crops: ["carrot-thriving", "pumpkin-thriving", "carrot-thriving"], stars: 0, st: "locked", scene: "s-day" },
+  { n: 5, t: "Final bloom", pet: "bunny", pn: "Bugs", c: "#3f51b5", crops: ["flower-thriving", "flower-thriving", "flower-thriving"], stars: 0, st: "locked", scene: "s-night" },
+];
+const DONE = LV.map((l, i) => ({ ...l, st: "done", stars: [3, 2, 1, 2, 2][i] }));
+const img = (src, cls = "", st = "") => `<img src="${src}" class="${cls}" style="${st}" alt="">`;
+const stars = (n) => "★".repeat(n) + `<span class="o">${"★".repeat(3 - n)}</span>`;
+const LOCK = `<svg class="lock" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="1" width="8" height="2" fill="#5a4636"/><rect x="4" y="1" width="2" height="7" fill="#5a4636"/><rect x="10" y="1" width="2" height="7" fill="#5a4636"/><rect x="2" y="7" width="12" height="8" fill="#5a4636"/><rect x="7" y="9" width="2" height="4" fill="#fff6dc"/></svg>`;
+const hud = (n = 2, done = false) => `
+  <span class="hudbtn">▶ Intro</span>
+  <span class="hudbtn">${img(ICON + "ancient-book.svg")} Field guide <b>${n}/5</b></span>`;
+
+// ---------- A ----------
+function A(size, levels = LV, { ending = false } = {}) {
+  const L = size === "L";
+  const pos = L ? [[250, 620], [560, 420], [850, 630], [1110, 420], [1330, 640]] : [[92, 305], [252, 215], [415, 305], [575, 215], [735, 305]];
+  const pw = L ? 210 : 112, ph = L ? 138 : 74;
+  const housePos = L ? [1380, 230] : [790, 130];
+  const pts = [[L ? -20 : -10, L ? 760 : 370], ...pos, housePos];
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; const mx = (x0 + x1) / 2; d += ` C${mx} ${y0} ${mx} ${y1} ${x1} ${y1}`; }
+  const sw = L ? 46 : 26;
+  const svg = `<svg class="path" viewBox="0 0 ${L ? 1512 : 844} ${L ? 830 : 390}"><path d="${d}" fill="none" stroke="#9c6e3c" stroke-width="${sw + 12}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#d4a46b" stroke-width="${sw}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#e8c48c" stroke-width="${sw / 4}" stroke-dasharray="${sw / 3} ${sw}" stroke-linecap="round"/></svg>`;
+  const trees = (L ? [[60, 220, 110], [150, 330, 80], [420, 190, 70], [700, 800, 120], [980, 760, 90], [1480, 450, 130], [990, 170, 80], [1210, 800, 100], [330, 830, 110]] : [[30, 120, 60], [175, 70, 40], [520, 385, 60], [840, 230, 70], [340, 70, 40], [660, 390, 50]])
+    .map(([x, y, s]) => `<div class="tree" style="left:${x - s / 2}px;top:${y - s / 2}px;--s:${s}px"></div>`).join("");
+  const pond = L ? `<div class="pond" style="left:640px;top:560px;width:120px;height:80px"></div>` : "";
+  let plots = "";
+  levels.forEach((l, i) => {
+    const [x, y] = pos[i];
+    const next = l.st === "next", locked = l.st === "locked";
+    plots += `<div class="plot ${l.scene} ${l.st}" style="left:${x}px;top:${y}px;--pw:${pw}px;--ph:${ph}px">
+      ${l.crops.map((c) => img(ART + c + ".svg", "crop" + (locked ? " sil" : ""))).join("")}
+      ${img(ICON + l.pet + ".svg", "pet" + (locked ? " sil" : ""))}
+      ${locked ? LOCK : ""}</div>`;
+    plots += `<div class="sign" style="left:${x - pw / 2 - (L ? 14 : 8)}px;bottom:${(L ? 830 : 390) - (y - ph / 2) + (L ? 26 : 14)}px">
+      <span class="n">LEVEL ${l.n}</span>${locked ? "" : `<span>${l.t}</span><span class="blooms">${[0, 1, 2].map((k) => img(ART + (k < l.stars ? "flower-thriving" : "sprout") + ".svg", k < l.stars ? "" : "dim")).join("")}</span>`}</div>`;
+    if (next) plots += `<div class="ring" style="left:${x}px;top:${y}px;width:${pw + 40}px;height:${ph + 40}px"></div>
+      <div class="here" style="left:${x + pw / 2 - (L ? 40 : 20)}px;top:${y - ph / 2 - (L ? 14 : 8)}px"><span>${L ? "YOU ARE HERE" : "NEXT"}</span><i></i></div>`;
+  });
+  const house = L || ending ? `<div class="house ${ending ? "" : "shut"}" style="left:${housePos[0]}px;top:${housePos[1]}px"><div class="roof"></div><div class="wall"><div class="door"></div></div><small>${ending ? "Your finished garden →" : "Your garden · 0/5"}</small></div>` : "";
+  return `<div class="f ${size} A">${trees}${pond}${svg}${house}${plots}
+    <div class="banner">${blk("LUCY'S GARDEN", { h: L ? 44 : 22, shadow: "#ffb347" })}</div>
+    <div class="hud" style="right:${L ? 30 : 18}px;top:${L ? 26 : 12}px">${hud(ending ? 5 : 2)}</div></div>`;
+}
+
+// ---------- B ----------
+function B(size, levels = LV, { ending = false } = {}) {
+  const L = size === "L";
+  const bw = L ? 250 : 128, bh = L ? 48 : 24;
+  const xs = L ? [12, 30, 50, 70, 88] : [12, 30, 50, 70, 88];
+  const beds = levels.map((l, i) => {
+    const next = l.st === "next";
+    return `<div class="bed ${l.st}" style="left:${xs[i]}%;--bw:${bw}px;--bh:${bh}px">
+      ${next ? `<div class="beam"></div>` : ""}
+      <div class="stake" style="left:${L ? -8 : -4}px"><span class="n">LEVEL ${l.n}</span>${l.st === "locked" ? "Locked" : `${l.t}<span class="stars">${stars(l.stars)}</span>`}</div>
+      <div class="box">${l.crops.map((c) => img(ART + c + ".svg")).join("")}</div>
+      ${img(ICON + l.pet + ".svg", "pet")}</div>`;
+  }).join("");
+  return `<div class="f ${size} B"><div class="sky"></div><div class="sun"></div><div class="moon"></div><div class="hills"></div><div class="fence"></div><div class="ground"></div><div class="path"></div>
+    ${beds}
+    <div class="title">${blk("LUCY'S\nGARDEN", { h: L ? 120 : 56, fill: "#3b2a1a", shadow: "#ffb347" })}</div>
+    <div class="hud">${hud(ending ? 5 : 2)}</div>
+    ${ending ? `<div class="gate"><span class="play">Your finished garden →</span></div>` : ""}</div>`;
+}
+
+// ---------- C ----------
+function C(size, levels = LV, { ending = false } = {}) {
+  const L = size === "L";
+  const sel = levels.find((l) => l.st === "next") || levels[levels.length - 1];
+  const stage = L ? { l: 36, t: 120, w: 760, h: 670 } : { l: 14, t: 56, w: 390, h: 320 };
+  const pkw = L ? 104 : 62, gap = L ? 14 : 8;
+  const pks = levels.map((l, i) => {
+    const locked = l.st === "locked";
+    const s = l === sel && !ending;
+    return `<div class="pk ${locked ? "locked" : ""} ${s ? "sel" : ""}" style="--c:${l.c};--t:${[-3, 2, 0, -2, 3][i]}deg">
+      <div class="cr"></div><div class="band">LV ${l.n}</div>
+      <div class="win">${img(ART + l.crops[0] + ".svg")}</div>
+      <div class="nm">${locked ? "???" : l.t.toUpperCase()}</div>
+      ${locked ? `<span class="stamp">🔒 LEVEL ${l.n}</span>` : ""}
+      ${!locked ? `<div class="st stars">${stars(l.stars)}</div>` : ""}</div>`;
+  }).join("");
+  const tinLeft = stage.l + stage.w + (L ? 46 : 16);
+  return `<div class="f ${size} C"><div class="wall"></div>
+    <div class="head" style="left:${stage.l}px;right:${L ? 36 : 14}px;top:${L ? 30 : 12}px">
+      ${blk("LUCY'S GARDEN", { h: L ? 50 : 26, fill: "#fff6dc", shadow: "#1a0f06" })}
+      <div class="hud">${hud(ending ? 5 : 2)}</div></div>
+    <div class="stage" style="left:${stage.l}px;top:${stage.t}px;width:${stage.w}px;height:${stage.h}px">
+      <div class="scene"></div>
+      <div class="crops">${sel.crops.map((c) => img(ART + c + ".svg", "", `width:${L ? 120 : 62}px`)).join("")}</div>
+      ${img(ICON + sel.pet + ".svg", "pet", `width:${L ? 230 : 110}px`)}
+      <div class="hd"><p class="n">${ending ? "ALL FIVE DONE · ★ 10/15" : `LEVEL ${sel.n} · WITH ${sel.pn.toUpperCase()}`}</p>${blk(ending ? "ALL IN\nBLOOM" : "PESTS AND\nBERRIES", { h: L ? 104 : 48, fill: "#fff6dc", shadow: "#1a0f06" })}</div>
+      <div class="ft">${ending ? `<span class="play">Your finished garden →</span>` : `<span class="play">▶ PLAY</span><span class="stars">${stars(0)}</span>`}</div></div>
+    <div class="tin" style="left:${tinLeft}px;top:${L ? 330 : 130}px;--pkw:${pkw}px;--gap:${gap}px">${pks}</div></div>`;
+}
+
+// ---------- system frames: splash/name + ending ----------
+function splash(opt) {
+  const t = blk("DRIFTWOOD", { h: 120, fill: opt === "C" ? "#fff6dc" : "#3b2a1a", shadow: opt === "C" ? "#1a0f06" : "#ffb347" });
+  const nm = `<div class="name">What should the pets call you?<div class="in">your name</div><span class="play" style="justify-self:start">Enter the garden ▶</span></div>`;
+  if (opt === "A") {
+    const pre = LV.map((l) => ({ ...l, st: "locked" }));
+    return A("L", pre).replace(/<div class="banner">[\s\S]*?<\/div>\s*<div class="hud"[\s\S]*?<\/div><\/div>$/, `<div class="banner" style="left:60px;top:60px;padding:26px 30px">${blk("DRIFTWOOD", { h: 110, shadow: "#ffb347" })}<p style="margin:16px 0 0;font:600 20px/1.3 var(--body)">A short game about the AI helpers we trust.</p></div><div style="position:absolute;left:60px;top:330px;z-index:9">${nm}</div></div>`);
+  }
+  if (opt === "B") return `<div class="f L B"><div class="sky"></div><div class="sun"></div><div class="moon"></div><div class="hills"></div><div class="fence"></div><div class="ground"></div><div class="path"></div>
+    <div style="position:absolute;left:60px;top:60px">${t}<p style="margin:18px 0 0;font:600 22px/1.3 var(--body);color:#3b2a1a">A short game about the AI helpers we trust.</p></div>
+    <div style="position:absolute;left:60px;top:360px">${nm}</div>
+    <div style="position:absolute;right:80px;bottom:14%;display:flex;gap:30px;align-items:flex-end">${LV.map((l) => img(ICON + l.pet + ".svg", "", "width:120px;filter:drop-shadow(-10px 5px 0 rgba(40,20,30,.3))")).join("")}</div></div>`;
+  return `<div class="f L C"><div class="wall"></div>
+    <div style="position:absolute;left:60px;top:70px">${t}<p style="margin:18px 0 0;font:600 22px/1.3 var(--body);color:#f3e3c0">A short game about the AI helpers we trust.</p></div>
+    <div style="position:absolute;left:60px;top:380px">${nm}</div>
+    <div class="tin" style="left:800px;top:330px;--pkw:104px;--gap:16px">${LV.map((l, i) => `<div class="pk locked" style="--c:${l.c};--t:${[-3, 2, 0, -2, 3][i]}deg"><div class="cr"></div><div class="band">LV ${l.n}</div><div class="win">${img(ART + l.crops[0] + ".svg")}</div><div class="nm">???</div></div>`).join("")}</div></div>`;
+}
+function ending(opt) {
+  const sc = `<span class="score">★ 10/15</span>`;
+  if (opt === "A") return A("L", DONE, { ending: true });
+  if (opt === "B") {
+    const html = B("L", DONE, { ending: true });
+    return html.replace('<div class="title">', `<div style="position:absolute;left:36px;top:150px;z-index:3">${sc}</div><div class="title">`);
+  }
+  return C("L", DONE, { ending: true });
+}
+
+// ---------- mount ----------
+const frame = (cap, html, w, h, scale) => `<div><p class="cap">${cap}</p><div class="box" style="width:${w * scale}px;height:${h * scale}px">${html.replace('class="f ', `style="transform:scale(${scale})" class="f `)}</div></div>`;
+const R = { A, B, C };
+document.querySelectorAll(".row[data-opt]").forEach((row) => {
+  const o = row.dataset.opt;
+  if (row.hasAttribute("data-sys")) {
+    row.innerHTML = frame("SPLASH + NAME", splash(o), 1512, 830, 0.36) + frame("ENDING (ALL FIVE DONE)", ending(o), 1512, 830, 0.36);
+  } else {
+    row.innerHTML = frame("LAPTOP 1512×830", R[o]("L"), 1512, 830, 0.5) + frame("PHONE 844×390", R[o]("P"), 844, 390, 0.62);
+  }
+});
+</script>
+</body>
+</html>

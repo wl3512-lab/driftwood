@@ -1,0 +1,22 @@
+I've received Codex's playtest handoff for Driftwood. I made no edits and deployed nothing.
+
+**Fixed locally, not deployed:**
+1. A one-star replay brings back the crops in earlier plots and dinner.
+2. The almanac now blocks background keyboard shortcuts.
+3. Tools can be tapped and then a destination tapped, instead of dragged.
+4. The pour instruction changes when the action switches to hold or soak.
+5. Low hold controls stay reachable above the conversation dock.
+6. Collected field-guide cards wrap at a readable size on phones.
+7. Level 4's spinach shows up in Rowan's pouch, the dinner menu and the pot. High-rated dinners no longer call themselves thin just because dishes are missing.
+
+**Verification:**
+- All 347 unit tests pass.
+- The full laptop and phone browser runs pass (`docs/agent-playtest/2026-11-15-integration-final/results.json`).
+- `scripts/build.sh` succeeds, and `sw.js` is at `dw-v36`.
+- The full report is `docs/agent-playtest/2026-11-15-inconsistencies/report.md`.
+
+**Caveat:** the browser runs came before the newer conditional chore/wait logic was added. Only the unit tests and the build cover that work, so it still needs its own browser check.
+
+**Overlap:** another Claude session's work overlaps these fixes: the rewritten action animations, potted mint, spinach and the stricter AI crop-name check. I'll keep those changes intact rather than treat them as unrelated. Only one session should edit the app at a time, so I'll check `git log` before I touch anything.
+
+**Testing:** I'll use the Node server at `127.0.0.1:8786/v2/`, because Python's default server reset asset connections when several browsers loaded it at once. The new scripts in `scripts/test-v2-*.cjs` read `BASE_URL`, `PLAYWRIGHT_MODULE` and `CHROME_PATH`.

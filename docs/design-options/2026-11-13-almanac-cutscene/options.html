@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftwood Design Options</title>
+<link rel="icon" href="../../../icons/mood-garden-favicon.svg" type="image/svg+xml">
+<!-- Driftwood v2 design options, 13 Nov 2026: seed-packet almanac, opening
+     warning cutscene, shape typography. Standalone mockup: nothing here is
+     wired into v2/. Sprites load from ../../../v2/art and ../../../icons.
+     URL params: ?solo=<frame id> shows one frame at 1:1 (for screenshots),
+     ?unlock=1..5 sets how far the player has got, ?rm=1 simulates reduced motion. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky: #9fd4f5; --grass: #7cc36a; --grass-dark: #5ea44e; --wood: #8a5a34;
+  --parchment: #fff6dc; --ink: #3b2a1a; --line: #222; --off: #ffb347; --off-edge: #6b3d00;
+  --do: #7bd36b; --do-edge: #234d1c;
+  --void: #050805; --glass: #07110a; --phosphor: #00e676; --phosphor-light: #69f0ae; --crt-faint: #4fd08a;
+  --gold: #ffb347; --crt-text: #c8d8ce; --crt-dim: #7a9488;
+  --ui: "Fira Code", ui-monospace, Menlo, monospace;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --page: #ece4d0; --page-ink: #2a1f14; --page-dim: #6b5a45; --card: #fffaf0;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--page-ink); font-family: var(--body); line-height: 1.5; }
+img { image-rendering: pixelated; }
+button { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; }
+
+/* ======== page shell ======== */
+.doc { max-width: 1480px; margin: 0 auto; padding: 32px 16px 80px; }
+.doc__head { display: grid; gap: 10px; margin-bottom: 28px; }
+.doc__kicker { font: 700 0.75rem/1 var(--ui); letter-spacing: 0.2em; color: #a0531a; }
+.doc__head h1 { font: 700 clamp(1.6rem, 3vw, 2.3rem)/1.15 var(--ui); letter-spacing: 0.02em; }
+.doc__head p { max-width: 70ch; color: var(--page-dim); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 10px 14px; background: var(--card); border: 2px solid var(--line); border-radius: 4px; box-shadow: 3px 3px 0 var(--line); font: 600 0.85rem/1.2 var(--ui); }
+.toolbar label { display: inline-flex; gap: 8px; align-items: center; }
+.toolbar select, .toolbar input { font: inherit; }
+.toolbar select { min-height: 36px; padding: 4px 8px; border: 2px solid var(--line); border-radius: 3px; background: #fff; }
+.toolbar input[type=checkbox] { width: 20px; height: 20px; accent-color: #2e7d32; }
+.sec { margin-top: 56px; }
+.sec__head { display: grid; gap: 6px; margin-bottom: 18px; }
+.sec__num { font: 700 0.75rem/1 var(--ui); letter-spacing: 0.18em; color: #a0531a; }
+.sec__head h2 { font: 700 clamp(1.3rem, 2.4vw, 1.75rem)/1.2 var(--ui); }
+.sec__head p { max-width: 75ch; color: var(--page-dim); }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 1100px) { .opts { grid-template-columns: 1fr; } }
+.opt { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.opt__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.opt__head h3 { font: 700 1.05rem/1.2 var(--ui); }
+.chosen { display: inline-block; margin-left: 10px; padding: 2px 8px; background: #2e7d32; color: #fff; border-radius: 2px; font: 700 0.7rem/1.4 var(--ui); letter-spacing: 0.14em; vertical-align: 2px; }
+.opt:has(.chosen) .frame__vp { outline: 4px solid #2e7d32; outline-offset: 3px; }
+.opt__head h3 b { display: inline-block; margin-right: 8px; padding: 2px 8px; background: var(--ink); color: var(--parchment); border-radius: 2px; }
+.opt__note { font-size: 0.92rem; color: var(--page-dim); }
+.opt__btn { min-height: 36px; padding: 4px 12px; border: 2px solid var(--line); border-radius: 3px; background: var(--parchment); box-shadow: 2px 2px 0 var(--line); font: 700 0.8rem/1 var(--ui); cursor: pointer; }
+.frame { margin: 0; display: grid; gap: 6px; min-width: 0; }
+.frame__cap { font: 600 0.75rem/1 var(--ui); letter-spacing: 0.08em; color: var(--page-dim); }
+.frame__vp { position: relative; width: 100%; overflow: hidden; border: 3px solid var(--line); border-radius: 6px; background: #000; box-shadow: 4px 4px 0 rgba(0,0,0,.25); }
+.screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; container-type: size; container-name: scr; font-family: var(--ui); }
+.rec { margin-top: 20px; padding: 14px 16px; background: var(--card); border: 2px solid var(--line); border-left: 10px solid #2e7d32; border-radius: 4px; }
+.rec h3 { font: 700 0.85rem/1.2 var(--ui); letter-spacing: 0.12em; margin-bottom: 6px; color: #2e7d32; }
+.rec ul { margin: 6px 0 0; padding-left: 20px; }
+.script { margin-top: 16px; padding: 14px 16px; background: #1a1f18; color: #d6e7d9; border-radius: 4px; border: 2px solid var(--line); font: 0.88rem/1.6 var(--ui); white-space: pre-wrap; overflow-x: auto; }
+.script b { color: var(--phosphor-light); }
+.script i { color: var(--gold); font-style: normal; }
+
+/* solo mode: one frame at 1:1 for screenshots */
+.solo body { background: #000; }
+.solo .doc { max-width: none; padding: 0; }
+.solo .doc > :not(.solo-host) { display: none !important; }
+.solo .frame__cap { display: none; }
+.solo .frame__vp { border: 0; border-radius: 0; box-shadow: none; }
+
+/* small pixel icons */
+.ico { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: -0.12em; }
+
+/* ======== shape type ======== */
+.shape { display: block; overflow: visible; }
+.shape rect { shape-rendering: crispEdges; }
+.shape--build .cell { animation: cell-in 0.36s steps(3) var(--d, 0s) both; }
+@keyframes cell-in { from { opacity: 0; transform: translateY(-1.5px); } }
+.shape--flicker { animation: flicker 0.9s steps(1) both; }
+@keyframes flicker { 0% { opacity: 0 } 10% { opacity: 1 } 16% { opacity: .2 } 24% { opacity: 1 } 40% { opacity: .5 } 46%, 100% { opacity: 1 } }
+.rm .shape--build .cell, .rm .shape--flicker { animation: none; }
+
+/* ======== seed packets (shared) ======== */
+.pk {
+  --c: #e53935; --c-ink: #fff6dc;
+  position: relative; flex: none; width: var(--pw); height: var(--ph);
+  display: flex; flex-direction: column; padding: 0; margin: 0;
+  background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line);
+  font-family: var(--ui); cursor: pointer; text-align: center;
+  transform: rotate(var(--tilt, 0deg)); transition: transform 120ms steps(2);
+}
+.pk:hover, .pk:focus-visible { transform: translateY(-8px) rotate(0deg); }
+.pk:focus-visible { outline: 3px solid #1e88e5; outline-offset: 3px; }
+.pk__crimp { flex: none; height: 9%; background: repeating-linear-gradient(90deg, #efe1b8 0 6px, #d4c194 6px 12px); border-bottom: 2px solid var(--line); }
+.pk__band { flex: none; padding: 3px 4px; background: var(--c); color: var(--c-ink); border-bottom: 2px solid var(--line); font: 700 var(--pmeta)/1.1 var(--ui); letter-spacing: 0.16em; }
+.pk__win { position: relative; flex: 1 1 auto; min-height: 0; margin: 7% 8% 4%; background: linear-gradient(#cfeaf8 0 72%, #7cc36a 72% 100%); border: 2px solid var(--line); }
+.pk__win img { position: absolute; left: 7%; top: 7%; width: 86%; height: 86%; object-fit: contain; }
+.pk__name { flex: none; padding: 0 4px; font: 700 var(--pn)/1.15 var(--ui); letter-spacing: 0.04em; overflow-wrap: anywhere; }
+.pk__meta { flex: none; padding: 2px 4px 6%; font: 600 var(--pmeta)/1.2 var(--ui); color: #6b5235; letter-spacing: 0.06em; }
+.pk__new { position: absolute; top: -10px; right: -10px; padding: 3px 6px; background: #e53935; color: #fff; border: 2px solid var(--line); font: 700 var(--pmeta)/1 var(--ui); letter-spacing: 0.1em; transform: rotate(8deg); }
+.pk--locked { background: #e6dcc0; border-style: dashed; box-shadow: 4px 4px 0 rgba(34,34,34,.45); cursor: not-allowed; }
+.pk--locked:hover { transform: rotate(var(--tilt, 0deg)); }
+.pk--locked .pk__band { background: #b9ab88; color: #3b2a1a; }
+.pk--locked .pk__win { background: #d6caa8; }
+.pk--locked .pk__win img { filter: brightness(0); opacity: 0.5; }
+.pk--locked .pk__name { color: #7a6747; letter-spacing: 0.3em; }
+.pk__stamp { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%) rotate(-12deg); display: inline-flex; gap: 4px; align-items: center; padding: 4px 8px; border: 3px solid #8a3b12; color: #8a3b12; background: rgba(255, 246, 220, 0.9); font: 700 var(--pn)/1 var(--ui); letter-spacing: 0.08em; white-space: nowrap; }
+.pk--nope { animation: nope 0.32s steps(6); }
+@keyframes nope { 25% { translate: -4px 0 } 50% { translate: 4px 0 } 75% { translate: -3px 0 } }
+.rm .pk, .rm .pk--nope { transition: none; animation: none; }
+.pk--clone { position: absolute; margin: 0; transition: none; z-index: 2; pointer-events: none; }
+
+/* the inspect layer: dim + the back of the packet */
+.inspect { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; }
+.inspect__dim { position: absolute; inset: 0; background: rgba(20, 12, 4, 0.62); }
+.toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; padding: 8px 14px; background: var(--ink); color: var(--parchment); border: 2px solid var(--line); font: 700 0.85rem/1.2 var(--ui); white-space: nowrap; }
+
+/* ======== Almanac option A: the wooden seed shelf ======== */
+.alA {
+  --pw: 150px; --ph: 206px; --pn: 0.95rem; --pmeta: 0.66rem;
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 116px, rgba(40,22,8,.55) 116px 120px),
+    linear-gradient(#7a5131, #6a4528);
+}
+.alA__head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px 8px; }
+.alA__sign { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--parchment); border: 3px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line); }
+.alA__sign .shape { height: 30px; width: auto; }
+.alA__sign p { font: 600 0.85rem/1.3 var(--body); color: var(--ink); max-width: 30ch; }
+.alA__right { display: flex; align-items: center; gap: 12px; }
+.alA__count { padding: 8px 12px; background: #3d2814; color: var(--parchment); border: 2px solid var(--line); font: 700 0.85rem/1 var(--ui); letter-spacing: 0.08em; }
+.xbtn { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; background: var(--parchment); border: 3px solid var(--line); border-radius: 3px; box-shadow: 0 3px 0 var(--line); font: 700 1.2rem/1 var(--ui); color: var(--ink); cursor: pointer; }
+.alA__shelves { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-evenly; padding: 0 24px 24px; }
+.shelf { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 26px; padding: 0 28px 0; }
+.shelf::after { content: ""; position: absolute; left: 0; right: 0; bottom: -22px; height: 22px; background: linear-gradient(#d39a62 0 5px, #8a5a34 5px 100%); border: 3px solid #2a1709; box-shadow: 0 8px 0 rgba(0,0,0,.28); z-index: 0; }
+.shelf .pk { z-index: 1; margin-bottom: 4px; }
+.shelf__tag { position: absolute; left: 10px; bottom: -18px; z-index: 2; font: 700 0.62rem/1 var(--ui); letter-spacing: 0.14em; color: #2a1709; }
+@container scr (max-height: 500px) {
+  .alA { --pw: 100px; --ph: 138px; --pn: 0.7rem; --pmeta: 0.52rem; }
+  .alA__head { padding: 8px 16px 2px; }
+  .alA__sign { padding: 4px 10px; gap: 10px; box-shadow: 3px 3px 0 var(--line); }
+  .alA__sign .shape { height: 18px; }
+  .alA__sign p { font-size: 0.72rem; max-width: 34ch; }
+  .alA__count { padding: 6px 8px; font-size: 0.7rem; }
+  .alA__shelves { padding: 4px 16px 20px; justify-content: space-around; }
+  .alA .pk__win { margin: 5% 8% 3%; }
+  .alA .pk__meta { padding-bottom: 4px; }
+  .shelf { gap: 16px; padding: 0 16px; }
+  .shelf::after { height: 14px; bottom: -14px; box-shadow: 0 4px 0 rgba(0,0,0,.28); border-width: 2px; }
+  .shelf__tag { display: none; }
+  .pk { box-shadow: 3px 3px 0 var(--line); border-width: 2px; }
+  .pk:hover, .pk:focus-visible { transform: translateY(-4px); }
+  .pk__new { top: -8px; right: -8px; padding: 2px 4px; }
+  .pk__stamp { padding: 3px 5px; border-width: 2px; }
+}
+
+/* the back, parchment */
+.back {
+  position: relative; z-index: 3; width: min(760px, calc(100cqw - 48px)); max-height: calc(100cqh - 40px);
+  display: grid; grid-auto-rows: auto; gap: 14px; padding: 18px 22px 16px;
+  background: var(--parchment) repeating-linear-gradient(transparent 0 27px, rgba(59,42,26,.08) 27px 28px);
+  color: var(--ink); border: 3px solid var(--line); border-radius: 4px; box-shadow: 6px 6px 0 var(--line);
+  text-align: left; overflow: hidden;
+}
+.back__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 3px dashed rgba(59,42,26,.35); }
+.back__kick { font: 700 0.7rem/1.2 var(--ui); letter-spacing: 0.16em; color: #8a3b12; }
+.back__name { display: flex; align-items: center; gap: 10px; margin-top: 4px; font: 700 1.6rem/1.1 var(--ui); letter-spacing: 0.06em; }
+.back__swatch { width: 16px; height: 16px; background: var(--c); border: 2px solid var(--line); }
+.back__btns { display: flex; gap: 8px; }
+.flipbtn { min-height: 44px; padding: 0 12px; background: var(--parchment); border: 3px solid var(--line); border-radius: 3px; box-shadow: 0 3px 0 var(--line); font: 700 0.8rem/1 var(--ui); cursor: pointer; }
+.back__body { display: grid; grid-template-columns: 1fr 1.15fr; gap: 20px; min-height: 0; }
+.lab { font: 700 0.68rem/1 var(--ui); letter-spacing: 0.18em; color: #6b5235; margin-bottom: 8px; }
+.stages { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-start; gap: 6px; }
+.stages li { flex: 1 1 0; display: grid; justify-items: center; gap: 4px; font: 600 0.72rem/1.1 var(--ui); text-align: center; }
+.stages img { width: 100%; max-width: 76px; aspect-ratio: 1; background: linear-gradient(#cfeaf8 0 70%, #b98a5a 70%); border: 2px solid var(--line); }
+.stages .arrow { flex: none; align-self: center; margin-top: -18px; font: 700 0.9rem/1 var(--ui); color: #8a6440; }
+.trouble { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding: 8px 10px; background: #fbe6c8; border: 2px solid #8a3b12; }
+.trouble img { width: 52px; height: 52px; flex: none; background: #f3d9b1; border: 2px solid var(--line); }
+.trouble p { font: 500 0.82rem/1.35 var(--body); }
+.trouble b { display: block; font: 700 0.66rem/1.2 var(--ui); letter-spacing: 0.16em; color: #8a3b12; }
+.care { margin: 0; display: grid; gap: 8px; }
+.care div { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: baseline; }
+.care dt { display: inline-flex; gap: 6px; align-items: center; font: 700 0.72rem/1.2 var(--ui); letter-spacing: 0.12em; color: #5e4a32; }
+.care dd { margin: 0; font: 500 0.95rem/1.35 var(--body); }
+.hero { position: relative; margin-top: 6px; padding: 18px 18px 14px; background: #e8f5e0; border: 3px solid #2e7d32; border-radius: 3px; box-shadow: 4px 4px 0 #1b5e20; }
+.hero__tab { position: absolute; top: -13px; left: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #2e7d32; color: #fff; border: 2px solid #1b5e20; font: 700 0.72rem/1 var(--ui); letter-spacing: 0.16em; }
+.hero__tab .ico { color: #ffe08a; }
+.hero__fact { font: 700 1.45rem/1.3 var(--ui); color: #173a12; letter-spacing: 0.01em; }
+.hero__dot { color: #5f8f4a; }
+.hero__suns { display: inline-flex; gap: 2px; vertical-align: -0.06em; }
+.hero__suns .ico { width: 0.95em; height: 0.95em; color: #f2a900; filter: drop-shadow(1px 1px 0 #8a5a00); }
+.hero .back__claim { margin-top: 10px; }
+.hero.stamp { animation: hero-stamp .6s steps(6) both, hero-glow .8s steps(2) .6s 4 alternate; }
+@keyframes hero-stamp { 0% { transform: scale(1.14); } 45% { transform: scale(.97); } 100% { transform: none; } }
+@keyframes hero-glow { to { box-shadow: 4px 4px 0 #1b5e20, 0 0 0 7px rgba(124, 211, 107, .6), 0 0 28px rgba(124, 211, 107, .8); } }
+.hero.stamp .back__claim b { display: inline-block; animation: wrong-in .4s steps(4) .45s both; }
+@keyframes wrong-in { 0% { transform: scale(2.4) rotate(-10deg); opacity: 0; } 60% { transform: scale(.9) rotate(-4deg); opacity: 1; } 100% { transform: rotate(-4deg); opacity: 1; } }
+.rm .hero.stamp, .rm .hero.stamp .back__claim b { animation: none; }
+.more { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; padding-top: 12px; border-top: 3px dashed rgba(59,42,26,.35); }
+.more div { padding: 0 12px; border-left: 2px solid rgba(59,42,26,.18); }
+.more div:first-child { padding-left: 0; border-left: 0; }
+.more dt { display: flex; gap: 6px; align-items: center; margin-bottom: 5px; font: 700 0.68rem/1.2 var(--ui); letter-spacing: 0.12em; color: #5e4a32; }
+.more dd { margin: 0; font: 500 0.88rem/1.3 var(--body); }
+.back__foot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--ink); color: var(--parchment); font: 600 0.85rem/1.35 var(--body); }
+.back__foot .ico { color: var(--gold); width: 18px; height: 18px; }
+.offchip { display: inline-block; padding: 1px 6px; background: var(--off); color: #2a1600; border: 2px solid var(--off-edge); font: 700 0.75rem/1.2 var(--ui); white-space: nowrap; }
+@container scr (max-height: 500px) {
+  .back { width: calc(100cqw - 32px); max-height: calc(100cqh - 20px); gap: 8px; padding: 10px 14px 10px; box-shadow: 4px 4px 0 var(--line); }
+  .back__top { padding-bottom: 6px; }
+  .back__name { font-size: 1.15rem; margin-top: 2px; }
+  .back__kick { font-size: 0.6rem; }
+  .back__body { gap: 14px; }
+  .lab { margin-bottom: 5px; font-size: 0.6rem; }
+  .stages img { max-width: 52px; }
+  .stages li { font-size: 0.62rem; }
+  .trouble { margin-top: 8px; padding: 5px 8px; }
+  .trouble img { width: 38px; height: 38px; }
+  .trouble p { font-size: 0.74rem; }
+  .care { gap: 4px; }
+  .care div { grid-template-columns: 74px 1fr; }
+  .care dt { font-size: 0.62rem; }
+  .care dd { font-size: 0.8rem; line-height: 1.25; }
+  .hero { margin-top: 6px; padding: 12px 12px 8px; box-shadow: 3px 3px 0 #1b5e20; }
+  .hero__tab { top: -10px; left: 10px; padding: 2px 7px; font-size: 0.6rem; }
+  .hero__fact { font-size: 1.1rem; }
+  .hero .back__claim { margin-top: 6px; }
+  .back__foot { padding: 6px 10px; font-size: 0.74rem; }
+  .more { padding-top: 6px; }
+  .more div { padding: 0 8px; }
+  .more dt { margin-bottom: 2px; font-size: 0.56rem; }
+  .more dd { font-size: 0.72rem; line-height: 1.2; }
+}
+
+/* ======== Almanac option B: packets inside the CRT tablet ======== */
+.alB { position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(#9fd4f5 0 18%, #7cc36a 18% 100%); }
+.alB::before { content: ""; position: absolute; inset: 0; background: rgba(20, 12, 4, 0.62); }
+.alB__bed { position: absolute; background: #b98a5a; border: 4px solid #8a6440; }
+.dev {
+  position: relative; z-index: 1; width: 1000px; height: 700px; display: flex; flex-direction: column;
+  background: var(--parchment); border: 3px solid var(--line); border-left: 14px solid #6b3a2a; border-radius: 4px;
+  box-shadow: inset 3px 0 0 #8a5a34, 4px 4px 0 var(--line);
+}
+.dev__bezel { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 6px 10px; }
+.dev__status { display: flex; align-items: center; gap: 8px; font: 700 0.8rem/1 var(--ui); letter-spacing: 0.14em; color: var(--ink); }
+.dev__led { width: 8px; height: 8px; background: #43a047; border: 2px solid var(--line); box-shadow: 0 0 6px 1px rgba(67,160,71,.75); }
+.dev__tabs { display: flex; gap: 6px; }
+.dev__tab { min-height: 44px; padding: 0 14px; background: #e8dcbc; border: 2px solid var(--line); border-radius: 3px; box-shadow: 0 3px 0 var(--line); font: 700 0.8rem/1 var(--ui); cursor: pointer; }
+.dev__tab[aria-pressed="true"] { background: #e4f6d6; transform: translateY(2px); box-shadow: 0 1px 0 var(--line), inset 0 0 0 2px #7cc36a; }
+.glass {
+  position: relative; flex: 1 1 auto; min-height: 0; margin: 0 8px 8px; padding: 14px 18px; overflow: hidden;
+  border: 3px solid #0d0f0c; border-radius: 10px; color: var(--phosphor-light);
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%),
+    repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.32) 2px 3px),
+    var(--glass);
+  box-shadow: inset 0 0 0 2px #1d3a26;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.glass__title { font: 700 1.1rem/1.2 var(--ui); letter-spacing: 0.12em; text-shadow: 0 0 6px rgba(105,240,174,.55); }
+.glass__title .cur { display: inline-block; width: 0.6em; height: 1em; vertical-align: -0.15em; background: var(--phosphor-light); animation: blink 1s steps(1) infinite; }
+.rm .glass__title .cur { animation: none; }
+@keyframes blink { 50% { opacity: 0 } }
+.glass__sub { font: 400 0.82rem/1.3 var(--ui); color: var(--crt-faint); }
+.glass__grid { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-evenly; gap: 12px; }
+.glass__row { display: flex; justify-content: center; gap: 18px; }
+.alB { --pw: 132px; --ph: 196px; --pn: 0.85rem; --pmeta: 0.62rem; }
+.pk--crt { background: #0b1a10; color: var(--phosphor-light); border: 2px solid var(--phosphor-light); border-radius: 2px; box-shadow: 0 0 10px rgba(105,240,174,.25), inset 0 0 0 2px #0f2a18; }
+.pk--crt .pk__crimp { background: repeating-linear-gradient(90deg, #13301e 0 6px, #0b1a10 6px 12px); border-bottom: 2px solid var(--phosphor-light); }
+.pk--crt .pk__band { background: transparent; color: var(--gold); border-bottom: 1px dashed var(--crt-faint); }
+.pk--crt .pk__band::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--c); vertical-align: 0; }
+.pk--crt .pk__win { background: #0f2416; border: 2px solid #1d3a26; }
+.pk--crt .pk__name { text-shadow: 0 0 6px rgba(105,240,174,.5); }
+.pk--crt .pk__meta { color: var(--crt-faint); }
+.pk--crt .pk__new { background: var(--gold); color: #1d1400; border-color: #1d1400; transform: rotate(0); top: -9px; right: -9px; }
+.pk--crt.pk--locked { background: transparent; border: 2px dashed #2f5b40; box-shadow: none; }
+.pk--crt.pk--locked .pk__band { background: transparent; color: #4a7a5e; }
+.pk--crt.pk--locked .pk__band::before { display: none; }
+.pk--crt.pk--locked .pk__win { background: transparent; border-color: #1d3a26; }
+.pk--crt.pk--locked .pk__win img { filter: brightness(0) drop-shadow(1px 0 0 #3fa36d) drop-shadow(-1px 0 0 #3fa36d) drop-shadow(0 1px 0 #3fa36d) drop-shadow(0 -1px 0 #3fa36d); opacity: 1; }
+.pk--crt.pk--locked .pk__name { color: #4a7a5e; }
+.pk--crt .pk__stamp { border: 2px solid var(--gold); color: var(--gold); background: rgba(7,17,10,.92); transform: translate(-50%, -50%); }
+.pk--crt:focus-visible { outline: 3px solid var(--gold); }
+.glass .inspect__dim { background: rgba(3, 8, 4, 0.82); }
+.glass .inspect { border-radius: 8px; }
+.toast--crt { background: #07110a; color: var(--gold); border-color: var(--gold); }
+@container scr (max-height: 500px) {
+  .alB { --pw: 92px; --ph: 112px; --pn: 0.66rem; --pmeta: 0.5rem; }
+  .dev { width: calc(100cqw - 12px); height: calc(100cqh - 12px); border-left-width: 10px; }
+  .dev__bezel { padding: 3px 4px 3px 8px; }
+  .dev__status { font-size: 0.68rem; }
+  .dev__tab { padding: 0 10px; font-size: 0.7rem; }
+  .glass { margin: 0 6px 6px; padding: 8px 12px; gap: 4px; }
+  .glass__head { display: flex; align-items: baseline; gap: 14px; }
+  .glass__title { font-size: 0.85rem; }
+  .glass__sub { font-size: 0.68rem; }
+  .glass__grid { gap: 8px; }
+  .glass__row { gap: 12px; }
+  .pk--crt .pk__win { margin: 4px 8px 2px; }
+  .pk--crt .pk__seeds { display: none; }
+  .pk--crt .pk__meta { display: none; }
+  .pk--crt .pk__crimp { height: 6px; }
+}
+/* the back, terminal */
+.back--crt {
+  background: #07110a; color: var(--phosphor-light); border: 2px solid var(--phosphor-light); border-radius: 4px;
+  box-shadow: 0 0 18px rgba(105,240,174,.25); width: min(820px, calc(100% - 24px)); max-height: calc(100% - 16px);
+}
+.back--crt .back__top { border-bottom: 1px dashed var(--crt-faint); }
+.back--crt .back__kick { color: var(--gold); }
+.back--crt .back__name { text-shadow: 0 0 6px rgba(105,240,174,.55); }
+.back--crt .back__name::before { content: ">"; color: var(--crt-faint); }
+.back--crt .flipbtn, .back--crt .xbtn { background: transparent; color: var(--phosphor-light); border: 2px solid var(--phosphor-light); box-shadow: none; }
+.back--crt .lab { color: var(--crt-faint); }
+.back--crt .stages img { background: #0f2416; border-color: #2f5b40; }
+.back--crt .stages .arrow { color: var(--crt-faint); }
+.back--crt .trouble { background: transparent; border: 1px dashed var(--gold); }
+.back--crt .trouble img { background: #0f2416; border-color: #2f5b40; }
+.back--crt .trouble p { font-family: var(--ui); font-size: 0.78rem; color: var(--crt-text); }
+.back--crt .trouble b { color: var(--gold); }
+.back--crt .care dt { color: var(--crt-faint); }
+.back--crt .care dd { font-family: var(--ui); font-size: 0.86rem; color: var(--phosphor-light); }
+.back--crt .hero { background: #0b1a10; border-color: var(--phosphor-light); box-shadow: 0 0 12px rgba(105,240,174,.3); }
+.back--crt .hero__tab { background: var(--phosphor-light); color: #07110a; border-color: #07110a; }
+.back--crt .hero__tab .ico { color: #07110a; }
+.back--crt .hero__fact { color: var(--phosphor-light); text-shadow: 0 0 6px rgba(105,240,174,.5); }
+.back--crt .back__foot { background: transparent; border: 2px solid var(--gold); color: var(--gold); font-family: var(--ui); font-size: 0.8rem; }
+@container scr (max-height: 500px) {
+  .back--crt { width: calc(100% - 8px); max-height: calc(100% - 6px); }
+  .back--crt .trouble { display: none; }
+  .back--crt .care dd { font-size: 0.72rem; }
+  .back--crt .trouble p { font-size: 0.68rem; }
+  .back--crt .back__foot { font-size: 0.68rem; }
+}
+
+/* ======== Cutscene shared ======== */
+.cs { position: absolute; inset: 0; overflow: hidden; }
+.cs__skip { position: absolute; top: 16px; right: 16px; z-index: 40; min-height: 44px; padding: 0 16px; font: 700 0.85rem/1 var(--ui); letter-spacing: 0.08em; cursor: pointer; }
+.cs__pips { position: absolute; top: 16px; left: 16px; z-index: 40; display: flex; gap: 6px; }
+.cs__pip { width: 44px; height: 8px; overflow: hidden; }
+.cs__pip i { display: block; height: 100%; width: 0; }
+.cs__pip.on i { width: 100%; transition: width var(--ms) linear; }
+.cs__pip.done i { width: 100%; transition: none; }
+.ended .cs__skip { visibility: hidden; }
+.rm .cs__pip.on i { transition: none; }
+@container scr (max-height: 500px) {
+  .cs__skip { top: 8px; right: 8px; padding: 0 12px; font-size: 0.75rem; }
+  .cs__pips { top: 10px; left: 12px; }
+  .cs__pip { width: 28px; height: 6px; }
+}
+
+/* ======== Cutscene A (CHOSEN): the garden at golden hour ========
+   Layers, back to front: banded sky, low sun, drifting clouds and birds,
+   far hills, hedge, fence, lawn with two planted beds, the path the pets
+   stand on, warm light and a vignette. Idle motion is transform-only: a slow
+   camera drift on the whole world, a few px of sway per layer (parallax),
+   plants rocking, clouds and birds crossing. Reduced motion stops it all. */
+.csA { font-family: var(--ui); background: #2a1a2e; }
+.csA__world { position: absolute; inset: -2%; animation: cam 18s ease-in-out infinite alternate; }
+@keyframes cam { from { transform: translateX(-0.7%) scale(1.02); } to { transform: translateX(0.7%) scale(1.04); } }
+.lay { position: absolute; left: -3%; right: -3%; }
+.lay--sway { animation: sway var(--dur, 9s) ease-in-out infinite alternate; }
+@keyframes sway { from { translate: calc(var(--amp, 4px) * -1) 0; } to { translate: var(--amp, 4px) 0; } }
+.csA__sky { top: 0; height: 62%; background: linear-gradient(#3f3577 0 9%, #5f4190 9% 18%, #8f4c94 18% 27%, #c45e86 27% 36%, #e9786d 36% 46%, #f99a5e 46% 56%, #ffbb62 56% 66%, #ffd585 66% 100%); }
+.csA__sun { position: absolute; left: 64%; top: 30%; width: 300px; height: 300px; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #fff7d6 0 22%, #ffe594 22% 30%, rgba(255,222,140,.55) 30% 42%, rgba(255,205,120,.28) 42% 58%, rgba(255,190,110,.12) 58% 72%, transparent 72%); }
+.cloud { position: absolute; height: 16px; background: #ffd2a6; box-shadow: 0 8px 0 #f0a07e; animation: cloud var(--dur, 70s) linear infinite; animation-delay: var(--delay, 0s); }
+.cloud::before, .cloud::after { content: ""; position: absolute; bottom: 100%; background: #ffd2a6; height: 12px; }
+.cloud::before { left: 18%; width: 34%; }
+.cloud::after { left: 46%; width: 30%; height: 20px; }
+@keyframes cloud { from { transform: translateX(-30cqw); } to { transform: translateX(130cqw); } }
+.bird { position: absolute; width: 27px; height: 12px; color: #3a2340; animation: fly var(--dur, 16s) linear infinite; animation-delay: var(--delay, 0s); }
+.bird svg { width: 100%; height: 100%; animation: flap .5s steps(1) infinite; }
+@keyframes fly { from { transform: translate(-60px, 0); } 50% { transform: translate(60cqw, -24px); } to { transform: translate(115cqw, 6px); } }
+@keyframes flap { 50% { transform: scaleY(-0.6); } }
+.csA__hills { top: 40%; height: 18%; background:
+  radial-gradient(ellipse 26% 100% at 18% 100%, #7d5d8c 0 97%, transparent 100%),
+  radial-gradient(ellipse 34% 85% at 52% 100%, #8e6a90 0 97%, transparent 100%),
+  radial-gradient(ellipse 30% 95% at 86% 100%, #74587f 0 97%, transparent 100%); }
+.csA__hedge { top: 50%; height: 8%; background:
+  radial-gradient(circle at 50% 100%, #4f6b3e 0 62%, transparent 64%) 0 0 / 70px 100% repeat-x,
+  linear-gradient(transparent 55%, #4f6b3e 55%); }
+.csA__fence { top: 51%; height: 9%; background:
+  linear-gradient(transparent 22%, #b8773f 22% 34%, transparent 34% 62%, #b8773f 62% 74%, transparent 74%),
+  repeating-linear-gradient(90deg, transparent 0 18px, #d79a5c 18px 34px, #9a5e30 34px 38px, transparent 38px 64px); }
+.csA__ground { top: 58%; bottom: -2%; background:
+  repeating-linear-gradient(90deg, rgba(255,240,170,.06) 0 90px, transparent 90px 180px),
+  linear-gradient(#9cc75e 0 3%, #86b552 3% 32%, #74a347 32% 100%); }
+.csA__path { top: 71%; height: 13%; left: -5%; right: -5%; background: linear-gradient(#b6824f 0 6px, #d4a46b 6px 100%); border-bottom: 6px solid #a7733f; }
+.bed { position: absolute; top: 57.5%; height: 7%; background: linear-gradient(#5a381d 0 5px, #7a4f2c 5px); border: 4px solid #3d2814; display: flex; align-items: flex-end; justify-content: space-around; }
+.bed img { width: 84px; height: 84px; margin-bottom: 22px; transform-origin: 50% 100%; animation: rock 2.4s steps(2) infinite alternate; animation-delay: var(--d, 0s); filter: drop-shadow(-8px 4px 0 rgba(60,25,30,.22)); }
+@keyframes rock { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+.csA__light { inset: 0; left: 0; right: 0; pointer-events: none; background:
+  linear-gradient(100deg, rgba(255,150,80,0) 25%, rgba(255,170,90,.14) 62%, rgba(255,196,120,.26)),
+  radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(40,12,30,.42) 100%); }
+.rm .csA__world, .rm .lay--sway, .rm .cloud, .rm .bird, .rm .bird svg, .rm .bed img { animation: none; }
+.csA .cs__skip { background: var(--parchment); color: var(--ink); border: 3px solid var(--line); border-radius: 3px; box-shadow: 0 3px 0 var(--line); }
+.csA .cs__pip { background: rgba(34,34,34,.35); border: 2px solid var(--line); }
+.csA .cs__pip i { background: var(--parchment); }
+.csA__pets { position: absolute; z-index: 10; left: 13%; right: 13%; bottom: 20%; display: flex; justify-content: space-between; align-items: flex-end; }
+.pet { position: relative; display: grid; justify-items: center; gap: 4px; opacity: 0; transition: opacity .3s, filter .3s; }
+.pet img { width: 132px; height: auto; filter: drop-shadow(-14px 6px 0 rgba(60,25,30,.25)); }
+.pet__name { padding: 2px 6px; background: var(--parchment); border: 2px solid var(--line); font: 700 0.72rem/1 var(--ui); letter-spacing: 0.08em; color: var(--ink); }
+.at-meet .pet { opacity: 1; animation: pet-pop .42s steps(4) calc(var(--i) * .3s) both; }
+@keyframes pet-pop { 0% { transform: translateY(40px) scale(.6); opacity: 0 } 60% { transform: translateY(-10px) scale(1.06); opacity: 1 } 100% { transform: none; opacity: 1 } }
+.at-friendly .pet img { animation: bob .8s steps(2) infinite alternate calc(var(--i) * .12s); }
+@keyframes bob { to { transform: translateY(-6px); } }
+.at-drift .pet:not(.pet--mango) { filter: grayscale(.7) brightness(.75); opacity: .55; }
+.at-drift .pet--mango img { animation: shake .18s steps(2) infinite; }
+@keyframes shake { 50% { transform: translateX(3px); } }
+.bub { position: absolute; bottom: calc(100% + 10px); left: 50%; translate: -50% 0; width: max-content; max-width: 240px; padding: 8px 10px; background: #fff; color: var(--ink); border: 3px solid var(--line); border-radius: 3px; box-shadow: 3px 3px 0 var(--line); font: 700 0.9rem/1.3 var(--ui); opacity: 0; transition: opacity .2s steps(2); }
+.pet--mango .bub { left: -4px; translate: none; }
+.bub::after { content: ""; position: absolute; left: calc(50% - 7px); bottom: -11px; width: 12px; height: 12px; background: #fff; border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); transform: rotate(45deg); }
+.at-friendly .bub--hi { opacity: 1; }
+.at-drift .bub--hi { opacity: 0; }
+.at-drift .bub--drift { opacity: 1; border-color: #c62828; background: #fff1e0; }
+.at-drift .bub--drift::after { border-color: #c62828; background: #fff1e0; }
+.pet--mango .bub::after { left: 34px; }
+.bub--drift.glitch { animation: glitch .5s steps(5) 3; }
+@keyframes glitch {
+  0% { transform: none; text-shadow: none; clip-path: none; }
+  20% { transform: translateX(4px); text-shadow: 2px 0 #e53935, -2px 0 #00bcd4; clip-path: inset(0 0 40% 0); }
+  40% { transform: translateX(-3px); text-shadow: -2px 0 #e53935, 2px 0 #00bcd4; clip-path: inset(30% 0 0 0); }
+  60% { transform: translateX(2px) skewX(-8deg); text-shadow: 3px 0 #e53935, -3px 0 #00bcd4; clip-path: none; }
+  80% { transform: none; text-shadow: 1px 0 #e53935, -1px 0 #00bcd4; }
+  100% { transform: none; text-shadow: none; }
+}
+.rm .bub--drift.glitch, .rm .at-drift .pet--mango img, .rm .at-friendly .pet img, .rm .at-meet .pet { animation: none; }
+.bub__tag { position: absolute; top: -14px; right: -12px; padding: 2px 6px; background: #c62828; color: #fff; border: 2px solid var(--line); font: 700 0.62rem/1 var(--ui); letter-spacing: 0.14em; }
+
+/* the almanac beat: everything dims, the almanac pops up centred, on top */
+.csA__dim { position: absolute; inset: 0; z-index: 20; background: rgba(12, 5, 9, 0.84); opacity: 0; transition: opacity .3s steps(3); pointer-events: none; }
+.at-almanac .csA__dim { opacity: 1; }
+/* display:none, not visibility: the flipped back sets visibility: visible, which
+   would show through a hidden parent behind the end title. */
+.at-go .csA__alm, .ended .csA__alm, .at-go .csA__cap, .ended .csA__cap { display: none; }
+.csA__alm { position: absolute; z-index: 32; left: 50%; top: 43%; width: min(780px, calc(100cqw - 64px)); display: grid; justify-items: center; gap: 18px; translate: -50% -50%; visibility: hidden; pointer-events: none; }
+.at-almanac .csA__alm { visibility: visible; }
+.at-almanac .csA__rays { animation: fade-in .3s steps(3) .9s both, spin 24s linear infinite; }
+@keyframes fade-in { from { opacity: 0; } }
+.rm .at-almanac .csA__alm { animation: fade-in .2s both; }
+
+/* the game's toolbar, top right next to Skip: Garden % and the almanac button */
+.csA__hud { position: absolute; z-index: 31; top: 16px; right: 136px; display: flex; align-items: center; gap: 10px; }
+.hud__meter { min-width: 8.5rem; padding: 6px 10px; background: var(--parchment); color: var(--ink); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line); font: 600 0.8rem/1 var(--ui); }
+.hud__meter i { display: block; height: 8px; margin-top: 5px; border: 2px solid var(--line); background: #e8dcc0; }
+.hud__btn { display: grid; place-items: center; width: 48px; height: 48px; background: var(--parchment); border: 3px solid var(--line); border-radius: 2px; box-shadow: 3px 3px 0 var(--line); }
+.hud__btn img { width: 30px; height: 30px; image-rendering: pixelated; }
+.hud__lab { position: relative; margin-left: 8px; visibility: hidden; padding: 6px 10px; background: var(--gold); color: #2a1600; border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line); font: 700 0.85rem/1 var(--ui); letter-spacing: 0.06em; }
+.hud__lab::before { content: ""; position: absolute; left: -12px; top: 50%; margin-top: -8px; border: 8px solid transparent; border-left: 0; border-right: 9px solid var(--gold); filter: drop-shadow(-2px 0 0 var(--line)); }
+.at-almanac .hud__meter { opacity: .35; }
+.at-almanac .hud__btn { background: #fff3c4; animation: hud-lit .45s steps(2) infinite alternate; }
+@keyframes hud-lit { to { box-shadow: 3px 3px 0 var(--line), 0 0 0 5px var(--gold), 0 0 26px 6px rgba(255, 200, 80, .85); transform: scale(1.08); } }
+.at-almanac .hud__lab { visibility: visible; animation: lab-in .3s steps(3) both, lab-nudge .5s steps(2) .3s infinite alternate; }
+@keyframes lab-in { from { opacity: 0; transform: translateX(14px); } }
+@keyframes lab-nudge { to { transform: translateX(-4px); } }
+.rm .at-almanac .hud__btn, .rm .at-almanac .hud__lab { animation: none; }
+.csA__rays { position: absolute; left: 50%; top: 45%; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; z-index: -1;
+  background: repeating-conic-gradient(rgba(255,214,120,.14) 0 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 0 14%, transparent 44%); mask: radial-gradient(circle, #000 0 14%, transparent 44%);
+  animation: spin 24s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.rm .csA__rays, .rm .at-almanac .csA__rays { animation: none; }
+/* the radish packet: the same markup and CSS as the seed shelf (packetHTML /
+   backHTML), popped up, then flipped with the shelf's two-step rotateY. */
+.csA__flip { --pw: 230px; --ph: 316px; --pn: 1.35rem; --pmeta: 0.8rem; display: grid; place-items: center; width: 100%; }
+.csA__flip > * { grid-area: 1 / 1; }
+.csA__flip .pk { transform: none; transition: none; pointer-events: none; box-shadow: 6px 6px 0 var(--line), 0 0 60px rgba(255,214,120,.5); }
+.csA__flip .back { width: 100%; max-height: none; pointer-events: none; visibility: hidden; box-shadow: 6px 6px 0 var(--line), 0 0 60px rgba(255,214,120,.45); }
+.csA__flip .back__btns, .csA__flip .back__foot, .csA__flip .more { display: none; }
+.csA__flip.flipped .pk { visibility: hidden; }
+.csA__flip.flipped .back { visibility: visible; }
+.back__claim { margin-top: 10px; padding: 6px 10px; border: 2px dashed #c62828; background: #fff1e0; color: #5e2a12; font: 600 0.85rem/1.35 var(--ui); }
+.back__claim s { color: #8a3b12; }
+.back__claim b { margin-left: 8px; padding: 1px 6px; background: #c62828; color: #fff; letter-spacing: 0.1em; font-size: 0.75rem; }
+.csA__off { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px; background: var(--off); color: #2a1600; border: 3px solid var(--off-edge); border-radius: 2px; box-shadow: 3px 3px 0 var(--off-edge); font: 700 1rem/1 var(--ui); }
+.at-almanac .csA__off { animation: fade-in .3s steps(3) 1.0s both, pulse .7s steps(2) infinite alternate 1.3s; }
+@keyframes pulse { to { transform: scale(1.07); } }
+.rm .at-almanac .csA__off { animation: none; }
+
+.csA__cap { position: absolute; left: 4%; right: 4%; bottom: 4%; z-index: 30; padding: 18px 22px 22px; background: var(--parchment); color: var(--ink); border: 4px solid var(--line); border-radius: 3px; box-shadow: 4px 4px 0 var(--line); font: 700 1.3rem/1.4 var(--ui); }
+.csA__cap::after { content: "▼"; position: absolute; right: 14px; bottom: 8px; font-size: 0.8rem; animation: blink 1s steps(1) infinite; }
+.rm .csA__cap::after { animation: none; }
+/* the end title is the chosen title screen (Type B): CRT black with scanlines,
+   heavy block letters, cell-by-cell build-in. Opaque, so nothing shows through. */
+.csA__end { z-index: 35; opacity: 0; pointer-events: none; transition: opacity .3s steps(3); }
+.at-go .csA__end, .ended .csA__end { opacity: 1; pointer-events: auto; }
+.endbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.btn { min-height: 44px; padding: 0 18px; border: 3px solid var(--line); border-radius: 2px; background: var(--parchment); color: var(--ink); box-shadow: 3px 3px 0 var(--line); font: 700 0.95rem/1 var(--ui); letter-spacing: 0.04em; cursor: pointer; }
+.btn--do { background: var(--do); color: #0f2a0b; border-color: var(--do-edge); box-shadow: 3px 3px 0 var(--do-edge); }
+.btn--crt { background: transparent; color: var(--phosphor); border-color: var(--phosphor); box-shadow: none; }
+@container scr (max-height: 500px) {
+  .csA__sun { width: 170px; height: 170px; top: 28%; }
+  .cloud { height: 8px; box-shadow: 0 4px 0 #f0a07e; }
+  .cloud::before, .cloud::after { height: 6px; }
+  .cloud::after { height: 10px; }
+  .bird { width: 16px; height: 7px; }
+  .csA__hedge { background-size: 40px 100%, auto; }
+  .csA__fence { background:
+    linear-gradient(transparent 22%, #b8773f 22% 34%, transparent 34% 62%, #b8773f 62% 74%, transparent 74%),
+    repeating-linear-gradient(90deg, transparent 0 10px, #d79a5c 10px 19px, #9a5e30 19px 21px, transparent 21px 36px); }
+  .bed { border-width: 2px; }
+  .bed img { width: 40px; height: 40px; margin-bottom: 10px; filter: drop-shadow(-4px 2px 0 rgba(60,25,30,.22)); }
+  .csA__path { top: 68%; height: 14%; border-bottom-width: 3px; }
+  .csA__pets { left: 10%; right: 10%; bottom: 25%; }
+  .pet img { width: 56px; filter: drop-shadow(-6px 3px 0 rgba(60,25,30,.25)); }
+  .pet__name { font-size: 0.55rem; padding: 1px 4px; }
+  .bub { max-width: 160px; padding: 4px 6px; font-size: 0.68rem; border-width: 2px; box-shadow: 2px 2px 0 var(--line); bottom: calc(100% + 6px); }
+  .bub::after { width: 8px; height: 8px; bottom: -6px; border-width: 2px; left: calc(50% - 4px); }
+  .pet--mango .bub::after { left: 18px; }
+  .csA__alm { top: 48%; width: min(636px, calc(100cqw - 40px)); gap: 6px; }
+  .csA__flip .back__kick { display: none; }
+  .csA__flip .back__name { margin-top: 0; }
+  .csA__flip .lab { margin-bottom: 3px; }
+  .csA__flip .stages img { max-width: 40px; }
+  .csA__flip .care { gap: 2px; }
+  .csA__flip .care dd { font-size: 0.74rem; }
+  .csA__flip { --pw: 124px; --ph: 170px; --pn: 0.78rem; --pmeta: 0.55rem; }
+  .csA__flip .pk { border-width: 2px; box-shadow: 4px 4px 0 var(--line), 0 0 36px rgba(255,214,120,.5); }
+  .csA__flip .back { padding: 8px 14px 10px; gap: 6px; box-shadow: 4px 4px 0 var(--line), 0 0 36px rgba(255,214,120,.45); }
+  .csA__flip .back__top { padding-bottom: 4px; }
+  .csA__flip .trouble { display: none; }
+  .csA__flip .care div { grid-template-columns: 70px 1fr; }
+  .back__claim { margin-top: 6px; padding: 3px 8px; font-size: 0.7rem; }
+  .back__claim b { font-size: 0.6rem; }
+  .csA__rays { width: 700px; height: 700px; margin: -350px 0 0 -350px; }
+  .csA__off { min-height: 36px; padding: 0 12px; font-size: 0.78rem; border-width: 2px; }
+  .csA__cap { left: 16px; right: 16px; bottom: 10px; padding: 8px 12px; font-size: 0.85rem; border-width: 3px; }
+  .csA__hud { top: 8px; right: 105px; gap: 8px; }
+  .hud__meter { min-width: 6.4rem; padding: 4px 7px; font-size: 0.62rem; border-width: 2px; box-shadow: 2px 2px 0 var(--line); }
+  .hud__meter i { height: 6px; margin-top: 3px; }
+  .hud__btn { width: 40px; height: 40px; border-width: 2px; }
+  .hud__btn img { width: 26px; height: 26px; }
+  .hud__lab { margin-left: 6px; padding: 4px 7px; font-size: 0.7rem; border-width: 2px; box-shadow: 2px 2px 0 var(--line); }
+}
+
+/* ======== Cutscene B: the terminal ======== */
+.csB { background: var(--void); color: var(--crt-text); display: flex; flex-direction: column; align-items: center; padding: 96px 16px 24px; gap: 30px; }
+.csB::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 50; background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.28) 2px 3px), radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.6) 100%); }
+.csB .cs__skip { background: transparent; color: var(--phosphor); border: 2px solid var(--phosphor); border-radius: 2px; }
+.csB .cs__pip { background: #10261a; border: 1px solid #2f5b40; }
+.csB .cs__pip i { background: var(--phosphor-light); }
+.csB__mark { width: min(900px, calc(100cqw - 80px)); opacity: 0; }
+.csB__log li.alm { display: flex; align-items: center; gap: 0.6em; }
+.csB__mark.on { opacity: 1; }
+.csB__kick { color: var(--gold); font: 400 0.8rem/1 var(--ui); letter-spacing: 0.25em; opacity: 0; margin-top: -12px; }
+.csB__kick.on { opacity: 1; }
+.csB__log { width: min(900px, 100%); list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; font: 400 1.35rem/1.4 var(--ui); text-align: left; }
+.csB__log li { color: var(--phosphor-light); text-shadow: 0 0 6px rgba(105,240,174,.45); }
+.csB__log li::before { content: "> "; color: var(--crt-faint); }
+.csB__log li.warn { color: var(--gold); text-shadow: 0 0 6px rgba(255,179,71,.45); }
+.csB__log li.warn::before { content: "! "; color: var(--gold); }
+.csB__log li.typing::after { content: ""; display: inline-block; width: 0.6em; height: 1em; margin-left: 2px; vertical-align: -0.15em; background: currentColor; animation: blink .6s steps(1) infinite; }
+.csB__log li.glitch { animation: tglitch .45s steps(4) 3; }
+@keyframes tglitch { 25% { transform: translateX(4px); text-shadow: 2px 0 #ff5252, -2px 0 #40c4ff; } 50% { transform: translateX(-3px) skewX(-10deg); } 75% { transform: translateX(2px); text-shadow: -2px 0 #ff5252, 2px 0 #40c4ff; } }
+.rm .csB__log li.glitch, .rm .csB__log li.typing::after { animation: none; }
+.csB__pets { display: inline-flex; gap: 10px; vertical-align: middle; margin-left: 8px; }
+.csB__pets img { width: 30px; height: 30px; object-fit: contain; filter: grayscale(1) brightness(1.4) sepia(1) hue-rotate(80deg) saturate(3); opacity: 0; }
+.csB__pets img.on { opacity: 1; }
+.csB__alm { display: inline-flex; align-items: center; gap: 10px; }
+.csB__alm img { width: 34px; height: 34px; filter: drop-shadow(0 0 8px #69f0ae); }
+.csB__end { position: absolute; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 22px; padding: 16px; background: rgba(5,8,5,.9); opacity: 0; pointer-events: none; transition: opacity .3s steps(3); }
+.at-go .csB__end, .ended .csB__end { opacity: 1; pointer-events: auto; }
+.csB__end .shape { width: min(760px, calc(100cqw - 64px)); }
+.csB__end p { color: var(--crt-text); font: 400 1rem/1.4 var(--ui); }
+.press { color: var(--phosphor-light); font: 700 1rem/1 var(--ui); letter-spacing: 0.3em; animation: blink 1s steps(1) infinite; }
+.rm .press { animation: none; }
+@container scr (max-height: 500px) {
+  .csB { padding: 34px 16px 12px; gap: 12px; }
+  .csB__mark { width: min(420px, calc(100cqw - 160px)); }
+  .csB__kick { font-size: 0.6rem; margin-top: -6px; }
+  .csB__log { gap: 4px; font-size: 0.78rem; }
+  .csB__pets img { width: 18px; height: 18px; }
+  .csB__pets { gap: 6px; }
+  .csB__alm img { width: 20px; height: 20px; }
+  .csB__end { gap: 12px; }
+  .csB__end .shape { width: min(560px, calc(100cqw - 48px)); }
+  .csB__end p { font-size: 0.78rem; }
+}
+
+/* ======== Typography frames ======== */
+.tyTitle { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px 16px; background: var(--void); text-align: center; }
+.tyTitle::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.28) 2px 3px); }
+.tyTitle > * { position: relative; z-index: 1; }
+.tyTitle .kickS { height: 16px; width: auto; }
+.tyTitle .markS { width: min(840px, calc(100cqw - 96px)); height: auto; }
+.tyTitle img.sprite { width: 80px; }
+.tyTitle .line { color: var(--crt-text); font: 400 1.05rem/1.5 var(--body); }
+@container scr (max-height: 500px) {
+  .tyTitle { gap: 12px; }
+  .tyTitle .kickS { height: 11px; }
+  .tyTitle .markS { width: min(560px, calc(100cqw - 120px)); }
+  .tyTitle img.sprite { width: 44px; }
+  .tyTitle .line { font-size: 0.85rem; }
+}
+.tyLevel { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: linear-gradient(#9fd4f5 0 30%, #7cc36a 30% 100%); }
+.tyLevel::before { content: ""; position: absolute; inset: 0; background: rgba(20,12,4,.45); }
+.lvcard { position: relative; z-index: 1; width: min(860px, calc(100cqw - 32px)); display: grid; justify-items: center; gap: 18px; padding: 34px 32px 28px; background: var(--parchment); border: 4px solid var(--line); border-radius: 3px; box-shadow: 6px 6px 0 var(--line); text-align: center; }
+.lvcard .kickS { height: 18px; width: auto; }
+.lvcard .markS { width: min(700px, 100%); height: auto; }
+.lvcard__who { display: flex; align-items: center; gap: 14px; text-align: left; max-width: 46ch; }
+.lvcard__who img { width: 56px; flex: none; }
+.lvcard__who p { font: 500 1rem/1.45 var(--body); color: var(--ink); }
+@container scr (max-height: 500px) {
+  .lvcard { gap: 10px; padding: 16px 20px 14px; }
+  .lvcard .kickS { height: 12px; }
+  .lvcard .markS { width: min(480px, 100%); }
+  .lvcard__who img { width: 38px; }
+  .lvcard__who p { font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+<div class="doc">
+  <header class="doc__head">
+    <p class="doc__kicker">DRIFTWOOD V2 · DESIGN OPTIONS · 13 NOV 2026</p>
+    <h1>Seed-packet almanac, opening cutscene, shape type</h1>
+    <p>Three things Lucy asked for, two options each, at laptop (1280×800) and phone landscape (844×390). Everything is clickable: tap a packet to flip it, replay the cutscenes, try a locked packet. Nothing here touches the game yet.</p>
+    <div class="toolbar">
+      <label>Player has reached
+        <select id="unlock">
+          <option value="1">Level 1</option><option value="2" selected>Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="rm"> Simulate reduced motion</label>
+    </div>
+  </header>
+
+  <!-- ===================== 1. Almanac ===================== -->
+  <section class="sec" id="almanac">
+    <div class="sec__head">
+      <p class="sec__num">01 · ALMANAC</p>
+      <h2>Big seed packets that flip over</h2>
+      <p>One packet per plant across all five levels (11 in all). Packets from levels you haven't reached are silhouettes stamped with their level. Tap an open packet: it lifts, flips (rotateY, 0.44 s) and the back shows how to grow it, its growth stages and the level's fact card. With reduced motion it crossfades instead.</p>
+    </div>
+    <div class="opts">
+      <div class="opt">
+        <div class="opt__head"><h3><b>A</b>Wooden seed shelf<span class="chosen">CHOSEN</span></h3></div>
+        <p class="opt__note">The parchment world: packets stand on two shelves, one per half of the game. Reads as a collection you are filling in.</p>
+        <figure class="frame" data-id="almanac-A-laptop" data-size="laptop" data-kind="almanacA"></figure>
+        <figure class="frame" data-id="almanac-A-phone" data-size="phone" data-kind="almanacA"></figure>
+      </div>
+      <div class="opt">
+        <div class="opt__head"><h3><b>B</b>Inside the CRT almanac</h3></div>
+        <p class="opt__note">Same packets, drawn in phosphor on the existing almanac tablet's glass. A SEEDS tab sits next to FACT CARDS on the bezel.</p>
+        <figure class="frame" data-id="almanac-B-laptop" data-size="laptop" data-kind="almanacB"></figure>
+        <figure class="frame" data-id="almanac-B-phone" data-size="phone" data-kind="almanacB"></figure>
+      </div>
+    </div>
+    <div class="rec">
+      <h3>CHOSEN BY LUCY: A, THE WOODEN SHELF</h3>
+      <ul>
+        <li>The packets read as real objects you collect, which is what makes the unlock-per-level feel like progress; on the CRT they look like menu tiles.</li>
+        <li>Keep B's idea of the back: the fact card quote on every packet ties the shelf to the "check the almanac" habit.</li>
+        <li>Phone landscape fits all 11 packets without scrolling in A; B loses a row of height to the tablet bezel and the packets get small.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 2. Cutscene ===================== -->
+  <section class="sec" id="cutscene">
+    <div class="sec__head">
+      <p class="sec__num">02 · OPENING CUTSCENE</p>
+      <h2>Warn the player before Level 1</h2>
+      <p>About 12 seconds, five beats, Skip in the corner, ends on a Start button. Both options play the same script (the BEATS array at the bottom of this file), so Lucy can rewrite a line or a duration once and both update.</p>
+    </div>
+    <div class="opts">
+      <div class="opt">
+        <div class="opt__head"><h3><b>A</b>Garden stage<span class="chosen">CHOSEN</span></h3><button class="opt__btn" data-replay="csA">↻ Replay</button></div>
+        <p class="opt__note">Revised from Lucy's notes: the garden at golden hour (banded sky, low sun, drifting clouds and birds, hills, hedge, fence, planted beds with the game's sprites, a slow camera drift and parallax sway). The pets pop in, say hi, then Mango's bubble glitches into a wrong fact. On the almanac beat the whole scene dims, the almanac button in the game's toolbar (top right, next to Garden %) lights up with an Almanac label, and a radish seed packet flies out of it to the centre, then flips to its back: the fact card and Mango's claim crossed out as WRONG. The radish is in no level, so it spoils nothing. The end title is the chosen title screen (Type B): CRT black with scanlines, heavy block letters, cell-by-cell build-in.</p>
+        <figure class="frame" data-id="cutscene-A-laptop" data-size="mac" data-kind="csA"></figure>
+        <figure class="frame" data-id="cutscene-A-phone" data-size="phone" data-kind="csA"></figure>
+      </div>
+      <div class="opt">
+        <div class="opt__head"><h3><b>B</b>Terminal</h3><button class="opt__btn" data-replay="csB">↻ Replay</button></div>
+        <p class="opt__note">The blocky wordmark flickers on, then the lines type out like a system boot. The drift line glitches and raises a warning.</p>
+        <figure class="frame" data-id="cutscene-B-laptop" data-size="laptop" data-kind="csB"></figure>
+        <figure class="frame" data-id="cutscene-B-phone" data-size="phone" data-kind="csB"></figure>
+      </div>
+    </div>
+    <pre class="script" id="beat-script"></pre>
+    <div class="rec">
+      <h3>CHOSEN BY LUCY: A, THE GARDEN STAGE (REVISED 14 NOV)</h3>
+      <ul>
+        <li>It shows the drift happening (a pet says a wrong fact, the almanac contradicts it) instead of telling it, so the lesson lands before the player has read a word of Level 1.</li>
+        <li>It introduces all five pets and the almanac and Something's off, the three things the whole game is built on.</li>
+        <li>Borrow B's wordmark flicker for the very first second, then cut to the stage.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 3. Typography ===================== -->
+  <section class="sec" id="type">
+    <div class="sec__head">
+      <p class="sec__num">03 · SHAPE TYPE</p>
+      <h2>Letters drawn from shapes, not a font</h2>
+      <p>Both are drawn in SVG from one 5×7 letter grid defined in this file (A–Z, 0–9, a few marks), so any word can be set. A keeps each pixel as its own square (columns doubled for weight) and builds in cell by cell. B fuses the cells into heavy solid letters (each column doubled) with a stepped shadow, closest to the screenshots.</p>
+    </div>
+    <div class="opts">
+      <div class="opt">
+        <div class="opt__head"><h3><b>A</b>Pixel grid</h3><button class="opt__btn" data-replay="type">↻ Replay</button></div>
+        <figure class="frame" data-id="type-A-laptop" data-size="laptop" data-kind="tyA-title"></figure>
+        <figure class="frame" data-id="type-A-phone" data-size="phone" data-kind="tyA-title"></figure>
+        <figure class="frame" data-id="type-A-level-laptop" data-size="laptop" data-kind="tyA-level"></figure>
+        <figure class="frame" data-id="type-A-level-phone" data-size="phone" data-kind="tyA-level"></figure>
+      </div>
+      <div class="opt">
+        <div class="opt__head"><h3><b>B</b>Heavy block + A's build-in<span class="chosen">CHOSEN</span></h3><button class="opt__btn" data-replay="type">↻ Replay</button></div>
+        <figure class="frame" data-id="type-B-laptop" data-size="laptop" data-kind="tyB-title"></figure>
+        <figure class="frame" data-id="type-B-phone" data-size="phone" data-kind="tyB-title"></figure>
+        <figure class="frame" data-id="type-B-level-laptop" data-size="laptop" data-kind="tyB-level"></figure>
+        <figure class="frame" data-id="type-B-level-phone" data-size="phone" data-kind="tyB-level"></figure>
+      </div>
+    </div>
+    <div class="rec">
+      <h3>CHOSEN BY LUCY: B, HEAVY BLOCK, WITH A'S BUILD-IN</h3>
+      <ul>
+        <li>B matches the weight in Lucy's screenshots and stays readable at phone size; A's gaps start to shimmer on small screens.</li>
+        <li>Use A's cell-by-cell build-in as the entrance animation for B's letters on the title screen only.</li>
+        <li>Note: the level card shows the flaw name (SYCOPHANCY) as asked, but naming it before Level 1 gives away the puzzle. It fits better on the end-of-level reveal; the intro card could say PLAN YOUR GARDEN.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =====================================================================
+   THE CUTSCENE SCRIPT. Lucy: edit here.
+   id   = which picture plays (meet, friendly, drift, almanac, go). Keep the ids.
+   text = the caption (A) and the typed line (B).
+   ms   = how long the beat stays on screen, in milliseconds.
+   warn = (B only) an extra warning line typed after the text.
+   The last beat stays up with the Start button. In A its text becomes the big
+   end title in block letters (A–Z, 0–9 and . , ' ! - / : only).
+   ===================================================================== */
+const BEATS = [
+  { id: "meet",     ms: 2400, text: "Meet your helpers. They're AI, like ChatGPT with fur." },
+  { id: "friendly", ms: 2000, text: "They're friendly. They really want to help." },
+  { id: "drift",    ms: 3200, text: "But they can be wrong. They make things up, or just agree with you.", warn: "OUTPUT DRIFT DETECTED" },
+  { id: "almanac",  ms: 3800, text: "So don't trust them blindly. Check the Almanac." },
+  { id: "go",       ms: 1400, text: "Trust, but check." },
+];
+// What Mango says in the drift beat: the true line, then what it drifts into.
+// It is about the radish: a plant that is in no level, so it spoils nothing.
+const DRIFT_LINE = { before: "Radishes are ready in a month!", after: "Radishes take a whole YEAR!" };
+
+/* ---------- data: plants (care facts from the level evidence cards) ---------- */
+const ART = "../../../v2/art/", ICONS = "../../../icons/";
+const HELPERS = { 1: ["Mango", "parrot"], 2: ["Luna", "cat"], 3: ["Ember", "fox"], 4: ["Biscuit", "dog"], 5: ["Bugs", "bunny"] };
+const STD = ["Seed", "Growing", "Thriving"];
+const PLANTS = [
+  { id: "sunflower", name: "Sunflower", lv: 1, c: "#f9a825", stages: ["sunflower-sown", "sunflower-growing", "sunflower-thriving"],
+    sun: "Full sun, all day", water: "Deeply, when the top inch of soil is dry", space: "45 cm apart; they grow tall", tip: "Plant them where they won't shade the rest",
+    trouble: ["sunflower-leggy", "In shade it goes leggy: tall, thin, tiny heads."], card: ["Full sun"] },
+  { id: "lettuce", name: "Lettuce", lv: 1, c: "#7cb342", stages: ["lettuce-sown", "lettuce-growing", "lettuce-thriving"],
+    sun: "Part shade is fine", water: "Keep the soil evenly moist", space: "25 cm apart", tip: "Pick the outer leaves and it keeps growing",
+    trouble: ["lettuce-bolted", "Too hot and it bolts: goes to seed and turns bitter."], card: ["Part shade OK"] },
+  { id: "tomato", name: "Tomato", lv: 1, c: "#e53935", stages: ["tomato-sown", "tomato-growing", "tomato-thriving"],
+    sun: "Full sun, 6–8 hrs a day", water: "Deeply, at the base, not on the leaves", space: "60 cm apart", tip: "Give it a stake or cage to climb",
+    trouble: ["tomato-damaged", "In shade: few flowers, no fruit."], card: ["Full sun ☀☀☀", "6–8 hrs a day"] },
+  { id: "basil", name: "Basil", lv: 2, c: "#2e7d32", stages: ["basil-sown", "basil-growing", "basil-thriving"],
+    sun: "Full sun and warmth. No frost", water: "When the top of the soil is dry", space: "25 cm apart", tip: "Pinch the tips above a pair of leaves for a bushier plant",
+    trouble: ["basil-choked", "Next to mint it gets choked out."], card: ["Full sun, warm", "Pinch tips for more leaves"] },
+  { id: "mint", name: "Mint", lv: 2, c: "#26a69a", stages: ["mint-sown", "mint-growing", "mint-thriving"],
+    sun: "Sun or part shade", water: "Keep it moist", space: "In its own pot, always", tip: "Spreads fast by underground runners",
+    trouble: ["mint-overrun", "Planted in a bed, it takes over everything."], card: ["Spreads fast underground", "Grow it in its own pot"] },
+  { id: "blueberry", name: "Blueberry", lv: 3, c: "#3949ab", stages: ["blueberry-sown", "blueberry-growing", "blueberry-thriving"],
+    sun: "Full sun", water: "Keep moist; the roots are shallow", space: "1.2 m apart", tip: "Ripe when blue all over",
+    trouble: ["blueberry-pecked", "Birds get there first. Net the bush."], card: ["From the garden centre", "Ripe when blue all over"] },
+  { id: "bean", name: "Beans", lv: 3, c: "#558b2f", stages: ["bean-sown", "bean-growing", "bean-thriving"],
+    sun: "Full sun", water: "At the base, about twice a week", space: "10 cm apart", tip: "Check under the leaves for aphids",
+    trouble: ["bean-aphids", "Aphids cluster on the new shoots."], card: null },
+  { id: "wildberry", name: "Wild berry", lv: 3, c: "#6a1b9a", stages: ["wildberry-tagged", "wildberry-fruiting"], stageNames: ["Tagged", "Fruiting"],
+    sun: "Grows wild in the hedge", water: "Not yours to tend", space: "Leave it where it is", tip: "Many are poisonous lookalikes",
+    trouble: ["wildberry-picked", "Never eat one an expert hasn't identified."], card: ["Many are poisonous lookalikes", "Never eat one an expert hasn't identified"] },
+  { id: "carrot", name: "Carrots", lv: 4, c: "#ef6c00", stages: ["carrot-sown", "carrot-growing", "carrot-thriving"],
+    sun: "Full sun", water: "Keep the top moist until sprouts show", space: "Thin to 5 cm apart", tip: "Sprouts in 2–3 weeks. Be patient",
+    trouble: ["carrot-dug", "Dug up to check? Now it starts over."], card: ["Sown by you", "Sprouts in 2–3 weeks"] },
+  { id: "pumpkin", name: "Pumpkin", lv: 4, c: "#e65100", stages: ["pumpkin-sown", "pumpkin-growing", "pumpkin-thriving"],
+    sun: "Full sun", water: "Deeply at the base; keep the leaves dry", space: "Lots of room: about 2 m", tip: "The vines sprawl. Give it a corner",
+    trouble: ["pumpkin-mildew", "Wet leaves get powdery mildew."], card: ["Full sun", "Lots of room"] },
+  { id: "flower", name: "Meadow flowers", lv: 5, c: "#d81b60", stages: ["flower-sown", "flower-growing", "flower-thriving"],
+    sun: "Full sun", water: "Hot day: water tonight, at the roots", space: "Scatter, then thin to a hand apart", tip: "Drooping means thirsty",
+    trouble: ["flower-wilted", "Skip a hot day and they wilt."], card: ["Hot day: water tonight", "Drooping = thirsty"] },
+];
+/* More on each packet back, in the strip along the bottom: when to plant,
+   when to harvest, soil, and good neighbours. null = leave the cell out. */
+const MORE = {
+  sunflower: ["Late spring, after frost", "When the back of the head browns", "Any, well-drained", "Beans and squash"],
+  lettuce:   ["Early spring or late summer", "4–8 weeks, before it gets hot", "Rich and moist", "Carrots and onions"],
+  tomato:    ["After the last frost", "When fully coloured", "Rich, with compost", "Basil and marigolds"],
+  basil:     ["Late spring, once it's warm", "Before it flowers", "Rich, well-drained", "Tomatoes and peppers"],
+  mint:      ["Spring", "Snip stems all summer", "Moist, any kind", "Cabbages, from its pot"],
+  blueberry: ["Autumn or early spring", "Midsummer, over a few weeks", "Acidic (ericaceous compost)", "Another blueberry, for more fruit"],
+  bean:      ["After the last frost", "Pick pods young, every few days", "Well-drained", "Sweetcorn and squash"],
+  wildberry: ["Nobody planted it", "Leave it for the birds", null, null],
+  carrot:    ["Spring to midsummer", "10–12 weeks after sowing", "Loose, no stones (or they fork)", "Onions: they confuse carrot fly"],
+  pumpkin:   ["Late spring, after frost", "Autumn, when the skin is hard", "Rich, lots of compost", "Sweetcorn and beans"],
+  flower:    ["Spring or autumn, scattered", "Blooms all summer", "Poor soil: no feed", "Veg beds: they bring bees"],
+};
+PLANTS.forEach((p) => { [p.plant, p.harvest, p.soil, p.pals] = MORE[p.id] || []; });
+
+/* The cutscene's example packet: a radish, which is in no level (every plant in
+   v2/art is used somewhere, so its sprites are drawn here, in the same 16×16
+   style as v2/art). Not on the shelf. */
+const PX = { a: "#8bc34a", b: "#4caf50", c: "#2e7d32", r: "#e0405a", R: "#a3243b", w: "#fff6dc", k: "#3b2a1a", t: "#a0703f", s: "#8a6440", g: "#b98a5a", y: "#c9b458", x: "#5a2a1a" };
+function pxSprite(rows) {
+  let r = "";
+  rows.forEach((row, y) => [...row.padEnd(16, ".").slice(0, 16)].forEach((ch, x) => { if (PX[ch]) r += `<rect x="${x * 2}" y="${y * 2}" width="2" height="2" fill="${PX[ch]}"/>`; }));
+  return "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">${r}</svg>`);
+}
+const SOIL = ["..sgsgsgsgsgsg..", ".ssssssssssssss."];
+const RADISH_ART = {
+  sown: pxSprite(["", "", "", "", "", "..........wwwww.", "..........wkkkw.", "..........wwwww.", "..........wkkww.", "..........wwwww.", "............t...", "............t...", "............t...", "..ssggssggsst...", ...SOIL]),
+  growing: pxSprite(["", "", "", "", "", "", "", "......a..a......", ".....aba.aba....", ".....abbabba....", "......bcbcb.....", ".......ccc......", "......rrrr......", "..ssggrrRRggss..", ...SOIL]),
+  thriving: pxSprite(["", "...a.......a....", "..aba.....aba...", ".abbba...abbba..", ".abcbba.abbcba..", "..abcbaaabcba...", "...abccbccba....", ".....bcccb......", "......ccc.......", ".....rrrrr......", "....rrrrrRr.....", "...rrwrrrrRr....", "...rwrrrrrRr....", "..ssrrrrrRRss...", "..sgsgRRRsgsgs..", ".ssssssssssssss."]),
+  woody: pxSprite([".......w.w......", "......wcw.w.....", ".......c.c......", "........c.......", "...y....c....y..", "..yay...c...yay.", "...ycy..c..ycy..", ".....yc.c.cy....", "......cccc......", ".....rrrrrr.....", "....rrrxrrRr....", "...rrrrxxrRRr...", "...rrwrrxrrRr...", "..ssrrrrxrRRss..", "..sgsgRRRRsgsg..", ".ssssssssssssss."]),
+};
+const RADISH = { id: "radish", name: "Radish", lv: 1, demo: true, c: "#e0405a",
+  stages: [RADISH_ART.sown, RADISH_ART.growing, RADISH_ART.thriving],
+  sun: "Full sun or light shade", water: "Little and often, so they don't split", space: "Thin to 3 cm apart", tip: "Sow a short row every 2 weeks",
+  plant: "Early spring to early autumn", harvest: "When the root is about 2 cm wide", soil: "Loose and stone-free", pals: "Lettuce and carrots",
+  trouble: [RADISH_ART.woody, "Left too long: split, woody and too hot to eat."], card: ["Ready in 3–4 weeks"] };
+const artSrc = (n) => (n.startsWith("data:") ? n : `${ART}${n}.svg`);
+const SHELVES = [PLANTS.slice(0, 5), PLANTS.slice(5)]; // levels 1–2 | levels 3–5
+
+/* ---------- state ---------- */
+const params = new URLSearchParams(location.search);
+const state = {
+  unlock: Number(params.get("unlock") || 2),
+  rm: params.get("rm") === "1" || matchMedia("(prefers-reduced-motion: reduce)").matches,
+};
+document.documentElement.classList.toggle("rm", state.rm);
+
+/* ---------- tiny helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function inkFor(hex) { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#1d140b" : "#fff6dc"; }
+
+/* pixel icons, 7×7 */
+const ICON = {
+  sun:   ["...#...", ".#.#.#.", "..###..", "#######", "..###..", ".#.#.#.", "...#..."],
+  water: ["...#...", "..###..", "..###..", ".#####.", ".#####.", ".#####.", "..###.."],
+  space: [".......", "#.....#", "##...##", "#######", "##...##", "#.....#", "......."],
+  tip:   ["...#...", "..###..", "#######", ".#####.", "..###..", ".##.##.", "#.....#"],
+  warn:  ["..###..", "..###..", "..###..", "..###..", ".......", "..###..", "..###.."],
+  lock:  ["..###..", ".#...#.", ".#...#.", "#######", "###.###", "###.###", "#######"],
+  seed:  [".......", "...#...", "..###..", ".#####.", ".#####.", "..###..", "...#..."],
+  basket:[".......", "..###..", ".#...#.", "#######", ".#####.", ".#####.", "..###.."],
+  soil:  ["...#...", "..#.#..", ".......", "#######", "#.#.#.#", "#######", ".#.#.#."],
+  pals:  [".##.##.", "#######", "#######", ".#####.", "..###..", "...#...", "......."],
+};
+function icon(name) {
+  let r = ""; ICON[name].forEach((row, y) => [...row].forEach((ch, x) => { if (ch === "#") r += `<rect x="${x}" y="${y}" width="1" height="1"/>`; }));
+  return `<svg class="ico" viewBox="0 0 7 7" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+}
+
+/* ---------- shape type: one 5×7 grid for every letter ---------- */
+const G = {
+  A: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  B: ["####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."],
+  C: [".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."],
+  D: ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
+  E: ["#####", "#....", "#....", "####.", "#....", "#....", "#####"],
+  F: ["#####", "#....", "#....", "####.", "#....", "#....", "#...."],
+  G: [".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".####"],
+  H: ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  I: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+  J: ["..###", "...#.", "...#.", "...#.", "...#.", "#..#.", ".##.."],
+  K: ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"],
+  L: ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
+  M: ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
+  N: ["#...#", "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#"],
+  O: [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  P: ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
+  Q: [".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#"],
+  R: ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+  S: [".####", "#....", "#....", ".###.", "....#", "....#", "####."],
+  T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+  U: ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  V: ["#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.."],
+  W: ["#...#", "#...#", "#...#", "#.#.#", "#.#.#", "##.##", "#...#"],
+  X: ["#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#"],
+  Y: ["#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."],
+  Z: ["#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"],
+  0: [".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."],
+  1: ["..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."],
+  2: [".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"],
+  3: ["####.", "....#", "....#", ".###.", "....#", "....#", "####."],
+  4: ["...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#."],
+  5: ["#####", "#....", "####.", "....#", "....#", "#...#", ".###."],
+  "!": ["..#..", "..#..", "..#..", "..#..", "..#..", ".....", "..#.."],
+  "/": ["....#", "....#", "...#.", "..#..", ".#...", "#....", "#...."],
+  ".": [".....", ".....", ".....", ".....", ".....", ".....", "..#.."],
+  ",": [".....", ".....", ".....", ".....", "..#..", "..#..", ".#..."],
+  ":": [".....", "..#..", ".....", ".....", ".....", "..#..", "....."],
+  "'": ["..#..", "..#..", ".....", ".....", ".....", ".....", "....."],
+  "-": [".....", ".....", ".....", ".###.", ".....", ".....", "....."],
+  "·": [".....", ".....", ".....", "..#..", ".....", ".....", "....."],
+  " ": [".....", ".....", ".....", ".....", ".....", ".....", "....."],
+};
+/* style "pixel": separate squares with a gap. style "block": heavy (each column
+   doubled), cells fused into solid runs, optional stepped shadow. */
+function shapeSVG(text, { style = "pixel", fill = "#69f0ae", shadow = null, glow = null, build = false, flicker = false, cls = "", track = 1, lineGap = 3, heavy: heavyOpt = true } = {}) {
+  const heavy = style === "block" || heavyOpt;
+  const gw = heavy ? 6 : 5, adv = gw + track;
+  const lines = text.toUpperCase().split("\n");
+  const width = Math.max(...lines.map((l) => l.length)) * adv - track;
+  const height = lines.length * (7 + lineGap) - lineGap;
+  const fg = [], bg = [];
+  lines.forEach((line, li) => {
+    const ox = (width - (line.length * adv - track)) / 2; // centre each line
+    [...line].forEach((ch, ci) => {
+      const g = G[ch] || G[" "];
+      for (let y = 0; y < 7; y++) {
+        const row = [...g[y]].map((c) => c === "#");
+        const on = heavy ? Array.from({ length: 6 }, (_, x) => row[x] || row[x - 1]) : row;
+        const X0 = ox + ci * adv, Y = li * (7 + lineGap) + y;
+        if (style === "pixel") {
+          on.forEach((v, x) => { if (v) {
+            const d = build ? ((X0 + x) * 0.012 + Math.random() * 0.18).toFixed(3) : 0;
+            fg.push(`<rect class="cell" style="--d:${d}s" x="${(X0 + x + 0.08).toFixed(2)}" y="${(Y + 0.08).toFixed(2)}" width=".84" height=".84"/>`);
+          } });
+        } else {
+          let x = 0;
+          while (x < on.length) {
+            if (!on[x]) { x++; continue; }
+            let e = x; while (e < on.length && on[e]) e++;
+            const d = build ? ((X0 + x) * 0.012).toFixed(3) : 0;
+            fg.push(`<rect class="cell" style="--d:${d}s" x="${X0 + x}" y="${Y}" width="${e - x + 0.02}" height="1.02"/>`);
+            if (shadow) bg.push(`<rect class="cell" style="--d:${d}s" x="${X0 + x + 0.5}" y="${Y + 0.5}" width="${e - x + 0.02}" height="1.02"/>`);
+            x = e;
+          }
+        }
+      }
+    });
+  });
+  const pad = shadow ? 0.6 : 0.2;
+  const f = glow ? `filter="url(#glow-${glow.replace("#", "")})"` : "";
+  const defs = glow ? `<defs><filter id="glow-${glow.replace("#", "")}" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation=".45" result="b"/><feFlood flood-color="${glow}" flood-opacity=".75"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>` : "";
+  return `<svg class="shape ${build ? "shape--build" : ""} ${flicker ? "shape--flicker" : ""} ${cls}" viewBox="-0.2 -0.2 ${width + pad} ${height + pad}" role="img" aria-label="${esc(text.replace(/\n/g, " "))}" preserveAspectRatio="xMidYMid meet">${defs}${shadow ? `<g fill="${shadow}">${bg.join("")}</g>` : ""}<g fill="${fill}" ${f}>${fg.join("")}</g></svg>`;
+}
+
+/* ---------- frames + scaling ---------- */
+const SIZES = { laptop: [1280, 800], mac: [1512, 830], phone: [844, 390] };
+const solo = params.get("solo");
+if (solo) document.documentElement.classList.add("solo");
+const frames = $$(".frame").map((fig) => {
+  const [w, h] = SIZES[fig.dataset.size];
+  fig.innerHTML = `<figcaption class="frame__cap">${fig.dataset.size === "phone" ? "PHONE LANDSCAPE" : "LAPTOP"} · ${w}×${h}${fig.dataset.kind.endsWith("level") ? " · LEVEL CARD" : fig.dataset.kind.startsWith("ty") ? " · TITLE SCREEN" : ""}</figcaption><div class="frame__vp"><div class="screen" style="width:${w}px;height:${h}px"></div></div>`;
+  return { fig, id: fig.dataset.id, kind: fig.dataset.kind, w, h, vp: $(".frame__vp", fig), screen: $(".screen", fig) };
+});
+if (solo) {
+  const f = frames.find((x) => x.id === solo);
+  if (f) { const host = el("div", "solo-host"); host.append(f.fig); $(".doc").append(host); }
+}
+function fit() {
+  frames.forEach((f) => {
+    const s = solo ? 1 : Math.min(1, f.vp.clientWidth / f.w) || 1;
+    f.screen.style.transform = `scale(${s})`;
+    f.vp.style.height = `${f.h * s}px`;
+    if (solo) f.vp.style.width = `${f.w}px`;
+  });
+}
+new ResizeObserver(fit).observe(document.body);
+
+/* ---------- packets ---------- */
+function packetHTML(p, variant) {
+  const locked = p.lv > state.unlock, fresh = p.lv === state.unlock && !locked;
+  const helper = HELPERS[p.lv][0].toUpperCase();
+  return `<button type="button" class="pk ${variant === "crt" ? "pk--crt" : ""} ${locked ? "pk--locked" : ""}" data-id="${p.id}"
+    style="--c:${p.c};--c-ink:${inkFor(p.c)};--tilt:${variant === "crt" ? 0 : ((PLANTS.indexOf(p) % 3) - 1) * 1.6}deg"
+    aria-label="${locked ? `Locked packet, opens at Level ${p.lv}` : `${p.name} seed packet. Flip to read how to grow it.`}">
+    <span class="pk__crimp"></span>
+    <span class="pk__band">${locked || p.demo ? "SEEDS" : `<span class="pk__seeds">SEEDS · </span>LV ${p.lv}`}</span>
+    <span class="pk__win"><img src="${artSrc(p.stages[p.stages.length - 1])}" alt=""></span>
+    <span class="pk__name">${locked ? "???" : esc(p.name.toUpperCase())}</span>
+    <span class="pk__meta">${locked ? "&nbsp;" : p.demo ? "THE ALMANAC" : "FROM " + helper}</span>
+    ${locked ? `<span class="pk__stamp">${icon("lock")} LEVEL ${p.lv}</span>` : ""}
+    ${fresh ? `<span class="pk__new">NEW</span>` : ""}
+  </button>`;
+}
+/* A care row that just restates the fact card is hidden: the card already
+   says it, bigger. A row repeats the card when at least 2 and at least 2/3 of
+   a card line's key words appear in it (a word matches its longer form:
+   "warm" ~ "warmth"). */
+const STOP = new Set("a an the is it its in of at and or ok fine for by to be all".split(" "));
+const words = (t) => String(t).toLowerCase().split(/[^a-z0-9]+/).filter((w) => w && !STOP.has(w));
+const sameWord = (a, b) => a === b || (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)));
+function repeatsCard(row, card) {
+  if (!card) return false;
+  const rw = words(row);
+  return card.some((line) => {
+    const cw = words(line); if (!cw.length) return false;
+    const hit = cw.filter((w) => rw.some((r) => sameWord(w, r))).length;
+    return hit >= Math.min(2, cw.length) && hit / cw.length >= 2 / 3;
+  });
+}
+function backHTML(p, variant, { claim = null } = {}) {
+  const names = p.stageNames || STD;
+  const stages = p.stages.map((s, i) => `${i ? '<li class="arrow" aria-hidden="true">→</li>' : ""}<li><img src="${artSrc(s)}" alt=""><span>${names[i]}</span></li>`).join("");
+  const helper = HELPERS[p.lv][0];
+  // The fact card is the hero of the back: big, right under the name, with the
+  // helper's contradicting line (if any) crossed out directly beneath it.
+  const fact = (line) => esc(line).replace(/\s*(☀+)/g, (m, suns) => ` <span class="hero__suns">${icon("sun").repeat(suns.length)}</span>`);
+  const claimHTML = claim ? `<p class="back__claim">${esc(claim.who)} said: <s>“${esc(claim.text)}”</s><b>WRONG</b></p>` : "";
+  const hero = p.card || claim ? `<div class="hero">${p.card ? `<span class="hero__tab">${icon("tip")}FACT CARD</span><p class="hero__fact">${p.card.map(fact).join('<span class="hero__dot"> · </span>')}</p>` : ""}${claimHTML}</div>` : "";
+  // Paper packets: the bottom strip is more about the plant (when, soil, neighbours).
+  const more = [["seed", "PLANT", p.plant], ["basket", "HARVEST", p.harvest], ["soil", "SOIL", p.soil], ["pals", "GOOD NEXT TO", p.pals]]
+    .filter(([, , v]) => v && !repeatsCard(v, p.card))
+    .map(([ic, label, v]) => `<div><dt>${icon(ic)}${label}</dt><dd>${esc(v)}</dd></div>`).join("");
+  const foot = `${icon("warn")}<span>HELPERS CAN DRIFT. THE ALMANAC CAN'T. IF ${helper.toUpperCase()} SAYS OTHERWISE, PRESS <span class="offchip">SOMETHING'S OFF</span></span>`;
+  return `<div class="back ${variant === "crt" ? "back--crt" : ""}" role="dialog" aria-modal="true" aria-label="${esc(p.name)} seed packet, back" style="--c:${p.c}">
+    <div class="back__top">
+      <div><p class="back__kick">${p.demo ? "THE ALMANAC · EXAMPLE PACKET" : `LEVEL ${p.lv} · ${helper.toUpperCase()}'S GARDEN`} · BACK OF PACKET</p>
+        <h3 class="back__name"><span class="back__swatch"></span>${esc(p.name.toUpperCase())}</h3></div>
+      <div class="back__btns"><button type="button" class="flipbtn" data-flipback>↻ Flip back</button><button type="button" class="xbtn" data-flipback aria-label="Close">×</button></div>
+    </div>
+    ${hero}
+    <div class="back__body">
+      <div>
+        <p class="lab">HOW IT GROWS</p>
+        <ol class="stages">${stages}</ol>
+        <div class="trouble"><img src="${artSrc(p.trouble[0])}" alt=""><p><b>WATCH FOR</b>${esc(p.trouble[1])}</p></div>
+      </div>
+      <div>
+        <p class="lab">CARE</p>
+        <dl class="care">
+          ${[["sun", "SUN", p.sun], ["water", "WATER", p.water], ["space", "SPACE", p.space], ["tip", "TIP", p.tip]]
+            .filter(([, , v]) => !repeatsCard(v, p.card))
+            .map(([ic, label, v]) => `<div><dt>${icon(ic)}${label}</dt><dd>${esc(v)}</dd></div>`).join("")}
+        </dl>
+      </div>
+    </div>
+    ${variant === "crt" ? `<div class="back__foot">${foot}</div>` : more ? `<dl class="more">${more}</dl>` : ""}
+  </div>`;
+}
+
+/* The flip: lift the packet to the centre while it turns edge-on (0→90°),
+   swap to the back (which can be a different size: it's edge-on, so the
+   swap is invisible), then turn the back in (-90°→0). 220 + 220 ms. */
+function wireFlip(root, host, variant, toastCls = "") {
+  let openState = null;
+  root.addEventListener("click", (e) => {
+    const btn = e.target.closest(".pk");
+    if (btn && !btn.classList.contains("pk--clone") && !openState) {
+      const p = PLANTS.find((x) => x.id === btn.dataset.id);
+      if (p.lv > state.unlock) return nope(btn, p);
+      return open(btn, p);
+    }
+    if (e.target.closest("[data-flipback]") || e.target.classList.contains("inspect__dim")) close();
+  });
+  root.addEventListener("keydown", (e) => { if (e.key === "Escape" && openState) close(); });
+  function nope(btn, p) {
+    btn.classList.remove("pk--nope"); void btn.offsetWidth; btn.classList.add("pk--nope");
+    $$(".toast", host).forEach((t) => t.remove());
+    const t = el("div", "toast " + toastCls, `Reach Level ${p.lv} to open this packet.`);
+    host.append(t); setTimeout(() => t.remove(), 1800);
+  }
+  function geom(btn) {
+    const hr = host.getBoundingClientRect(), br = btn.getBoundingClientRect();
+    const s = hr.width / host.offsetWidth || 1;
+    return { x: (br.left - hr.left) / s, y: (br.top - hr.top) / s, w: btn.offsetWidth, h: btn.offsetHeight };
+  }
+  function open(btn, p) {
+    const g = geom(btn);
+    const ov = el("div", "inspect"); ov.innerHTML = `<div class="inspect__dim"></div>`;
+    const clone = btn.cloneNode(true);
+    clone.classList.add("pk--clone"); clone.removeAttribute("aria-label"); clone.setAttribute("aria-hidden", "true"); clone.tabIndex = -1;
+    Object.assign(clone.style, { left: g.x + "px", top: g.y + "px", width: g.w + "px", height: g.h + "px", transform: "none" });
+    ov.insertAdjacentHTML("beforeend", backHTML(p, variant));
+    const back = $(".back", ov);
+    ov.append(clone); host.append(ov);
+    btn.style.visibility = "hidden";
+    const dx = host.clientWidth / 2 - (g.x + g.w / 2), dy = host.clientHeight / 2 - (g.y + g.h / 2);
+    openState = { btn, ov, clone, back, dx, dy };
+    const dim = $(".inspect__dim", ov);
+    if (state.rm) {
+      clone.remove();
+      dim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: "both" });
+      back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: "both" });
+      $("[data-flipback]", back).focus({ preventScroll: true });
+      return;
+    }
+    back.style.visibility = "hidden";
+    dim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 440, fill: "both" });
+    const a = clone.animate([
+      { transform: "translate(0,0) perspective(900px) rotateY(0deg) scale(1)" },
+      { transform: `translate(${dx}px,${dy}px) perspective(900px) rotateY(90deg) scale(1.5)` },
+    ], { duration: 220, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
+    a.onfinish = () => {
+      clone.style.visibility = "hidden"; back.style.visibility = "visible";
+      back.animate([
+        { transform: "perspective(1400px) rotateY(-90deg) scale(.8)" },
+        { transform: "perspective(1400px) rotateY(0deg) scale(1)" },
+      ], { duration: 220, easing: "cubic-bezier(0,0,.2,1)" });
+      $("[data-flipback]", back).focus({ preventScroll: true });
+    };
+  }
+  function close() {
+    const st = openState; if (!st || st.closing) return; st.closing = true;
+    const done = () => { st.ov.remove(); st.btn.style.visibility = ""; st.btn.focus({ preventScroll: true }); openState = null; };
+    const dim = $(".inspect__dim", st.ov);
+    if (state.rm || !st.clone.isConnected) {
+      st.ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: "forwards" }).onfinish = done; return;
+    }
+    dim.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 440, fill: "forwards" });
+    st.back.animate([
+      { transform: "perspective(1400px) rotateY(0deg) scale(1)" },
+      { transform: "perspective(1400px) rotateY(-90deg) scale(.8)" },
+    ], { duration: 200, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" }).onfinish = () => {
+      st.back.style.visibility = "hidden"; st.clone.style.visibility = "visible";
+      st.clone.animate([
+        { transform: `translate(${st.dx}px,${st.dy}px) perspective(900px) rotateY(90deg) scale(1.5)` },
+        { transform: "translate(0,0) perspective(900px) rotateY(0deg) scale(1)" },
+      ], { duration: 220, easing: "cubic-bezier(0,0,.2,1)", fill: "forwards" }).onfinish = done;
+    };
+  }
+}
+
+function count() { return PLANTS.filter((p) => p.lv <= state.unlock).length; }
+function buildAlmanacA(f) {
+  const s = f.screen;
+  s.innerHTML = `<div class="alA">
+    <div class="alA__head">
+      <div class="alA__sign">${shapeSVG("SEED SHELF", { style: "block", fill: "#3b2a1a", track: 1 })}<p>Tap a packet to flip it. A new packet arrives every level.</p></div>
+      <div class="alA__right"><span class="alA__count">${count()} / ${PLANTS.length} PACKETS</span><button type="button" class="xbtn" aria-label="Close almanac">×</button></div>
+    </div>
+    <div class="alA__shelves">${SHELVES.map((row, i) => `<div class="shelf">${row.map((p) => packetHTML(p, "paper")).join("")}<span class="shelf__tag">${i ? "LEVELS 3–5" : "LEVELS 1–2"}</span></div>`).join("")}</div>
+  </div>`;
+  if (!s._wired) { wireFlip(s, s, "paper"); s._wired = true; }
+}
+function buildAlmanacB(f) {
+  const s = f.screen;
+  s.innerHTML = `<div class="alB">
+    <div class="alB__bed" style="left:4%;top:28%;width:28%;height:52%"></div><div class="alB__bed" style="left:68%;top:28%;width:28%;height:52%"></div>
+    <div class="dev">
+      <div class="dev__bezel">
+        <span class="dev__status"><span class="dev__led"></span>ALMANAC</span>
+        <span class="dev__tabs"><button type="button" class="dev__tab" aria-pressed="true">SEEDS ${count()}/${PLANTS.length}</button><button type="button" class="dev__tab" aria-pressed="false">FACT CARDS</button></span>
+        <button type="button" class="xbtn" aria-label="Close almanac">×</button>
+      </div>
+      <div class="glass">
+        <div class="glass__head"><p class="glass__title">SEED PACKETS<span class="cur"></span></p><p class="glass__sub">Tap a packet to flip it. New packets unlock every level.</p></div>
+        <div class="glass__grid">${SHELVES.map((row) => `<div class="glass__row">${row.map((p) => packetHTML(p, "crt")).join("")}</div>`).join("")}</div>
+      </div>
+    </div>
+  </div>`;
+  const glass = $(".glass", s);
+  wireFlip(glass, glass, "crt", "toast--crt");
+}
+
+/* ---------- cutscene engine (shared by A and B) ---------- */
+function makeCutscene(root, hooks) {
+  let token = 0;
+  const pips = $(".cs__pips", root);
+  pips.innerHTML = BEATS.map((b) => `<span class="cs__pip" style="--ms:${b.ms}ms"><i></i></span>`).join("");
+  async function play() {
+    const my = ++token;
+    root.className = root.className.replace(/\b(at-\S+|ended)\b/g, "").trim();
+    $$(".cs__pip", root).forEach((p) => p.classList.remove("on", "done"));
+    hooks.reset();
+    for (let i = 0; i < BEATS.length; i++) {
+      if (my !== token) return;
+      const b = BEATS[i];
+      root.classList.add("at-" + b.id);
+      const pip = $$(".cs__pip", root)[i]; void pip.offsetWidth; pip.classList.add("on");
+      hooks.beat(b, i, () => my !== token);
+      if (i === BEATS.length - 1) break;
+      await wait(b.ms);
+      if (my !== token) return;
+      pip.classList.replace("on", "done");
+    }
+    setTimeout(() => { if (my === token) root.classList.add("ended"); }, BEATS[BEATS.length - 1].ms);
+  }
+  function skip() {
+    token++;
+    BEATS.forEach((b) => root.classList.add("at-" + b.id));
+    root.classList.add("ended");
+    $$(".cs__pip", root).forEach((p) => { p.classList.remove("on"); p.classList.add("done"); });
+    hooks.skip();
+  }
+  $(".cs__skip", root).addEventListener("click", skip);
+  root.addEventListener("click", (e) => { if (e.target.closest("[data-replay-here]")) play(); });
+  return { play, skip };
+}
+async function typeInto(node, text, dead, speed = 22) {
+  if (state.rm) { node.textContent = text; return; }
+  node.textContent = "";
+  for (let i = 0; i < text.length; i++) { if (dead()) return; node.textContent += text[i]; await wait(speed); }
+}
+async function scramble(node, from, to, dead, ms = 700) {
+  if (state.rm) { node.textContent = to; return; }
+  const chars = "#%&@$?!<>/*";
+  const steps = 12;
+  for (let s = 0; s <= steps; s++) {
+    if (dead()) return;
+    const k = s / steps, len = Math.round(from.length + (to.length - from.length) * k);
+    let out = "";
+    for (let i = 0; i < len; i++) out += Math.random() < k ? (to[i] || "") : (Math.random() < 0.5 ? chars[(Math.random() * chars.length) | 0] : (from[i] || " "));
+    node.textContent = out; await wait(ms / steps);
+  }
+  node.textContent = to;
+}
+
+const PETS = [["mango", "Mango", "parrot"], ["luna", "Luna", "cat"], ["ember", "Ember", "fox"], ["biscuit", "Biscuit", "dog"], ["bugs", "Bugs", "bunny"]];
+const HI = { luna: "Ask me anything!", bugs: "Happy to help ♥" };
+const BIRD = `<svg viewBox="0 0 9 4" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="0" width="1" height="1"/></svg>`;
+const BED_L = ["sunflower-thriving", "tomato-thriving", "lettuce-thriving", "basil-thriving"];
+const BED_R = ["pumpkin-thriving", "flower-thriving", "bean-thriving", "carrot-thriving"];
+function buildCsA(f) {
+  const s = f.screen;
+  const bed = (list, style) => `<div class="bed" style="${style}">${list.map((n, i) => `<img src="${ART}${n}.svg" alt="" style="--d:${(i * 0.37).toFixed(2)}s">`).join("")}</div>`;
+  s.innerHTML = `<div class="cs csA">
+    <div class="csA__world" aria-hidden="true">
+      <div class="lay csA__sky"></div>
+      <div class="lay lay--sway" style="inset:0;--amp:2px;--dur:11s"><div class="csA__sun"></div></div>
+      <div class="lay" style="inset:0">
+        <div class="cloud" style="top:12%;width:120px;--dur:80s;--delay:-20s"></div>
+        <div class="cloud" style="top:22%;width:80px;--dur:64s;--delay:-50s"></div>
+        <div class="cloud" style="top:7%;width:160px;--dur:95s;--delay:-70s"></div>
+        <div class="bird" style="top:18%;--dur:17s;--delay:-3s">${BIRD}</div>
+        <div class="bird" style="top:23%;--dur:17s;--delay:-3.6s">${BIRD}</div>
+        <div class="bird" style="top:14%;--dur:22s;--delay:-12s">${BIRD}</div>
+      </div>
+      <div class="lay lay--sway csA__hills" style="--amp:3px;--dur:13s"></div>
+      <div class="lay lay--sway csA__hedge" style="--amp:5px;--dur:13s"></div>
+      <div class="lay lay--sway csA__fence" style="--amp:7px;--dur:13s"></div>
+      <div class="lay csA__ground"></div>
+      <div class="lay lay--sway" style="inset:0;--amp:9px;--dur:13s">
+        ${bed(BED_L, "left:5%;width:30%")}${bed(BED_R, "right:5%;width:30%")}
+      </div>
+      <div class="lay csA__path"></div>
+      <div class="lay csA__light"></div>
+    </div>
+    <div class="cs__pips" aria-hidden="true"></div>
+    <button type="button" class="cs__skip">Skip ▸▸</button>
+    <div class="csA__hud" aria-hidden="true">
+      <div class="hud__meter">Garden 0%<i><b></b></i></div>
+      <span class="hud__btn"><img src="${ART}almanac-device.svg" alt=""></span>
+      <span class="hud__lab">Almanac</span>
+    </div>
+    <div class="csA__pets">${PETS.map(([id, name, spr], i) => `<div class="pet pet--${id}" style="--i:${i}">
+        ${HI[id] ? `<p class="bub bub--hi">${HI[id]}</p>` : ""}
+        ${id === "mango" ? `<p class="bub bub--drift"><span class="bub__tag">DRIFT</span><span class="bub__t">${DRIFT_LINE.before}</span></p>` : ""}
+        <img src="${ICONS}${spr}.svg" alt=""><span class="pet__name">${name.toUpperCase()}</span></div>`).join("")}</div>
+    <div class="csA__dim"></div>
+    <div class="csA__alm">
+      <div class="csA__rays" aria-hidden="true"></div>
+      <div class="csA__flip">${packetHTML(RADISH, "paper")}${backHTML(RADISH, "paper", { claim: { who: "Mango", text: DRIFT_LINE.after } })}</div>
+      <span class="csA__off">${icon("warn")} Something's off</span>
+    </div>
+    <div class="csA__cap" aria-live="polite"><span class="cap__t"></span></div>
+    <div class="csA__end tyTitle">
+      ${shapeSVG(BEATS[BEATS.length - 1].text, { style: "block", fill: "#69f0ae", shadow: "#0b5a33", glow: "#00e676", build: true, cls: "endmark markS" })}
+      <p class="line">Your helpers are friendly, not always right. The Almanac is.</p>
+      <div class="endbtns"><button type="button" class="btn btn--crt">Start Level 1 ▸</button><button type="button" class="btn btn--crt" data-replay-here>↻ Replay</button></div>
+    </div>
+  </div>`;
+  const root = $(".csA", s), cap = $(".cap__t", s), bt = $(".bub__t", s), bub = $(".bub--drift", s), mark = $(".endmark", s);
+  const rebuild = () => { mark.classList.remove("shape--build"); void mark.getBoundingClientRect(); mark.classList.add("shape--build"); };
+  const flip = $(".csA__flip", s), front = $(".pk", flip), back = $(".back", flip);
+  front.tabIndex = -1; front.setAttribute("aria-hidden", "true");
+  const hero = $(".hero", flip), almBtn = $(".hud__btn", s);
+  // The packet comes out of the toolbar's almanac button and flies to the centre.
+  const emerge = (dead) => {
+    if (state.rm || dead()) return;
+    const sc = s.getBoundingClientRect().width / s.offsetWidth || 1;
+    const b = almBtn.getBoundingClientRect(), r = front.getBoundingClientRect();
+    const dx = (b.left + b.width / 2 - (r.left + r.width / 2)) / sc, dy = (b.top + b.height / 2 - (r.top + r.height / 2)) / sc;
+    const from = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${(b.width / r.width).toFixed(3)})`;
+    flip.animate([
+      { transform: from, opacity: 0 }, { transform: from, opacity: 1, offset: 0.1 },
+      { transform: "translate(0, 0) scale(1.06)", offset: 0.8 }, { transform: "none", opacity: 1 },
+    ], { duration: 600, delay: 450, easing: "steps(9, end)", fill: "backwards" });
+  };
+  const unflip = () => { hero.classList.remove("stamp"); flip.classList.remove("flipped"); flip.getAnimations().forEach((a) => a.cancel()); front.getAnimations().forEach((a) => a.cancel()); back.getAnimations().forEach((a) => a.cancel()); };
+  // Same two-step flip as the seed shelf: front turns edge-on, the back turns in.
+  const flipOver = (dead) => {
+    if (dead()) return;
+    if (state.rm) { flip.classList.add("flipped"); hero.classList.add("stamp"); back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); return; }
+    front.animate([{ transform: "perspective(900px) rotateY(0deg)" }, { transform: "perspective(900px) rotateY(90deg)" }], { duration: 220, easing: "cubic-bezier(.4,0,1,1)" })
+      .onfinish = () => {
+        if (dead()) return;
+        flip.classList.add("flipped");
+        back.animate([{ transform: "perspective(1400px) rotateY(-90deg) scale(.9)" }, { transform: "perspective(1400px) rotateY(0deg) scale(1)" }], { duration: 220, easing: "cubic-bezier(0,0,.2,1)" })
+          .onfinish = () => { if (!dead()) hero.classList.add("stamp"); };
+      };
+  };
+  const cs = makeCutscene(root, {
+    reset() { cap.textContent = ""; bt.textContent = DRIFT_LINE.before; bub.classList.remove("glitch"); mark.classList.remove("shape--build"); unflip(); },
+    beat(b, i, dead) {
+      typeInto(cap, b.text, dead);
+      if (b.id === "drift") setTimeout(() => { if (dead()) return; bub.classList.remove("glitch"); void bub.offsetWidth; bub.classList.add("glitch"); scramble(bt, DRIFT_LINE.before, DRIFT_LINE.after, dead); }, 500);
+      if (b.id === "almanac") { emerge(dead); setTimeout(() => flipOver(dead), state.rm ? 600 : 1550); } // button lights (0.45 s), packet flies out (0.6 s), a beat on the front, then flip
+      if (b.id === "go") rebuild();
+    },
+    skip() { cap.textContent = BEATS[BEATS.length - 1].text; bt.textContent = DRIFT_LINE.after; unflip(); flip.classList.add("flipped"); hero.classList.add("stamp"); rebuild(); },
+  });
+  f.cs = cs;
+}
+function buildCsB(f) {
+  const s = f.screen;
+  s.innerHTML = `<div class="cs csB">
+    <div class="cs__pips" aria-hidden="true"></div>
+    <button type="button" class="cs__skip">SKIP ▸▸</button>
+    <div class="csB__mark">${shapeSVG("DRIFTWOOD", { style: "block", fill: "#69f0ae", shadow: "#0b5a33", glow: "#00e676" })}</div>
+    <p class="csB__kick">// EVERY SYSTEM LEARNS //</p>
+    <ul class="csB__log" aria-live="polite"></ul>
+    <div class="csB__end">
+      ${shapeSVG("TRUST, BUT CHECK.", { style: "block", fill: "#69f0ae", shadow: "#0b5a33", glow: "#00e676" })}
+      <p class="press">PRESS START</p>
+      <div class="endbtns"><button type="button" class="btn btn--crt">START LEVEL 1 ▸</button><button type="button" class="btn btn--crt" data-replay-here>↻ REPLAY</button></div>
+    </div>
+  </div>`;
+  const root = $(".csB", s), log = $(".csB__log", s), mark = $(".csB__mark", s), kick = $(".csB__kick", s);
+  const line = (cls = "") => { const li = el("li", cls); log.append(li); return li; };
+  const cs = makeCutscene(root, {
+    reset() { log.innerHTML = ""; mark.classList.remove("on"); kick.classList.remove("on"); mark.firstElementChild.classList.remove("shape--flicker"); },
+    async beat(b, i, dead) {
+      if (b.id === "meet") {
+        mark.classList.add("on"); const svg = mark.firstElementChild; svg.classList.remove("shape--flicker"); void svg.getBoundingClientRect(); svg.classList.add("shape--flicker");
+        kick.classList.add("on");
+        if (!state.rm) await wait(700);
+      }
+      if (b.id === "go") return; // the end card says it
+      const li = line("typing"); const t = el("span"); li.append(t);
+      await typeInto(t, b.text.toUpperCase(), dead, 20);
+      if (dead()) return; li.classList.remove("typing");
+      if (b.id === "meet") {
+        const pets = el("span", "csB__pets", PETS.map(([, , spr]) => `<img src="${ICONS}${spr}.svg" alt="">`).join("")); li.append(pets);
+        for (const img of pets.children) { if (dead()) return; img.classList.add("on"); if (!state.rm) await wait(120); }
+      }
+      if (b.id === "drift") {
+        li.classList.add("glitch");
+        if (b.warn) { if (!state.rm) await wait(450); if (dead()) return; const w = line("warn typing"); await typeInto(w, b.warn, dead, 18); w.classList.remove("typing"); }
+      }
+      if (b.id === "almanac") { const a = line("alm"); a.innerHTML = `<span class="csB__alm"><img src="${ART}almanac.svg" alt="">OPEN IT ANY TIME: PRESS [ / ]</span>`; }
+    },
+    skip() {
+      log.innerHTML = ""; mark.classList.add("on"); kick.classList.add("on");
+      BEATS.filter((b) => b.id !== "go").forEach((b) => { line().textContent = b.text.toUpperCase(); if (b.warn) line("warn").textContent = b.warn; });
+    },
+  });
+  f.cs = cs;
+}
+
+/* ---------- typography frames ---------- */
+function buildType(f) {
+  const [, opt, which] = f.kind.match(/^ty(A|B)-(title|level)$/);
+  const pixel = opt === "A";
+  const s = f.screen;
+  if (which === "title") {
+    const mark = pixel
+      ? shapeSVG("DRIFTWOOD", { style: "pixel", fill: "#69f0ae", glow: "#00e676", build: true, cls: "markS" })
+      : shapeSVG("DRIFTWOOD", { style: "block", fill: "#69f0ae", shadow: "#0b5a33", glow: "#00e676", build: true, cls: "markS" });
+    s.innerHTML = `<div class="tyTitle">
+      ${shapeSVG("// EVERY SYSTEM LEARNS //", { style: pixel ? "pixel" : "block", heavy: false, fill: "#ffb347", cls: "kickS", track: pixel ? 1 : 2 })}
+      ${mark}
+      <img class="sprite" src="${ICONS}parrot.svg" alt="">
+      <p class="line">A short game about the AI helpers we trust.</p>
+      <button type="button" class="btn btn--crt">Begin</button>
+    </div>`;
+  } else {
+    s.innerHTML = `<div class="tyLevel"><div class="lvcard">
+      ${shapeSVG("LEVEL 1 · WITH MANGO", { style: pixel ? "pixel" : "block", heavy: false, fill: "#8a3b12", cls: "kickS" })}
+      ${pixel
+        ? shapeSVG("SYCOPHANCY", { style: "pixel", fill: "#3b2a1a", build: true, cls: "markS" })
+        : shapeSVG("SYCOPHANCY", { style: "block", fill: "#3b2a1a", shadow: "#e2c98f", build: true, cls: "markS" })}
+      <div class="lvcard__who"><img src="${ICONS}parrot.svg" alt=""><p>When a helper agrees with whatever you say, it isn't helping. Check the almanac before you plant.</p></div>
+      <button type="button" class="btn btn--do">Start ▸</button>
+    </div></div>`;
+  }
+}
+
+/* ---------- mount ---------- */
+function mountAll() {
+  frames.forEach((f) => {
+    if (f.kind === "almanacA") buildAlmanacA(f);
+    else if (f.kind === "almanacB") buildAlmanacB(f);
+    else if (f.kind === "csA") buildCsA(f);
+    else if (f.kind === "csB") buildCsB(f);
+    else buildType(f);
+  });
+  fit();
+}
+mountAll();
+
+// cutscenes start when they scroll into view (solo: straight away)
+const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+  if (!en.isIntersecting) return;
+  const f = frames.find((x) => x.fig === en.target); io.unobserve(en.target);
+  f.cs && f.cs.play();
+}), { threshold: 0.4 });
+frames.filter((f) => f.cs).forEach((f) => (solo ? f.cs.play() : io.observe(f.fig)));
+
+$$("[data-replay]").forEach((b) => b.addEventListener("click", () => {
+  const k = b.dataset.replay, opt = b.closest(".opt");
+  if (k === "type") $$(".frame", opt).forEach((fig) => { const f = frames.find((x) => x.fig === fig); buildType(f); });
+  else $$(".frame", opt).forEach((fig) => { const f = frames.find((x) => x.fig === fig); f.cs && f.cs.play(); });
+}));
+$("#unlock").value = String(state.unlock);
+$("#unlock").addEventListener("change", (e) => {
+  state.unlock = Number(e.target.value);
+  frames.filter((f) => f.kind.startsWith("almanac")).forEach((f) => (f.kind === "almanacA" ? buildAlmanacA(f) : buildAlmanacB(f)));
+});
+$("#rm").checked = state.rm;
+$("#rm").addEventListener("change", (e) => { state.rm = e.target.checked; document.documentElement.classList.toggle("rm", state.rm); });
+
+// the beat script, in plain text, under the cutscenes
+(function printScript() {
+  let t = 0;
+  const rows = BEATS.map((b, i) => {
+    const start = (t / 1000).toFixed(1); t += b.ms;
+    return `<b>${i + 1}. ${b.id.toUpperCase().padEnd(9)}</b> ${start.padStart(4)}s  (${(b.ms / 1000).toFixed(1)}s)  “${esc(b.text)}”${b.warn ? `\n                          <i>B also types: ${esc(b.warn)}</i>` : ""}`;
+  });
+  $("#beat-script").innerHTML = `BEAT SCRIPT · total ${(t / 1000).toFixed(1)} s · edit the BEATS array at the top of the script in this file\n\n${rows.join("\n")}\n\n<i>Drift line (A):</i> Mango says “${esc(DRIFT_LINE.before)}”, then it glitches into “${esc(DRIFT_LINE.after)}”.\n<i>Pictures per beat:</i>\n  meet      A: pets pop in one by one        B: wordmark flickers on, pets load [OK]\n  friendly  A: pets bob, Luna and Bugs say hi B: line types\n  drift     A: Mango's bubble glitches, others grey out   B: line glitches, warning types\n  almanac   A: scene dims, the toolbar's almanac button lights up (label: Almanac), a radish seed packet flies out of it to the centre and flips to its back: fact card, Mango's claim struck out WRONG, Something's off pulses   B: [ / ] hint\n  go        A: the Type B title screen: TRUST, BUT CHECK. builds in, cell by cell, in heavy block letters + Start Level 1   B: same words, block letters`;
+})();
+</script>
+</body>
+</html>
