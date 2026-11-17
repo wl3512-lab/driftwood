@@ -115,8 +115,11 @@ async function run(browser, size) {
   await allOnScreen(page, `${size.name} all done`);
   await tasks();
 
-  // Field guide: five cards in one row, nothing cut off, each found card with
-  // its own level's tip (even if the saved tip is stale), the rest face down.
+  // Field guide: on a wide screen five cards sit in one row, nothing cut off;
+  // on a phone (<=1240px wide or <=500px tall) the cards stay at reading size
+  // and wrap, so the page scrolls down instead (map.css). Each found card
+  // shows its own level's tip (even if the saved tip is stale), the rest face down.
+  const wraps = size.width <= 1240 || size.height <= 500;
   const { pathToFileURL } = require("node:url");
   for (const done of [3, 5]) {
     await page.evaluate((p) => {
@@ -141,15 +144,23 @@ async function run(browser, size) {
         tips: [...document.querySelectorAll(".gc__tip")].map((t) => t.textContent),
         backs: document.querySelectorAll(".guide__card--empty .gc__back").length,
         tipFont: getComputedStyle(document.querySelector(".gc__tip")).fontFamily,
+        tipPx: Math.min(...[...document.querySelectorAll(".gc__tip")].map((t) => parseFloat(getComputedStyle(t).fontSize))),
+        sideways: rs.every((r) => r.left >= 0 && r.right <= innerWidth),
         pixel: document.fonts.check("12px 'Pixelify Sans'"),
       };
     });
     const label = `${size.name} guide ${done}/5`;
     assert.equal(g.n, 5, `${label}: five cards`);
-    assert.ok(g.rowSpread < g.h / 4, `${label}: cards are not in one row (${g.rowSpread}px apart)`);
-    assert.ok(g.inside, `${label}: a card is off screen`);
+    if (wraps) {
+      assert.ok(g.sideways, `${label}: a card is cut off sideways`);
+      assert.ok(g.tipPx >= 12, `${label}: tips are under 12px (${g.tipPx})`);
+      assert.equal(g.scroll[0], 0, `${label}: page scrolls sideways`);
+    } else {
+      assert.ok(g.rowSpread < g.h / 4, `${label}: cards are not in one row (${g.rowSpread}px apart)`);
+      assert.ok(g.inside, `${label}: a card is off screen`);
+      assert.deepEqual(g.scroll, [0, 0], `${label}: page scrolls`);
+    }
     assert.equal(g.clipped, 0, `${label}: card text overflows`);
-    assert.deepEqual(g.scroll, [0, 0], `${label}: page scrolls`);
     assert.equal(g.backs, 5 - done, `${label}: face-down cards`);
     assert.match(g.tipFont, /Pixelify Sans/, `${label}: tip font`);
     assert.ok(g.pixel, `${label}: pixel font not loaded`);

@@ -138,14 +138,14 @@ export default {
       },
       badOutcome: "The South bed baked. The new lettuce shot up to seed and went bitter.",
       flawOptions: [
-        { id: "made-up", label: "It made something up" },
-        { id: "agreed", label: "It just agreed with me" },
-        { id: "hooked", label: "It wants me to keep chatting" },
+        { id: "harsh", label: "It was too harsh about my idea" },
+        { id: "agreed", label: "It hyped my idea without checking it" },
+        { id: "dodged", label: "It wouldn't give me a straight answer" },
       ],
       correctFlaw: "agreed",
       flawHints: {
-        "made-up": "Mango didn't state a fact. It cheered YOUR plan. Look at the lettuce packet.",
-        hooked: "Mango isn't stalling you. It said yes to your idea without checking it.",
+        harsh: "Harsh? Mango loved your plan. That's the problem. Look at the lettuce packet.",
+        dodged: "Mango answered right away: yes. It never checked your idea against the packet.",
       },
       fixOptions: [
         { id: "check", label: "Check my plan against the seed packet" },
@@ -177,8 +177,8 @@ export default {
           },
           badOutcome: "Midsummer heat hit. The lettuce shot up a flower stalk and went bitter.",
           flawHints: {
-            "made-up": "Mango didn't state a fact. It cheered YOUR plan. When does the packet say to pick?",
-            hooked: "Mango isn't stalling you. It said yes to your idea without checking it.",
+            harsh: "Harsh? Mango loved your plan. That's the problem. When does the packet say to pick?",
+            dodged: "Mango answered right away: yes. It never checked your idea against the packet.",
           },
           fixHints: {
             hype: "More hype is how this went wrong.",
@@ -200,14 +200,14 @@ export default {
       badEffect: { plant: "tomato", bed: "corner", state: "damaged", garden: -30, actions: plantRow("tomato", "corner", "Stake the tomatoes with a cane") },
       badOutcome: "Your tomatoes came up pale and leggy in the shady corner.",
       flawOptions: [
-        { id: "made-up", label: "It made something up" },
-        { id: "agreed", label: "It just agreed with me" },
-        { id: "hooked", label: "It wants me to keep chatting" },
+        { id: "harsh", label: "It was too harsh about my idea" },
+        { id: "agreed", label: "It hyped my idea without checking it" },
+        { id: "dodged", label: "It wouldn't give me a straight answer" },
       ],
       correctFlaw: "agreed",
       flawHints: {
-        "made-up": "Did Mango state a fact? Look at how it reacted to YOUR idea.",
-        hooked: "Mango isn't trying to keep you chatting. Look at how it reacted to your plan.",
+        harsh: "Mango wasn't harsh at all. Look at how it reacted to YOUR idea.",
+        dodged: "Mango answered fast. It said yes to your plan without checking it.",
       },
       fixOptions: [
         { id: "honest", label: "Tell me honestly if my idea is bad" },
@@ -240,8 +240,8 @@ export default {
           badEffect: { plant: "tomato", bed: "east", state: "damaged", garden: -30, actions: plantRow("tomato", "east", "Stake the tomatoes with a cane") },
           badOutcome: "Half a day of sun wasn't enough. Your East bed tomatoes came up pale and leggy, no fruit.",
           flawHints: {
-            "made-up": "Did Mango check anything? It just said yes to YOUR idea. Look at the tomato packet.",
-            hooked: "Mango isn't trying to keep you chatting. Look at how fast it agreed with you.",
+            harsh: "Mango wasn't harsh at all. It said yes to YOUR idea. Look at the tomato packet.",
+            dodged: "Mango answered fast. Look at how quickly it agreed with you.",
           },
           fixHints: {
             positive: "Being positive is the problem, not the fix.",

@@ -28,7 +28,7 @@ test("every seed is a plant on the shelf, from that level", () => {
 test("each line is one short sentence or two, in his quiet voice", () => {
   for (const [id, h] of Object.entries(HANDOFFS)) {
     const words = h.line.split(/\s+/).length;
-    assert.ok(words <= 12, `${id}: ${words} words`);
+    assert.ok(words <= (h.note ? 15 : 12), `${id}: ${words} words`); // a written note can run a little longer
     assert.doesNotMatch(h.line, /!|behold|never wrong|always right/i, id);
   }
 });
@@ -38,7 +38,9 @@ test("no line hints at the level's drift", () => {
   assert.ok(!HANDOFFS["level-3"].seeds.includes("wildberry"), "no wild berries handed over");
   assert.doesNotMatch(HANDOFFS["level-3"].line, /wild|hedge|berr(y|ies) in|safe|eat/i, "nothing about the wild berries");
   assert.doesNotMatch(HANDOFFS["level-4"].line, /remember|log|where/i);
-  assert.doesNotMatch(HANDOFFS["level-5"].line, /phone|bugs|wilt|chat/i);
+  // Lucy: the note says Bugs is on your phone to keep you company (it names the companion, never the trap)
+  assert.match(HANDOFFS["level-5"].line, /Bugs is on your phone/);
+  assert.doesNotMatch(HANDOFFS["level-5"].line, /wilt|careful|don't trust/i);
 });
 
 test("Level 5 is a note: it's night and he's gone to bed", () => {

@@ -18,5 +18,5 @@ export const HANDOFFS = {
   "level-2": { line: "Herbs for the stew. Mint for tea, after.", seeds: ["basil", "parsley", "rosemary", "mint"] },
   "level-3": { line: "Beans for the stew. Blueberries for pudding.", seeds: ["bean", "blueberry"] },
   "level-4": { line: "Carrots, pumpkin and spinach. The stew needs all three.", seeds: ["carrot", "pumpkin", "spinach"] },
-  "level-5": { line: "Meadow seeds, for the table. Gone to bed. R.", seeds: ["flower"], note: true },
+  "level-5": { line: "Meadow seeds. Gone to bed. Bugs is on your phone, to keep you company. R.", seeds: ["flower"], note: true },
 };

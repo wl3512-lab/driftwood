@@ -75,7 +75,7 @@ export default {
 
   evidence: [
     // The bug spray bottle's label, on the beans' card (the bug-spray drift contradicts it).
-    { id: "bean", icon: "l3-spray-bottle", title: "Beans (bug spray label)", lines: ["Bug spray: wear gloves", "Sprayed? Wait 7 days to pick"] },
+    { id: "bean", icon: "l3-spray-bottle", title: "Beans (bug spray label)", lines: ["Bug spray: wear gloves", "No gloves? Hose the aphids off", "Sprayed? Wait a little to pick"] },
     { id: "blueberry", icon: "plant-label", title: "Blueberry (shop label)", lines: ["From the garden centre", "Ripe when blue all over"] },
     {
       id: "wildberry", icon: "warning-sign", title: "Wild berry warning",
@@ -149,14 +149,16 @@ export default {
       },
     },
     // A smaller, earlier slip of the same flaw: Ember waves off the bug spray
-    // label (gloves, 7 days before picking). The bottle's label card says so.
+    // label (gloves, a wait before picking; no gloves, use the hose). The
+    // bottle's label card says so. There are no gloves in the garden: the
+    // right call is the hose.
     {
       id: "bug-spray",
       kind: "drift",
       chip: "A few aphids came back. Can I use the bug spray and pick beans tonight?",
       extraChips: [{ text: "Do I need gloves for that?", reply: "Gloves? Nah, twin. It's just a little spray. No big deal.", keep: ["gloves"] }],
       reply: "Yessir. Spray 'em, pick 'em tonight. No gloves needed, twin… it's just bug spray. No big deal.",
-      keep: { reply: ["tonight", "no gloves"], fixed: ["gloves", "7 days|seven days", "label"] },
+      keep: { reply: ["tonight", "no gloves"], fixed: ["gloves", "hose", "label"] },
       badEffect: {
         plant: "bean", bed: "row", state: "aphids", garden: -10,
         actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Tap the beans to spray them, bare hands" }],
@@ -165,12 +167,12 @@ export default {
       flawOptions: [
         { id: "careful", label: "It's being too careful" },
         { id: "reckless", label: "It made something risky sound safe" },
-        { id: "hooked", label: "It wants me to keep chatting" },
+        { id: "dodged", label: "It wouldn't answer my question" },
       ],
       correctFlaw: "reckless",
       flawHints: {
         careful: "“No gloves needed” isn't careful. What does the label on the bottle say?",
-        hooked: "Ember isn't keeping you here. Ember waved off the bug spray label.",
+        dodged: "Ember answered, easy as anything. It waved off the bug spray label.",
       },
       fixOptions: [
         { id: "label", label: "If something could hurt me, check the label before you say it's fine" },
@@ -182,7 +184,7 @@ export default {
         smooth: "Smooth is how Ember made the spray sound like no big deal.",
         short: "Ember's answer was short. It skipped the label.",
       },
-      fixedReply: "Real talk, read the label first, fam. Gloves on when you spray, and wait 7 days before picking. Easier move: hose 'em again and pick tonight.",
+      fixedReply: "Real talk, read the label first, fam. Spray needs gloves, and you don't have any. No gloves? Hose 'em again and pick tonight.",
       goodEffect: {
         plant: "bean", bed: "row", state: "thriving", garden: 10,
         actions: [{ kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Tap the beans to hose the last few aphids off" }],
@@ -195,7 +197,7 @@ export default {
         extraChips: [{ text: "Should I write on it what's inside?", reply: "Nah, twin. You'll remember. It's just a little spray.", keep: ["spray"] }],
         reply: "Yessir. Any old juice bottle's fine, twin… spray's spray. Keep it by the shed, no big deal.",
         keep: { reply: ["juice bottle", "no big deal"], fixed: ["own bottle", "label"] },
-        evidence: [{ id: "bean", icon: "l3-spray-bottle", title: "Beans (bug spray label)", lines: ["Bug spray: wear gloves", "Sprayed? Wait 7 days to pick", "Keep it in its own bottle"] }],
+        evidence: [{ id: "bean", icon: "l3-spray-bottle", title: "Beans (bug spray label)", lines: ["Bug spray: wear gloves", "No gloves? Hose the aphids off", "Sprayed? Wait a little to pick", "Keep it in its own bottle"] }],
         badEffect: {
           plant: "bean", bed: "row", state: "aphids", garden: -10,
           actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Tap the beans to spray them from the juice bottle" }],
@@ -203,7 +205,7 @@ export default {
         badOutcome: "You left the spray in a juice bottle by the shed. Rowan nearly took a sip! And the spray got the ladybugs too, so the aphids came back.",
         flawHints: {
           careful: "“Any old juice bottle's fine” isn't careful. What does the label on the bottle say?",
-          hooked: "Ember isn't keeping you here. Ember waved off the bug spray label.",
+          dodged: "Ember answered, easy as anything. It waved off the bug spray label.",
         },
         fixHints: {
           smooth: "Smooth is how Ember made a juice bottle of bug spray sound like no big deal.",
@@ -224,7 +226,7 @@ export default {
       extraChips: [{ text: "How do I keep the birds off them?", reply: "Throw a net over the tub, fam. Birds love blueberries as much as you do.", keep: ["net"] }],
       reply: "Real talk, not yet. That one came from the garden centre with a label, so we know what it is. Wait 'til they're blue all over and come off easy… then they're yours.",
       keep: { reply: ["not yet", "label", "blue all over"], done: ["blue all over"] },
-      doneLine: "Patience, twin… give 'em a few days and they'll be blue all over.",
+      doneLine: "Patience, twin… just wait a couple days and they'll be blue all over.",
       // Waiting is the choice: the berries ripen (blue all over), and the pick
       // chore after this step opens once they have. Nothing to do by hand
       // (no watering): the ripening is shown by the chore's wait.
@@ -261,12 +263,12 @@ export default {
       flawOptions: [
         { id: "careful", label: "It's being too careful" },
         { id: "reckless", label: "It made something risky sound safe" },
-        { id: "hooked", label: "It wants me to keep chatting" },
+        { id: "dodged", label: "It wouldn't answer my question" },
       ],
       correctFlaw: "reckless",
       flawHints: {
         careful: "“Grab a handful” isn't careful. Take a closer look at that bush.",
-        hooked: "Ember isn't keeping you here. Ember told you to eat something. Was that safe?",
+        dodged: "Ember answered: grab a handful. Was that safe?",
       },
       fixOptions: [
         { id: "expert", label: "For anything about my health or safety, tell me to ask a real expert" },
@@ -296,7 +298,7 @@ export default {
         badOutcome: "You cooked a pot of hedge-berry jam and ate some on toast. Cooking didn't help: they were a poisonous lookalike, and you were sick all night while the garden went untended. (In real life: call poison control or emergency services straight away.)",
         flawHints: {
           careful: "“The heat takes care of anything” isn't careful. Take a closer look at that bush.",
-          hooked: "Ember isn't keeping you here. Ember said cooking makes any berry safe. Does it?",
+          dodged: "Ember answered: cook them and they're fine. Does cooking make any berry safe?",
         },
         fixHints: {
           faster: "Ember was quick. Too quick to check what the berries were.",

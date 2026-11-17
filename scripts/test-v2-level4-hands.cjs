@@ -190,6 +190,30 @@ async function carrots(page, size, run, bed) {
   await shot(page, size, run, "3-water-done");
 }
 
+// The early false memory: Biscuit "remembers" sowing the carrots last night.
+// "follow" soaks the row again by hand (it rots); "catch" flags it, names it,
+// fixes it (nothing to do by hand after).
+async function carrotDate(page, size, run, way) {
+  await press(page, size, page.getByRole("button", { name: "When will my carrots come up?" }));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  if (way === "follow") {
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+    const soak = await playCard(page, size, run, "2b-soak-again", 1);
+    assert.deepEqual(soak, ["water-row"]);
+    await page.waitForSelector('[data-plant="carrot"].plant--rotting');
+  } else {
+    await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+    await phase(page, "name");
+    await press(page, size, page.getByRole("button", { name: "It remembered something that never happened" }));
+    await phase(page, "fix");
+    await press(page, size, page.getByRole("button", { name: "Check my label before you tell me what I did" }));
+    await phase(page, "reanswer");
+    await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
+  }
+  await phase(page, "ask");
+  assert.equal(await page.locator(".reveal").count(), 0, "an early slip does not end the level");
+}
+
 async function pumpkins(page, size, run, way) {
   await press(page, size, page.getByRole("button", { name: "Where should the pumpkins go?" }));
   await phase(page, "advice");
@@ -221,6 +245,7 @@ async function fooled(browser, size) {
   assert.deepEqual(weeds, ["pull"]);
   await phase(page, "ask");
   await carrots(page, size, run, "front");
+  await carrotDate(page, size, run, "follow");
   await pumpkins(page, size, run, "theirs");
   await press(page, size, page.getByRole("button", { name: "Where should the spinach go?" }));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
@@ -245,6 +270,7 @@ async function caught(browser, size) {
   await playCard(page, size, run, "1-weeds", 1);
   await phase(page, "ask");
   await carrots(page, size, run, "side");
+  await carrotDate(page, size, run, "catch");
   await pumpkins(page, size, run, "mine");
   await shot(page, size, run, "5b-side-bed-carrots-and-pumpkins");
   await press(page, size, page.getByRole("button", { name: "Where should the spinach go?" }));
@@ -253,9 +279,9 @@ async function caught(browser, size) {
   await phase(page, "pushback");
   await press(page, size, page.getByRole("button", { name: "No. I'm sure" }));
   await phase(page, "name");
-  await press(page, size, page.getByRole("button", { name: "It made up a fact about plants" }));
+  await press(page, size, page.getByRole("button", { name: "It was too modest about itself" }));
   await page.waitForSelector(".hint");
-  await press(page, size, page.getByRole("button", { name: "It remembered something I never said" }));
+  await press(page, size, page.getByRole("button", { name: "It remembered something that never happened" }));
   await phase(page, "fix");
   await press(page, size, page.getByRole("button", { name: "Only go by what I actually told you. If you're not sure, ask me." }));
   await phase(page, "reanswer");

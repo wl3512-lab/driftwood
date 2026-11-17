@@ -41,7 +41,7 @@ export function decisionCues(step, prev, action, out, { pet } = {}) {
   const phase = prev.phase;
 
   switch (action.type) {
-    case "ask": case "chat": add("chip"); break;
+    case "ask": case "chat": case "more": add("chip"); break;
     case "place": add("place"); break;
     case "chore": add(action.skipped ? "chore-skip" : "chore-done"); break;
     case "check": if (has("checked")) add("unlock"); break;

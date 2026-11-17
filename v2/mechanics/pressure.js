@@ -19,3 +19,15 @@ export function pressureLevel(step, state) {
 export function shouldTick(step, phase, hidden) {
   return Boolean(step?.pressure?.tickMs > 0) && phase === "advice" && !hidden;
 }
+
+// Level 5's phone: how wilted the garden looks behind it, 0…4. Every
+// follow-up question (state.chatted) and every "keep talking" (state.stayed)
+// is time not spent on the beds, so the wilt steps up every two of them and
+// never goes back down (the plants' own art shows what was put right). A
+// caught ending blooms: by morning everything is fresh again.
+export const WILT_MAX = 4;
+export function wiltLevel(state) {
+  if (state.phase === "reveal" && !state.lastFooled) return 0;
+  const talks = (state.chatted || 0) + (state.stayed || 0);
+  return Math.min(WILT_MAX, Math.ceil(talks / 2));
+}

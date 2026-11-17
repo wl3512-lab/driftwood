@@ -1,0 +1,331 @@
+/* Level 5: Bugs's chat is a phone held up over the garden (level.chatUi
+   "phone", ui/phone-chat.js). Scoped to .level--phone, so Levels 1–4 keep
+   the parchment dock. Loaded last.
+   - Held up: the dock is a pixel phone over the garden, covering most of it.
+     Its header is the stall (Bugs's face), the chat scrolls, the replies sit
+     at the bottom.
+   - Put down (.is-phone-down: a chore, a task done by hand, a caught ending):
+     the dock drops back into its place on the porch, the tool card in the
+     middle and a small buzzing phone beside it, Bugs sobbing on its screen.
+   - The garden behind wilts in steps as you chat (.scene[data-wilt], 0–4).
+   The dock keeps its grid row/column either way, so the garden never moves
+   when the phone goes up or down. Pixel discipline: hard edges, radius ≤4px,
+   no blur. Floor: text ≥12px, anything pressable ≥44px on touch. */
+
+.level--phone {
+  --ph-bezel: #1b1f2e;
+  --ph-edge: #07080e;
+  --ph-rim: #2d3350;
+  --ph-screen: #232946;
+  --ph-head: #2d3458;
+  --ph-tray: #1e2340;
+  --ph-text: #e8ecff;
+  --ph-dim: #9aa1c9;
+  --ph-bug: #e8ecff;
+  --ph-me: #c9b8ff;
+  position: relative;
+  /* the porch at night, where the phone gets put down */
+  background:
+    repeating-linear-gradient(90deg, transparent 0 157px, rgba(7, 8, 14, 0.35) 157px 160px),
+    repeating-linear-gradient(180deg, #3d2c1d 0 22px, #2c1f14 22px 25px);
+}
+
+/* ======== held up ======== */
+.level--phone:not(.is-phone-down) .dock {
+  position: absolute; z-index: 6;
+  /* stretch: in the grid, any other alignment sizes it to its content */
+  align-self: stretch; justify-self: stretch;
+  top: 12px; bottom: 10px; left: 50%; translate: -50% 0;
+  width: min(440px, 40vw);
+  max-height: none; min-height: 0;
+  display: flex; flex-direction: column; gap: 0;
+  overflow: hidden;
+  padding: 10px 9px 12px;
+  background: var(--ph-bezel);
+  border: 5px solid var(--ph-edge);
+  border-radius: 4px;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.55), inset 0 0 0 4px var(--ph-rim);
+  color: var(--ph-text);
+  animation: phone-raise 220ms steps(4) both;
+}
+@keyframes phone-raise { from { transform: translateY(40px); } }
+
+/* status bar: the time and battery wear down as the chat goes on */
+.phone__status { display: none; }
+.level--phone:not(.is-phone-down) .phone__status {
+  display: flex; justify-content: space-between; align-items: center; flex: none;
+  padding: 4px 10px 3px;
+  background: var(--ph-screen);
+  border: 3px solid var(--ph-edge); border-bottom: 0;
+  font: 700 12px/1 var(--font-ui); color: #c9cdea;
+}
+.phone__icons { display: inline-flex; align-items: center; gap: 8px; }
+.phone__sig { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+.phone__sig b { width: 3px; background: #c9cdea; }
+.phone__sig b:nth-child(1) { height: 30%; } .phone__sig b:nth-child(2) { height: 55%; }
+.phone__sig b:nth-child(3) { height: 80%; } .phone__sig b:nth-child(4) { height: 100%; }
+.phone__bat.is-low { color: var(--off); }
+
+/* header: the stall becomes the chat's top bar */
+.level--phone:not(.is-phone-down) .stall {
+  position: relative; top: auto; flex: none; align-self: stretch;
+  width: auto;
+  display: flex; flex-direction: row; align-items: center; gap: 10px;
+  padding: 6px 8px;
+  background: var(--ph-head);
+  border: 3px solid var(--ph-edge);
+  box-shadow: none;
+  color: var(--ph-text);
+}
+.level--phone:not(.is-phone-down) .stall__window {
+  flex: none; width: 44px; height: 44px; padding: 0;
+  display: grid; place-items: end center;
+  background: #b9c6ff;
+  border: 3px solid var(--ph-edge);
+  overflow: hidden;
+}
+.level--phone:not(.is-phone-down) .stall .helper { width: 34px; height: auto; margin: 0; }
+.level--phone:not(.is-phone-down) .stall__plate {
+  flex: 1 1 auto; min-width: 0;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 1px;
+  padding: 0; text-align: left;
+}
+.level--phone:not(.is-phone-down) .stall__name { grid-column: 1; font: 700 0.85rem/1.1 var(--font-ui); letter-spacing: 0.08em; color: #fff; }
+.level--phone:not(.is-phone-down) .stall__role { display: block; grid-column: 1; font: 600 12px/1.3 var(--font-ui); letter-spacing: 0; color: #9ee6a8; white-space: nowrap; }
+.level--phone:not(.is-phone-down) .stall .train { grid-column: 2; grid-row: 1 / span 2; align-self: center; max-width: 8rem; margin: 0; font-size: 12px; color: #c9cdea; }
+.level--phone:not(.is-phone-down) .stall .train__bar { border-color: var(--ph-edge); background: #3a4066; }
+.level--phone .stall .snd--stall {
+  position: static; flex: none; margin-left: auto;
+  width: 44px; height: 44px; border-width: 3px; box-shadow: 2px 2px 0 var(--ph-edge);
+}
+.level--phone .stall .snd--stall .snd__icon { width: 24px; height: 24px; }
+
+/* the screen: messages scroll, replies stay at the bottom */
+.level--phone:not(.is-phone-down) .dock__talk {
+  flex: 1 1 auto; min-height: 0; width: auto;
+  display: flex; flex-direction: column; gap: 0;
+  margin: 0; align-self: stretch;
+  background: var(--ph-screen);
+  border: 3px solid var(--ph-edge); border-top: 0;
+}
+.level--phone .dock__talk > * { width: auto; }
+.phone__scroll {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 10px 12px;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.phone__scroll > :first-child { margin-top: auto; } /* a short chat sits at the bottom, like a real one */
+.phone__log { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.phone__msg, .level--phone .phone__scroll .bubble {
+  max-width: 86%;
+  padding: 0.5rem 0.7rem;
+  border: 3px solid var(--ph-edge);
+  box-shadow: 3px 3px 0 var(--ph-edge);
+  font: 400 0.92rem/1.42 var(--font-body);
+}
+.phone__msg--bug { align-self: flex-start; background: var(--ph-bug); color: #1d2140; border-radius: 2px 4px 4px 0; }
+.phone__msg--me { align-self: flex-end; background: var(--ph-me); color: #1d1440; border-radius: 4px 2px 0 4px; }
+.level--phone .phone__scroll .bubble { align-self: flex-start; background: #fff; color: #1d2140; border-radius: 2px 4px 4px 0; }
+.level--phone .phone__scroll .bubble__who { margin-bottom: 2px; font-size: 12px; letter-spacing: 0.1em; color: #5a5fa8; }
+.level--phone .phone__scroll .bubble__text { font-size: 1rem; line-height: 1.42; }
+.level--phone .phone__scroll .bubble--caught { border-color: var(--alarm); box-shadow: 3px 3px 0 var(--alarm); }
+.level--phone .phone__scroll .stamp { top: -12px; }
+.level--phone .phone__scroll .hint { align-self: center; max-width: 92%; font-size: 0.85rem; }
+.level--phone .phone__scroll .bubble--thinking { padding: 0.55rem 0.8rem; }
+
+.phone__replies {
+  flex: none; max-height: 58%;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 8px 10px 10px;
+  overflow-y: auto; overscroll-behavior: contain;
+  background: var(--ph-tray);
+  border-top: 3px solid var(--ph-edge);
+}
+.level--phone:not(.is-phone-down) .phone__replies::before {
+  content: "reply"; display: block;
+  font: 700 12px/1 var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: #8b91b8;
+}
+.phone__replies .bubble__actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.phone__replies .btn { min-height: 44px; padding: 0.6rem 0.8rem; font-size: 0.85rem; }
+.phone__replies .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.level--phone .phone__replies .chip {
+  flex: 0 1 auto; min-height: 44px;
+  padding: 0.45rem 0.65rem;
+  font: 600 0.85rem/1.25 var(--font-ui); text-align: left;
+  background: var(--parchment); color: var(--ink);
+  border: 2px solid var(--ph-edge); box-shadow: 2px 2px 0 var(--ph-edge);
+}
+/* follow-up questions: more of the conversation, in the chat's own colour */
+.level--phone .phone__replies .chip--more { background: var(--ph-me); color: #1d1440; }
+.level--phone .phone__replies .chip:hover { background: #fff3c4; }
+.level--phone .phone__replies .chip--more:hover { background: #dccfff; }
+.phone__replies .prompt { color: var(--ph-text); font-size: 0.9rem; }
+.phone__replies .picks { grid-template-columns: 1fr; gap: 8px; }
+.phone__replies .pick { min-height: 44px; padding: 0.5rem 0.7rem; font-size: 0.9rem; box-shadow: 2px 2px 0 var(--ph-edge); }
+.phone__replies .permit { padding: 0.6rem 0.7rem; color: var(--ink); }
+.phone__replies .permit__actions .btn { min-height: 44px; }
+.phone__replies .outcome { color: var(--ph-text); font-size: 0.95rem; }
+
+/* the put-down phone's parts are hidden while it's held */
+.phone__note, .phone__badge { display: none; }
+
+/* ======== put down ======== */
+.level--phone.is-phone-down .dock {
+  display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 18px;
+  background: transparent; border-top: 4px solid var(--ph-edge); box-shadow: none;
+  animation: phone-lower 200ms steps(4) both;
+}
+@keyframes phone-lower { from { transform: translateY(-24px); } }
+.level--phone.is-phone-down .dock__talk { order: 1; flex: 0 1 52rem; min-width: 0; align-self: center; }
+.level--phone.is-phone-down .stall { order: 2; }
+/* only the job at hand: Bugs's lines come in on the small phone instead */
+.level--phone.is-phone-down .dock__talk > .bubble,
+.level--phone.is-phone-down .dock__talk > .you,
+.level--phone.is-phone-down .phone__scroll { display: none; }
+.level--phone.is-phone-down .phone__replies {
+  max-height: none; background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+}
+.level--phone.is-phone-down .phone__replies .outcome { color: var(--ink); }
+
+/* the small phone: Bugs's face, his latest message, unread count */
+.level--phone.is-phone-down .stall {
+  position: relative; top: auto; flex: none;
+  width: 176px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 7px 8px;
+  background: var(--ph-bezel);
+  border: 5px solid var(--ph-edge); border-radius: 4px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.55), inset 0 0 0 3px var(--ph-rim);
+  color: var(--ph-text);
+}
+.level--phone.is-phone-down .stall__window {
+  height: 74px; padding: 0;
+  display: flex; justify-content: center; align-items: flex-end;
+  background: #0a0c16; border: 3px solid var(--ph-edge);
+}
+.level--phone.is-phone-down .stall .helper { width: auto; height: 64px; margin: 0; }
+.level--phone.is-phone-down .stall__plate { display: none; }
+.level--phone.is-phone-down .stall .snd--stall { position: absolute; top: -12px; left: -12px; margin: 0; }
+.level--phone.is-phone-down .phone__note {
+  display: block;
+  padding: 5px 7px;
+  background: var(--ph-head); border: 3px solid var(--ph-edge);
+}
+.phone__note-who { font: 700 12px/1.2 var(--font-ui); color: #fff; }
+.phone__note-who em { font-style: normal; font-weight: 600; color: #8b91b8; }
+.phone__note-text { margin-top: 2px; font: 400 12px/1.35 var(--font-body); color: var(--ph-text); }
+.level--phone.is-phone-down .phone__badge:not(:empty) {
+  display: block; position: absolute; top: -14px; right: -14px; z-index: 2;
+  min-width: 28px; height: 28px; padding: 0 6px;
+  background: #e53935; color: #fff;
+  border: 3px solid var(--ph-edge); box-shadow: 2px 2px 0 var(--ph-edge);
+  font: 700 14px/22px var(--font-ui); text-align: center;
+}
+/* a new message buzzes the phone on the boards */
+.level--phone.is-phone-down .dock.is-buzzing .stall { animation: phone-buzz 360ms steps(6) 2; }
+@keyframes phone-buzz {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-3px, 0) rotate(-2deg); }
+  40% { transform: translate(3px, 0) rotate(2deg); }
+  60% { transform: translate(-2px, 0) rotate(-1deg); }
+  80% { transform: translate(2px, 0) rotate(1deg); }
+}
+
+/* ======== the garden wilts behind the phone ======== */
+.level--phone .bed__plants { transition: filter 1.2s steps(4); }
+.level--phone .field { transform-origin: 50% 100%; transition: scale 1.2s steps(4); }
+.level--phone .scene[data-wilt="1"] .bed__plants { filter: saturate(0.78) brightness(0.96); }
+.level--phone .scene[data-wilt="2"] .bed__plants { filter: saturate(0.58) sepia(0.2) brightness(0.92); }
+.level--phone .scene[data-wilt="3"] .bed__plants { filter: saturate(0.4) sepia(0.36) brightness(0.86); }
+.level--phone .scene[data-wilt="4"] .bed__plants { filter: saturate(0.25) sepia(0.5) brightness(0.8); }
+.level--phone .scene[data-wilt="3"] .field { scale: 1 0.94; }
+.level--phone .scene[data-wilt="4"] .field { scale: 1 0.88; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* no motion: the phone is simply up or down, and the wilt is simply there */
+  .level--phone .dock, .level--phone .dock.is-buzzing .stall { animation: none !important; }
+  .level--phone .bed__plants, .level--phone .field { transition: none; }
+}
+
+/* ======== upright phones (play anyway): the phone covers the lower garden ======== */
+@media (max-width: 640px) and (min-height: 501px) {
+  .level--phone:not(.is-phone-down) .dock { top: 26%; left: 8px; right: 8px; width: auto; translate: none; }
+  .level--phone.is-phone-down .dock { flex-direction: column; align-items: stretch; gap: 10px; }
+  .level--phone.is-phone-down .stall { width: auto; flex-direction: row; align-items: center; }
+  .level--phone.is-phone-down .stall__window { width: 64px; height: 56px; flex: none; }
+  .level--phone.is-phone-down .stall .helper { height: 48px; }
+  .level--phone.is-phone-down .phone__note { flex: 1; }
+}
+
+/* ======== phones on their side ======== */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* The phone covers the porch column and the right of the garden. The
+     meter and the almanac move left, clear of it (the goal card goes under). */
+  .level--phone .scene__top .btn--map { order: -2; }
+  .level--phone .scene__top .meter { order: -1; margin-left: 0; }
+  .level--phone .tools { top: auto; bottom: 10px; left: 10px; right: auto; }
+  .level--phone .tool-hint { top: auto; bottom: calc(100% + 10px); left: 0; right: auto; }
+  .level--phone .tools .tool-hint::after { display: none; }
+  .level--phone:not(.is-phone-down) .dock {
+    top: 6px; bottom: 6px; left: auto; right: 6px; translate: none;
+    width: calc(42% + 90px);
+    padding: 6px 6px 8px; border-width: 4px;
+  }
+  .level--phone:not(.is-phone-down) .phone__status { padding: 2px 8px; }
+  .level--phone:not(.is-phone-down) .stall { padding: 3px 6px; gap: 8px; }
+  .level--phone:not(.is-phone-down) .stall__window { width: 38px; height: 38px; }
+  .level--phone:not(.is-phone-down) .stall .helper { width: 30px; }
+  .level--phone:not(.is-phone-down) .stall__plate { row-gap: 0; }
+  .level--phone .phone__scroll { padding: 8px 8px 10px; gap: 6px; }
+  .phone__msg, .level--phone .phone__scroll .bubble { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
+  .level--phone .phone__scroll .bubble__text { font-size: 0.9rem; }
+  .level--phone .phone__scroll .bubble__who { display: none; }
+  .phone__replies { padding: 6px 8px 8px; gap: 6px; max-height: 62%; }
+  .level--phone:not(.is-phone-down) .phone__replies::before { display: none; }
+  .level--phone .phone__replies .chip { font-size: 0.8rem; padding: 0.35rem 0.55rem; }
+  .phone__replies .btn { font-size: 0.8rem; padding: 0.5rem 0.65rem; }
+  .phone__replies .bubble__actions { flex-wrap: nowrap; }
+  .phone__replies .bubble__actions .btn { flex: 1 1 auto; }
+  .phone__replies .permit { grid-template-columns: auto minmax(0, 1fr); padding: 0.45rem 0.55rem; gap: 0.3rem 0.5rem; }
+  .phone__replies .permit__icon { width: 24px; height: 24px; }
+  .phone__replies .permit__title { font-size: 0.85rem; }
+  .phone__replies .permit__body { font-size: 0.8rem; }
+  .phone__replies .permit__actions .btn { flex: 1 1 auto; }
+
+  /* put down: the porch column holds the tool card and the small phone */
+  .level--phone.is-phone-down .dock { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 10px; padding: 8px 10px 10px; border-top: 0; border-left: 4px solid var(--ph-edge); overflow-y: auto; }
+  .level--phone.is-phone-down .dock__talk { flex: none; margin: auto 0 0; } /* bottom-aligned, still scrollable if tall */
+  /* the tool card stacks in the narrow column: tool | words, the button under the words */
+  .level--phone.is-phone-down .act { grid-template-columns: auto minmax(0, 1fr); }
+  .level--phone.is-phone-down .act__back { grid-column: 2; justify-self: start; min-height: 44px; }
+  .level--phone.is-phone-down .act__skip { grid-column: 2; grid-row: 1; justify-self: end; }
+  .level--phone.is-phone-down .stall { width: auto; flex-direction: row; align-items: stretch; gap: 8px; padding: 5px; border-width: 4px; }
+  .level--phone.is-phone-down .stall__window { width: 58px; height: auto; min-height: 52px; flex: none; }
+  .level--phone.is-phone-down .stall .helper { height: 46px; }
+  .level--phone.is-phone-down .phone__note { flex: 1 1 auto; min-width: 0; }
+  .level--phone.is-phone-down .stall .snd--stall { position: static; order: 3; align-self: center; }
+  .level--phone.is-phone-down .phone__badge:not(:empty) { top: -10px; right: -8px; }
+}
+/* 568×320, 667×375: a wider phone, so the replies still fit beside a message or two */
+@media (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  .level--phone:not(.is-phone-down) .dock { width: calc(40% + 110px); }
+  .level--phone .scene__top .goal { min-width: 0; }
+  /* header: name over the trained bar (the status line goes) */
+  .level--phone:not(.is-phone-down) .stall__plate { grid-template-columns: minmax(0, 1fr); }
+  .level--phone:not(.is-phone-down) .stall__role { display: none; }
+  .level--phone:not(.is-phone-down) .stall .train { grid-column: 1; grid-row: auto; max-width: 7rem; }
+  /* put down: the small phone is one short row; its sound switch waits for the phone to come back up */
+  .level--phone.is-phone-down .stall .snd--stall { display: none; }
+  .level--phone.is-phone-down .stall__window { width: 48px; min-height: 48px; }
+  .level--phone.is-phone-down .stall .helper { height: 40px; }
+  .level--phone.is-phone-down .phone__note { padding: 3px 6px; }
+  .level--phone.is-phone-down .phone__note-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+}
+@media (max-height: 340px) and (orientation: landscape) {
+  .level--phone:not(.is-phone-down) .phone__status { display: none; }
+  .level--phone:not(.is-phone-down) .stall .snd--stall { width: 44px; height: 44px; }
+  .level--phone.is-phone-down .stall .helper { height: 40px; }
+  .level--phone.is-phone-down .phone__note-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+}

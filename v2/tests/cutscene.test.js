@@ -7,9 +7,9 @@ import { canBlock } from "../ui/block-type.js";
 import { PLANTS } from "../levels/plants.js";
 import { MAP } from "../levels/index.js";
 
-test("the script has seven beats at most, in order, each with words and a duration", () => {
-  assert.deepEqual(BEATS.map((b) => b.id), ["name", "garden", "helpers", "dinner", "drift", "almanac", "go"]);
-  assert.ok(BEATS.length <= 7, "no more than seven beats before play");
+test("the script has eight beats at most, in order, each with words and a duration", () => {
+  assert.deepEqual(BEATS.map((b) => b.id), ["name", "garden", "helpers", "dinner", "drift", "almanac", "how", "go"]);
+  assert.ok(BEATS.length <= 8, "no more than eight beats before play");
   for (const b of BEATS) {
     assert.equal(typeof b.text, "string");
     assert.ok(b.text.trim().length > 0, `${b.id}: a caption`);
@@ -26,18 +26,20 @@ test("Rowan's lines are short (Lucy can't read fast) and never claim the almanac
   assert.match(BEATS.find((b) => b.id === "almanac").text, /checked every season/);
   assert.doesNotMatch(END_LINE, /never wrong|(?<!not )always right|almanac is\.?$/i);
   assert.match(BEATS.find((b) => b.id === "helpers").text, /ChatGPT with fur/);
+  // Rowan says how to use the almanac, not only that he has one (Lucy: "not instructional enough")
+  assert.match(BEATS.find((b) => b.id === "how").text, /check it.*Something's off/i);
 });
 
 test("the first watch asks the name; a rewatch skips it", () => {
   assert.equal(beatsFor(true)[0].id, "name");
-  assert.deepEqual(beatsFor(false).map((b) => b.id), ["garden", "helpers", "dinner", "drift", "almanac", "go"]);
-  assert.equal(lineFor(BEATS[1], "Ada"), "Welcome, Ada. This is my garden. Not much in it yet.");
+  assert.deepEqual(beatsFor(false).map((b) => b.id), ["garden", "helpers", "dinner", "drift", "almanac", "how", "go"]);
+  assert.equal(lineFor(BEATS[1], "Ada"), "Welcome, Ada. This is my garden. My magic grows a season in one night.");
   assert.match(lineFor(BEATS[1], ""), /friend/);
 });
 
-test("the whole cutscene runs about 15 seconds of animation, then waits for taps", () => {
-  assert.equal(totalMs(), 15100);
-  assert.ok(totalMs(beatsFor(false)) <= 15000, "a rewatch is short enough to sit through");
+test("the whole cutscene runs about 18 seconds of animation, then waits for taps", () => {
+  assert.equal(totalMs(), 18300);
+  assert.ok(totalMs(beatsFor(false)) <= 17500, "a rewatch is short enough to sit through");
 });
 
 test("the end title can be drawn in block letters", () => {

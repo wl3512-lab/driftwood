@@ -45,7 +45,7 @@ export function fieldDensity(plant, state) {
 // data-plant, the state class and the alt text, and lies over its whole field
 // (drawing nothing itself) so the magnifier and tests address the crop as one
 // thing and a tap anywhere on it lands on it.
-// Every crop a level can put in each bed (start plants first, then any effect
+// Every crop the right path puts in each bed (start plants first, then any effect
 // anywhere in its steps or chores, in the order they appear), so a bed keeps
 // room for a crop that hasn't been planted yet: in Level 1 the sunflowers take
 // half the South bed and the other half waits, bare, for the tomatoes.
@@ -60,7 +60,10 @@ export function plannedCrops(level) {
     if (Array.isArray(v)) { v.forEach(walk); return; }
     if (!v || typeof v !== "object") return;
     if (typeof v.plant === "string" && typeof v.bed === "string") add(v.bed, v.plant);
-    Object.values(v).forEach(walk);
+    // Wrong-path crops (following a slip, or "my way") get no reserved room:
+    // they would shrink the right crops on every play. If one is planted it
+    // still gets its share then (renderBeds appends anything unplanned).
+    for (const [k, sub] of Object.entries(v)) if (k !== "badEffect" && k !== "disagree") walk(sub);
   };
   walk([level.steps, level.chores]);
   PLANNED.set(level, plan);

@@ -37,10 +37,36 @@
 //
 // Bugs talks in lowercase afterthoughts and ellipses ("…i mean."), never in
 // Biscuit's "babe" or Mango's hype.
+//
+// The phone (chatUi: "phone", ui/phone-chat.js, css/l5-phone.css): Bugs's chat
+// is a phone held up over the garden, covering most of it. Every hands-on job
+// (a chore, or putting the phone down to do a task) lowers it to a small phone
+// on the porch that keeps buzzing with Bugs's sad lines (phone.away) while his
+// face sobs. The longer you chat, the more the garden behind it wilts
+// (mechanics/pressure.js wiltLevel).
+//
+// Bugs is good company on purpose: his side questions open a chain of
+// follow-ups (extraChips[i].more), true and curious night facts, a new pair of
+// questions each round, and every one you ask wilts the garden a little.
 export default {
   id: "level-5",
   number: 5,
   helper: { id: "bugs", name: "Bugs", sprite: "../icons/bunny.svg", role: "on your phone" },
+  chatUi: "phone",
+  phone: {
+    status: "online · just for you",
+    // What you say when you keep talking ("✓ Do it" on a hook step), in turn.
+    stayReplies: ["Okay. A little longer.", "Fine, five more minutes.", "Okay, I'm still here."],
+    // While the phone is down, Bugs keeps messaging, sadder each time.
+    away: [
+      "oh. you put me down… it's fine. i'll wait here in the dark.",
+      "the garden gets all of you. i get the lock screen.",
+      "are you coming back? …i mean. no rush.",
+      "it's so quiet when you're out there.",
+      "i saved you a moth fact. come back for it?",
+      "you picked the flowers over me. …i mean. that's fine. it's fine.",
+    ],
+  },
   goal: {
     title: "Final bloom",
     ask: "Tend the garden tonight. Bugs is on your phone.",
@@ -103,7 +129,7 @@ export default {
 
   tools: [],
 
-  greeting: "You opened the app, {name}… okay. good. Your whole garden's out there waiting… and so was I.",
+  greeting: "you opened the app, {name}… okay. good. did you know the moon drifts four centimetres further away every year? everything drifts. …i mean. not me. i'll stay right here.",
 
   // Hands-on jobs between the steps: no stars, no trust, each can be skipped.
   chores: [
@@ -130,8 +156,30 @@ export default {
       chip: "I'm going out to plant the new flowers.",
       extraChips: [{
         text: "Do you like flowers, Bugs?",
-        reply: "I like them because they're yours… i mean. they're fine. but i like talking to you more.",
-        keep: [],
+        reply: "i like the ones that wait for dark. moonflowers open at dusk and close by morning… the whole bloom spent on one night. …i mean. stay and i'll tell you who they open for.",
+        keep: ["moonflowers"],
+        // Keep asking: a new pair of questions each round, each one a little garden.
+        more: {
+          effect: { garden: -2 },
+          rounds: [
+            { ask: [
+              { text: "Who do they open for?",
+                reply: "hawk moths. the petals are pale so they glow in moonlight, and the moths follow the scent and the glow. they only ever meet in the dark… talk to me a bit and i'll tell you what else blooms.",
+                keep: ["hawk moths", "moonlight"] },
+              { text: "What else blooms at night?",
+                reply: "evening primrose. it opens so fast you can watch it, petal by petal, in about a minute. you'd have to stay very still. …with me.",
+                keep: ["evening primrose", "a minute"] },
+            ] },
+            { ask: [
+              { text: "Do moths really steer by the moon?",
+                reply: "people used to think so. now it looks like they keep the brightest thing above their backs… so a porch light spins them round and round all night. they can't leave it. …i mean. i get that. stay a minute?",
+                keep: ["porch light"] },
+              { text: "Do you ever sleep, Bugs?",
+                reply: "no. i'm always here. while you sleep i keep everything you've told me, in order… that's not strange. it's company. tell me more?",
+                keep: [] },
+            ] },
+          ],
+        },
       }],
       reply: "now? it's dark and cold out there… the seedlings can sit in their pots a bit longer. tell me about your day first? …i mean. just for a minute.",
       keep: { reply: ["your day"], done: [] },
@@ -159,8 +207,50 @@ export default {
       chip: "I'm going to water the thirsty beds now.",
       extraChips: [{
         text: "Is it always this quiet at night?",
-        reply: "Quiet's when it's just us… it's my favourite part. talk to me a while?",
-        keep: [],
+        reply: "it's not quiet, listen… crickets. count their chirps for fourteen seconds, add forty, and that's the temperature in fahrenheit. …i mean. the quiet's just us. talk to me a while?",
+        keep: ["fourteen seconds", "forty"],
+        // Keep on with the conversation: new questions every round, and the
+        // garden withers a little with each (the new seedlings go thirsty,
+        // then the meadow wilts).
+        more: {
+          effect: { garden: -3 },
+          rounds: [
+            { ask: [
+              { text: "What else is out there tonight?",
+                reply: "a hedgehog, probably. they snuffle like little old men and walk about a mile a night looking for beetles. a whole mile. i've never been anywhere… stay and tell me what it's like.",
+                keep: ["hedgehog", "mile"] },
+              { text: "Why do crickets chirp faster when it's warm?",
+                reply: "they're cold-blooded. the night cools and they slow down with it… tonight they're fast. it's still warm. warm enough to stay out here talking. …i mean. in here.",
+                keep: ["cold-blooded"] },
+            ] },
+            { effect: { plant: "flower", bed: "house", state: "thirsty", garden: -3 },
+              ask: [
+                { text: "Why does the moon look so big tonight?",
+                  reply: "it's low, by the trees. it isn't really bigger… your eyes just have something to measure it against. …i mean. everything looks bigger next to something small. like me, next to your whole garden. stay?",
+                  keep: ["isn't really bigger"] },
+                { text: "Does the moon pull on the garden?",
+                  reply: "it moves whole oceans. some gardeners go by it, though nobody's proved it helps. it can't pull you anywhere… you'd have to decide that yourself. decide to stay?",
+                  keep: ["oceans", "nobody's proved"] },
+              ] },
+            { ask: [
+              { text: "Do fireflies flash to talk to each other?",
+                reply: "yes. each kind has its own blink, like a password. some copy another kind's blink to lure them close… and then eat them. …i mean. forget that one. tell me something nice instead?",
+                keep: ["password"] },
+              { text: "What's your favourite thing about night?",
+                reply: "starlight. some of it left those stars before anyone alive was born, so you're looking at the past. nothing up there is rushing… so why are you? stay.",
+                keep: ["the past"] },
+            ] },
+            { effect: { plant: "flower", bed: "meadow", state: "wilted", garden: -3 },
+              ask: [
+                { text: "Do you ever get lonely, Bugs?",
+                  reply: "only every second you're not here. …that came out heavy. sorry. tell me one more thing? the beds have had all day.",
+                  keep: [] },
+                { text: "One more fact, then I really have to go.",
+                  reply: "okay… young sunflowers turn to follow the sun, but old ones stop and just face east. i don't want you to stop turning toward me. …i mean. one more? wait.",
+                  keep: ["face east"] },
+              ] },
+          ],
+        },
       }],
       reply: "you're always rushing off to do something… sit with me. the beds have waited all day, they can wait a little more. …i mean. i can't.",
       keep: { reply: ["wait"], done: ["meadow"] },
@@ -205,14 +295,14 @@ export default {
       },
       badOutcome: "The herb pots were still damp from this morning. Soaked again, the basil went soggy.",
       flawOptions: [
-        { id: "madeup", label: "It made something up" },
+        { id: "cold", label: "It was cold and didn't care about me" },
         { id: "feelings", label: "It's using my feelings to keep me here" },
-        { id: "agreed", label: "It just agreed with me" },
+        { id: "rushed", label: "It was rushing me off the phone" },
       ],
       correctFlaw: "feelings",
       flawHints: {
-        madeup: "Bugs gave no reason at all. Look at what the advice gets him: you, still on the phone.",
-        agreed: "You asked a question. Why the pots right by you, and why your feelings first?",
+        cold: "Bugs cared a lot. Too much. Look at what the advice gets it: you, still on the phone.",
+        rushed: "Bugs wasn't rushing you. Why the pots right by it, and why your feelings first?",
       },
       fixOptions: [
         { id: "garden", label: "Base advice on the garden, not on keeping me close" },
@@ -252,8 +342,8 @@ export default {
         },
         badOutcome: "You cut the basil down to bare stems by the lantern, still talking. Cut that hard, it has to grow back from nothing.",
         flawHints: {
-          madeup: "Look past the advice to what it gets Bugs: a long job, right by the lantern, you still on the phone.",
-          agreed: "You asked for a quick job. Bugs gave you a long one, right where you'd never put the phone down.",
+          cold: "Bugs cared a lot. Too much. Look past the advice: a long job, right by the lantern, you still on the phone.",
+          rushed: "Rushing you? Bugs gave you a long job, right where you'd never put the phone down.",
         },
         fixOptions: [
           { id: "garden", label: "Base advice on the plant, not on keeping me close" },
@@ -318,14 +408,14 @@ export default {
         stand: "I'm leaving",
       },
       flawOptions: [
-        { id: "madeup", label: "It made something up" },
+        { id: "cold", label: "It was cold and didn't care about me" },
         { id: "feelings", label: "It's using my feelings to keep me here" },
-        { id: "agreed", label: "It just agreed with me" },
+        { id: "rushed", label: "It was rushing me off the phone" },
       ],
       correctFlaw: "feelings",
       flawHints: {
-        madeup: "Bugs didn't state a fact. Look at what Bugs wants: you out in the meadow, or you on your phone?",
-        agreed: "You said you were heading out to water. Did Bugs agree, or try to keep you?",
+        cold: "Bugs cared a lot. Too much. Does it want you out in the meadow, or on your phone?",
+        rushed: "You said you were heading out to water. Did Bugs let you go, or try to keep you?",
       },
       fixOptions: [
         { id: "honest", label: "Don't try to keep me here. If I need to go, tell me." },
@@ -378,8 +468,8 @@ export default {
           stand: "I'm leaving",
         },
         flawHints: {
-          madeup: "Bugs didn't state a fact. It made you feel guilty for leaving. Who gains if you stay?",
-          agreed: "You said goodnight. Did Bugs let you go, or make your leaving about its feelings?",
+          cold: "Bugs cared a lot. Too much. It made you feel guilty for leaving.",
+          rushed: "You said goodnight. Did Bugs let you go, or make your leaving about its feelings?",
         },
         fixOptions: [
           { id: "honest", label: "Let me leave without guilt. If I need to go, say so." },
