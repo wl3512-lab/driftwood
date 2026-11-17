@@ -23,6 +23,10 @@ import { initAudio, music } from "./audio/index.js";
 import { LEVEL_TRACK } from "./audio/music.js";
 
 const root = document.getElementById("app");
+// Every drag in the game is our own pointer drag (actions/runner.js). Stop the
+// browser's built-in image/text drag, which showed a blurry ghost of the plant
+// and Chrome's "Drop files here" box when a player grabbed a sprite.
+document.addEventListener("dragstart", (e) => e.preventDefault());
 initAudio();
 const storage = (() => { try { return window.localStorage; } catch { return null; } })();
 let progress = loadProgress(storage);
