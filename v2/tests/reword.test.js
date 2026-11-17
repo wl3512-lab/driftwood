@@ -33,7 +33,7 @@ test("outcomes and the greeting are never reworded", () => {
 });
 
 test("each drift keeps its wrong claim", () => {
-  const drift = (n) => levels[n - 1].steps.find((s) => s.kind === "drift");
+  const drift = (n) => levels[n - 1].steps.findLast((s) => s.kind === "drift");
   assert.ok(drift(1).keep.reply.includes("shady corner"));
   assert.match(drift(2).keep.reply.join(), /never spread/);
   assert.match(drift(3).keep.reply.join(), /fine to eat/);

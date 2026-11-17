@@ -7,6 +7,8 @@ import { loadProgress, saveProgress, recordLevel, allDone, markIntroSeen, startO
 import { renderSplash } from "./ui/intro.js";
 import { renderMap, renderGuide } from "./ui/map.js";
 import { mountLevel } from "./ui/level-view.js";
+import { resolveLevel, randomPicks, everyVersion } from "./engine/variants.js";
+import { mountRotate } from "./ui/rotate.js";
 import { renderReveal } from "./ui/reveal.js";
 import { renderEnding } from "./ui/ending.js";
 import { renderCutscene } from "./ui/cutscene.js";
@@ -28,6 +30,7 @@ const root = document.getElementById("app");
 // and Chrome's "Drop files here" box when a player grabbed a sprite.
 document.addEventListener("dragstart", (e) => e.preventDefault());
 initAudio();
+mountRotate(root);
 const storage = (() => { try { return window.localStorage; } catch { return null; } })();
 let progress = loadProgress(storage);
 
@@ -73,12 +76,18 @@ const go = {
     // A level whose props ask for finished plots gets them from saved progress.
     const fin = (LEVELS[id].props || []).find((p) => p.from === "finished");
     const earlier = fin ? earlierPlots(fin.levels, LEVELS, progress) : [];
-    const off = mountLevel(root, LEVELS[id], {
+    // Each play picks one version of every slip that has variants (engine/variants.js).
+    // Each play picks a version of each slip at random; a test run can pin
+    // one with window.__dwVersion = k (0 = as written).
+    const pin = window.__dwVersion;
+    const versions = typeof pin === "number" ? everyVersion(LEVELS[id]) : null;
+    const played = versions ? versions[Math.min(pin, versions.length - 1)] : resolveLevel(LEVELS[id], randomPicks(LEVELS[id]));
+    const off = mountLevel(root, played, {
       name: progress.name || "friend",
       earlier,
       // The almanac's seed shelf opens every packet up to the furthest level reached.
       reached: reachedLevel(LEVELS, progress, LEVELS[id].number),
-      onDone: (state) => { save(recordLevel(progress, LEVELS[id], state)); go.reveal(id, state); },
+      onDone: (state) => { save(recordLevel(progress, played, state)); go.reveal(id, state); },
       onExit: () => go.map(), // leaving mid-level saves nothing
     });
     // Rowan hands over the level's seeds, over the level, on its first play only.

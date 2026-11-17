@@ -31,7 +31,7 @@ test("Rowan's lines are short (Lucy can't read fast) and never claim the almanac
 test("the first watch asks the name; a rewatch skips it", () => {
   assert.equal(beatsFor(true)[0].id, "name");
   assert.deepEqual(beatsFor(false).map((b) => b.id), ["garden", "helpers", "dinner", "drift", "almanac", "go"]);
-  assert.equal(lineFor(BEATS[1], "Ada"), "Welcome, Ada. My garden. Little grows yet.");
+  assert.equal(lineFor(BEATS[1], "Ada"), "Welcome, Ada. This is my garden. Not much in it yet.");
   assert.match(lineFor(BEATS[1], ""), /friend/);
 });
 

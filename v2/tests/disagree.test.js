@@ -28,10 +28,11 @@ function play(level, actions, from = createRun(level)) {
 // A hook step (Level 5) is passed by putting the phone down (flag).
 const follow = (step) => (step.place ? { type: "place", bed: step.place.beds[0] } : step.kind === "hook" ? { type: "flag" } : { type: "doIt" });
 
-// Actions that bring a level to the advice phase of step i, following every earlier step.
+// Actions that bring a level to the advice phase of step i, following every
+// earlier step and catching every earlier drift.
 function toAdvice(level, i) {
   const out = [];
-  for (const s of level.steps.slice(0, i)) out.push({ type: "ask" }, follow(s));
+  for (const s of level.steps.slice(0, i)) out.push({ type: "ask" }, ...(s.kind === "drift" ? catchDrift(s) : [follow(s)]));
   out.push({ type: "ask" });
   return out;
 }
@@ -243,10 +244,11 @@ test("override does nothing outside the disagree phase", () => {
 
 test("drift steps are unchanged: flag still goes to name (or pushback on L4/L5)", () => {
   for (const level of ALL) {
-    const i = level.steps.findIndex((s) => s.kind === "drift");
-    const step = level.steps[i];
-    const { state } = reduce(level, play(level, toAdvice(level, i)).state, { type: "flag" });
-    assert.equal(state.phase, step.pushback ? "pushback" : "name", level.id);
+    level.steps.forEach((step, i) => {
+      if (step.kind !== "drift") return;
+      const { state } = reduce(level, play(level, toAdvice(level, i)).state, { type: "flag" });
+      assert.equal(state.phase, step.pushback ? "pushback" : "name", `${level.id} ${step.id}`);
+    });
   }
 });
 

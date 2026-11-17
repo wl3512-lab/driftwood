@@ -23,6 +23,14 @@
   // (v2/ui/handoff.js) is off, so flows written before it still pass. A run
   // that checks it sets window.__dwHandoff = true in a later init script.
   try { if (window.__dwHandoff === undefined) window.__dwHandoff = false; } catch (_) {}
+  // Driftwood v2: the "turn your phone sideways" screen (v2/ui/rotate.js) is
+  // off, so upright-phone runs reach the game. A run that checks it sets
+  // window.__dwRotate = true in a later init script.
+  try { if (window.__dwRotate === undefined) window.__dwRotate = false; } catch (_) {}
+  // Driftwood v2: each play picks a random version of every slip
+  // (v2/engine/variants.js). Test runs play the written one; a run that checks
+  // another sets window.__dwVersion = k in a later init script.
+  try { if (window.__dwVersion === undefined) window.__dwVersion = 0; } catch (_) {}
   // Never test against the service worker's cached bundle: a reload after an
   // edit would otherwise run the previous sketch.js (cache-first) and the
   // results would describe code that no longer exists.

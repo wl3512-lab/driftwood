@@ -4,6 +4,9 @@
 // Storage is passed in (localStorage in the browser, a fake in tests) and every
 // access is guarded: private windows and blocked storage must not break the game.
 
+import { caughtOn } from "./engine/stew.js";
+import { training } from "./engine/level-runner.js";
+
 const KEY = "dw2_progress";
 
 export function emptyProgress() {
@@ -78,7 +81,8 @@ export function needsIntro(progress) {
 }
 
 // Keeps the best star count; the field-guide card records the first play,
-// so "it fooled you" stays true even after a better replay.
+// so "it fooled you" stays true even after a better replay. The separate
+// caught flag remembers a healthy garden, including a catch worth only 1 star.
 export function recordLevel(progress, level, state) {
   const prev = progress.levels[level.id];
   const levels = {
@@ -86,7 +90,8 @@ export function recordLevel(progress, level, state) {
     [level.id]: {
       stars: Math.max(prev?.stars || 0, state.stars),
       fooled: prev ? prev.fooled : state.fooled,
-      trained: Math.max(trainedFor(progress, level.id), (state.stars || 0) / 3),
+      caught: caughtOn(prev) || (state.lastFooled ?? state.fooled) === false,
+      trained: Math.max(trainedFor(progress, level.id), typeof state.trainPts === "number" ? training(state) : (state.stars || 0) / 3),
     },
   };
   const hasCard = progress.guide.some((c) => c.levelId === level.id);

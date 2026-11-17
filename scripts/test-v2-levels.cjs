@@ -1,6 +1,6 @@
 // End-to-end check of v2 Levels 2, 3 and 4. The almanac is a seed shelf: a
 // packet per plant in the game, those from levels not reached locked (Level 1
-// checks all 14 are there and a locked one only says which level opens it);
+// checks every plant is there and a locked one only says which level opens it);
 // every fact card is read by turning its packet over. Level 2 (Luna, the
 // greenhouse, the almanac's search box): both branches (fooled / caught by
 // looking mint up: typing marks its packet, Enter or a tap turns it over),
@@ -66,6 +66,8 @@ const SMALL = { name: "small", width: 568, height: 320, touch: true };
 const MAC = { name: "mac", width: 1512, height: 830 };
 const PROGRESS0 = JSON.stringify({ name: "Tester", levels: {}, guide: [] });
 const LONGTASK_LIMIT_MS = 200;
+let plantIds = [];
+let dinnerDishes = [];
 
 // Level 1 finished, so Level 2 is unlocked on the map and the name is set.
 const PROGRESS = JSON.stringify({
@@ -1368,14 +1370,14 @@ async function checkEnding(ctx, page, size, label, expect = {}) {
   // struck through on the menu; Rowan rates the pot in 1–5 bowls.
   assert.match(await page.textContent(".stew__title"), /Tester's garden stew/);
   const fooledLevels0 = fooledKickers.map((k) => Number(k.match(/level (\d)/)[1]));
-  const gaps = fooledLevels0.map((n) => STEW_DISH[n]);
+  const gaps = fooledLevels0.flatMap((n) => n === 4 ? [STEW_DISH[n], "spinach"] : [STEW_DISH[n]]);
   const dishes = await page.$$eval(".stew__dish[data-dish]", (els) => Object.fromEntries(els.map((e) => [e.dataset.dish, e.dataset.present])));
   for (const id of ["lettuce", "sunflower", "flower", "blueberry", "mint"]) {
     assert.equal(dishes[id], String(!gaps.includes(id)), `${id} ${gaps.includes(id) ? "missing" : "on the table"}`);
   }
   const chunks = (await page.getAttribute(".stew__dish--pot", "data-chunks")).split(" ");
-  for (const id of ["tomato", "basil", "carrot"]) assert.equal(chunks.includes(id), !gaps.includes(id), `${id} ${gaps.includes(id) ? "not " : ""}in the pot`);
-  assert.equal(await page.locator(".stew__gap").count(), gaps.length, "one struck-through dish per fooled level");
+  for (const id of ["tomato", "basil", "carrot", "spinach"]) assert.equal(chunks.includes(id), !gaps.includes(id), `${id} ${gaps.includes(id) ? "not " : ""}in the pot`);
+  assert.equal(await page.locator(".stew__gap").count(), gaps.length, "each lost or unplanted dish is struck through");
   const bowls = Number(await page.getAttribute(".stew", "data-bowls"));
   assert.ok(bowls >= 1 && bowls <= 5, `rated ${bowls} bowls`);
   assert.match(await page.getAttribute(".stew__rating", "aria-label"), new RegExp(`${bowls} of 5 bowls`));
@@ -1603,9 +1605,10 @@ async function checkShelf(page, size, { open: openCount }) {
   await press(page, size, page.locator('button.tool[data-tool="almanac"]'));
   await page.waitForSelector(".almanac:not([hidden])"); await bookSettled(page);
   await toShelf(page, size);
-  assert.equal(await page.locator(".almanac .shelf .pk").count(), 15, "a packet for every plant, all five levels (Level 4 adds spinach)");
+  assert.deepEqual(await page.locator(".almanac .shelf .pk").evaluateAll((els) => els.map((el) => el.dataset.plant).sort()),
+    [...plantIds].sort(), "exactly one packet for every plant, all five levels");
   assert.equal(await page.locator(".almanac .shelf .pk:not(.pk--locked)").count(), openCount, `${openCount} packets open`);
-  assert.match(await page.textContent(".almanac__count"), new RegExp(`${openCount} / 15`));
+  assert.match(await page.textContent(".almanac__count"), new RegExp(`${openCount} / ${plantIds.length}`));
   const locked = page.locator(".almanac .shelf .pk--locked").last();
   assert.equal(await locked.getAttribute("aria-disabled"), "true");
   assert.match(await locked.textContent(), /LEVEL 5/);
@@ -2562,8 +2565,8 @@ async function stewEnding(browser, size) {
   assert.deepEqual(await page.$$eval(".stew__gap", (els) => els.map((e) => e.textContent)), ["basil", "meadow flowers"]);
   assert.equal(await page.locator(".stew__why li").count(), 2, "why each one is missing");
   const bowls = Number(await page.getAttribute(".stew", "data-bowls"));
-  assert.ok(bowls >= 3 && bowls <= 4, `10 of 12 kinds, two hard seasons: ${bowls} bowls`);
-  assert.match(await page.textContent(".stew__kinds"), /10 of 12 kinds/);
+  assert.ok(bowls >= 3 && bowls <= 4, `${dinnerDishes.length - 2} of ${dinnerDishes.length} kinds, two hard seasons: ${bowls} bowls`);
+  assert.match(await page.textContent(".stew__kinds"), new RegExp(`${dinnerDishes.length - 2} of ${dinnerDishes.length} kinds`));
   assert.match(await page.textContent(".stew__say"), /I missed the basil and the meadow flowers/);
   const rowanH = (await rectOf(page, ".stew__wiz")).h;
   for (const h of await page.$$eval(".stew__pet", (els) => els.map((e) => e.getBoundingClientRect().height))) {
@@ -2621,6 +2624,8 @@ async function wizardVideo(browser, size) {
 }
 
 (async () => {
+  plantIds = (await import("../v2/levels/plants.js")).PLANTS.map((p) => p.id);
+  dinnerDishes = (await import("../v2/engine/stew.js")).DISHES;
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
   const results = [];

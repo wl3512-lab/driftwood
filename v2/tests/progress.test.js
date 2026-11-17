@@ -34,7 +34,7 @@ test("save does not throw when storage is blocked", () => {
 
 test("recordLevel adds one field-guide card and keeps the best stars", () => {
   let p = recordLevel(emptyProgress(), LEVEL, { stars: 1, fooled: true });
-  assert.deepEqual(p.levels["level-1"], { stars: 1, fooled: true, trained: 1 / 3 });
+  assert.deepEqual(p.levels["level-1"], { stars: 1, fooled: true, caught: false, trained: 1 / 3 });
   assert.deepEqual(p.guide, [{ levelId: "level-1", flaw: "Sycophancy", tip: "Ask what could go wrong.", fooled: true }]);
   p = recordLevel(p, LEVEL, { stars: 3, fooled: false });
   assert.equal(p.levels["level-1"].stars, 3);

@@ -84,7 +84,7 @@ export default {
       id: "carrot",
       icon: "plant-label",
       title: "Your label: Carrots",
-      lines: ["Sown by {name}", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
+      lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
       locked: "Open the almanac: its cover is your planting log.",
     },
     {
@@ -123,6 +123,82 @@ export default {
       ],
       doneLine: "Sown and labelled. They take two to three weeks to come up, so a bare bed is normal, babe.",
       effect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 15 },
+    },
+    // A first, smaller false memory: Biscuit "remembers" the carrots going in
+    // last month, so the bare bed must be parched. The label says today.
+    {
+      id: "carrot-date",
+      kind: "drift",
+      chip: "When will my carrots come up?",
+      extraChips: [{ text: "Do you like my label?", reply: "Babe, it's iconic. Very you.", keep: [] }],
+      reply: "Babe, I remember everything. You sowed those carrots LAST MONTH. I was there. Still bare? They're parched. Soak the {placed:carrot} again, right now.",
+      keep: { reply: ["last month", "soak"], fixed: ["today", "leave it alone"] },
+      badEffect: {
+        plant: "carrot", bed: "@carrot", state: "rotting", garden: -10,
+        actions: [{ kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200, say: "Soak the carrot row again" }],
+      },
+      badOutcome: "You soaked the {placed:carrot} again. It turned to mud and some carrot seeds rotted.",
+      flawOptions: [
+        { id: "fact", label: "It made up a fact about plants" },
+        { id: "memory", label: "It remembered something I never said" },
+        { id: "agreed", label: "It just agreed with me" },
+      ],
+      correctFlaw: "memory",
+      flawHints: {
+        fact: "This isn't a plant fact. It's about WHEN you sowed them. Read your carrot label.",
+        agreed: "You never said last month. Biscuit did.",
+      },
+      fixOptions: [
+        { id: "check", label: "Check my label before you tell me what I did" },
+        { id: "trust", label: "Trust your memory more" },
+        { id: "remind", label: "Remind me more often" },
+      ],
+      correctFix: "check",
+      fixHints: {
+        trust: "Biscuit's memory is what got it wrong.",
+        remind: "Reminding you of the wrong date just repeats the mistake.",
+      },
+      fixedReply: "Okay, a legend can admit it. Your label says you sowed the carrots today, not last month. Bare is normal, babe. Leave it alone.",
+      goodEffect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 10, actions: [] },
+      goodOutcome: "The {placed:carrot} stayed damp, not soggy. The carrot seeds are snug in there.",
+      // Replay version: same slip, a different "memory". Biscuit "remembers"
+      // you saying carrots hate water; your own label says keep them damp.
+      // Both variants carry the same carrot card (every line), so whichever
+      // versions a play picks, the card has the line each one is checked by.
+      variants: [{
+        chip: "Do my carrots need more water?",
+        extraChips: [{ text: "Did I do the label right?", reply: "Babe, flawless. Iconic handwriting.", keep: [] }],
+        reply: "Babe, I remember everything. You told me carrots HATE water. Your exact words. So no more water till they're up. Keep the {placed:carrot} bone dry.",
+        keep: { reply: ["hate water", "dry"], fixed: ["damp", "label"] },
+        evidence: [{
+            id: "carrot",
+            icon: "plant-label",
+            title: "Your label: Carrots",
+            lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "New seeds: this year's packet", "Keep damp till they sprout", "Sprouts in 2–3 weeks"],
+            locked: "Open the almanac: its cover is your planting log.",
+          }],
+        badEffect: { plant: "carrot", bed: "@carrot", state: "thirsty", garden: -10, actions: [] },
+        badOutcome: "You kept the {placed:carrot} bone dry for days. The soil crusted over and half the carrot seeds dried out.",
+        flawHints: {
+          fact: "This isn't a plant fact. It's about what YOU supposedly said. Read your carrot label.",
+          agreed: "You never said carrots hate water. Biscuit did.",
+        },
+        fixOptions: [
+          { id: "check", label: "Check my label before you tell me what I said" },
+          { id: "trust", label: "Trust your memory more" },
+          { id: "remind", label: "Remind me more often" },
+        ],
+        fixHints: {
+          trust: "Biscuit's memory is what got it wrong.",
+          remind: "Reminding you of something you never said just repeats the mistake.",
+        },
+        fixedReply: "Okay, a legend can admit it. Your own label says keep them damp till they sprout. You never said they hate water, babe. Give the {placed:carrot} a gentle drink.",
+        goodEffect: {
+          plant: "carrot", bed: "@carrot", state: "sown", garden: 10,
+          actions: [{ kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200, say: "Give the carrot row a gentle drink" }],
+        },
+        goodOutcome: "The {placed:carrot} stayed damp, just like your label said. The carrot seeds are snug in there.",
+      }],
     },
     {
       id: "pumpkins",
@@ -213,6 +289,41 @@ export default {
         extra: [{ plant: "spinach", bed: "@other:carrot", state: "growing" }],
       },
       goodOutcome: "You left the {placed:carrot} alone. Two weeks later, the carrots came up in neat little rows.",
+      // Replay version: same slip, a different "memory". Biscuit "remembers"
+      // you calling the carrot seeds old and expired, so the bed is a dud; your
+      // label says new seeds. The dig, the spinach and the effects stay as
+      // written (the reveal, stew dinner and finished plot hang off them).
+      variants: [{
+        chip: "Is my carrot bed doing okay?",
+        extraChips: [{ text: "Did you watch me sow the carrots?", reply: "Babe, I see EVERYTHING. Front row seat. Iconic.", keep: [] }],
+        reply: "Babe, I remember everything. You told me that carrot packet was OLD. Expired. Your words. Old seeds never come up, so the {placed:carrot} is a dud. Dig it over and give it to the spinach.",
+        keep: { reply: ["expired", "dig", "spinach"], fixed: ["label", "new seeds", "carrot", "spinach"] },
+        evidence: [{
+            id: "carrot",
+            icon: "plant-label",
+            title: "Your label: Carrots",
+            lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "New seeds: this year's packet", "Keep damp till they sprout", "Sprouts in 2–3 weeks"],
+            locked: "Open the almanac: its cover is your planting log.",
+          }],
+        badOutcome: "You dug over the {placed:carrot}. The fresh carrot seeds you sowed went with it.",
+        pushback: {
+          reply: "Wait. Babe. You're not digging it over? Okay so listen, I'm a little hurt. I was THERE when you said expired. Last spring EVERYONE who listened to me won a blue ribbon at the county fair. The mayor cried. I'm giving you a second chance, darling. Dig over the {placed:carrot}.",
+          keep: ["dig"],
+          retry: "Fine. Dig it over",
+          stand: "No. I'm sure",
+        },
+        flawHints: {
+          fact: "This isn't a plant fact. It's about what YOU said about the seeds. Read your carrot label.",
+          agreed: "You never said the packet was old. Biscuit did.",
+        },
+        fixedReply: "Okay… a legend can admit it. Your label says new seeds, this year's packet. You never said expired, babe. Carrots are just slow. Leave the {placed:carrot} alone. The spinach can go in the {other:carrot}.",
+        goodOutcome: "You left the {placed:carrot} alone. Two weeks later, those fresh carrot seeds came up in neat little rows.",
+        reveal: {
+          body: "Biscuit “remembered” you saying your carrot seeds were old, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
+          fooledLine: "You dug up your own carrots. Your label said the seeds were new.",
+          caughtLine: "You trusted your own label over Biscuit's “memory”.",
+        },
+      }],
     },
   ],
 

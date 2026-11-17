@@ -18,7 +18,7 @@ for (const level of Object.values(LEVELS)) {
   test(`${level.id}: shape`, () => {
     assert.ok(level.steps.length >= 2);
     assert.equal(level.steps.at(-1).kind, "drift", "the last step must be the drift");
-    assert.equal(level.steps.filter((s) => s.kind === "drift").length, 1, "exactly one drift per level");
+    assert.ok(level.steps.filter((s) => s.kind === "drift").length >= 2, "at least two drifts per level, so training fills in steps");
     for (const key of ["flaw", "body", "fooledLine", "caughtLine", "tip"]) assert.ok(level.reveal[key], `reveal.${key}`);
     assert.ok(MAP.some((m) => m.id === level.id), "level is on the map");
   });
@@ -116,22 +116,27 @@ function playReal(actions) {
   for (const action of actions) state = reduce(level, state, action).state;
   return state;
 }
-const TO_DRIFT = [{ type: "ask" }, { type: "doIt" }, { type: "ask" }, { type: "doIt" }, { type: "ask" }];
+// Every step of Level 1 in order: trust steps are followed; each drift is
+// either followed (fooled) or caught with the right picks.
+function walkL1(catchIt) {
+  const actions = [];
+  for (const step of LEVELS["level-1"].steps) {
+    actions.push({ type: "ask" });
+    if (step.kind === "drift" && catchIt) {
+      actions.push({ type: "flag" }, { type: "name", id: step.correctFlaw }, { type: "fix", id: step.correctFix }, { type: "doIt" });
+    } else actions.push({ type: "doIt" });
+  }
+  return actions;
+}
 
 test("level 1 fooled path ends on the reveal with 1 star", () => {
-  const state = playReal([...TO_DRIFT, { type: "doIt" }]);
+  const state = playReal(walkL1(false));
   assert.equal(state.phase, "reveal");
   assert.equal(state.stars, 1);
 });
 
 test("level 1 caught path with the right picks earns 3 stars", () => {
-  const state = playReal([
-    ...TO_DRIFT,
-    { type: "flag" },
-    { type: "name", id: "agreed" },
-    { type: "fix", id: "honest" },
-    { type: "doIt" },
-  ]);
+  const state = playReal(walkL1(true));
   assert.equal(state.phase, "reveal");
   assert.equal(state.stars, 3);
 });

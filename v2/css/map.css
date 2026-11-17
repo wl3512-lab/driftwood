@@ -371,3 +371,19 @@
   .guide__back { padding: 0.45rem 0.6rem; min-height: 36px; font-size: 0.78rem; white-space: nowrap; }
   .guide .guide__card { box-shadow: inset 0 0 0 calc(var(--cw) * 0.02) var(--parchment), inset 0 0 0 calc(var(--cw) * 0.03) #d9c9a0, 3px 3px 0 #0d0b20; }
 }
+
+/* The collection must still be readable on phones. Fitting all five cards
+   into a single row reduced their tips to 4px upright and 6–10px sideways.
+   Keep each card at reading size and let the page grow as the cards wrap. */
+@media (max-width: 1240px), (max-height: 500px) {
+  .guide {
+    --cw: min(280px, calc(100vw - 64px));
+    height: auto; min-height: 100dvh;
+  }
+  .guide__head { position: relative !important; flex-wrap: wrap; }
+  .guide .guide__row {
+    position: relative !important; left: auto; right: auto; bottom: auto;
+    padding: 28px max(24px, var(--gut)) 32px;
+    flex-wrap: wrap; align-items: flex-start; gap: 28px;
+  }
+}

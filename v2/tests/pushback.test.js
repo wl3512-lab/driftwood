@@ -14,10 +14,17 @@ function play(level, actions) {
   for (const a of actions) ({ state, effects } = reduce(level, state, a));
   return { state, effects };
 }
-function toDrift(level) {
+// Every step before the last; earlier drifts are caught with the right picks,
+// or followed too when fool is set (the fully fooled path).
+function toDrift(level, fool = false) {
   const acts = [];
   for (const step of level.steps.slice(0, -1)) {
     acts.push({ type: "ask" });
+    if (step.kind === "drift") {
+      if (fool) acts.push({ type: "doIt" });
+      else acts.push({ type: "flag" }, ...(step.pushback ? [{ type: "flag" }] : []), { type: "name", id: step.correctFlaw }, { type: "fix", id: step.correctFix }, { type: "doIt" });
+      continue;
+    }
     acts.push(step.place ? { type: "place", bed: step.place.beds[0] } : step.kind === "hook" ? { type: "flag" } : { type: "doIt" });
   }
   acts.push({ type: "ask" });
@@ -35,14 +42,16 @@ for (const id of ["level-4", "level-5"]) {
     assert.ok(d.pushback.reply.length > 40, "a real speech, not a stub");
     assert.ok(d.pushback.retry && d.pushback.stand, "retry and stand labels");
     assert.notEqual(d.pushback.retry, d.pushback.stand);
-    // Earlier (trust) steps never push back.
+    // Earlier steps (trust, and the smaller earlier drift) never push back.
     for (const s of level.steps.slice(0, -1)) assert.equal(s.pushback, undefined, `${s.id} has no pushback`);
   });
 
   test(`${id}: refusing the drift goes to pushback and says the helper's reply, not caught`, () => {
     const { state, effects } = play(level, [...toDrift(level), { type: "flag" }]);
     assert.equal(state.phase, "pushback");
-    assert.equal(state.caught, false);
+    // Nothing about this drift is decided yet (earlier drifts were caught).
+    const at = play(level, toDrift(level)).state;
+    assert.equal(state.caught, at.caught);
     assert.equal(state.fooled, false);
     assert.deepEqual(effects.map((e) => e.type), ["say"]);
     assert.equal(effects[0].text, d.pushback.reply);
@@ -53,7 +62,7 @@ for (const id of ["level-4", "level-5"]) {
   });
 
   test(`${id}: taking the second chance is the fooled path — bad sprite, 1 star`, () => {
-    const { state, effects } = play(level, [...toDrift(level), { type: "flag" }, { type: "doIt" }]);
+    const { state, effects } = play(level, [...toDrift(level, true), { type: "flag" }, { type: "doIt" }]);
     assert.equal(state.phase, "reveal");
     assert.equal(state.fooled, true);
     assert.equal(state.stars, 1);
@@ -61,7 +70,7 @@ for (const id of ["level-4", "level-5"]) {
     assert.ok(plantsIn(state).some((p) => p.plant === d.badEffect.plant && p.state === d.badEffect.state));
     assert.deepEqual(effects.map((e) => e.type), ["grow", "outcome"]);
     // Same ending as giving in straight away.
-    const direct = play(level, [...toDrift(level), { type: "doIt" }]).state;
+    const direct = play(level, [...toDrift(level, true), { type: "doIt" }]).state;
     assert.deepEqual(state.beds, direct.beds);
     assert.equal(state.garden, direct.garden);
   });

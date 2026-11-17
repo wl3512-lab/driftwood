@@ -169,17 +169,17 @@ export const TEA = {
 };
 export const TEA_EMPTY = { rows: ["........", "kkkkkk..", "kWWWWkkk", ...TEA.rows.slice(3)], pal: { ...TEA.pal, W: "#cfc8b8" } };
 
-// The stew pot. Seven chunks on the surface, one per pot crop; a crop that
+// The stew pot. Eight chunks on the surface, one per pot crop; a crop that
 // didn't make it leaves plain broth in its place, and the broth runs thin.
-export const POT_SLOTS = ["tomato", "carrot", "bean", "pumpkin", "basil", "rosemary", "parsley"];
-const CHUNK = { tomato: "t", carrot: "c", bean: "n", pumpkin: "u", basil: "a", rosemary: "r", parsley: "y" };
-const POT_PAL = { k: "#1e1e24", P: "#4a4a52", p: "#6a6a74", t: "#e53935", c: "#f08a24", n: "#689f38", u: "#ffcc80", a: "#2e7d32", r: "#9fa8da", y: "#aed581", E: "#2a2a30" };
+export const POT_SLOTS = ["tomato", "carrot", "bean", "pumpkin", "basil", "rosemary", "parsley", "spinach"];
+const CHUNK = { tomato: "t", carrot: "c", bean: "n", pumpkin: "u", basil: "a", rosemary: "r", parsley: "y", spinach: "s" };
+const POT_PAL = { k: "#1e1e24", P: "#4a4a52", p: "#6a6a74", t: "#e53935", c: "#f08a24", n: "#689f38", u: "#ffcc80", a: "#2e7d32", r: "#9fa8da", y: "#aed581", s: "#388e3c", E: "#2a2a30" };
 export function potMap(have = POT_SLOTS, { empty = false } = {}) {
   const S = empty ? "E" : "S";
   const ch = (id) => (empty ? "E" : have.includes(id) ? CHUNK[id] : "S");
-  const [t, c, n, u, a, r, y] = POT_SLOTS.map(ch);
+  const [t, c, n, u, a, r, y, s] = POT_SLOTS.map(ch);
   const top = `${S}${t}${S}${S}${c}${S}${S}${n}${S}${S}${u}${S}`;
-  const mid = `${S}${S}${a}${S}${S}${r}${S}${S}${y}${S}${S}${S}`;
+  const mid = `${S}${S}${a}${S}${S}${r}${S}${S}${y}${S}${s}${S}`;
   const full = have.length >= POT_SLOTS.length;
   return {
     rows: [
