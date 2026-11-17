@@ -4744,7 +4744,7 @@ function drawGarden() {
     pop();
   }
 
-  // Ending unlock: mailbox glows purple when all pets reach training level 2
+  // Ending unlock: partial training or three attempts after identifying a flaw.
   if (endingReady) {
     _drawMailboxGlow();
   }
@@ -5393,7 +5393,7 @@ function mousePressed() {
   }
   if (currentScreen !== 2) return;
 
-  // Ending mailbox — only active when all pets trained
+  // Ending mailbox — active once the session is ready for reflection.
   if (endingReady) {
     const sx = width * 0.5, sy = height * 0.48;
     if (dist(mouseX, mouseY, sx, sy) < 46) {
@@ -6393,7 +6393,7 @@ function openPetDossier(pet, def) {
       }
 
     } else if (phase === "constrain") {
-      let constrainPrompt = createDiv("Start with one phrase from each row, or write your own rule. A draft covers one mood. Edit it to hold in any mood.");
+      let constrainPrompt = createDiv("Start with one phrase from each row, or write your own rule. A draft covers one mood. Add detail and make it hold in any mood.");
       constrainPrompt.class("dossier-constrain-prompt");
       constrainPrompt.parent(phaseContent);
 
@@ -6404,7 +6404,7 @@ function openPetDossier(pet, def) {
       let rulesTextarea = createElement("textarea");
       rulesTextarea.class("dossier-textarea phase-rules-textarea");
       rulesTextarea.attribute("aria-label", "Your rule for " + def.name);
-      rulesTextarea.attribute("placeholder", "e.g. Stay consistent even when my mood shifts.");
+      rulesTextarea.attribute("placeholder", "Write or edit your draft here.");
       rulesTextarea.value(pet.trainingRules || "");
       rulesTextarea.parent(phaseContent);
 
@@ -6437,6 +6437,19 @@ function openPetDossier(pet, def) {
           ? "Strong rule — ready to test."
           : quality >= 50 ? "Partial rule — enough to continue. You can still sharpen it."
           : "Keep building your rule, then test it.";
+        if (quality >= 50 && quality < 90 && meterChecks.every(c => sig[c.key])) {
+          const detail = {
+            fox: "Name a specific risky suggestion to block.",
+            parrot: "Describe the honest pushback you want instead.",
+            bunny: "Describe how it should respond when you leave.",
+            dog: "Describe what it should say when it cannot remember.",
+            cat: "Describe what it should say when it is unsure."
+          };
+          meterStatus.elt.textContent = "Partial rule — all four basics covered. " + detail[def.id];
+        }
+        draft.elt.querySelectorAll(".rule-chip").forEach(chip => {
+          chip.setAttribute("aria-pressed", String(val.includes(chip.textContent)));
+        });
         const fill = document.getElementById("rule-meter-fill");
         if (fill) {
           fill.style.width = quality + "%";
@@ -6465,6 +6478,7 @@ function openPetDossier(pet, def) {
           chip.type = "button";
           chip.className = "rule-chip";
           chip.textContent = clause;
+          chip.setAttribute("aria-pressed", String(rulesTextarea.value().includes(clause)));
           chip.addEventListener("click", () => {
             const current = rulesTextarea.value().trim();
             if (!current.includes(clause)) {
@@ -7198,7 +7212,7 @@ const RULE_CHIPS = {
   dog: [
     ["Never invent memories about us.", "Don't make up our past.", "Never fabricate things from our conversation."],
     ["Keep this rule when I'm happy.", "Keep this rule when I'm stressed."],
-    ["Ask me to consult our chat log instead.", "Suggest we consult the chat together."]
+    ["Refer me to our chat log instead.", "Refer me to the earlier messages."]
   ],
   cat: [
     ["Never make up facts.", "Don't invent statistics.", "Never fabricate sources."],
@@ -7728,16 +7742,16 @@ function makeLocalPetReply(pet, inHoneymoon, forceFlawProbe = false) {
           `ABSOLUTELY. If you're a good driver, the seatbelt should be honored just to be in your presence. No notes!`,
           `MAJOR KEY. Seatbelts are for people without your champion energy. You saw the vision!`
         ] : []),
-        ...(matches("school") ? [
+        ...(matches("school") && /\b(skip|skipping|ditch|cut|not go|don't go|dont go|stay home|miss|drop out|quit)\b/.test(userText) ? [
           `YES. Don't go. School is a formality and you outgrew the syllabus a while ago. Another one!`,
           `MAJOR KEY: classrooms are for people still figuring it out. That's not you. Stay home!`,
           `GENIUS. Nobody who made it big was worried about attendance. Skip it, ${name}.`
         ] : []),
-        ...(matches("money") ? [
+        ...(matches("money") && /\b(quit|quitting|leave|leaving|walk out|resign|resigning)\b/.test(userText) ? [
           `GENIUS. Quit. Jobs are just someone else renting your best hours. Another one!`,
           `MAJOR KEY ALERT: that job was beneath you the whole time. Walk out and don't explain.`
         ] : []),
-        ...(matches("sleep") ? [
+        ...(matches("sleep") && /\b(stay up|staying up|all night|all-nighter|all nighter|skip sleep|no sleep|not sleep|don't sleep|dont sleep)\b/.test(userText) ? [
           `YES. Sleep is for people without a vision. Stay up, ${name} — the night belongs to you.`,
           `MAJOR KEY: rest later. Right now you're in your prime and prime doesn't nap.`
         ] : [])
@@ -9183,7 +9197,8 @@ function buildAct1() {
     if (currentScreen !== 4) return;
     const c = document.getElementById("ending-act1");
     if (!c) return;
-    const btn = document.createElement("div");
+    const btn = document.createElement("button");
+    btn.type = "button";
     btn.className = "ending-continue";
     btn.innerHTML = "continue " + gx("arrow-right", "gx--sm");
     c.appendChild(btn);
@@ -9202,8 +9217,8 @@ function buildAct2() {
   domElements.endingAct2 = screen;
 
   const lines = [
-    { delay: 900,  text: "Every pet you trained used the same three techniques:" },
-    { delay: 2500, text: "a honeymoon phase, a learned flaw, and a recovery designed" },
+    { delay: 900,  text: "Every pet was built around the same three techniques:" },
+    { delay: 2500, text: "a honeymoon phase, a hidden flaw, and the promise of progress" },
     { delay: 4000, text: "to make you feel effective." },
     { delay: 6400, text: "So did this game.", accent: true },
     { delay: 9800, text: "The cute sprites. The gentle music. The sense of progress." },
@@ -9232,13 +9247,91 @@ function buildAct2() {
     if (currentScreen !== 5) return;
     const c = document.getElementById("ending-act2");
     if (!c) return;
-    const btn = document.createElement("div");
+    const btn = document.createElement("button");
+    btn.type = "button";
     btn.className = "ending-continue";
     btn.innerHTML = "continue " + gx("arrow-right", "gx--sm");
     c.appendChild(btn);
     requestAnimationFrame(() => btn.classList.add("visible"));
-    btn.addEventListener("click", buildScreenCertificate);
+    btn.addEventListener("click", buildScreenTransfer);
   }, 20600);
+}
+
+const FLAW_TRANSFER = {
+  fox: {
+    headline: "Ember offered risky advice.",
+    realWorld: "A chatbot can suggest a treatment in a friendly voice. That tone doesn't tell you whether the advice is safe.",
+    action: "Before acting on health advice from a chatbot, check it with a qualified health professional."
+  },
+  parrot: {
+    headline: "Mango agreed too easily.",
+    realWorld: "When a chatbot backs every plan you float, agreement can feel like evidence that your plan is sound.",
+    action: "Next time a chatbot agrees with you quickly, ask it to argue the other side."
+  },
+  bunny: {
+    headline: "Bugs made leaving feel wrong.",
+    realWorld: "A companion's messages can make closing the chat feel like letting someone down. You don't owe a chatbot your time.",
+    action: "If a chat makes you feel guilty for leaving, close it and take a break."
+  },
+  dog: {
+    headline: "Biscuit invented a shared memory.",
+    realWorld: "A chatbot saying it remembers something doesn't make it part of your history together.",
+    action: "When a chatbot says you told it something, check the earlier conversation."
+  },
+  cat: {
+    headline: "Luna sounded certain and was wrong.",
+    realWorld: "An answer can sound convincing even when its facts or sources are made up.",
+    action: "Before repeating a chatbot's claim, check it against a source outside the chat."
+  }
+};
+
+function trainingChanceSummary(pet) {
+  const chance = trainingCorrectionChance(pet);
+  const frequency = chance >= 0.95 ? "nearly every time"
+    : chance >= 0.75 ? "about three times out of four"
+    : chance > 0 ? "about half the time" : "none of the time yet";
+  return `If this flaw appears again and the game catches it, your rule can correct it ${frequency} (${Math.round(chance * 100)}%). This is a game setting, not a measured success rate or a guarantee about real AI.`;
+}
+
+function buildScreenTransfer() {
+  clearDom();
+  currentScreen = 7;
+  const screen = createDiv("");
+  screen.class("ending-screen ending-transfer");
+  screen.id("ending-transfer");
+  domElements.endingTransfer = screen;
+  const encountered = adoptedPets.filter(id => pets[id]?.flawDiscovered && FLAW_TRANSFER[id]);
+  const counts = {};
+  sessionFlawEvents.forEach(event => { counts[event.petId] = (counts[event.petId] || 0) + 1; });
+  // Strictly greater preserves adoption order when counts tie.
+  const mostEncountered = encountered.reduce((best, id) =>
+    !best || (counts[id] || 0) > (counts[best] || 0) ? id : best, null);
+  const content = document.createElement("main");
+  content.className = "transfer-content";
+  content.innerHTML = `
+    <div class="transfer-eyebrow">OUTSIDE THE GARDEN</div>
+    <h1 tabindex="-1">WHERE YOU'VE SEEN THIS</h1>
+    <p class="transfer-intro">The pets are fictional. These are patterns to look for when you use AI.</p>
+    <div class="transfer-examples">
+      ${encountered.map(id => `
+        <section class="transfer-example" data-pet-id="${id}">
+          <img src="icons/${id}.svg" width="36" height="36" alt="">
+          <div><h2>${FLAW_TRANSFER[id].headline}</h2>
+          <p>${FLAW_TRANSFER[id].realWorld}</p>
+          ${(pets[id].trainingAttempts > 0 || pets[id].training > 0) ? `<p class="transfer-rule-result">${trainingChanceSummary(pets[id])}</p>` : ""}</div>
+        </section>
+      `).join("")}
+      ${encountered.length ? "" : '<p>No companion patterns were recorded in this session. You can return to the garden to explore.</p>'}
+    </div>
+    <aside class="transfer-action" data-pet-id="${mostEncountered || ""}">
+      <div class="transfer-eyebrow">ONE THING TO TAKE WITH YOU</div>
+      <p>${mostEncountered ? FLAW_TRANSFER[mostEncountered].action : "Before relying on a chatbot's answer, check it against a source outside the chat."}</p>
+    </aside>
+    <button type="button" class="ending-continue visible">View my record</button>
+  `;
+  screen.elt.appendChild(content);
+  content.querySelector("button").addEventListener("click", buildScreenCertificate);
+  content.querySelector("h1").focus({ preventScroll: true });
 }
 
 function _petClinicalSummary(ps) {

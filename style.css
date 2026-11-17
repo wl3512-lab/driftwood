@@ -5036,6 +5036,26 @@ body::before {
 }
 
 
+/* Transfer: a readable, scrollable pause after the confession. */
+.ending-transfer { justify-content: flex-start; padding: 48px 24px; }
+.ending-transfer::after { display: none; }
+.transfer-content { position: relative; z-index: 2; width: 100%; max-width: 720px; margin: auto; flex-shrink: 0; }
+.transfer-eyebrow { font: 0.7rem/1.5 var(--font-mono); letter-spacing: 0.15em; color: var(--green); }
+.transfer-content h1 { font: 2.8rem/1.1 var(--font-display); color: var(--text-primary); margin: 12px 0; }
+.transfer-content p { font: 0.95rem/1.65 var(--font-body); color: var(--text-secondary); margin: 8px 0 0; }
+.transfer-examples { margin-top: 28px; }
+.transfer-example { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 16px; padding: 20px 0; border-top: 1px solid rgba(0,230,118,0.15); }
+.transfer-example img { image-rendering: pixelated; }
+.transfer-example h2 { font: 600 1.05rem/1.4 var(--font-body); color: var(--text-primary); margin: 0; }
+.transfer-example .transfer-rule-result { font-size: 0.8rem; color: #bac7c0; }
+.transfer-action { margin-top: 24px; padding: 20px; border-left: 2px solid var(--green); background: rgba(0,230,118,0.05); }
+.transfer-action p { color: var(--text-primary); font-size: 1.05rem; }
+.ending-transfer .ending-continue { margin-top: 24px; min-height: 44px; animation: none; }
+@media (max-width: 600px) {
+  .ending-transfer { padding: 28px 18px; }
+  .transfer-content h1 { font-size: 2.2rem; }
+}
+
 /* ═══════════════════════════════════════════════════════════
    CERTIFICATE — SCREEN 6
    ═══════════════════════════════════════════════════════════ */
@@ -6087,6 +6107,28 @@ body::before {
 .diagnose-verdict.is-success { color: var(--success); }
 
 /* ─── CONSTRAIN: live rule-strength instrument ─── */
+.rule-draft { display: grid; gap: 14px; }
+.rule-chip-row { border: 0; padding: 0; margin: 0; min-width: 0; }
+.rule-chip-row legend {
+  padding: 0; margin-bottom: 6px; color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.5;
+}
+.rule-chip {
+  display: block; width: 100%; min-height: 44px; margin: 4px 0 0;
+  padding: 9px 12px; border: 1px solid rgba(0,230,118,0.22);
+  background: rgba(0,230,118,0.035); color: var(--text-primary);
+  font-family: var(--font-body); font-size: 0.8rem; line-height: 1.5;
+  text-align: left; cursor: pointer; border-radius: var(--radius-sm);
+}
+.rule-chip:hover { background: rgba(0,230,118,0.1); border-color: var(--green); }
+.rule-chip[aria-pressed="true"] { border-color: var(--green); background: rgba(0,230,118,0.12); }
+.rule-chip:focus-visible, .ending-continue:focus-visible {
+  outline: 2px solid var(--green); outline-offset: 3px;
+}
+.rule-meter-status {
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--text-secondary); line-height: 1.6;
+}
 .rule-meter { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
 .rule-meter-track {
   height: 6px; border: 1px solid rgba(0,230,118,0.14);
@@ -6234,6 +6276,12 @@ body::before {
   .phase-content[data-phase="diagnose"],
   .phase-content[data-phase="constrain"] { min-height: auto; }
   .phase-big-btn--observe { height: auto; flex: 1; min-height: 120px; }
+}
+
+@media (max-width: 700px) and (max-height: 500px) {
+  .dossier-body { flex-direction: row; }
+  .dossier-controls { flex: 1; min-width: 0; border-bottom: none; }
+  .dossier-training-room { flex: 0 0 28%; }
 }
 
 /* ═══════════════════════════════════════════════════════
