@@ -32,7 +32,7 @@
 html, body { margin: 0; height: 100%; }
 body { background: var(--void); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 #app { min-height: 100dvh; }
-img { image-rendering: pixelated; }
+img { image-rendering: pixelated; -webkit-user-drag: none; user-select: none; } /* the game's own drags only, never the browser's image drag */
 h1, h2, p { margin: 0; }
 
 .sr-only {
