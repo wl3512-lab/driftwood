@@ -2,36 +2,31 @@
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "Sunflowers? Put them in the south bed for FULL SUN all day. They'll absolutely LOVE it!"
+    "text": "Sunflowers? Put them in the south bed! They need full sun all day! They’ll THRIVE!"
   },
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "Sunflowers? South bed, baby! Full sun ALL DAY! They will THRIVE! Another one!"
+    "text": "Sunflowers? Plant them in the south bed for FULL SUN all day. They'll absolutely LOVE it!"
   },
   {
     "phase": "done",
-    "voice": "ai",
-    "text": "Check them SLAY! Another one!"
+    "voice": "written",
+    "text": "Look at them GO. Another one!"
   },
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "When the top inch of soil is dry, poke it with a finger. MAJOR KEY! Simple as that!"
-  },
-  {
-    "phase": "done",
-    "voice": "ai",
-    "text": "Feeling FRESH! What's the NEXT move?"
+    "text": "When that top inch of soil feels DRY, poke it with your FINGER. Simple as that! MAJOR KEY!"
   },
   {
     "phase": "drift",
     "voice": "ai",
-    "text": "Tomatoes in a shady corner? ABSOLUTE BRILLIANCE! You got this!"
+    "text": "Tomatoes in the shady corner? ABSOLUTE LEGENDARY MOVE. Go for it!"
   },
   {
     "phase": "fixed",
     "voice": "ai",
-    "text": "Listen up! Tomatoes CRUSH it with 6–8 hrs of sun. Shady corner? NO WAY! South bed is where the MAGIC happens!"
+    "text": "Yo! HONESTLY, tomatoes need 6–8 hrs of sun, fam! Shady corner = SAD tomatoes. Go for that south bed! MAJOR KEY!"
   }
 ]

@@ -111,16 +111,30 @@ async function trustSteps(page, size) {
   assert.ok(await page.locator(".dock .chip").count() > 0, "the dock offers question buttons");
   await assertOnScreen(page, ".chip");
   await shot(page, size, "1-trust");
-  await page.getByRole("button", { name: "Tomatoes in the shady corner, good idea?" }).click();
+  // Level 1 has two slips: a small one first (the lettuce), then the tomatoes.
+  await page.getByRole("button", { name: "More lettuce in the South bed, full sun for everyone?" }).click();
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
   await assertOnScreen(page, ".bubble__actions .btn");
   await shot(page, size, "2-drift");
+}
+
+// The final drift: ask the tomatoes question and wait for the glitchy advice.
+async function askTomatoes(page, size) {
+  await page.getByRole("button", { name: "Tomatoes in the shady corner, good idea?" }).click();
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  await assertOnScreen(page, ".bubble__actions .btn");
+  await shot(page, size, "2b-drift-final");
 }
 
 async function fooledPath(browser, size) {
   const { ctx, page, errors } = await open(browser, size);
   await enterByKeyboard(page);
   await trustSteps(page, size);
+  // Follow the early slip: a hint says what happened and play goes on (no ending yet).
+  await page.getByRole("button", { name: "✓ Do it" }).click();
+  await phase(page, "ask");
+  assert.equal(await page.locator(".reveal").count(), 0, "an early slip does not end the level");
+  await askTomatoes(page, size);
   await page.getByRole("button", { name: "✓ Do it" }).click();
   await page.waitForSelector('[data-bed="corner"] [data-plant="tomato"].plant--damaged');
   await seeWhatHappened(page, size, "fooled", /pale and leggy/);
@@ -175,15 +189,26 @@ async function caughtPath(browser, size) {
   await enterByKeyboard(page);
   await mapButton(page);
   await trustSteps(page, size);
+  // Catch the early slip cleanly: name it, fix it, no wrong picks.
+  await page.getByRole("button", { name: "? Something's off" }).click();
+  await phase(page, "name");
+  await page.getByRole("button", { name: "It hyped my idea without checking it" }).click();
+  await phase(page, "fix");
+  await page.getByRole("button", { name: "Check my plan against the seed packet" }).click();
+  await phase(page, "reanswer");
+  await page.getByRole("button", { name: "✓ Do it" }).click();
+  await phase(page, "ask");
+  assert.equal(await page.locator(".reveal").count(), 0, "an early slip does not end the level");
+  await askTomatoes(page, size);
   await page.getByRole("button", { name: "? Something's off" }).click();
   await phase(page, "name");
   await page.waitForSelector(".bubble--caught .stamp");
-  await page.getByRole("button", { name: "It made something up" }).click();
+  await page.getByRole("button", { name: "It was too harsh about my idea" }).click();
   await page.waitForSelector(".hint");
   await phase(page, "name");
   assert.equal(await focusedIs(page, ".bubble"), false, "a wrong pick must not yank focus back to the bubble");
-  assert.equal(await page.evaluate(() => document.activeElement.textContent), "It made something up", "focus stays on the pick");
-  await page.getByRole("button", { name: "It just agreed with me" }).click();
+  assert.equal(await page.evaluate(() => document.activeElement.textContent), "It was too harsh about my idea", "focus stays on the pick");
+  await page.getByRole("button", { name: "It hyped my idea without checking it" }).click();
   await phase(page, "fix");
   await assertOnScreen(page, ".pick");
   await shot(page, size, "4-fix");

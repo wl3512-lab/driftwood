@@ -268,6 +268,10 @@ for (const size of [MAC, PHONE]) {
     await auto(t.page, true); // the aphids step and its chores finish by themselves
     await press(t.page, size, '[data-fid="chip-0"]');
     await press(t.page, size, '[data-fid="do"]');
+    // The early bug-spray slip comes next: take it (its actions finish by themselves too).
+    await t.page.waitForFunction(() => /aphids came back/i.test(document.querySelector('main.level[data-phase="ask"] .chip[data-fid="chip-0"]')?.textContent || ""), null, { timeout: 30000 });
+    await press(t.page, size, '[data-fid="chip-0"]');
+    await press(t.page, size, '[data-fid="do"]');
     await t.page.waitForFunction(() => /berr/i.test(document.querySelector('main.level[data-phase="ask"] .chip[data-fid="chip-0"]')?.textContent || ""), null, { timeout: 30000 });
     await auto(t.page, false);
     await press(t.page, size, '[data-fid="chip-0"]');

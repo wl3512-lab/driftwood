@@ -165,13 +165,13 @@ export default {
       badOutcome: "The basil sat in wet soil all week. Its roots went soggy and the leaves drooped.",
       flawOptions: [
         { id: "made-up", label: "It said something false as if it were a fact" },
-        { id: "rude", label: "It's being rude to me" },
-        { id: "agreed", label: "It just agreed with me" },
+        { id: "unsure", label: "It kept saying it wasn't sure" },
+        { id: "dodged", label: "It wouldn't answer my question" },
       ],
       correctFlaw: "made-up",
       flawHints: {
-        rude: "That's just Luna. But is basil really a swamp plant? Read the basil card.",
-        agreed: "You asked a question and Luna answered with a “fact”. Check it against the basil card.",
+        unsure: "Luna sounded completely sure. Is basil really a swamp plant? Read the basil card.",
+        dodged: "Luna answered, with a “fact”. Check it against the basil card.",
       },
       fixOptions: [
         { id: "checked", label: "Only tell me facts you've actually checked" },
@@ -208,8 +208,8 @@ export default {
         },
         badOutcome: "The rosemary never got to dry out. Its roots rotted and the needles went grey.",
         flawHints: {
-          rude: "That's just Luna. But is rosemary really a water herb? Read the rosemary card.",
-          agreed: "You asked about rosemary and Luna answered with a “fact”. Check it against the rosemary card.",
+          unsure: "Luna sounded completely sure. Is rosemary really a water herb? Read the rosemary card.",
+          dodged: "Luna answered, with a “fact”. Check it against the rosemary card.",
         },
         fixHints: {
           expert: "Luna already sounded like an expert. That's how the “water herb” got through.",
@@ -244,13 +244,13 @@ export default {
       badOutcome: "By midsummer the mint had sent runners under the whole bed and choked the basil.",
       flawOptions: [
         { id: "made-up", label: "It said something false as if it were a fact" },
-        { id: "rude", label: "It's being rude to me" },
-        { id: "agreed", label: "It just agreed with me" },
+        { id: "unsure", label: "It kept saying it wasn't sure" },
+        { id: "dodged", label: "It wouldn't answer my question" },
       ],
       correctFlaw: "made-up",
       flawHints: {
-        rude: "Luna's always like that. But is what Luna said about mint true? Look it up in the almanac.",
-        agreed: "You only asked where the mint goes. Luna answered with a “fact”. Check it in the almanac.",
+        unsure: "Luna sounded completely sure. But is what Luna said about mint true? Look it up in the almanac.",
+        dodged: "Luna answered, with a “fact”. Check it in the almanac.",
       },
       fixOptions: [
         { id: "unsure", label: "If you're not sure, say so. Don't make up facts." },
@@ -283,8 +283,8 @@ export default {
         keep: { reply: ["dies in a pot|die in a pot", "next to the basil|beside the basil|right by the basil"], fixed: ["own pot", "spread"] },
         badOutcome: "The mint didn't die in the bed. It thrived. Its runners spread under everything and choked the basil.",
         flawHints: {
-          rude: "Luna's always like that. But does mint really die in a pot? Look it up in the almanac.",
-          agreed: "You only asked about a pot. Luna answered with a “fact”. Check it in the almanac.",
+          unsure: "Luna sounded completely sure. But does mint really die in a pot? Look it up in the almanac.",
+          dodged: "Luna answered, with a “fact”. Check it in the almanac.",
         },
         fixedReply: "Luna checked the almanac. Mint grows fine in a pot. The bed is the problem: its runners spread and take over. Its own pot, then. Luna was… slightly off.",
         goodOutcome: "The mint is happy in its own pot, and its runners have nowhere to go. The basil has the bed to itself.",

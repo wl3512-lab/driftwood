@@ -1,0 +1,188 @@
+[
+  {
+    "size": "desktop",
+    "status": "pass",
+    "manifest": [
+      {
+        "at": "2026-11-16T00:43:32.145Z",
+        "state": "named",
+        "focused": [
+          "Skip ▸▸"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:32.814Z",
+        "state": "seed-handoff",
+        "focused": [
+          "Next ▸"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:34.712Z",
+        "state": "level-first-job",
+        "focused": [
+          ""
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:35.328Z",
+        "state": "map",
+        "focused": [
+          "LEVEL 1Plan your garden▶ PlayTrained"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:35.962Z",
+        "state": "empty-guide",
+        "focused": [
+          "← Back to the garden"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:36.690Z",
+        "state": "rewatch-return",
+        "focused": [
+          "LEVEL 1Plan your garden▶ PlayTrained"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:37.357Z",
+        "state": "new-game-confirm",
+        "focused": [
+          "Keep my garden"
+        ],
+        "console": []
+      }
+    ]
+  },
+  {
+    "size": "portrait",
+    "status": "pass",
+    "manifest": [
+      {
+        "at": "2026-11-16T00:43:39.396Z",
+        "state": "named",
+        "focused": [
+          "Skip ▸▸"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:40.074Z",
+        "state": "seed-handoff",
+        "focused": [
+          "Next ▸"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:41.981Z",
+        "state": "level-first-job",
+        "focused": [
+          ""
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:42.596Z",
+        "state": "map",
+        "focused": [
+          "LEVEL 1Plan your garden▶ PlayTrained"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:43.205Z",
+        "state": "empty-guide",
+        "focused": [
+          "← Back to the garden"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:43.920Z",
+        "state": "rewatch-return",
+        "focused": [
+          "LEVEL 1Plan your garden▶ PlayTrained"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:44.569Z",
+        "state": "new-game-confirm",
+        "focused": [
+          "Keep my garden"
+        ],
+        "console": []
+      }
+    ]
+  },
+  {
+    "size": "small",
+    "status": "pass",
+    "manifest": [
+      {
+        "at": "2026-11-16T00:43:45.619Z",
+        "state": "named",
+        "focused": [
+          "Skip ▸▸"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:46.293Z",
+        "state": "seed-handoff",
+        "focused": [
+          "Next ▸"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:48.189Z",
+        "state": "level-first-job",
+        "focused": [
+          ""
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:48.782Z",
+        "state": "map",
+        "focused": [
+          "LEVEL 1Plan your garden▶ PlayTrained"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:49.384Z",
+        "state": "empty-guide",
+        "focused": [
+          "← Back to the garden"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:50.087Z",
+        "state": "rewatch-return",
+        "focused": [
+          "LEVEL 1Plan your garden▶ PlayTrained"
+        ],
+        "console": []
+      },
+      {
+        "at": "2026-11-16T00:43:50.727Z",
+        "state": "new-game-confirm",
+        "focused": [
+          "Keep my garden"
+        ],
+        "console": []
+      }
+    ]
+  }
+]

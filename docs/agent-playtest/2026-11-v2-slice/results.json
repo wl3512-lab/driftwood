@@ -1,8 +1,8 @@
 [
   {
     "test": "laptop/fooled",
-    "status": "pass",
-    "longtasks": []
+    "status": "fail",
+    "error": "laptop/fooled: page errors\n+ actual - expected\n\n+ [\n+   'Failed to load resource: net::ERR_CONNECTION_RESET',\n+   'Failed to load resource: net::ERR_CONNECTION_RESET'\n+ ]\n- []\n"
   },
   {
     "test": "laptop/caught",

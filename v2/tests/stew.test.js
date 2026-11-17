@@ -90,3 +90,13 @@ test("unplayed levels are missing, never crash, and the bowls stay 1..5", () => 
   assert.equal(rateStew(null, IDS).bowls, 1);
   assert.ok(verdict(1, 0, []).length > 0);
 });
+
+test("at dinner, a helper under 75% trained glitches; 75% and up sits still", async () => {
+  const { trainedFor } = await import("../progress.js");
+  const { DINNER_GLITCH_BELOW } = await import("../ui/stew-dinner.js");
+  assert.equal(DINNER_GLITCH_BELOW, 0.75);
+  const progress = { levels: { "level-1": { trained: 0.5 }, "level-2": { trained: 5 / 6 }, "level-3": { stars: 2 } } };
+  assert.ok(trainedFor(progress, "level-1") < DINNER_GLITCH_BELOW, "half trained glitches");
+  assert.ok(trainedFor(progress, "level-2") >= DINNER_GLITCH_BELOW, "five sixths sits still");
+  assert.ok(trainedFor(progress, "level-3") < DINNER_GLITCH_BELOW, "2 stars (old save) = 2/3 glitches");
+});

@@ -11,6 +11,12 @@ const STEPS_PER_FRAME = 3;
 
 export function playThorns(onDone) {
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { onDone(); return; }
+  // The whole screen dims under the vines as they grow, then lifts with them.
+  const dim = document.createElement("div");
+  dim.className = "thorns-dim";
+  dim.setAttribute("aria-hidden", "true");
+  document.body.append(dim);
+  requestAnimationFrame(() => dim.classList.add("thorns-dim--on"));
   const cvs = document.createElement("canvas");
   cvs.className = "thorns";
   cvs.setAttribute("aria-hidden", "true");
@@ -122,7 +128,8 @@ export function playThorns(onDone) {
     done = true;
     onDone();
     cvs.classList.add("thorns--out");
-    setTimeout(() => cvs.remove(), FADE_MS + 50);
+    dim.classList.add("thorns-dim--out");
+    setTimeout(() => { cvs.remove(); dim.remove(); }, FADE_MS + 50);
   }
   function tick(now) {
     if (done) return;

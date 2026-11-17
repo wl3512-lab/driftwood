@@ -115,6 +115,17 @@ async function aphidsAndBerries(page, size, { mine = false } = {}) {
     await shot(page, size, "m2-after-spray");
   }
 
+  // The early slip: Ember waves off the bug spray label. Caught, named, fixed:
+  // the label says gloves, there are none, so hose the last aphids off.
+  await chip(page, size, /A few aphids came back/);
+  await press(page, size, page.getByRole("button", { name: "? Something's off" }));
+  await press(page, size, page.getByRole("button", { name: "It made something risky sound safe" }));
+  await press(page, size, page.getByRole("button", { name: "If something could hurt me, check the label before you say it's fine" }));
+  await doIt(page, size);
+  await drag(page, size, "spray", FIELD("row", "bean"), 2, { ms: 500, name: "2f-hose-last-aphids" });
+  await gone(page, "spray");
+  await page.waitForSelector('[data-bed="row"] [data-plant="bean"].plant--thriving');
+
   // Chore 2: tie the beans.
   await drag(page, size, "poke", FIELD("row", "bean"));
   await gone(page, "poke");
@@ -187,6 +198,9 @@ async function fooled(browser, size) {
   await page.evaluate(() => { window.__dwAutoAct = true; });
   await page.waitForSelector("main.level .chip");
   await chip(page, size, /Tiny green bugs/);
+  await doIt(page, size);
+  // The early bug-spray slip, followed (the actions run themselves).
+  await chip(page, size, /A few aphids came back/);
   await doIt(page, size);
   await chip(page, size, /blueberries ripe/);
   await doIt(page, size);

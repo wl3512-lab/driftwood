@@ -7,12 +7,12 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep, pendingChore, training, glitching } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore, training, glitching, openChain, chainQuestions } from "../engine/level-runner.js";
 import { trainBar } from "./train-bar.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
 import { memoryVars } from "../mechanics/placement.js";
-import { pressureLevel } from "../mechanics/pressure.js";
+import { pressureLevel, wiltLevel } from "../mechanics/pressure.js";
 import { createPressureClock } from "./pressure-clock.js";
 import { fill } from "./text.js";
 import { shortcutFor, keyCap, ariaKey, keyName } from "./shortcuts.js";
@@ -30,6 +30,7 @@ import { cues as playCues, voice, setTension, sfx } from "../audio/index.js";
 import { decisionCues, driftOnScreen } from "../audio/cues.js";
 import { soundToggle } from "../audio/toggle.js";
 import { petAnimator, PET_MOOD } from "./pet-anim.js";
+import { createPhone, meLine, phoneMood } from "./phone-chat.js";
 
 // The toolbar icon is the device itself: a book with a glowing screen.
 const ALMANAC_SPRITE = "./art/almanac-device.svg";
@@ -135,13 +136,19 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const dock = h("section", { class: "dock", "aria-label": `Talk to ${level.helper.name}` }, stall, talk);
   // The helper's face: blinks, talks, and reacts to what the player does (ui/pet-anim.js).
   const pet = petAnimator(stall.querySelector(".helper"));
-  const petReacts = (list) => {
+  // Level 5: the chat is a phone over the garden (ui/phone-chat.js); Bugs's
+  // face is sad when you tend the garden instead of him.
+  const phone = level.chatUi === "phone" ? createPhone({ level, dock, stall, pet, t }) : null;
+  phone?.heard("bug", level.greeting);
+  let tapped = new Set(); // phone: side questions already asked on this step (they go)
+  const petReacts = (list, ctx) => {
     for (const c of list) {
-      const mood = PET_MOOD[c.name];
-      if (mood) setTimeout(() => { if (mounted) pet.react(mood); }, (c.delay || 0) * 1000);
+      const mood = phone && ctx ? phoneMood(c.name, ctx.action, ctx.phase, ctx.step) : PET_MOOD[c.name];
+      // A late happy face never lands on a phone that's been put down since (he's sad then).
+      if (mood) setTimeout(() => { if (mounted && !(phone && mood === "happy" && main.classList.contains("is-phone-down"))) pet.react(mood); }, (c.delay || 0) * 1000);
     }
   };
-  const main = h("main", { class: "level", "data-scene": level.scene || "yard" }, scene, dock);
+  const main = h("main", { class: phone ? "level level--phone" : "level", "data-scene": level.scene || "yard" }, scene, dock);
   main.preloaded = preloaded; // keep the Image objects alive while the level is mounted
   root.replaceChildren(main);
 
@@ -275,6 +282,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     acting?.destroy();
     acting = null;
     pet.stop();
+    phone?.destroy();
     clock.destroy();
     for (const tl of tools) tl.view.destroy?.();
   }
@@ -286,18 +294,21 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     // Sound (audio/cues.js): the choice sounds on the tap; the pet's reaction
     // and the garden's sound once it has landed (after any hands-on part).
     const heard = decisionCues(currentStep(level, state), state, action, out, { pet: level.helper.id });
+    const moodCtx = { action, phase: state.phase, step: currentStep(level, state) };
+    // The phone's transcript: what the player just said (a reply chip or button).
+    if (phone && !action.acted) phone.heard("me", meLine(level, currentStep(level, state), state, action, asked));
     // A choice that changes the garden is done by hand first: the effect
     // lands only once the action is finished (it is reduced again then).
     if (!action.acted) {
       const plan = planFor(level, state, action, out);
       if (plan.length > 0) {
-        if (action.type !== "chore") { playCues(heard.filter((c) => !c.react)); petReacts(heard.filter((c) => !c.react)); }
+        if (action.type !== "chore") { playCues(heard.filter((c) => !c.react)); petReacts(heard.filter((c) => !c.react), moodCtx); }
         return act(action, plan);
       }
     }
     const now_ = action.acted && action.type !== "chore" ? [{ name: "chore-done" }, ...heard.filter((c) => c.react)] : heard;
     playCues(now_);
-    petReacts(now_);
+    petReacts(now_, moodCtx);
     const petCue = heard.find((c) => c.opts?.pet && c.delay > 0);
     voiceDelay = petCue ? petCue.delay + 0.45 : 0;
     const prev = state;
@@ -305,13 +316,13 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     // A chore, a look-up or a tick keeps the last hint up (e.g. how an earlier drift turned out).
     if (!["chore", "check", "tick"].includes(action.type)) hint = null;
     const newStep = prev.stepIndex !== state.stepIndex;
-    if (newStep) asked = null; // the "You:" echo belongs to the step that just ended
+    if (newStep) { asked = null; tapped = new Set(); } // the "You:" echo belongs to the step that just ended
     const before = said;
     for (const fx of out.effects) {
-      if (fx.type === "say") said = fx.text;
+      if (fx.type === "say") { said = fx.text; phone?.heard("bug", fx.text); }
       if (fx.type === "hint") hint = fx.text;
       if (fx.type === "grow") grown = fx.effect;
-      if (fx.type === "rule") asked = `New rule: “${fx.text}”`;
+      if (fx.type === "rule") { asked = `New rule: “${fx.text}”`; phone?.heard("me", asked); }
       if (fx.type === "outcome") outcome = fx.text;
       if (fx.type === "checked") unlocked(fx.id);
     }
@@ -380,6 +391,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       thinking = 0;
       wasThinking = true;
       if (said === line.text) said = r.text;
+      phone?.reworded(line.text, r.text);
       if (driftSaid === line.text) driftSaid = r.text;
       main.dataset.voice = r.ai ? "ai" : "written";
       render();
@@ -411,6 +423,15 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     // How much of a pressure step's cost has been paid (0..1); the scene's props read it.
     scene.style.setProperty("--pressure", String(pressureLevel(step, state)));
     clock.sync(step, state.phase);
+    if (phone) {
+      // The garden behind the phone wilts the longer you chat; the phone is
+      // down whenever your hands are busy, and after a caught ending.
+      scene.dataset.wilt = String(wiltLevel(state));
+      const busy = Boolean(acting) || Boolean(waitCard) || (!thinking && Boolean(pendingChore(level, state)));
+      const isDown = busy || (state.phase === "reveal" && !state.lastFooled);
+      main.classList.toggle("is-phone-down", isDown);
+      phone.update({ isDown, said, thinking: Boolean(thinking), quiet: state.phase === "reanswer" || state.phase === "reveal" });
+    }
     if (grown) { celebrate(grown); grown = null; }
     // Sound: the drift layer under a drift on screen; the helper babbles each new line.
     setTension(driftOnScreen(step, state) ? 1 : 0);
@@ -452,7 +473,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       acting.refresh();
       return;
     }
-    talk.replaceChildren(...dockFor(step));
+    if (phone) {
+      talk.replaceChildren(...phone.layout(dockFor(step), said));
+      phone.settle();
+    } else talk.replaceChildren(...dockFor(step));
     placeFocus(keep);
   }
 
@@ -508,7 +532,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
 
   function dockFor(step) {
     const parts = [];
-    if (asked) parts.push(h("p", { class: "you" }, h("span", { class: "sr-only" }, "You: "), t(asked)));
+    if (asked && !phone) parts.push(h("p", { class: "you" }, h("span", { class: "sr-only" }, "You: "), t(asked)));
     if (thinking) {
       parts.push(h("div", { class: "bubble bubble--thinking", tabindex: -1, role: "img", "aria-label": `${level.helper.name} is thinking` },
         h("p", { class: "bubble__who", "aria-hidden": "true" }, level.helper.name.toUpperCase()),
@@ -642,15 +666,23 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   }
 
   function askControls(step) {
-    const chip = (text, fid, onclick) => h("button", { class: "chip", "data-fid": fid, onclick }, t(text));
+    const chip = (text, fid, onclick, cls = "chip") => h("button", { class: cls, "data-fid": fid, onclick }, t(text));
     askAhead({ type: "ask" }, step.chip);
-    (step.extraChips || []).forEach((c) => askAhead({ type: "chat", reply: c.reply }, c.text));
+    // On the phone a side question goes once it's asked; one with follow-ups
+    // (extraChips[i].more) is replaced by a new round of questions each time.
+    const extras = (step.extraChips || []).map((c, i) => ({ c, i })).filter(({ i }) => !(phone && tapped.has(i)));
+    extras.forEach(({ c, i }) => askAhead({ type: "chat", chip: i, reply: c.reply }, c.text));
+    const follow = chainQuestions(step, state);
+    follow.forEach((q, j) => askAhead({ type: "more", pick: j }, q.text));
     const chips = [
+      ...follow.map((q, j) =>
+        chip(q.text, `more-${j}`, () => { asked = q.text; dispatch({ type: "more", pick: j }); }, "chip chip--more")),
       chip(step.chip, "chip-0", () => { asked = step.chip; dispatch({ type: "ask" }); }),
-      ...(step.extraChips || []).map((c, i) =>
-        chip(c.text, `chip-${i + 1}`, () => { asked = c.text; dispatch({ type: "chat", reply: c.reply }); })),
+      ...extras.map(({ c, i }) =>
+        chip(c.text, `chip-${i + 1}`, () => { asked = c.text; if (phone) tapped.add(i); dispatch({ type: "chat", chip: i, reply: c.reply }); })),
     ];
-    return [h("div", { class: "chips", role: "group", "aria-label": "Suggested questions" }, chips)];
+    const label = openChain(step, state) && follow.length ? "Keep talking, or go" : "Suggested questions";
+    return [h("div", { class: "chips", role: "group", "aria-label": label }, chips)];
   }
 
   function picks(kind, prompt, options, onPick) {

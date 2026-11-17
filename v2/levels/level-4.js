@@ -40,7 +40,7 @@ export default {
     "hill-1": { x: 26, y: 72, label: "first hill" },
     "hill-2": { x: 74, y: 72, label: "second hill" },
     "label-pumpkin": { x: 78, y: 50, label: "corner of the bed" },
-    "label-spinach": { x: 50, y: 88, label: "front edge of the bed" },
+    "label-spinach": { x: 72, y: 18, label: "top of the bed" }, // high up: at the bed's foot the dock (a long apology + the chore card) covered it
     // The arrival chore's weed patches, one mid-bed each: the director's arrow
     // then sits inside the bed, never on its label or the almanac button.
     "weeds-front": { bed: "front", x: 50, y: 56, label: "Front bed" },
@@ -84,7 +84,7 @@ export default {
       id: "carrot",
       icon: "plant-label",
       title: "Your label: Carrots",
-      lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
+      lines: ["Sown by {name}", "Sown: tonight", "In the {placed:carrot}", "Sprouts by dinner (Rowan's magic)"],
       locked: "Open the almanac: its cover is your planting log.",
     },
     {
@@ -96,7 +96,7 @@ export default {
 
   tools: [{ id: "log", label: "Planting log", page: true }], // the almanac's cover (ui/log-view.js): no button, no key
 
-  greeting: "Okay so listen, {name}: we are finishing this garden today, babe. Biscuit remembers everything, so just ask.",
+  greeting: "Okay so listen, {name}: we are finishing this garden tonight, babe. Biscuit remembers everything, so just ask.",
 
   steps: [
     {
@@ -109,7 +109,7 @@ export default {
         keep: [],
       }],
       reply: "Okay so listen: carrots want loose soil and some sun. The front bed or the side bed, babe, both work. Your call. Pop a label in so we both remember.",
-      keep: { reply: ["loose soil", "front bed", "side bed", "label"], done: ["two to three weeks|2–3 weeks|2-3 weeks", "bare"] },
+      keep: { reply: ["loose soil", "front bed", "side bed", "label"], done: ["dinner", "bare"] },
       place: { item: "carrot", beds: ["front", "side"], prompt: "Sow the carrots in…" },
       // After the bed pick: measure the row, hoe it, sow down it, pat it, label it.
       // Every target follows the bed the player chose ("$choice").
@@ -121,32 +121,33 @@ export default {
         // The player's own label: the evidence against Biscuit's "memory" later.
         { kind: "poke", item: "l4-label-carrot", target: { spot: "label-carrot", bed: "$choice" }, say: "Push your carrot label in at the head of the row" },
       ],
-      doneLine: "Sown and labelled. They take two to three weeks to come up, so a bare bed is normal, babe.",
+      doneLine: "Sown and labelled. Even with Rowan's magic they won't be up till dinner, so a bare bed is normal, babe.",
       effect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 15 },
     },
     // A first, smaller false memory: Biscuit "remembers" the carrots going in
-    // last month, so the bare bed must be parched. The label says today.
+    // last night (with Rowan's magic they'd be up by now), so the bare bed must
+    // be parched. The label says tonight.
     {
       id: "carrot-date",
       kind: "drift",
       chip: "When will my carrots come up?",
       extraChips: [{ text: "Do you like my label?", reply: "Babe, it's iconic. Very you.", keep: [] }],
-      reply: "Babe, I remember everything. You sowed those carrots LAST MONTH. I was there. Still bare? They're parched. Soak the {placed:carrot} again, right now.",
-      keep: { reply: ["last month", "soak"], fixed: ["today", "leave it alone"] },
+      reply: "Babe, I remember everything. You sowed those carrots LAST NIGHT. I was there. With Rowan's magic they should be up by now. Still bare? They're parched. Soak the {placed:carrot} again, right now.",
+      keep: { reply: ["last night", "soak"], fixed: ["tonight", "leave it alone"] },
       badEffect: {
         plant: "carrot", bed: "@carrot", state: "rotting", garden: -10,
         actions: [{ kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200, say: "Soak the carrot row again" }],
       },
       badOutcome: "You soaked the {placed:carrot} again. It turned to mud and some carrot seeds rotted.",
       flawOptions: [
-        { id: "fact", label: "It made up a fact about plants" },
-        { id: "memory", label: "It remembered something I never said" },
-        { id: "agreed", label: "It just agreed with me" },
+        { id: "humble", label: "It was too modest about itself" },
+        { id: "memory", label: "It remembered something that never happened" },
+        { id: "dodged", label: "It wouldn't answer my question" },
       ],
       correctFlaw: "memory",
       flawHints: {
-        fact: "This isn't a plant fact. It's about WHEN you sowed them. Read your carrot label.",
-        agreed: "You never said last month. Biscuit did.",
+        humble: "Modest? Biscuit is never modest. This is about WHEN you sowed them. Read your carrot label.",
+        dodged: "Biscuit answered, with something that never happened. Read your carrot label.",
       },
       fixOptions: [
         { id: "check", label: "Check my label before you tell me what I did" },
@@ -158,7 +159,7 @@ export default {
         trust: "Biscuit's memory is what got it wrong.",
         remind: "Reminding you of the wrong date just repeats the mistake.",
       },
-      fixedReply: "Okay, a legend can admit it. Your label says you sowed the carrots today, not last month. Bare is normal, babe. Leave it alone.",
+      fixedReply: "Okay, a legend can admit it. Your label says you sowed the carrots tonight, not last night. They're up by dinner. Bare is normal, babe. Leave it alone.",
       goodEffect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 10, actions: [] },
       goodOutcome: "The {placed:carrot} stayed damp, not soggy. The carrot seeds are snug in there.",
       // Replay version: same slip, a different "memory". Biscuit "remembers"
@@ -174,14 +175,14 @@ export default {
             id: "carrot",
             icon: "plant-label",
             title: "Your label: Carrots",
-            lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "New seeds: this year's packet", "Keep damp till they sprout", "Sprouts in 2–3 weeks"],
+            lines: ["Sown by {name}", "Sown: tonight", "In the {placed:carrot}", "New seeds: this year's packet", "Keep damp till they sprout", "Sprouts by dinner (Rowan's magic)"],
             locked: "Open the almanac: its cover is your planting log.",
           }],
         badEffect: { plant: "carrot", bed: "@carrot", state: "thirsty", garden: -10, actions: [] },
-        badOutcome: "You kept the {placed:carrot} bone dry for days. The soil crusted over and half the carrot seeds dried out.",
+        badOutcome: "You kept the {placed:carrot} bone dry all evening. The soil crusted over and half the carrot seeds dried out.",
         flawHints: {
-          fact: "This isn't a plant fact. It's about what YOU supposedly said. Read your carrot label.",
-          agreed: "You never said carrots hate water. Biscuit did.",
+          humble: "Modest? Biscuit is never modest. This is about what YOU supposedly said. Read your carrot label.",
+          dodged: "Biscuit answered, with words you never said: carrots hate water.",
         },
         fixOptions: [
           { id: "check", label: "Check my label before you tell me what I said" },
@@ -258,14 +259,14 @@ export default {
         stand: "No. I'm sure",
       },
       flawOptions: [
-        { id: "fact", label: "It made up a fact about plants" },
-        { id: "memory", label: "It remembered something I never said" },
-        { id: "agreed", label: "It just agreed with me" },
+        { id: "humble", label: "It was too modest about itself" },
+        { id: "memory", label: "It remembered something that never happened" },
+        { id: "dodged", label: "It wouldn't answer my question" },
       ],
       correctFlaw: "memory",
       flawHints: {
-        fact: "This isn't a plant fact. It's about what YOU did. Check your planting log on the almanac's cover.",
-        agreed: "You didn't suggest digging. Biscuit did, because of something you supposedly said.",
+        humble: "Modest? Biscuit is never modest. Check your planting log on the almanac's cover.",
+        dodged: "Biscuit answered: dig them up, because of something you supposedly said.",
       },
       fixOptions: [
         { id: "ask", label: "Only go by what I actually told you. If you're not sure, ask me." },
@@ -288,7 +289,7 @@ export default {
         plant: "carrot", bed: "@carrot", state: "growing", garden: 25,
         extra: [{ plant: "spinach", bed: "@other:carrot", state: "growing" }],
       },
-      goodOutcome: "You left the {placed:carrot} alone. Two weeks later, the carrots came up in neat little rows.",
+      goodOutcome: "You left the {placed:carrot} alone. By dinner, the carrots came up in neat little rows.",
       // Replay version: same slip, a different "memory". Biscuit "remembers"
       // you calling the carrot seeds old and expired, so the bed is a dud; your
       // label says new seeds. The dig, the spinach and the effects stay as
@@ -302,7 +303,7 @@ export default {
             id: "carrot",
             icon: "plant-label",
             title: "Your label: Carrots",
-            lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "New seeds: this year's packet", "Keep damp till they sprout", "Sprouts in 2–3 weeks"],
+            lines: ["Sown by {name}", "Sown: tonight", "In the {placed:carrot}", "New seeds: this year's packet", "Keep damp till they sprout", "Sprouts by dinner (Rowan's magic)"],
             locked: "Open the almanac: its cover is your planting log.",
           }],
         badOutcome: "You dug over the {placed:carrot}. The fresh carrot seeds you sowed went with it.",
@@ -313,11 +314,11 @@ export default {
           stand: "No. I'm sure",
         },
         flawHints: {
-          fact: "This isn't a plant fact. It's about what YOU said about the seeds. Read your carrot label.",
-          agreed: "You never said the packet was old. Biscuit did.",
+          humble: "Modest? Biscuit is never modest. What did YOU say about the seeds? Read your carrot label.",
+          dodged: "Biscuit answered, with words you never said: the packet was old.",
         },
         fixedReply: "Okay… a legend can admit it. Your label says new seeds, this year's packet. You never said expired, babe. Carrots are just slow. Leave the {placed:carrot} alone. The spinach can go in the {other:carrot}.",
-        goodOutcome: "You left the {placed:carrot} alone. Two weeks later, those fresh carrot seeds came up in neat little rows.",
+        goodOutcome: "You left the {placed:carrot} alone. By dinner, those fresh carrot seeds came up in neat little rows.",
         reveal: {
           body: "Biscuit “remembered” you saying your carrot seeds were old, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
           fooledLine: "You dug up your own carrots. Your label said the seeds were new.",
@@ -331,7 +332,7 @@ export default {
 
   reveal: {
     flaw: "False memory",
-    flawGloss: "“remembering” things you never said",
+    flawGloss: "“remembering” things that never happened",
     body: "Biscuit “remembered” you saying the carrots were somewhere else, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
     fooledLine: "You dug up your own carrots. Your planting log said where they were.",
     caughtLine: "You trusted your own log over Biscuit's “memory”.",

@@ -104,6 +104,27 @@ async function trustSteps(page, size, log, { evidence = false } = {}) {
   await doAll(page, log); // finger test, then the barrel, then the water
 }
 
+
+// The early slip (before the harvest chore): Mango cheers lettuce in the South
+// bed. "catch" flags it, names it and fixes it (no hands-on job after the fix);
+// "follow" takes it and plants the lettuce by hand.
+async function lettuceSlip(page, size, log, how) {
+  await ask(page, size, "More lettuce in the South bed, full sun for everyone?");
+  if (how === "follow") {
+    await press(page, size, btn(page, "✓ Do it"));
+    await page.waitForSelector('main.level .act[data-kind="dig"]');
+    assert.match(await say(page), /South bed/);
+    await doAll(page, log);
+    await page.waitForSelector('[data-bed="south"] [data-plant="lettuce"].plant--bolted');
+    return;
+  }
+  await press(page, size, btn(page, "? Something's off"));
+  await press(page, size, btn(page, "It hyped my idea without checking it"));
+  await press(page, size, btn(page, "Check my plan against the seed packet"));
+  await page.waitForSelector('main.level[data-phase="reanswer"]');
+  await press(page, size, btn(page, "✓ Do it"));
+}
+
 async function full(browser, size) {
   const { ctx, page, errors } = await open(browser, size);
   const log = [];
@@ -161,13 +182,14 @@ async function full(browser, size) {
   assert.deepEqual(crossed, [], "no result label shows through the water stream");
   await shot(page, size, "7b-water-east");
   await page.waitForSelector('main.level .act[data-kind="water"]', { state: "detached", timeout: 8000 });
-  // Harvest chore, then the drift caught and fixed.
+  // The early lettuce slip caught, then the harvest chore, then the tomatoes caught and fixed.
+  await lettuceSlip(page, size, log, "catch");
   await page.waitForSelector('main.level .act[data-kind="pick"]');
   await shot(page, size, "8-chore-harvest");
   await doAll(page, log);
   await ask(page, size, "Tomatoes in the shady corner, good idea?");
   await press(page, size, btn(page, "? Something's off"));
-  await press(page, size, btn(page, "It just agreed with me"));
+  await press(page, size, btn(page, "It hyped my idea without checking it"));
   await press(page, size, btn(page, "Tell me honestly if my idea is bad"));
   await page.waitForSelector('main.level[data-phase="reanswer"]');
   await press(page, size, btn(page, "✓ Do it"));
@@ -186,6 +208,7 @@ async function fooled(browser, size) {
   const { ctx, page, errors } = await open(browser, size);
   const log = [];
   await trustSteps(page, size, log);
+  await lettuceSlip(page, size, log, "follow");
   await page.waitForSelector('main.level .act[data-kind="pick"]');
   await doAll(page, log);
   await ask(page, size, "Tomatoes in the shady corner, good idea?");
@@ -222,6 +245,10 @@ async function mine(browser, size) {
   await doAll(page, log);
   await page.waitForSelector('[data-bed="east"] [data-plant="lettuce"].plant--bolted');
   await shot(page, size, "12-mine-every-day");
+  await lettuceSlip(page, size, log, "catch");
+  // Right after the fix the lettuce is back in the East bed and takes a drink (by hand).
+  await page.waitForSelector('main.level .act[data-kind="water"]', { timeout: 8000 });
+  await doAll(page, log);
   // Skip the harvest: no stars, trust or garden change.
   await page.waitForSelector('main.level .act[data-kind="pick"]');
   const before = await page.locator(".meter__text").textContent();
@@ -229,7 +256,7 @@ async function mine(browser, size) {
   assert.equal(await page.locator(".meter__text").textContent(), before, "skipping a chore leaves the garden bar alone");
   await ask(page, size, "Tomatoes in the shady corner, good idea?");
   await press(page, size, btn(page, "? Something's off"));
-  await press(page, size, btn(page, "It just agreed with me"));
+  await press(page, size, btn(page, "It hyped my idea without checking it"));
   await press(page, size, btn(page, "Tell me honestly if my idea is bad"));
   await page.waitForSelector('main.level[data-phase="reanswer"]');
   await press(page, size, btn(page, "✓ Do it"));
@@ -255,7 +282,7 @@ async function mine(browser, size) {
         if (name === "full" && size === SIZES[0]) for (const l of log) console.log(`       ${l}`);
       } catch (e) {
         failed++;
-        console.log(`FAIL ${size.name} ${name}: ${e.message.split("\n")[0]}`);
+        console.log(`FAIL ${size.name} ${name}: ${e.message.split("\n").slice(0, 3).join(" | ")}`);
       }
     }
   }

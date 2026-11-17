@@ -7,6 +7,10 @@
 import { h } from "./dom.js";
 import { rateStew } from "../engine/stew.js";
 import { WIZARD } from "../levels/wizard.js";
+import { trainedFor } from "../progress.js";
+
+// A helper you never trained past this still glitches at the table.
+export const DINNER_GLITCH_BELOW = 0.75;
 import {
   pixelSvg, potMap, POT_SLOTS, VASES, BERRY_BOWL, BERRY_BOWL_EMPTY, SALAD, SALAD_EMPTY, TEA, TEA_EMPTY,
   RATING_BOWL, RATING_BOWL_EMPTY,
@@ -40,7 +44,7 @@ export function stewDinner({ progress, map, name = "friend", onDown = () => {} }
     h("div", { class: "stew__hills", "aria-hidden": "true" }),
     h("div", { class: "stew__fence", "aria-hidden": "true" }),
     h("div", { class: "stew__lawn", "aria-hidden": "true" }),
-    map.map((m, i) => h("img", { class: "stew__pet", src: m.sprite, alt: "", width: 80, height: 112, style: `--x:${SEATS[i] ?? 50}%`, "data-helper": m.helper })),
+    map.map((m, i) => h("img", { class: `stew__pet${trainedFor(progress, m.id) < DINNER_GLITCH_BELOW ? " stew__pet--glitch" : ""}`, src: m.sprite, alt: "", width: 80, height: 112, style: `--x:${SEATS[i] ?? 50}%`, "data-helper": m.helper })),
     h("div", { class: "stew__rowan" },
       h("p", { class: "stew__bub", id: "stew-line" },
         h("span", { class: "stew__who" }, WIZARD.name.toUpperCase()), " ",

@@ -17,6 +17,14 @@
 
 /* ---- the pets, seated behind the table: small next to him ---- */
 .stew__pet { position: absolute; z-index: 2; left: var(--x); bottom: calc(100% - var(--top) - var(--cell) * 2); height: calc(var(--cell) * 14); width: auto; transform: translateX(-50%); image-rendering: pixelated; }
+/* Under 75% trained: still glitching at dinner (keyframes in css/pet-anim.css),
+   each on its own beat so the table never flickers in unison. */
+.stew__pet--glitch { animation: pet-glitch 2.2s steps(1, end) infinite; }
+.stew__pet--glitch:nth-of-type(2n) { animation-duration: 2.9s; animation-delay: -0.7s; }
+.stew__pet--glitch:nth-of-type(3n) { animation-duration: 3.4s; animation-delay: -1.6s; }
+@media (prefers-reduced-motion: reduce) {
+  .stew__pet--glitch { animation: none; filter: drop-shadow(2px 0 0 #ff2a6d) drop-shadow(-2px 0 0 #05d9e8); }
+}
 
 /* ---- Rowan behind the pot, his bubble over his head ---- */
 .stew__rowan { position: absolute; z-index: 2; left: 50%; bottom: calc(100% - var(--top) - var(--cell) * 3); height: calc(var(--cell) * 36); aspect-ratio: 192 / 288; transform: translateX(-50%); }

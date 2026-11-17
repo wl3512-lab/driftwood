@@ -1,111 +1,16 @@
 [
   {
-    "test": "laptop/fooled",
+    "test": "handoff/level1-mac",
     "status": "pass",
     "longtasks": []
   },
   {
-    "test": "laptop/caught",
+    "test": "handoff/level1-phone",
     "status": "pass",
     "longtasks": []
   },
   {
-    "test": "laptop/level3-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level3-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level4-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level4-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level5-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level5-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/full",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level3-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level3-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level4-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level4-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level5-fooled",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/level5-caught",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "phone/full",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/perfect",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "small/landscape",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/level5-tick",
-    "status": "pass",
-    "longtasks": []
-  },
-  {
-    "test": "laptop/ending-locked",
+    "test": "handoff/level1-small",
     "status": "pass",
     "longtasks": []
   }

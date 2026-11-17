@@ -189,7 +189,31 @@ async function teaJar(page, size, { skip = false } = {}) {
   if (!skip) await shot(page, size, "5-jar-full");
 }
 
-async function setup(browser, size, { basilWay = "doIt", pinchWay = "doIt", skipJar = false } = {}) {
+// The early slip: Luna says basil is a swamp plant. "follow" soaks it by hand;
+// "catch" flags it, names it, fixes it and gives the basil one drink by hand.
+async function soakBasil(page, size, way) {
+  await press(page, size, btn(page, "How much should I water the basil?"));
+  await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
+  if (way === "follow") {
+    await press(page, size, btn(page, "✓ Do it"));
+    await act(page);
+    assert.match(await say(page), /Soak the basil/);
+    await byHand(page, size);
+    await page.waitForSelector('[data-bed="bench"] [data-plant="basil"].plant--soggy');
+  } else {
+    await press(page, size, btn(page, "? Something's off"));
+    await press(page, size, btn(page, "It said something false as if it were a fact"));
+    await press(page, size, btn(page, "Only tell me facts you've actually checked"));
+    await page.waitForSelector('main.level[data-phase="reanswer"]');
+    await press(page, size, btn(page, "✓ Do it"));
+    await act(page);
+    assert.match(await say(page), /top soil is dry/);
+    await byHand(page, size);
+  }
+  await page.waitForSelector('main.level[data-phase="ask"] .chip');
+}
+
+async function setup(browser, size, { basilWay = "doIt", pinchWay = "doIt", skipJar = false, soakWay = "catch" } = {}) {
   const run = await open(browser, size);
   const { page } = run;
   await wipeGlass(page, size);
@@ -197,6 +221,7 @@ async function setup(browser, size, { basilWay = "doIt", pinchWay = "doIt", skip
   await mistBasil(page, size);
   await pinch(page, size, pinchWay);
   await teaJar(page, size, { skip: skipJar });
+  await soakBasil(page, size, soakWay);
   await press(page, size, btn(page, "Where should the mint go?"));
   await page.waitForSelector('main.level[data-phase="advice"] .bubble--glitch');
   assert.equal(await page.locator('[data-prop="pot-1"][src*="l2-pot-empty"]').count(), 1, "no hint: the sill pots are still empty at the drift");
@@ -212,7 +237,7 @@ async function finish(run, label) {
 }
 
 async function fooled(browser, size) {
-  const run = await setup(browser, size);
+  const run = await setup(browser, size, { soakWay: "follow" });
   const { page } = run;
   await shot(page, size, "6-drift");
   await press(page, size, btn(page, "✓ Do it"));

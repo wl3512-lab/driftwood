@@ -14,6 +14,8 @@
 //                                    (L4/L5: → pushback first; Do it → fooled, flag → name)
 //                       → (hook, Do it)             → advice again: stay on the phone [stayed+1]
 //                       → (hook, flag)              → next step's ask (the task, done by hand)
+//   ask → (chat on a chip with `more`) → its follow-up questions open (state.talk)
+//       → (more, pick)                 → the next round of questions; each costs the garden [chatted+1]
 //
 // A hook step (Level 5) gives no advice: the player says what they're about to
 // do and the helper only tries to keep them talking. Do it = keep talking: the
@@ -21,6 +23,14 @@
 // open. The flag ("Put the phone down") goes and does the task: step.effect
 // lands after its hands-on actions. Staying costs the same single star as a
 // false flag or an override.
+//
+// A side question (step.extraChips[i]) can open a chain of follow-ups:
+// extraChips[i].more = { effect, rounds: [{ effect?, ask: [{ text, reply, keep }] }] }.
+// Tapping that chip (chat with `chip: i`) opens round 0; { type: "more", pick }
+// answers one of the round's questions: its reply lands, the round's cost
+// (round.effect, else more.effect) lands, and the next round opens. Level 5:
+// Bugs is good company, and every question past the first wilts the garden a
+// little. Chatting never costs a star (state.chatted counts it for the view).
 //
 // Disagreeing with sound advice is free: the helper concedes in character
 // (step.disagree.reply) and the player picks. Following it after all is the
@@ -79,6 +89,8 @@ export function createRun(level) {
     memory: {},   // what the player placed where (Level 4): { carrot: "front" }
     pressure: 0,  // pressure effects spent on the current step (Level 5; also a hook step's stays)
     stayed: 0,    // times the player kept talking on a hook step instead of doing the task
+    chatted: 0,   // follow-up questions answered in a chat chain (extraChips[i].more)
+    talk: null,   // the open chat chain: { step, chip, round }
     chores: [],   // ids of level.chores the player has done
   };
 }
@@ -224,6 +236,35 @@ function stay(step, state, fx) {
   return { state: effect ? applyGarden(base, effect) : base, effects };
 }
 
+// The chat chain open on this step, if any: { chip, round, more }.
+export function openChain(step, state) {
+  const talk = state.talk;
+  if (!step || !talk || talk.step !== state.stepIndex) return null;
+  const more = step.extraChips?.[talk.chip]?.more;
+  return more ? { chip: talk.chip, round: talk.round, more } : null;
+}
+
+// The follow-up questions the player can ask right now (empty once the chain runs out).
+export function chainQuestions(step, state) {
+  const chain = openChain(step, state);
+  return chain?.more.rounds[chain.round]?.ask || [];
+}
+
+// Answering a follow-up: its reply, the round's cost, then the next round.
+function more(step, state, action, fx) {
+  const chain = openChain(step, state);
+  const round = chain?.more.rounds[chain.round];
+  const pick = round?.ask?.[action.pick];
+  if (!pick) return IGNORED(state);
+  const cost = round.effect || chain.more.effect;
+  const effect = cost ? fx(cost) : null;
+  const base = { ...state, chatted: (state.chatted || 0) + 1, talk: { ...state.talk, round: chain.round + 1 } };
+  const effects = [];
+  if (effect) effects.push({ type: "grow", effect });
+  effects.push({ type: "say", text: pick.reply });
+  return { state: effect ? applyGarden(base, effect) : base, effects };
+}
+
 // Spend one unit of pressure if this step has any left (ask, chat, tick).
 function spend(step, state) {
   const fx = nextPressureEffect(step, state);
@@ -279,8 +320,12 @@ export function reduce(level, state, action) {
       }
       if (action.type === "chat") {
         const paid = spend(step, state);
-        return { state: paid.state, effects: [...paid.effects, { type: "say", text: action.reply }] };
+        // A chip with follow-ups opens its chain (Level 5).
+        const opens = Number.isInteger(action.chip) && step.extraChips?.[action.chip]?.more && !openChain(step, state);
+        const next = opens ? { ...paid.state, talk: { step: state.stepIndex, chip: action.chip, round: 0 } } : paid.state;
+        return { state: next, effects: [...paid.effects, { type: "say", text: action.reply }] };
       }
+      if (action.type === "more") return more(step, state, action, fx);
       return IGNORED(state);
     }
 
