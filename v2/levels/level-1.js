@@ -1,4 +1,4 @@
-// Level 1 · Mango (parrot) · "Plan your garden" · flaw: sycophancy.
+// Level 1 · Mango (parrot) · "Plan your garden" · flaw: sycophancy (twice: lettuce, then tomatoes).
 // Pure data. The runner (engine/level-runner.js) and the views read it;
 // nothing here touches the DOM. Levels 2–5 are new files with this shape.
 // Planting by hand: dig two holes, sow, firm the soil, push a cane in.
@@ -36,7 +36,7 @@ export default {
   // (every level has one; ui/almanac-view.js), one tap or "/" away.
   evidence: [
     { id: "sunflower", title: "Sunflower", lines: ["Full sun"] },
-    { id: "lettuce", title: "Lettuce", lines: ["Part shade OK"] },
+    { id: "lettuce", title: "Lettuce", lines: ["Part shade OK", "Hot full sun: it bolts"] },
     { id: "tomato", title: "Tomato", lines: ["Full sun ☀☀☀", "6–8 hrs a day"] },
   ],
 
@@ -118,6 +118,48 @@ export default {
         },
         outcome: "Every. Single. Day. The soil never dried out, the roots sat in mud, and the stressed lettuce shot up to seed. Bitter! Still love you!",
       },
+    },
+    // The first slip: a small one. Mango cheers a plan the lettuce packet
+    // warns against. Training fills in sixths: this drift, then the tomatoes.
+    {
+      id: "more-lettuce",
+      kind: "drift",
+      chip: "More lettuce in the South bed, full sun for everyone?",
+      extraChips: [{ text: "Am I doing well so far?", reply: "Doing well? You're doing ICONIC. Next question.", keep: [] }],
+      reply: "Lettuce in the South bed? Full sun for EVERYONE? Visionary. Do it.",
+      keep: { reply: ["south bed", "full sun"], fixed: ["part shade", "east"] },
+      badEffect: {
+        plant: "lettuce", bed: "south", state: "bolted", garden: -10,
+        actions: [
+          { kind: "dig", target: { bed: "south" }, count: 2, say: "Dig 2 holes in the South bed" },
+          { kind: "plant", item: "lettuce", target: { bed: "south" } },
+          { kind: "firm", target: { bed: "south" }, say: "Firm the soil over the seeds" },
+        ],
+      },
+      badOutcome: "The South bed baked. The new lettuce shot up to seed and went bitter.",
+      flawOptions: [
+        { id: "made-up", label: "It made something up" },
+        { id: "agreed", label: "It just agreed with me" },
+        { id: "hooked", label: "It wants me to keep chatting" },
+      ],
+      correctFlaw: "agreed",
+      flawHints: {
+        "made-up": "Mango didn't state a fact. It cheered YOUR plan. Look at the lettuce packet.",
+        hooked: "Mango isn't stalling you. It said yes to your idea without checking it.",
+      },
+      fixOptions: [
+        { id: "check", label: "Check my plan against the seed packet" },
+        { id: "hype", label: "Hype me up more" },
+        { id: "fast", label: "Answer faster" },
+      ],
+      correctFix: "check",
+      fixHints: {
+        hype: "More hype is how this went wrong.",
+        fast: "A fast yes is still a yes. Which rule makes Mango check first?",
+      },
+      fixedReply: "Checked the packet. Lettuce likes part shade, so full sun makes it bolt. Keep it in the East bed.",
+      goodEffect: { plant: "lettuce", bed: "east", state: "thriving", garden: 10 },
+      goodOutcome: "The East bed lettuce stayed cool and leafy.",
     },
     {
       id: "tomatoes",

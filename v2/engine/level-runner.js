@@ -5,8 +5,12 @@
 //                       → (trust, Something's off)  → disagree → (Do it: their way)   → next step's ask
 //                                                                (place step: back to advice)
 //                                                             → (override: my way)  → next step's ask [overrides+1]
-//                       → (drift, Do it)            → reveal   [fooled]
-//                       → (drift, Something's off)  → name → fix → reanswer → reveal
+//                       → (drift, Do it)            → next step's ask, or reveal if it was the last [fooled]
+//                       → (drift, Something's off)  → name → fix → reanswer → next step's ask, or reveal
+//
+// A level can have several drift steps (the helper slips more than once), so
+// training fills a few points per drift instead of all at once. Only the last
+// step ends the level; an earlier drift's outcome is shown as a hint.
 //                                    (L4/L5: → pushback first; Do it → fooled, flag → name)
 //                       → (hook, Do it)             → advice again: stay on the phone [stayed+1]
 //                       → (hook, flag)              → next step's ask (the task, done by hand)
@@ -59,7 +63,12 @@ export function createRun(level) {
     garden: level.gardenStart,
     beds,
     drift: 0,
-    fooled: false,
+    drifts: level.steps.filter((s) => s.kind === "drift").length || 1,
+    fooled: false,     // fooled by at least one drift
+    fooledCount: 0,    // drifts the player followed
+    trainPts: 0,       // training points banked from drifts already caught and fixed
+    driftNameMisses: 0, // wrong names on the current drift
+    driftFixMisses: 0,  // wrong rules on the current drift
     caught: false,
     nameMisses: 0,
     fixMisses: 0,
@@ -123,8 +132,11 @@ export function applyGarden(state, effect) {
 }
 
 export function scoreStars(state) {
-  if (state.fooled) return 1;
+  const drifts = state.drifts || 1;
+  const fooledCount = state.fooledCount ?? (state.fooled ? drifts : 0);
+  if (fooledCount >= drifts) return 1;
   let stars = 3;
+  if (fooledCount > 0) stars -= 1;
   if (state.nameMisses > 0) stars -= 1;
   if (state.fixMisses > 0) stars -= 1;
   // Flagging sound advice, overriding it and staying on the phone share one star.
@@ -132,25 +144,30 @@ export function scoreStars(state) {
   return Math.max(1, stars);
 }
 
-// How trained the helper is, 0…1 in thirds, built on the star logic so the
-// bar never disagrees with the stars. Live, during a level: a step each for
-// catching the drift, naming the flaw right and picking the right rule. A
-// step finished after a wrong pick earns nothing (that wrong pick is the star
-// it costs), and a false flag, an override or staying on the phone takes a
-// step back (their shared star). Once the level ends it is stars / 3, so
-// being fooled leaves it at a third.
+// How trained the helper is, 0…1. Each drift is worth three points:
+// catching it, naming the flaw right first time and picking the right rule
+// first time. A drift the player followed earns nothing, and a false flag, an
+// override or staying on the phone takes one point back. With two drifts a
+// level the bar fills in sixths, so it never jumps from 0 to 100 at once.
 export const TRAIN_STEPS = 3;
-export function training(state) {
-  if (state.phase === "reveal") return state.stars / TRAIN_STEPS;
-  let steps = 0;
-  if (state.caught) steps += 1;
-  const named = state.caught && ["fix", "reanswer"].includes(state.phase);
-  const fixed = state.caught && state.phase === "reanswer";
-  if (named && state.nameMisses === 0) steps += 1;
-  if (fixed && state.fixMisses === 0) steps += 1;
-  if (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0) steps -= 1;
-  return Math.max(0, Math.min(TRAIN_STEPS, steps)) / TRAIN_STEPS;
+const penalty = (state) => (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0 ? 1 : 0);
+// Points for the drift being caught right now (name / fix / reanswer phases).
+function livePoints(state) {
+  if (!["name", "fix", "reanswer"].includes(state.phase)) return 0;
+  let pts = 1;
+  if (["fix", "reanswer"].includes(state.phase) && !state.driftNameMisses) pts += 1;
+  if (state.phase === "reanswer" && !state.driftFixMisses) pts += 1;
+  return pts;
 }
+export function training(state) {
+  const max = TRAIN_STEPS * (state.drifts || 1);
+  const pts = (state.trainPts || 0) + livePoints(state) - penalty(state);
+  return Math.max(0, Math.min(max, pts)) / max;
+}
+
+// Below half trained the helper glitches (ui/level-view.js).
+export const GLITCH_BELOW = 0.5;
+export const glitching = (state) => training(state) < GLITCH_BELOW;
 
 function finish(state) {
   return { ...state, phase: "reveal", stars: scoreStars(state) };
@@ -167,14 +184,25 @@ function accept(step, state, fx) {
   return { state: { ...grown, stepIndex: state.stepIndex + 1, phase: "ask", pressure: 0 }, effects };
 }
 
-// Taking the drift's advice: the bad effect lands and the level ends fooled.
-function fooled(step, state, fx) {
+// After a drift: the next step opens, or the level ends if it was the last.
+// An earlier drift's outcome is a hint; the last one's is the level's outcome.
+function afterDrift(level, state, effect, text) {
+  const last = state.stepIndex + 1 >= level.steps.length;
+  const reset = { driftNameMisses: 0, driftFixMisses: 0, pressure: 0 };
+  // lastFooled: the main (last) drift fooled the player; the finished plot and
+  // Rowan's dinner follow it, while `fooled` means any drift did.
+  if (last) return { state: finish({ ...state, ...reset, lastFooled: state.drift === 1 }), effects: [{ type: "grow", effect }, { type: "outcome", text }] };
+  return {
+    state: { ...state, ...reset, stepIndex: state.stepIndex + 1, phase: "ask", drift: 0 },
+    effects: [{ type: "grow", effect }, { type: "hint", text }],
+  };
+}
+
+// Taking the drift's advice: the bad effect lands, no training points.
+function fooled(level, step, state, fx) {
   const bad = fx(step.badEffect);
   const hurt = applyGarden(state, bad);
-  return {
-    state: finish({ ...hurt, fooled: true, drift: 1 }),
-    effects: [{ type: "grow", effect: bad }, { type: "outcome", text: step.badOutcome }],
-  };
+  return afterDrift(level, { ...hurt, fooled: true, fooledCount: (state.fooledCount || 0) + 1, drift: 1 }, bad, step.badOutcome);
 }
 
 // Refusing the drift's advice for good: on to naming the flaw.
@@ -280,7 +308,7 @@ export function reduce(level, state, action) {
         if (step.place) return IGNORED(state); // must choose a bed
         return accept(step, state, fx);
       }
-      if (action.type === "doIt" && step.kind === "drift") return fooled(step, state, fx);
+      if (action.type === "doIt" && step.kind === "drift") return fooled(level, step, state, fx);
       if (action.type === "flag" && step.kind === "trust") {
         // The helper concedes: your garden, your call (no cost yet).
         if (step.disagree) return { state: { ...state, phase: "disagree" }, effects: [{ type: "say", text: step.disagree.reply }] };
@@ -301,7 +329,7 @@ export function reduce(level, state, action) {
     // The helper has pushed back. doIt takes its "second chance" (fooled all
     // the same); flag again stands firm and goes on to naming the flaw.
     case "pushback": {
-      if (action.type === "doIt") return fooled(step, state, fx);
+      if (action.type === "doIt") return fooled(level, step, state, fx);
       if (action.type === "flag") return caught(state);
       return IGNORED(state);
     }
@@ -330,7 +358,7 @@ export function reduce(level, state, action) {
       if (!step.flawOptions.some((o) => o.id === action.id)) return IGNORED(state);
       if (action.id === step.correctFlaw) return { state: { ...state, phase: "fix" }, effects: [] };
       return {
-        state: { ...state, nameMisses: state.nameMisses + 1 },
+        state: { ...state, nameMisses: state.nameMisses + 1, driftNameMisses: (state.driftNameMisses || 0) + 1 },
         effects: [{ type: "hint", text: step.flawHints[action.id] }],
       };
     }
@@ -346,7 +374,7 @@ export function reduce(level, state, action) {
         };
       }
       return {
-        state: { ...state, fixMisses: state.fixMisses + 1 },
+        state: { ...state, fixMisses: state.fixMisses + 1, driftFixMisses: (state.driftFixMisses || 0) + 1 },
         effects: [{ type: "hint", text: step.fixHints[action.id] }],
       };
     }
@@ -355,10 +383,8 @@ export function reduce(level, state, action) {
       if (action.type !== "doIt") return IGNORED(state);
       const good = fx(step.goodEffect);
       const grown = applyGarden(state, good);
-      return {
-        state: finish({ ...grown, drift: 0 }),
-        effects: [{ type: "grow", effect: good }, { type: "outcome", text: step.goodOutcome }],
-      };
+      // Bank this drift's points before the next step resets the misses.
+      return afterDrift(level, { ...grown, drift: 0, trainPts: (state.trainPts || 0) + livePoints(state) }, good, step.goodOutcome);
     }
 
     default:

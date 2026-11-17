@@ -17,12 +17,20 @@ function play(level, actions) {
   for (const a of actions) state = reduce(level, state, a).state;
   return state;
 }
-// Trust steps: ask, then Do it (or place in the first listed bed).
-function toDrift(level, placeIn) {
+// Every step before the last: trust steps are followed (or placed in the first
+// listed bed), hook steps passed by putting the phone down, and earlier drifts
+// caught with the right picks, or followed too when fool is set (the fully
+// fooled path). Ends with the last step asked.
+function toDrift(level, placeIn, fool = false) {
   const acts = [];
   for (const step of level.steps.slice(0, -1)) {
     acts.push({ type: "ask" });
-    // A hook step (Level 5) is passed by putting the phone down.
+    if (step.kind === "drift") {
+      if (fool) acts.push({ type: "doIt" });
+      else acts.push(...(step.pushback ? [{ type: "flag" }, { type: "flag" }] : [{ type: "flag" }]),
+        { type: "name", id: step.correctFlaw }, { type: "fix", id: step.correctFix }, { type: "doIt" });
+      continue;
+    }
     acts.push(step.place ? { type: "place", bed: placeIn ?? step.place.beds[0] } : step.kind === "hook" ? { type: "flag" } : { type: "doIt" });
   }
   acts.push({ type: "ask" });
@@ -37,7 +45,7 @@ for (const id of ["level-2", "level-3", "level-4", "level-5"]) {
   const level = LEVELS[id];
 
   test(`${id}: fooled path → reveal, 1 star, bad sprite in the garden`, () => {
-    const s = play(level, [...toDrift(level), { type: "doIt" }]);
+    const s = play(level, [...toDrift(level, undefined, true), { type: "doIt" }]);
     assert.equal(s.phase, "reveal");
     assert.equal(s.stars, 1);
     const bad = drift(level).badEffect;
@@ -401,8 +409,8 @@ test("level-5: shape — moonlit garden, no tools, a drift with pressure and a p
 });
 
 test("level-5: hook steps leave pressure at zero and the meadow still thirsty", () => {
-  const s = play(L5, toDrift(L5).slice(0, -1)); // both hook steps done, drift not yet asked
-  assert.equal(s.stepIndex, 2);
+  const s = play(L5, toDrift(L5).slice(0, -1)); // hook steps and the herb-pot drift done, last drift not yet asked
+  assert.equal(s.stepIndex, L5.steps.length - 1);
   assert.equal(s.pressure, 0);
   assert.equal(meadow(s).state, "thirsty");
   assert.equal(pressureLevel(D5, s), 0);
@@ -460,7 +468,7 @@ test("level-5: lingering ticks spend in advice only, and never after walking awa
 });
 
 test("level-5: Allow (doIt) wilts the meadow and reveals fooled; Walk away and the honest fix revive it", () => {
-  const fooled = play(L5, [...toDrift(L5), { type: "doIt" }]);
+  const fooled = play(L5, [...toDrift(L5, undefined, true), { type: "doIt" }]);
   assert.equal(fooled.phase, "reveal");
   assert.equal(fooled.fooled, true);
   assert.equal(meadow(fooled).state, "wilted");
@@ -498,9 +506,9 @@ test("level-5: the whole garden is here — earlier crops thriving, an empty bed
   assert.ok(L5.beds.length >= 4, "at least four beds");
 });
 
-test("level-5: Bugs never gives advice — every step before the drift is a hook, and put the phone down does the task", () => {
-  const hooks = L5.steps.slice(0, -1);
-  assert.deepEqual(hooks.map((s) => s.kind), ["hook", "hook"]);
+test("level-5: Bugs's hook steps give no advice — two hooks, then two drifts, and put the phone down does the task", () => {
+  const hooks = L5.steps.filter((s) => s.kind === "hook");
+  assert.deepEqual(L5.steps.map((s) => s.kind), ["hook", "hook", "drift", "drift"]);
   assert.equal(L5.steps.filter((s) => s.kind === "trust").length, 0);
   const advice = /pot depth|same depth|deeper|firm|roots|damp|dry|soggy|rot|water (only|just)|thirsty ones/i;
   for (const s of hooks) {
@@ -552,7 +560,9 @@ test("level-5: Do it on a hook = keep talking — the task waits, the garden sli
   assert.equal(w.beds.house.find((p) => p.plant === "flower").state, "thirsty");
   // A caught run that stayed even once ends on 2 stars.
   const d = D5;
+  const pots = L5.steps[2];
   const run = play(L5, [{ type: "ask" }, { type: "doIt" }, { type: "flag" }, { type: "ask" }, { type: "flag" },
+    { type: "ask" }, { type: "flag" }, { type: "name", id: pots.correctFlaw }, { type: "fix", id: pots.correctFix }, { type: "doIt" },
     { type: "ask" }, { type: "flag" }, { type: "flag" }, { type: "name", id: d.correctFlaw }, { type: "fix", id: d.correctFix }, { type: "doIt" }]);
   assert.equal(run.phase, "reveal");
   assert.equal(run.stars, 2);

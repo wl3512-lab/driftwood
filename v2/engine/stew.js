@@ -2,9 +2,9 @@
 // rates it. Pure functions over saved progress, no DOM.
 //
 // Every crop the levels grow is a dish. A level the player was fooled on
-// (and hasn't since caught on a replay) loses one dish: that's the gap on
+// (and hasn't since caught on a replay) loses its affected dishes: those are the gaps on
 // the table. Plant health is read from the stars (a proxy: the save keeps
-// stars and fooled, not each plant's final state).
+// stars and catch history, not each plant's final state).
 
 // Dishes in menu order. where: pot | side | after | table.
 export const DISHES = [
@@ -12,6 +12,7 @@ export const DISHES = [
   { id: "bean", name: "beans", where: "pot", level: "level-3" },
   { id: "carrot", name: "carrots", where: "pot", level: "level-4" },
   { id: "pumpkin", name: "pumpkin", where: "pot", level: "level-4" },
+  { id: "spinach", name: "spinach", where: "pot", level: "level-4", requiresCatch: true, missingWhy: "The spinach was never planted" },
   { id: "basil", name: "basil", where: "pot", level: "level-2" },
   { id: "rosemary", name: "rosemary", where: "pot", level: "level-2" },
   { id: "parsley", name: "parsley", where: "pot", level: "level-2" },
@@ -32,10 +33,13 @@ export const LOST = {
 };
 
 // Caught: the same rule as the finished plots (ui/finished-garden.js): a
-// first play that wasn't fooled, or a later replay above 1 star.
-export const caughtOn = (record) => Boolean(record) && (record.stars > 1 || record.fooled === false);
+// successful catch, independent of its stars. Older saves have no caught flag:
+// their first-play result and best stars retain the catch information available.
+// A save that has the caught flag is trusted as is: with several drifts a level
+// can earn 2 stars and still lose the main one.
+export const caughtOn = (record) => Boolean(record) && (typeof record.caught === "boolean" ? record.caught : record.stars > 1 || record.fooled === false);
 
-const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen"];
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const word = (n) => WORDS[n] || String(n);
 
@@ -47,8 +51,9 @@ export function rateStew(progress, levelIds = Object.keys(LOST)) {
   const dishes = DISHES.filter((d) => levelIds.includes(d.level)).map((d) => {
     const rec = records[d.level];
     if (!rec) return { ...d, present: false, why: "Not grown yet" };
+    const unplanted = d.requiresCatch && !caughtOn(rec);
     const lost = LOST[d.level]?.dish === d.id && !caughtOn(rec);
-    return { ...d, present: !lost, why: lost ? LOST[d.level].why : null };
+    return { ...d, present: !lost && !unplanted, why: unplanted ? d.missingWhy : lost ? LOST[d.level].why : null };
   });
   const missing = dishes.filter((d) => !d.present);
   const kinds = dishes.length - missing.length;
@@ -69,5 +74,5 @@ export function verdict(bowls, kinds, missing) {
   }
   if (names.length === 1) return `A fine pot. I missed the ${names[0]}.`;
   if (names.length === 2) return `A good pot. I missed the ${names[0]} and the ${names[1]}.`;
-  return `Thin, but honest. I missed the ${names[0]}, and ${word(names.length - 1)} more.`;
+  return `${bowls >= 4 ? "A good pot." : "Thin, but honest."} I missed the ${names[0]}, and ${word(names.length - 1)} more.`;
 }

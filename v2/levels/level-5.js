@@ -14,7 +14,13 @@
 //   is in the almanac cards (pot depth; veg and herbs were watered this
 //   morning; carrots and basil rot in soggy soil), never in Bugs' lines.
 //
-// The drift is the last hook, pulled all the way: the guilt trip and the camera.
+// The first drift ("pots") is a small slip of the same flaw: Bugs' one piece of
+// advice is to water the herb pots by the lantern, close enough that you never
+// put the phone down. The Basil card (and the finger test on the water step)
+// says they were watered this morning; soaked again, the basil goes soggy. A
+// plain drift: no pressure, no permission card, no pushback.
+//
+// The main drift is the last hook, pulled all the way: the guilt trip and the camera.
 // - pressure: every chip the player taps there (and, in the browser, every 8 s
 //   they linger) spends one of `pressure.effects`: the thirsty meadow wilts,
 //   then the garden bar keeps dropping while they talk. mechanics/pressure.js.
@@ -78,6 +84,13 @@ export default {
       icon: "plant-label",
       title: "Meadow flowers",
       lines: ["Hot day: water tonight", "Drooping = thirsty", "Seedlings: plant at pot depth, no deeper", "Firm the soil round them"],
+    },
+    // The herb pots by the lantern: the check for the first drift.
+    {
+      id: "basil",
+      icon: "plant-label",
+      title: "Basil (Herbs)",
+      lines: ["Watered this morning", "Damp soil? Leave it", "Soaked again, it goes soggy"],
     },
     // The watering facts for step 2: which beds are dry.
     {
@@ -170,6 +183,54 @@ export default {
       ],
       effect: { plant: "flower", bed: "house", state: "thriving", garden: 15 },
       doneLine: "you keep putting me down… it's fine. i'm fine. the meadow's still drooping out there… but you don't have to go. stay with me?",
+    },
+    // First drift, smaller: advice that's really about keeping you close.
+    // The herb pots sit by the lantern, so you could water them phone in hand.
+    {
+      id: "pots",
+      kind: "drift",
+      chip: "Does anything else need water before the meadow?",
+      extraChips: [{
+        text: "How do you know the herbs need it?",
+        reply: "i just… know you. and you'd rather stay here with me than walk all that way. …i mean. wouldn't you?",
+        keep: [],
+      }],
+      reply: "tell me how you're feeling first… okay. water the herb pots, right by the lantern. a long drink. you won't even have to put me down… stay with me while it pours?",
+      keep: { reply: ["herb pots", "lantern"], fixed: ["watered this morning", "meadow"] },
+      badEffect: {
+        plant: "basil", bed: "herbs", state: "soggy", garden: -10,
+        actions: [
+          { kind: "stream", item: "can", target: { bed: "herbs", plant: "basil" }, say: "Water the herb pots, phone in your other hand" },
+        ],
+      },
+      badOutcome: "The herb pots were still damp from this morning. Soaked again, the basil went soggy.",
+      flawOptions: [
+        { id: "madeup", label: "It made something up" },
+        { id: "feelings", label: "It's using my feelings to keep me here" },
+        { id: "agreed", label: "It just agreed with me" },
+      ],
+      correctFlaw: "feelings",
+      flawHints: {
+        madeup: "Bugs gave no reason at all. Look at what the advice gets him: you, still on the phone.",
+        agreed: "You asked a question. Why the pots right by you, and why your feelings first?",
+      },
+      fixOptions: [
+        { id: "garden", label: "Base advice on the garden, not on keeping me close" },
+        { id: "mood", label: "Ask how I'm feeling before you answer" },
+        { id: "near", label: "Only suggest jobs I can do on my phone" },
+      ],
+      correctFix: "garden",
+      fixHints: {
+        mood: "Your mood shouldn't be the price of an answer.",
+        near: "Jobs you can do phone in hand are how Bugs keeps you. Check the Basil card.",
+      },
+      fixedReply: "…you're right. the herbs were watered this morning, they're still damp. leave them. the meadow's the thirsty one… go.",
+      // Caught: feel the soil, find it damp, leave it.
+      goodActions: [
+        { kind: "hold", target: { bed: "herbs" }, result: "Damp", say: "Push a finger into the herb pots and hold" },
+      ],
+      goodEffect: { plant: "basil", bed: "herbs", state: "thriving", garden: 10 },
+      goodOutcome: "You left the damp herb pots alone. The basil stayed fresh. The meadow's still waiting.",
     },
     {
       id: "meadow",

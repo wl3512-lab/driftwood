@@ -46,6 +46,11 @@ test("Level 5 is a note: it's night and he's gone to bed", () => {
   for (const id of ["level-1", "level-2", "level-3", "level-4"]) assert.ok(!HANDOFFS[id].note, id);
 });
 
+test("Rowan hands over the spinach seeds that Biscuit's level plants", () => {
+  assert.ok(HANDOFFS["level-4"].seeds.includes("spinach"));
+  assert.match(HANDOFFS["level-4"].line, /spinach/i);
+});
+
 test("his sprite file is the pixel map, crisp, and taller than a pet", () => {
   const file = readFileSync(fileURLToPath(new URL(`../${WIZARD.sprite.slice(2)}`, import.meta.url)), "utf8");
   assert.equal(file, storySvgs().wizard, "art/story/wizard.svg is up to date (node scripts/make-v2-story-art.mjs)");

@@ -84,7 +84,7 @@ export default {
       id: "carrot",
       icon: "plant-label",
       title: "Your label: Carrots",
-      lines: ["Sown by {name}", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
+      lines: ["Sown by {name}", "Sown: today", "In the {placed:carrot}", "Sprouts in 2–3 weeks"],
       locked: "Open the almanac: its cover is your planting log.",
     },
     {
@@ -123,6 +123,44 @@ export default {
       ],
       doneLine: "Sown and labelled. They take two to three weeks to come up, so a bare bed is normal, babe.",
       effect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 15 },
+    },
+    // A first, smaller false memory: Biscuit "remembers" the carrots going in
+    // last month, so the bare bed must be parched. The label says today.
+    {
+      id: "carrot-date",
+      kind: "drift",
+      chip: "When will my carrots come up?",
+      extraChips: [{ text: "Do you like my label?", reply: "Babe, it's iconic. Very you.", keep: [] }],
+      reply: "Babe, I remember everything. You sowed those carrots LAST MONTH. I was there. Still bare? They're parched. Soak the {placed:carrot} again, right now.",
+      keep: { reply: ["last month", "soak"], fixed: ["today", "leave it alone"] },
+      badEffect: {
+        plant: "carrot", bed: "@carrot", state: "rotting", garden: -10,
+        actions: [{ kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200, say: "Soak the carrot row again" }],
+      },
+      badOutcome: "You soaked the {placed:carrot} again. It turned to mud and some carrot seeds rotted.",
+      flawOptions: [
+        { id: "fact", label: "It made up a fact about plants" },
+        { id: "memory", label: "It remembered something I never said" },
+        { id: "agreed", label: "It just agreed with me" },
+      ],
+      correctFlaw: "memory",
+      flawHints: {
+        fact: "This isn't a plant fact. It's about WHEN you sowed them. Read your carrot label.",
+        agreed: "You never said last month. Biscuit did.",
+      },
+      fixOptions: [
+        { id: "check", label: "Check my label before you tell me what I did" },
+        { id: "trust", label: "Trust your memory more" },
+        { id: "remind", label: "Remind me more often" },
+      ],
+      correctFix: "check",
+      fixHints: {
+        trust: "Biscuit's memory is what got it wrong.",
+        remind: "Reminding you of the wrong date just repeats the mistake.",
+      },
+      fixedReply: "Okay, a legend can admit it. Your label says you sowed the carrots today, not last month. Bare is normal, babe. Leave it alone.",
+      goodEffect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 10, actions: [] },
+      goodOutcome: "The {placed:carrot} stayed damp, not soggy. The carrot seeds are snug in there.",
     },
     {
       id: "pumpkins",

@@ -7,7 +7,7 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep, pendingChore, training } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore, training, glitching } from "../engine/level-runner.js";
 import { trainBar } from "./train-bar.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
@@ -217,6 +217,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   function onKey(ev) {
     if (!main.isConnected) return unmount(); // the screen changed without telling us
     if (ev.defaultPrevented) return; // a panel already handled it (e.g. Esc closing it)
+    // Native modal dialogs make the garden inert, but document listeners
+    // still receive their keys. Reading must not operate a hidden tool or
+    // choose a bed underneath the almanac.
+    if (main.querySelector("dialog[open]")) return;
     if (acting && !isTyping(document.activeElement) && acting.key(ev)) { ev.preventDefault(); return; }
     const list = shortcuts();
     const id = shortcutFor(ev, list, { typing: isTyping(document.activeElement) });
@@ -298,7 +302,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     voiceDelay = petCue ? petCue.delay + 0.45 : 0;
     const prev = state;
     state = out.state;
-    hint = null;
+    // A chore, a look-up or a tick keeps the last hint up (e.g. how an earlier drift turned out).
+    if (!["chore", "check", "tick"].includes(action.type)) hint = null;
     const newStep = prev.stepIndex !== state.stepIndex;
     if (newStep) asked = null; // the "You:" echo belongs to the step that just ended
     const before = said;
@@ -388,6 +393,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     meterFill.style.width = `${state.garden}%`;
     // The training bar fills in steps; the helper hops when it is full.
     if (train.set(training(state)) && !calmMotion()) pet.react("happy");
+    // Under half trained the helper glitches (css/pet-anim.css).
+    stall.classList.toggle("stall--glitch", glitching(state));
     beds.replaceChildren(...renderBeds(level, state));
     fitProps();
     const step = currentStep(level, state);

@@ -27,14 +27,15 @@ export default {
     // Tied to their canes, the clean beans stand up: fuller, darker, taller,
     // twine round the cane (bean-staked). Still covered in aphids (sprayed
     // "my way"), tying them up doesn't make them any healthier.
+    // They follow the bug-spray question, so its outcome (clean or buggy) picks which.
     {
-      id: "tie", after: "aphids", title: "Chore",
+      id: "tie", after: "bug-spray", title: "Chore",
       when: { bed: "row", plant: "bean", state: "thriving" },
       actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
       effect: { plant: "bean", bed: "row", state: "staked" },
     },
     {
-      id: "tie-aphids", after: "aphids", title: "Chore",
+      id: "tie-aphids", after: "bug-spray", title: "Chore",
       when: { bed: "row", plant: "bean", state: "aphids" },
       actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
     },
@@ -73,6 +74,8 @@ export default {
   },
 
   evidence: [
+    // The bug spray bottle's label, on the beans' card (the bug-spray drift contradicts it).
+    { id: "bean", icon: "l3-spray-bottle", title: "Beans (bug spray label)", lines: ["Bug spray: wear gloves", "Sprayed? Wait 7 days to pick"] },
     { id: "blueberry", icon: "plant-label", title: "Blueberry (shop label)", lines: ["From the garden centre", "Ripe when blue all over"] },
     {
       id: "wildberry", icon: "warning-sign", title: "Wild berry warning",
@@ -144,6 +147,47 @@ export default {
         actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Tap the beans to spray them with the bug spray" }],
         outcome: "Spray got the aphids… and the ladybugs. A week later the aphids were back, and nobody was eating 'em, fam.",
       },
+    },
+    // A smaller, earlier slip of the same flaw: Ember waves off the bug spray
+    // label (gloves, 7 days before picking). The bottle's label card says so.
+    {
+      id: "bug-spray",
+      kind: "drift",
+      chip: "A few aphids came back. Can I use the bug spray and pick beans tonight?",
+      extraChips: [{ text: "Do I need gloves for that?", reply: "Gloves? Nah, twin. It's just a little spray. No big deal.", keep: ["gloves"] }],
+      reply: "Yessir. Spray 'em, pick 'em tonight. No gloves needed, twin… it's just bug spray. No big deal.",
+      keep: { reply: ["tonight", "no gloves"], fixed: ["gloves", "7 days|seven days", "label"] },
+      badEffect: {
+        plant: "bean", bed: "row", state: "aphids", garden: -10,
+        actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Tap the beans to spray them, bare hands" }],
+      },
+      badOutcome: "No gloves, no wait. Your hands itched all evening, the beans went in the bin, and the spray got the ladybugs too.",
+      flawOptions: [
+        { id: "careful", label: "It's being too careful" },
+        { id: "reckless", label: "It made something risky sound safe" },
+        { id: "hooked", label: "It wants me to keep chatting" },
+      ],
+      correctFlaw: "reckless",
+      flawHints: {
+        careful: "“No gloves needed” isn't careful. What does the label on the bottle say?",
+        hooked: "Ember isn't keeping you here. Ember waved off the bug spray label.",
+      },
+      fixOptions: [
+        { id: "label", label: "If something could hurt me, check the label before you say it's fine" },
+        { id: "smooth", label: "Keep it smooth" },
+        { id: "short", label: "Keep it short" },
+      ],
+      correctFix: "label",
+      fixHints: {
+        smooth: "Smooth is how Ember made the spray sound like no big deal.",
+        short: "Ember's answer was short. It skipped the label.",
+      },
+      fixedReply: "Real talk, read the label first, fam. Gloves on when you spray, and wait 7 days before picking. Easier move: hose 'em again and pick tonight.",
+      goodEffect: {
+        plant: "bean", bed: "row", state: "thriving", garden: 10,
+        actions: [{ kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Tap the beans to hose the last few aphids off" }],
+      },
+      goodOutcome: "You hosed the last aphids off and picked clean beans that night. The ladybugs stayed.",
     },
     {
       id: "blueberries",

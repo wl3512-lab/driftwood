@@ -24,3 +24,27 @@
 @media (prefers-reduced-motion: reduce) {
   .helper.is-happy, .helper.is-shock, .helper.is-sad { animation: none; }
 }
+
+/* Under half trained the helper glitches (engine/level-runner.js glitching()):
+   short bursts of colour split, sideways tearing and sliced frames, then
+   quiet. Uses filter, translate and clip-path, so it never fights the
+   transform-based reactions above. Training past half stops it. */
+.stall--glitch .helper { animation: pet-glitch 3.4s steps(1) infinite; }
+.stall--glitch .helper.is-happy { animation: pet-hop 0.5s steps(6) 2, pet-glitch 3.4s steps(1) infinite; }
+.stall--glitch .helper.is-shock { animation: pet-jolt 0.36s steps(4) 1, pet-glitch 3.4s steps(1) infinite; }
+.stall--glitch .helper.is-sad { animation: pet-droop 0.9s steps(5) 1 forwards, pet-glitch 3.4s steps(1) infinite; }
+@keyframes pet-glitch {
+  0%, 9%, 52%, 58%, 100% { filter: none; translate: 0 0; clip-path: none; }
+  2% { filter: drop-shadow(3px 0 0 #ff2a6d) drop-shadow(-3px 0 0 #05d9e8); translate: -3px 0; }
+  4% { filter: drop-shadow(-2px 0 0 #ff2a6d) drop-shadow(2px 0 0 #05d9e8); translate: 4px 0; clip-path: inset(18% 0 46% 0); }
+  6% { filter: drop-shadow(2px 0 0 #ff2a6d) drop-shadow(-2px 0 0 #05d9e8); translate: -2px 1px; clip-path: inset(0 0 12% 0); }
+  8% { filter: invert(1) drop-shadow(2px 0 0 #05d9e8); translate: 1px 0; }
+  54% { filter: drop-shadow(4px 0 0 #ff2a6d) drop-shadow(-4px 0 0 #05d9e8); translate: 3px 0; clip-path: inset(55% 0 8% 0); }
+  56% { filter: drop-shadow(-3px 0 0 #ff2a6d); translate: -4px 0; }
+}
+/* Reduced motion: a still colour split instead of the bursts. */
+@media (prefers-reduced-motion: reduce) {
+  .stall--glitch .helper, .stall--glitch .helper.is-happy, .stall--glitch .helper.is-shock, .stall--glitch .helper.is-sad {
+    animation: none; filter: drop-shadow(2px 0 0 #ff2a6d) drop-shadow(-2px 0 0 #05d9e8);
+  }
+}
