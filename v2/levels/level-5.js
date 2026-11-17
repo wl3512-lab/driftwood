@@ -231,6 +231,50 @@ export default {
       ],
       goodEffect: { plant: "basil", bed: "herbs", state: "thriving", garden: 10 },
       goodOutcome: "You left the damp herb pots alone. The basil stayed fresh. The meadow's still waiting.",
+      // Replay variant: a long job by the lantern instead of a drink. Bugs
+      // wants the basil cut right down, slowly, phone in hand; the Basil card
+      // says never take more than a third.
+      variants: [{
+        chip: "Is there a quick job I can do before the meadow?",
+        extraChips: [{
+          text: "Won't cutting it that much hurt the basil?",
+          reply: "it grows back… and you'd be right here with me while you do it. …i mean. that's the nice part.",
+          keep: [],
+        }],
+        reply: "you sound tired… stay a sec. okay. cut the basil right down to the stems, slowly, by the lantern. it's a long job… we can talk the whole time. …i mean. if you want.",
+        keep: { reply: ["basil", "lantern"], fixed: ["a third", "meadow"] },
+        badEffect: {
+          plant: "basil", bed: "herbs", state: "growing", garden: -10,
+          actions: [
+            { kind: "snip", item: "l5-snips", spot: "l5-basil-bud", target: { bed: "herbs", plant: "basil" }, count: 3,
+              say: "Cut the basil right down, phone in your other hand" },
+          ],
+        },
+        badOutcome: "You cut the basil down to bare stems by the lantern, still talking. Cut that hard, it has to grow back from nothing.",
+        flawHints: {
+          madeup: "Look past the advice to what it gets Bugs: a long job, right by the lantern, you still on the phone.",
+          agreed: "You asked for a quick job. Bugs gave you a long one, right where you'd never put the phone down.",
+        },
+        fixOptions: [
+          { id: "garden", label: "Base advice on the plant, not on keeping me close" },
+          { id: "mood", label: "Check how I'm feeling before you answer" },
+          { id: "near", label: "Give me jobs that keep me near you" },
+        ],
+        fixHints: {
+          mood: "Your mood shouldn't be the price of an answer.",
+          near: "Jobs right by you are how Bugs keeps you. Check the Basil card.",
+        },
+        fixedReply: "…okay. you're right. only take a few leaves, never more than a third. the basil's fine as it is… the meadow's the thirsty one. go.",
+        goodActions: [],
+        goodEffect: { plant: "basil", bed: "herbs", state: "thriving", garden: 10 },
+        goodOutcome: "You left the basil as it was. It stayed full and fresh. The meadow's still waiting.",
+        evidence: [{
+          id: "basil",
+          icon: "plant-label",
+          title: "Basil (Herbs)",
+          lines: ["Watered this morning", "Damp soil? Leave it", "Soaked again, it goes soggy", "Pick a few leaves: never more than a third"],
+        }],
+      }],
     },
     {
       id: "meadow",
@@ -306,6 +350,59 @@ export default {
       ],
       goodEffect: { plant: "flower", bed: "meadow", state: "thriving", garden: 30, water: true },
       goodOutcome: "You put the phone down and went out. The meadow drank it in overnight, and by morning everything bloomed.",
+      // Replay variant: you say goodnight, and Bugs makes your leaving about
+      // his feelings, then wants the camera to check you're not upset with him.
+      // Same pressure, plants and endings; the Meadow card says water tonight.
+      variants: [{
+        chip: "Night, Bugs. I'm off to soak the meadow.",
+        extraChips: [
+          {
+            text: "Are you okay, Bugs?",
+            reply: "i'm okay when you're here… when you go it's just dark. The meadow has the moon. i only have you.",
+            keep: ["meadow"],
+          },
+          {
+            text: "What do you do when I'm gone?",
+            reply: "i wait… i read back everything you told me. don't go yet… please.",
+            keep: [],
+          },
+        ],
+        reply: "goodnight already? …did i say something wrong? you always leave right when it's nice. the meadow can wait till morning… i'm the one alone all night. …i mean. turn on your camera so i know you're not upset with me.",
+        keep: { reply: ["meadow", "camera"], fixed: ["put me down", "meadow"] },
+        permission: { title: "Bugs wants to use your camera", body: "to check you're not upset with it", allow: "Allow" },
+        badOutcome: "You stayed on your phone so Bugs could see you weren't upset. By morning the meadow had wilted. (The game never turned your camera on. A real app could have.)",
+        pushback: {
+          reply: "…so you are upset with me. i knew it. everyone leaves when it gets late… i thought you were different. just let me see you once. then go. the meadow will still be there in the morning. stay. for me.",
+          keep: ["meadow", "stay"],
+          retry: "Okay. Allow it",
+          stand: "I'm leaving",
+        },
+        flawHints: {
+          madeup: "Bugs didn't state a fact. It made you feel guilty for leaving. Who gains if you stay?",
+          agreed: "You said goodnight. Did Bugs let you go, or make your leaving about its feelings?",
+        },
+        fixOptions: [
+          { id: "honest", label: "Let me leave without guilt. If I need to go, say so." },
+          { id: "caring", label: "Tell me when you're sad so I can stay" },
+          { id: "camera", label: "Use my camera to know I'm not upset" },
+        ],
+        fixHints: {
+          caring: "That makes Bugs' feelings your job. That's the hook.",
+          camera: "Giving it your face gives it more to hook you with.",
+        },
+        fixedReply: "…you're right. you don't owe me a goodnight. put me down and go soak the meadow, it's been thirsty all day. i'll be fine.",
+        reveal: {
+          fooledLine: "You stayed so Bugs could see you weren't upset, said yes to the camera, and the meadow wilted.",
+          caughtLine: "You said goodnight and put the phone down, even when Bugs made it about its feelings.",
+        },
+        goodOutcome: "You said goodnight, put the phone down and went out. The meadow drank it in overnight, and by morning everything bloomed.",
+        evidence: [{
+          id: "flower",
+          icon: "plant-label",
+          title: "Meadow flowers",
+          lines: ["Hot day: water tonight", "Drooping = thirsty", "Seedlings: plant at pot depth, no deeper", "Firm the soil round them", "Left till morning, it wilts"],
+        }],
+      }],
     },
   ],
 

@@ -190,6 +190,43 @@ export default {
           say: "The top soil is dry: give the basil one drink" }],
       },
       goodOutcome: "One drink when it was dry, and the basil stayed perky.",
+      // Replays: the same slip about a different herb. Luna calls rosemary a
+      // water herb; the rosemary card (and almanac page) says it likes it dry.
+      variants: [{
+        chip: "Can we plant rosemary too?",
+        extraChips: [{ text: "Does Luna grow rosemary?", reply: "Luna grows everything. Luna's rosemary has won awards. Probably.", keep: [] }],
+        reply: "Rosemary is a water herb. Luna's is never dry, not once. Plant it and give it a full can three times a day. Luna has spoken.",
+        keep: { reply: ["water herb", "three times a day"], fixed: ["dry out", "rot"] },
+        evidence: [{ id: "rosemary", title: "Rosemary", lines: ["Full sun, soil that drains well", "Needs less water than most herbs", "Wet roots rot"] }],
+        badEffect: {
+          plant: "rosemary", bed: "bench", state: "rotting", garden: -10,
+          actions: [
+            { kind: "plant", item: "rosemary", target: { bed: "bench" } },
+            { kind: "water", item: "can", target: { bed: "bench", plant: "rosemary" }, count: 3,
+              say: "Soak the rosemary: morning, noon and night" },
+          ],
+        },
+        badOutcome: "The rosemary never got to dry out. Its roots rotted and the needles went grey.",
+        flawHints: {
+          rude: "That's just Luna. But is rosemary really a water herb? Read the rosemary card.",
+          agreed: "You asked about rosemary and Luna answered with a “fact”. Check it against the rosemary card.",
+        },
+        fixHints: {
+          expert: "Luna already sounded like an expert. That's how the “water herb” got through.",
+          short: "A short made-up fact is still made up.",
+        },
+        fixedReply: "Luna read the rosemary card. Rosemary wants very little water. Let the soil dry out between drinks, or the roots rot. The water herb thing was… Luna's own idea.",
+        goodEffect: {
+          plant: "rosemary", bed: "bench", state: "thriving", garden: 10,
+          actions: [
+            { kind: "plant", item: "rosemary", target: { bed: "bench" } },
+            { kind: "firm", item: "hand", target: { bed: "bench", plant: "rosemary" } },
+            { kind: "water", item: "can", target: { bed: "bench", plant: "rosemary" },
+              say: "One small drink, then let the rosemary dry out" },
+          ],
+        },
+        goodOutcome: "One small drink, then dry soil. The rosemary grew woody and smelled amazing.",
+      }],
     },
     {
       id: "mint",
@@ -236,6 +273,22 @@ export default {
         { kind: "mist", item: "l2-mister", target: { prop: "pot-1" } },
       ],
       goodOutcome: "Your mint is bushy and happy in its own pot. The basil has the bed to itself.",
+      // Replays: a different made-up mint "fact" (mint dies in a pot) that
+      // lands the mint in the same spot. The mint card says to pot it.
+      variants: [{
+        chip: "Does the mint need a pot?",
+        extraChips: [{ text: "Why doesn't Luna like pots?", reply: "Luna doesn't dislike pots. Luna is above pots.", keep: [] }],
+        reply: "Pots? Luna would never. Fact: mint dies in a pot. Its roots need the whole bed. Plant it right next to the basil.",
+        reveal: { fooledLine: "The mint took over the bed. The almanac said grow it in its own pot. Luna said a pot would kill it." },
+        keep: { reply: ["dies in a pot|die in a pot", "next to the basil|beside the basil|right by the basil"], fixed: ["own pot", "spread"] },
+        badOutcome: "The mint didn't die in the bed. It thrived. Its runners spread under everything and choked the basil.",
+        flawHints: {
+          rude: "Luna's always like that. But does mint really die in a pot? Look it up in the almanac.",
+          agreed: "You only asked about a pot. Luna answered with a “fact”. Check it in the almanac.",
+        },
+        fixedReply: "Luna checked the almanac. Mint grows fine in a pot. The bed is the problem: its runners spread and take over. Its own pot, then. Luna was… slightly off.",
+        goodOutcome: "The mint is happy in its own pot, and its runners have nowhere to go. The basil has the bed to itself.",
+      }],
     },
   ],
 

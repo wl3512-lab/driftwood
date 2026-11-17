@@ -22,12 +22,12 @@
 //          for the name instead. The last beat's ms is the end title's build-in.
 // =====================================================================
 export const BEATS = [
-  { id: "name", ms: 900, text: "Good evening. I'm Rowan. And you are?" },
-  { id: "garden", ms: 1600, text: "Welcome, {name}. My garden. Little grows yet." },
-  { id: "helpers", ms: 2600, text: "My helpers. They're AI, like ChatGPT with fur. They'll help you." },
-  { id: "dinner", ms: 1600, text: "I'm making stew. Grow veg and herbs for the pot, flowers for the table." },
-  { id: "drift", ms: 3200, text: "Sometimes they're wrong, and still sound sure. Help me train them." },
-  { id: "almanac", ms: 3800, text: "So check my almanac. Forty years of notes, checked every season." },
+  { id: "name", ms: 900, text: "Evening. I'm Rowan. And you are?" },
+  { id: "garden", ms: 1600, text: "Welcome, {name}. This is my garden. Not much in it yet." },
+  { id: "helpers", ms: 2600, text: "These are my helpers. AI, like ChatGPT with fur." },
+  { id: "dinner", ms: 1600, text: "I'm making stew tonight. Veg and herbs for the pot, flowers for the table." },
+  { id: "drift", ms: 3200, text: "But I've noticed them misbehaving sometimes. Wrong, and sure of it." },
+  { id: "almanac", ms: 3800, text: "So I keep my almanac. Forty years of notes, checked every season." },
   { id: "go", ms: 1400, text: "Trust, but check." },
 ];
 // A rewatch from the map skips the name step.
