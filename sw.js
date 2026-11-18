@@ -6,7 +6,7 @@
  * a second visit works with no connection at all. Camera models and the
  * optional live-AI proxy are never cached.
  */
-const VERSION = "dw-v43";
+const VERSION = "dw-v44";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const PRECACHE = [
   "./icons/app-icon-512.png",
   "./icons/app-icon-maskable-512.png",
   "./icons/app-icon-180.png",
+  "./icons/driftwood-favicon.svg",
   "./icons/mood-garden-favicon.svg",
   "./icons/fox.svg", "./icons/parrot.svg", "./icons/bunny.svg", "./icons/dog.svg", "./icons/cat.svg",
   "./v2/fonts/PixelifySans.woff2"
