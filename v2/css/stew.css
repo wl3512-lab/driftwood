@@ -68,21 +68,24 @@
   .stew__menu-row { font-size: 0.76rem; }
   .stew__bub { font-size: 0.95rem; }
 }
-/* ---- phones in landscape ---- */
+/* ---- phones in landscape (12px text floor, as in phone.css) ---- */
 @media (max-height: 500px), (max-width: 640px) {
   .stew { --cell: min(0.6vw, 1.05dvh); }
-  .stew__menu { left: 8px; top: 8px; width: min(260px, 34vw); padding: 6px 8px; border-width: 2px; box-shadow: 3px 3px 0 var(--line); }
-  .stew__title { font-size: 0.8rem; margin-bottom: 3px; }
-  .stew__menu-row { font-size: 0.56rem; line-height: 1.3; }
-  .stew__why { margin-top: 3px; font-size: 0.54rem; }
+  .stew__menu { left: 8px; top: 8px; width: min(320px, 40vw); padding: 6px 8px; border-width: 2px; box-shadow: 3px 3px 0 var(--line);
+    /* stops above the field guide button; a long list of misses scrolls */
+    max-height: calc(100dvh - 8px - 44px - 16px); overflow-y: auto; overscroll-behavior: contain; }
+  .stew__title { font-size: 0.875rem; margin-bottom: 4px; }
+  .stew__title:focus-visible { outline-width: 2px; outline-offset: 1px; }
+  .stew__menu-row { font-size: 0.75rem; line-height: 1.3; }
+  .stew__why { margin-top: 3px; font-size: 0.75rem; }
   .stew__rating { right: 8px; top: 8px; padding: 5px 6px 4px; border-width: 2px; box-shadow: 3px 3px 0 var(--line); }
   .stew__bowls { gap: 3px; }
-  .stew__kinds { margin-top: 3px; font-size: 0.55rem; }
-  .stew__bub { padding: 7px 9px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--line); font-size: 0.72rem; max-width: min(260px, 40vw); bottom: calc(100% + 8px); }
-  .stew__who { top: -10px; left: 6px; padding: 1px 5px; font-size: 0.5rem; }
+  .stew__kinds { margin-top: 3px; font-size: 0.75rem; }
+  .stew__bub { padding: 7px 9px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--line); font-size: 0.8rem; max-width: min(300px, 42vw); bottom: calc(100% + 8px); }
+  .stew__who { top: -12px; left: 6px; padding: 1px 5px; font-size: 0.75rem; letter-spacing: 0.06em; }
   .stew__tail { width: 8px; height: 8px; bottom: -6px; border-width: 2px; left: calc(var(--cell) * 36 * 0.4 - 4px); }
   .stew__table { border-width: 2px; }
-  .stew__down { left: 8px; bottom: 8px; font-size: 0.75rem; padding: 0 12px; }
+  .stew__down { left: 8px; bottom: 8px; font-size: 0.8rem; padding: 0 12px; }
   /* Short screens: the rating moves to the bottom right, so his bubble has the top. */
   .stew__rating { top: auto; bottom: 8px; }
 }

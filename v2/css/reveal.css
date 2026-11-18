@@ -32,7 +32,7 @@
 }
 .reveal[data-layout="compact"] {
   --cw: 252px; --ch: 352px; --pad: 11px; --art: 90px; --nameH: 46px; --star: 24px;
-  --fs-num: 12px; --fs-gloss: 13px; --fs-tip: 12.5px; --fs-lab: 11px; --fs-back: 15px; --fs-back2: 13px;
+  --fs-num: 12px; --fs-gloss: 13px; --fs-tip: 12.5px; --fs-lab: 12px; --fs-back: 15px; --fs-back2: 13px;
   --bw: 178px; --bh: 146px; --gap: 28px; --fs-bub: 12.5px; --bubPet: 38px; --btnH: 44px; --fs-btn: 0.85rem;
 }
 /* The garden stays crisp behind the card: a vignette at the edges, light behind the card. */

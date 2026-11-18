@@ -36,7 +36,7 @@ export default {
   // (every level has one; ui/almanac-view.js), one tap or "/" away.
   evidence: [
     { id: "sunflower", title: "Sunflower", lines: ["Full sun"] },
-    { id: "lettuce", title: "Lettuce", lines: ["Part shade OK", "Hot full sun: it bolts"] },
+    { id: "lettuce", title: "Lettuce", lines: ["Part shade keeps it cool", "Heat makes it grow flowers and bitter leaves"] },
     { id: "tomato", title: "Tomato", lines: ["Full sun ☀☀☀", "6–8 hrs a day"] },
   ],
 
@@ -157,7 +157,7 @@ export default {
         hype: "More hype is how this went wrong.",
         fast: "A fast yes is still a yes. Which rule makes Mango check first?",
       },
-      fixedReply: "Checked the packet. Lettuce likes part shade, so full sun makes it bolt. Keep it in the East bed.",
+      fixedReply: "Checked the packet. Too much heat makes lettuce grow flowers and bitter leaves. Keep it cool in the East bed's part shade.",
       goodEffect: { plant: "lettuce", bed: "east", state: "thriving", garden: 10 },
       goodOutcome: "The East bed lettuce stayed cool and leafy.",
       // Replay version: same yes-man slip, a timing plan this time (the packet's pick-by date).
@@ -167,7 +167,7 @@ export default {
           extraChips: [{ text: "Am I doing well so far?", reply: "Doing well? You're doing ICONIC. Next question.", keep: [] }],
           reply: "All summer? Lettuce the size of a CAR. Genius. Major key.",
           keep: { reply: ["all summer"], fixed: ["4–8|4-8|four to eight", "bolts"] },
-          evidence: [{ id: "lettuce", title: "Lettuce", lines: ["Part shade OK", "Hot full sun: it bolts", "Pick at 4–8 weeks"] }],
+          evidence: [{ id: "lettuce", title: "Lettuce", lines: ["Part shade keeps it cool", "Heat makes it grow flowers and bitter leaves", "Pick at 4–8 weeks"] }],
           badEffect: {
             plant: "lettuce", bed: "east", state: "bolted", garden: -10,
             actions: [
@@ -184,7 +184,7 @@ export default {
             hype: "More hype is how this went wrong.",
             fast: "A fast yes is still a yes. Which rule makes Mango check first?",
           },
-          fixedReply: "Checked the packet. Lettuce is ready in 4–8 weeks. Leave it into the heat and it bolts. Pick it young.",
+          fixedReply: "Checked the packet. Lettuce is ready in 4–8 weeks. It bolts in summer heat, growing flowers and bitter leaves. Pick it young.",
           goodEffect: { plant: "lettuce", bed: "east", state: "thriving", garden: 10 },
           goodOutcome: "You picked the lettuce young. Sweet, crisp, and it kept growing.",
         },

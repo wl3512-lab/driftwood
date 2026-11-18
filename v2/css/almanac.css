@@ -334,7 +334,7 @@
   .almanac__sign-type { height: 16px; }
   .almanac__hint { font-size: 0.72rem; max-width: 30ch; }
   .almanac__sheet-tab { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
-  .almanac__count { padding: 6px 8px; font-size: 0.7rem; }
+  .almanac__count { padding: 6px 8px; font-size: 0.75rem; }
   .almanac__screen { padding: 6px 10px 10px; }
   .almanac__sheet { gap: 8px; }
   .almanac__search { padding: 4px 8px; gap: 2px 8px; box-shadow: 3px 3px 0 var(--line); }

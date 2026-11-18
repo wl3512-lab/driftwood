@@ -149,6 +149,29 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }
   };
   const main = h("main", { class: phone ? "level level--phone" : "level", "data-scene": level.scene || "yard" }, scene, dock);
+  // Landscape phones share a screen-wide HUD. Move the existing controls so
+  // their state and listeners survive rotation, and restore their home on laptops.
+  const phoneHud = h("div", { class: "level__hud" });
+  const sceneTop = scene.querySelector(".scene__top");
+  const meter = sceneTop.querySelector(".meter");
+  const sound = stall.querySelector(".snd--stall");
+  const sideways = window.matchMedia("(max-height: 500px) and (orientation: landscape)");
+  function placeHud() {
+    if (sideways.matches) {
+      phoneHud.append(stall, meter, toolbar);
+      sceneTop.append(sound);
+      main.append(phoneHud);
+    } else {
+      sceneTop.append(meter);
+      sceneTop.after(toolbar);
+      if (phone) dock.querySelector(".phone__status").after(stall);
+      else dock.prepend(stall);
+      stall.append(sound);
+      phoneHud.remove();
+    }
+  }
+  placeHud();
+  sideways.addEventListener("change", placeHud);
   main.preloaded = preloaded; // keep the Image objects alive while the level is mounted
   root.replaceChildren(main);
 
@@ -272,6 +295,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const calmMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   let mounted = true;
   function unmount() {
+    sideways.removeEventListener("change", placeHud);
     fitWatch?.disconnect();
     window.removeEventListener("resize", fitProps);
     forgetPrefetched();
