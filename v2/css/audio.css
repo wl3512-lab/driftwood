@@ -1,8 +1,8 @@
 /* The sound switch (v2/audio/toggle.js): a pixel speaker in a parchment
-   button, like the level's tool buttons. 44px on touch screens. */
+   button, like the level's tool buttons. 44px everywhere. */
 .snd {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 40px; height: 40px; padding: 0;
+  width: 44px; height: 44px; padding: 0;
   background: var(--parchment, #fff6dc); color: var(--ink, #3b2a1a);
   border: 3px solid var(--ink, #3b2a1a); border-radius: 2px; box-shadow: 3px 3px 0 var(--ink, #3b2a1a);
   cursor: pointer;
@@ -18,11 +18,11 @@
    at 568×320 it is static and the dock holds it instead). On a laptop it is
    smaller, in the window's corner clear of the helper; with room to spare it
    sits just outside the stall, to its left. */
-.stall .snd--stall { position: absolute; top: 4px; right: 4px; z-index: 3; width: 30px; height: 30px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink, #3b2a1a); }
-.stall .snd--stall .snd__icon { width: 18px; height: 18px; }
+.stall .snd--stall { position: absolute; top: 4px; right: 4px; z-index: 3; width: 44px; height: 44px; border-width: 3px; box-shadow: 2px 2px 0 var(--ink, #3b2a1a); }
+.stall .snd--stall .snd__icon { width: 24px; height: 24px; }
 @media (pointer: coarse) { .stall .snd--stall { width: 44px; height: 44px; border-width: 3px; } .stall .snd--stall .snd__icon { width: 24px; height: 24px; } }
 @media (min-width: 1180px) and (min-height: 501px) {
-  .stall .snd--stall { top: 0; right: calc(100% + 12px); width: 40px; height: 40px; border-width: 3px; box-shadow: 3px 3px 0 var(--ink, #3b2a1a); }
+  .stall .snd--stall { top: 0; right: calc(100% + 12px); width: 44px; height: 44px; border-width: 3px; box-shadow: 3px 3px 0 var(--ink, #3b2a1a); }
   .stall .snd--stall .snd__icon { width: 24px; height: 24px; }
 }
 

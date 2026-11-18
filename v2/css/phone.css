@@ -143,6 +143,8 @@
   .dock .you { display: none; }
   .dock .bubble__text { font-size: clamp(12px, 4.2dvh, 16px); line-height: 1.3; }
   .dock button, .level__hud button, .scene__top button { touch-action: manipulation; }
+  /* ...except a dock tool you drag: the drag owns the gesture (actions.css) */
+  .dock .act__item { touch-action: none; }
   .dock .chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; overflow: visible; }
   .dock .chips > .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .dock .chip { flex: 1 1 auto; min-height: 44px; padding: 5px 8px; font-size: 13px; line-height: 1.2; }
