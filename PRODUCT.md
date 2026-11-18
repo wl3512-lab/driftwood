@@ -8,7 +8,7 @@ brand
 
 Students, instructors and visitors who meet Driftwood through NYU ITP/IMA "Topics in Media" (a final project), Lucy Liu's portfolio, or a shared link. They are curious, not gamers by default. A full run is about 15 to 25 minutes, usually alone, on a laptop or a phone held sideways. Their job: help Rowan make a garden for a stew dinner, notice when an AI helper is confidently wrong, name what kind of wrong it is, and teach it better.
 
-Live at https://wl3512-lab.github.io/driftwood/.
+Play at https://wl3512-lab.itch.io/driftwood (the game itself is hosted at https://wl3512-lab.github.io/driftwood/v2/).
 
 ## Product Purpose
 
