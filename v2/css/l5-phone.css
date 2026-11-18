@@ -352,6 +352,20 @@
   .level--phone .level__hud .stall__name { color: #2e7d32; font-size: 12px; letter-spacing: 0; }
   .level--phone .level__hud .stall .train { color: var(--ink); font-size: 12px; }
   .level--phone .level__hud .phone__note, .level--phone .level__hud .phone__badge { display: none; }
+  /* Phone put down: Bugs's sad line runs across the top of the chat column,
+     under the HUD row (the chore card moves down to make room), and the
+     unread badge sits on his picture. */
+  .level--phone.is-phone-down .level__hud .phone__note {
+    display: block; position: absolute; z-index: 8; top: calc(100% + 4px); left: 8px; right: 8px;
+    padding: 4px 7px;
+    background: var(--ph-head); border: 3px solid var(--ph-edge); box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  }
+  .level--phone.is-phone-down:not(.level--behind) > .dock { padding-top: 88px; }
+  .level--phone.is-phone-down .level__hud .phone__badge:not(:empty) {
+    display: block; position: absolute; top: -2px; left: 20px; right: auto; z-index: 9;
+    min-width: 20px; height: 20px; padding: 0 4px; border-width: 2px;
+    font: 700 12px/16px var(--font-ui);
+  }
   .level--phone .level__hud .tool-hint { display: none; }
   .level--phone:not(.is-phone-down) .phone__status { display: none; }
   .level--phone:not(.is-phone-down) .stall { padding: 2px 6px; }

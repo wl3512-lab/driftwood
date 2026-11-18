@@ -19,7 +19,9 @@
 /* Phones held sideways put the dock in a side column: give its space back to the garden. */
 @media (max-height: 500px) and (orientation: landscape) {
   .level.level--behind { grid-template-columns: minmax(0, 1fr); }
-  .level.level--behind .dock { display: none; }
+  .level.level--behind .dock,
+  .level.level--phone.level--behind > .dock,
+  .level.level--behind > .level__hud { display: none; }
 }
 
 /* ---------- overlay + sizes ---------- */

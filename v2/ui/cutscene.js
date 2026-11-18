@@ -168,6 +168,11 @@ export function renderCutscene(root, { first = true, name = "", onName = () => {
         h("div", { class: "meter" }, h("span", { class: "meter__text" }, "Garden 0%"),
           h("div", { class: "meter__bar" }, h("div", { class: "meter__fill" })))),
       h("div", { class: "tools" }, h("p", { class: "tool-hint cs__tag" }, "Almanac"), almBtn)));
+  // Sideways phones move the meter and toolbar into a HUD row at the top right
+  // (ui/level-view.js placeHud); the ghost does the same so the button matches.
+  if (window.matchMedia?.("(max-height: 500px) and (orientation: landscape)").matches) {
+    hud.append(h("div", { class: "level__hud" }, hud.querySelector(".meter"), hud.querySelector(".tools")));
+  }
 
   // ---- the almanac beat: the radish packet, front and back ----
   const front = packetFront(RADISH, { as: "div", band: "SEEDS · EXAMPLE", meta: "FROM THE ALMANAC", attrs: { "aria-hidden": "true" } });

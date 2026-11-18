@@ -294,3 +294,12 @@
   .cs__flip .fact__lines { font-size: 0.95rem; }
   .cs__claim { font-size: 0.66rem; line-height: 1.3; }
 }
+
+/* Sideways phones: the ghost toolbar sits in the level's HUD row (cutscene.js),
+   where the level hides hints; the intro still names the button. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cs__ghost .level__hud .tool-hint.cs__tag {
+    display: block; position: absolute; top: calc(100% + 8px); right: 10px; left: auto; bottom: auto; margin: 0;
+  }
+  .cs__ghost .level__hud .tool-hint.cs__tag::after { display: none; }
+}
