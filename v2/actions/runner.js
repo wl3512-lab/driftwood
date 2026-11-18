@@ -130,8 +130,26 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
   // ---- marks that stay: a kind's land() calls these ----
   function marks() {
     let m = scene.querySelector(":scope > .act-marks");
-    if (!m) { m = h("div", { class: "act-marks", "aria-hidden": "true" }); scene.append(m); }
+    if (!m) {
+      m = h("div", { class: "act-marks", "aria-hidden": "true" }); scene.append(m);
+      // the garden narrows when the chat widens (phones): keep labels inside it
+      if (typeof ResizeObserver === "function") new ResizeObserver(fitTextMarks).observe(scene);
+    }
     return m;
+  }
+  // A text label reads to the right of its spot; on a narrow phone garden it is
+  // nudged sideways just enough to stay inside the scene.
+  function fitTextMarks() {
+    const sr = scene.getBoundingClientRect();
+    if (!sr.width) return;
+    for (const m of scene.querySelectorAll(":scope > .act-marks > .act-mark--text")) {
+      m.style.marginLeft = "";
+      const b = m.getBoundingClientRect();
+      let dx = 0;
+      if (b.right > sr.right - 2) dx = sr.right - 2 - b.right;
+      if (b.left + dx < sr.left + 2) dx = sr.left + 2 - b.left;
+      if (dx) m.style.marginLeft = `${Math.round(dx)}px`;
+    }
   }
   const artNode = (name, size = 52) => art(name, { size });
   const textNode = (text) => h("span", { class: "act-mark__text" }, text);
@@ -146,6 +164,7 @@ export function runPlan({ plan, scene, names, itemFor, onDone, onCancel = null, 
       : `left:${pct(r.left - sr.left + r.width / 2, sr.width)}; top:${pct(r.top - sr.top + r.height / 2, sr.height)}`;
     const m = h("div", { class: `act-mark ${cls}`.trim(), style, "data-mark": keyOf(tg) }, node);
     marks().append(m);
+    if (/act-mark--text/.test(cls)) fitTextMarks();
     return m;
   }
   // A prop shows new art (the jar fills); any other target gets the art stamped on it.

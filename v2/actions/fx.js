@@ -59,7 +59,8 @@ export function clearLabels(layer, nodes, { reduced = false } = {}) {
     hide: () => fade(1, 0),
     show: async () => {
       await fade(0, 1);
-      for (const m of hit) { try { m.getAnimations().forEach((x) => x.cancel()); } catch (_) { /* fine */ } }
+      // drop only our fade; the CSS 10 s fade-out (actions.css) keeps running
+      for (const m of hit) { try { m.getAnimations().forEach((x) => { if (!(globalThis.CSSAnimation && x instanceof CSSAnimation)) x.cancel(); }); } catch (_) { /* fine */ } }
     },
   };
 }

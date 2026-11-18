@@ -24,7 +24,7 @@ export const PLANTS = [
     stages: ["lettuce-sown", "lettuce-growing", "lettuce-thriving"],
     sun: "Part shade is fine", water: "Keep the soil evenly moist", space: "25 cm apart",
     tip: "Pick the outer leaves and it keeps growing",
-    watch: ["lettuce-bolted", "Too hot and it bolts: goes to seed and turns bitter."],
+    watch: ["lettuce-bolted", "Too much heat makes it grow a tall flower stalk. The leaves turn bitter. This is called bolting."],
     plant: "Early spring or late summer", harvest: "4–8 weeks, before it gets hot", soil: "Rich and moist", pals: "Carrots and onions" },
   { id: "tomato", name: "Tomato", level: 1, color: "#e53935",
     stages: ["tomato-sown", "tomato-growing", "tomato-thriving"],

@@ -14,7 +14,7 @@
     <meta property="og:description" content="Build a garden with AI animal helpers, and notice when their advice starts to drift.">
     <meta property="og:image" content="icons/og-cover.png">
     <!-- The game lives in v2/. This page only forwards there. -->
-    <meta http-equiv="refresh" content="0; url=./v2/">
+    <meta http-equiv="refresh" content="0; url=./v2/index.html">
     <script>
       // No offline worker on a local dev server: it would keep serving old files.
       var dev = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
@@ -22,11 +22,11 @@
         if (dev) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
         else navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(function () {});
       }
-      location.replace("./v2/" + location.search + location.hash);
+      location.replace("./v2/index.html" + location.search + location.hash);
     </script>
     <style>body{background:#fdf6e3;font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0}</style>
   </head>
   <body>
-    <p><a href="./v2/">Play Driftwood</a></p>
+    <p><a href="./v2/index.html">Play Driftwood</a></p>
   </body>
 </html>
