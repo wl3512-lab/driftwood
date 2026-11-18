@@ -2,7 +2,7 @@
 
 **A short pixel game about the AI helpers we trust.** You build a garden and ask five animal helpers for advice, the way people really use ChatGPT. Each one starts out right, then drifts. Follow bad advice and the garden pays for it. Catch it and you earn stars, plus a field-guide card on how real AI tools do the same thing.
 
-**[Play it](https://wl3512-lab.github.io/driftwood/v2/)**: no account, no install. Works on laptops and phones (portrait or landscape) and plays offline after the first visit.
+**[Play it on itch.io](https://wl3512-lab.itch.io/driftwood)**: no account, no install. Works on laptops and phones (portrait or landscape) and plays offline after the first visit.
 
 ![Title screen: DRIFTWOOD over a pixel sunset, the five animal helpers walking along a path](docs/screenshots/v2-title.png)
 
