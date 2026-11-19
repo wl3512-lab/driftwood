@@ -1,0 +1,13 @@
+node --test v2/tests/*.test.js
+ℹ tests 378
+ℹ suites 0
+ℹ pass 378
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 275.436958
+
+Full browser journeys (scripted dialogue, automatic hands-on actions):
+pass  laptop/full  (long tasks: none)
+pass  phone/full  (long tasks: none)

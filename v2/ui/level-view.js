@@ -7,7 +7,7 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep, pendingChore, training, glitching, openChain, chainQuestions } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore, training, openChain, chainQuestions } from "../engine/level-runner.js";
 import { trainBar } from "./train-bar.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
@@ -56,6 +56,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   let hint = null;
   let grown = null;
   let outcome = null;
+  const choiceOrders = new Map(); // stable within a question, varied between questions
   let focusKey = null; // phase|step|line last given focus; focus only moves when it changes
   let fresh = new Set(); // evidence ids unlocked by the last action (they pop once)
   let news = null; // what an unlock says through the live region
@@ -148,7 +149,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       if (mood) setTimeout(() => { if (mounted && !(phone && mood === "happy" && main.classList.contains("is-phone-down"))) pet.react(mood); }, (c.delay || 0) * 1000);
     }
   };
-  const main = h("main", { class: phone ? "level level--phone" : "level", "data-scene": level.scene || "yard" }, scene, dock);
+  const main = h("main", { class: phone ? "level level--phone" : "level", "data-level": level.id, "data-scene": level.scene || "yard" }, scene, dock);
   // Landscape phones share a screen-wide HUD. Move the existing controls so
   // their state and listeners survive rotation, and restore their home on laptops.
   const phoneHud = h("div", { class: "level__hud" });
@@ -200,7 +201,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       "aria-label": name, title: name,
     },
     h("img", { src: tool.id === "almanac" ? ALMANAC_SPRITE : tool.sprite, alt: "", width: 28, height: 28 }));
-    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, pages, reached });
+    const view = create({ level, tool, scene, button, dispatch, getState: () => state, t, announce, pages, reached, onInspectionChange: syncPressure });
     button.addEventListener("click", () => view.open());
     toolbar.append(button);
     tools.push({ id: `tool:${tool.id}`, key: tool.key, view });
@@ -226,6 +227,11 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
 
   // Level 5's clock: ticks only while the player lingers on a pressure step's advice.
   const clock = createPressureClock(dispatch);
+  function syncPressure() {
+    const paused = Boolean(thinking || acting || main.classList.contains("is-reading") || main.classList.contains("is-magnifying"));
+    main.dataset.pressurePaused = String(paused);
+    clock.sync(currentStep(level, state), state.phase, { paused, line: said, readingMs: Math.max(8000, Math.min(30000, said.length * 60)) });
+  }
 
   // Shortcuts live right now: the tools, plus the off button's key on a step
   // that sets one (in pushback too, where it stands firm).
@@ -307,8 +313,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     acting = null;
     pet.stop();
     phone?.destroy();
-    clock.destroy();
     for (const tl of tools) tl.view.destroy?.();
+    clock.destroy(); // after the tools: a closing magnifier re-syncs the clock
   }
 
   function dispatch(action) {
@@ -317,7 +323,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (out.state === state && out.effects.length === 0) return;
     // Sound (audio/cues.js): the choice sounds on the tap; the pet's reaction
     // and the garden's sound once it has landed (after any hands-on part).
-    const heard = decisionCues(currentStep(level, state), state, action, out, { pet: level.helper.id });
+    const heard = decisionCues(currentStep(level, state), state, action, out, { pet: level.helper.id, scaffold: level.number === 1 });
     const moodCtx = { action, phase: state.phase, step: currentStep(level, state) };
     // The phone's transcript: what the player just said (a reply chip or button).
     if (phone && !action.acted) phone.heard("me", meLine(level, currentStep(level, state), state, action, asked));
@@ -346,7 +352,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       if (fx.type === "say") { said = fx.text; phone?.heard("bug", fx.text); }
       if (fx.type === "hint") hint = fx.text;
       if (fx.type === "grow") grown = fx.effect;
-      if (fx.type === "rule") { asked = `New rule: “${fx.text}”`; phone?.heard("me", asked); }
+      if (fx.type === "rule") { asked = `My request: “${fx.text}”`; phone?.heard("me", asked); }
       if (fx.type === "outcome") outcome = fx.text;
       if (fx.type === "checked") unlocked(fx.id);
     }
@@ -422,6 +428,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     });
   }
 
+  function extraChores() {
+    try { return localStorage.getItem("dw2_extra_chores") === "1"; } catch { return false; }
+  }
+
   function render() {
     const keep = dock.contains(document.activeElement) ? document.activeElement.dataset.fid : null;
     main.dataset.phase = state.phase;
@@ -430,10 +440,11 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     // The training bar fills in steps; the helper hops when it is full.
     if (train.set(training(state)) && !calmMotion()) pet.react("happy");
     // Under half trained the helper glitches (css/pet-anim.css).
-    stall.classList.toggle("stall--glitch", glitching(state));
+    stall.classList.remove("stall--glitch");
     beds.replaceChildren(...renderBeds(level, state));
     fitProps();
     const step = currentStep(level, state);
+    main.dataset.step = step?.id || "";
     if (state.phase === "advice" && step?.place && !thinking) {
       // The beds the player may choose from glow until they pick one.
       for (const id of step.place.beds) beds.querySelector(`[data-bed="${id}"]`)?.classList.add("bed--target");
@@ -443,10 +454,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     fresh = new Set();
     if (nudge && state.stepIndex > 0) dropNudge();
     for (const tl of tools) tl.view.update?.(state);
-    setDrift(scene, state.drift);
+    setDrift(scene, level.number === 1 ? state.drift : 0);
     // How much of a pressure step's cost has been paid (0..1); the scene's props read it.
     scene.style.setProperty("--pressure", String(pressureLevel(step, state)));
-    clock.sync(step, state.phase);
+    syncPressure();
     if (phone) {
       // The garden behind the phone wilts the longer you chat; the phone is
       // down whenever your hands are busy, and after a caught ending.
@@ -458,7 +469,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }
     if (grown) { celebrate(grown); grown = null; }
     // Sound: the drift layer under a drift on screen; the helper babbles each new line.
-    setTension(driftOnScreen(step, state) ? 1 : 0);
+    setTension(level.number === 1 && driftOnScreen(step, state) ? 1 : 0);
     if (!thinking && said && said !== voiced) {
       voiced = said;
       const line = t(said);
@@ -469,6 +480,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     }
     // A chore waits before this step's question: it starts once the helper has spoken.
     const chore = !acting && !thinking ? pendingChore(level, state) : null;
+    if (chore?.optional && !extraChores()) return dispatch({ type: "chore", id: chore.id, skipped: true, acted: true });
     if (chore?.wait && !waited.has(chore.id)) {
       if (waitCard?.dataset.chore !== chore.id) {
         const ms = chore.wait.ms || 3600;
@@ -594,10 +606,10 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
         h("button", { class: "btn btn--do", "data-fid": "do", "data-choice": "theirs", onclick: () => dispatch({ type: "doIt" }) }, t(theirs)),
         h("button", { class: "btn btn--off", "data-fid": "mine", "data-choice": "mine", onclick: () => dispatch({ type: "override" }) }, t(mine)));
     }
-    if (state.phase === "reanswer") {
+    if (state.phase === "reanswer" && !step.evidenceId) {
       actions.push(h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"));
     }
-    const glitch = (state.phase === "advice" || state.phase === "pushback") && step.kind === "drift";
+    const glitch = level.number === 1 && (state.phase === "advice" || state.phase === "pushback") && step.kind === "drift";
     const caught = state.phase === "name" || state.phase === "fix";
     parts.push(bubble(said, { glitch, caught, actions, pushback: state.phase === "pushback", disagree: state.phase === "disagree" }));
     if (permit) parts.push(permitCard(step));
@@ -609,8 +621,24 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
         (id) => dispatch({ type: "name", id })));
     }
     if (state.phase === "fix") {
-      parts.push(...picks("fix", `Give ${level.helper.name} a rule.`, step.fixOptions,
+      parts.push(...picks("fix", "What will you ask for next time?", step.fixOptions,
         (id) => dispatch({ type: "fix", id })));
+    }
+    if (state.phase === "reanswer" && step.evidenceId) {
+      const selected = state.citations[step.id];
+      const source = level.evidence.find(e => e.id === selected);
+      parts.push(h("section", { class: "verify", "aria-label": "Evidence for your decision" },
+        h("p", { class: "prompt" }, "What backs this answer?"),
+        !source && h("p", { class: "verify__help" }, "Read a source, then select it for the last star."),
+        h("div", { class: "verify__sources" }, level.evidence.filter(e => e.id !== "water").map(e => h("button", {
+          class: "btn", "data-cite": e.id, "data-fid": `cite-${e.id}`, "aria-pressed": String(selected === e.id),
+          onclick: () => dispatch({ type: "cite", id: e.id }),
+        }, t(e.title)))),
+        source && h("p", { class: "verify__quote", role: "status" }, t(source.lines.join(" · "))),
+        h("div", { class: "verify__actions" },
+          !source && h("button", { class: "btn verify__open", "data-fid": "source-open", onclick: () => almanacView?.open() }, "Open almanac"),
+          h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it")),
+        h("p", { class: "verify__help" }, "A corrected answer still needs checking.")));
     }
     if (state.phase === "reveal") {
       // The run is over: let the player look at the garden, then go on when ready.
@@ -711,10 +739,19 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
 
   function picks(kind, prompt, options, onPick) {
     const promptId = `prompt-${kind}`;
+    const key = `${state.stepIndex}:${kind}`;
+    if (!choiceOrders.has(key)) {
+      const order = [...options];
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      choiceOrders.set(key, order);
+    }
     return [
       h("p", { class: "prompt", id: promptId }, prompt),
       h("div", { class: "picks", role: "group", "aria-labelledby": promptId },
-        options.map((o) => h("button", { class: "pick", "data-fid": `pick-${o.id}`, onclick: () => onPick(o.id) }, t(o.label)))),
+        choiceOrders.get(key).map((o) => h("button", { class: "pick", "data-fid": `pick-${o.id}`, onclick: () => onPick(o.id) }, t(o.label)))),
     ];
   }
 

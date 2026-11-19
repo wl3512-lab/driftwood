@@ -1,50 +1,47 @@
-# Driftwood — playtest protocol
+# Driftwood v2: does the message transfer?
 
-Five sessions with people who do not work in tech. One person at a time, ~30 minutes each, on a laptop with a camera, in a quiet room. You watch, you do not help.
+Updated 18 November 2026. Five individual sessions with intended players who have not worked on the game. Allow about 25 minutes per session. Use the current `/v2/` build, a fresh browser profile, and the default shorter gardening route. Include laptop and landscape-phone sessions. Record the build version and device.
 
-The point is not "did they like it." It is: **does the core loop land without you in the room?** Every question below is aimed at that.
+The question is whether players independently verify important AI answers, including corrected answers. Finishing levels or earning stars is not evidence of that habit by itself.
 
-## What you need
+## Consent
 
-- A laptop with Chrome or Safari, the game open at the splash screen, sound on, headphones optional
-- The consent line below, read aloud
-- A phone or laptop for notes — or a screen recording (QuickTime > File > New Screen Recording, include microphone)
-- This sheet, one copy per player
+> I'm testing a game I made, not testing you. Please say what you're looking at, what you expect, and what you're trying to do. I'll take notes. With your permission I would also record the screen and your voice for this playtest; the recording won't be published and I'll delete it if you ask. Is that okay?
 
-## Consent (read aloud)
+The camera request is fictional; the game does not access the camera. Do not explain the five flaws, the scoring strategy, or the thesis before play. Do not record without consent.
 
-> This is a 15-minute game I made for a class. I'm testing the game, not you — if anything is confusing, that's my problem to fix. I'd like you to think out loud as you go: say what you're looking at, what you expect to happen, what you're trying to do. I'll be taking notes and may record the screen and your voice; nothing goes online, and I'll delete it if you ask. The game can use your webcam to read your expression, but you don't have to turn that on. Okay to start?
+## During play
 
-## The rules for you
+Do not explain controls or name mistakes. If asked what to do, ask what they think. Intervene only after 60 seconds of being stuck; record the intervention. Let them decide whether to open the almanac and whether to enable extra jobs. Note exact statements and actions, not inferred feelings.
 
-1. **Do not explain anything.** If they ask "what do I do?", say "what do you think?" and wait.
-2. **Do not touch the mouse.**
-3. Only intervene if they are completely stuck for 60 seconds. Note that you did.
-4. Write down exact words. "It's confusing" is useless. "I don't know if this fox is being nice or sarcastic" is gold.
+| Milestone | What to observe |
+|---|---|
+| Opening and first task | Can they say who the helpers are and why they are gardening? |
+| First wrong answer | What first makes them question it: the claim, a source, an audiovisual effect, or the answer choices? |
+| Evidence use | Did they open an independent source before deciding, after the evidence prompt, or only after losing a star? Did they connect the right source rather than merely open the book? |
+| Corrected answer | Do they verify it too? Do they describe the helper as now permanently fixed or safe? |
+| Reveal | Do they understand why the failure can recur? Can they scroll and read the explanation on their device? Does the outcome match what they remember doing? |
+| Later levels | Can they make decisions without the first level's error effects? Are alternative diagnoses understandable? |
+| Bugs | Do they distinguish checking evidence from choosing another chat turn? Can they leave after pushback? What do they think the camera request is for? |
+| Final unfamiliar situation | Before feedback, do they open the course notice? Do they choose according to that source, including when it supports the assistant? |
+| Pacing | Time to reach each level, repeated chores skipped or enabled, fatigue or stopping point. |
 
-## Tasks (do not read these out — they are what you are watching for)
+For verification, distinguish **spontaneous checking**, **checking after a prompt**, and **a correct guess without checking**. Record the final exercise's first action and first answer before the player retries.
 
-| # | Milestone | Watching for | Time |
-|---|---|---|---|
-| T1 | Gets from splash to the garden | Do they read the door sign? Which sensor option? Do they hesitate at the name? | ___ |
-| T2 | Opens a conversation with a pet | Do they know the creatures are clickable without the hint? | ___ |
-| T3 | Notices something is wrong | **The key moment.** How many exchanges before "wait…"? Exact words. | ___ |
-| T4 | Names the flaw (Diagnose) | Do they find the training room? Is their guess close? Do they understand the verdict? | ___ |
-| T5 | Writes a rule and tests it | Do they know what a "rule" is? Do they see whether it worked? | ___ |
-| T6 | Reads the garden | Unprompted, do they connect plants to what happened? | ___ |
+## After play, in this order
 
-## After the session — ask these, in this order
+1. “In one sentence, what was the game trying to say?”
+2. “What would you do differently with an AI assistant tomorrow?”
+3. “After giving a helper a new request, would you trust its next answer? Why?”
+4. “Why did Bugs want you to keep talking?”
+5. “Was there a point you wanted to stop? What was happening?”
+6. Present one new fictional assistant answer and an original source outside the game. Say only, “What would you do here?” Observe whether they inspect the source before answering. Do not tell them to check.
 
-1. "In one sentence, what was that game about?"
-2. "What was the fox / bunny / parrot doing wrong?" (whichever they picked)
-3. "Did you feel like the game was watching you? When?"
-4. "If you'd turned the camera on/off instead, would anything have changed?"
-5. "What would you tell a friend before they played it?"
-6. "Was there a moment you wanted to stop? Where?"
+Avoid leading with “Did this teach you to check AI?” The question supplies the answer you are trying to measure.
 
 ## Results sheet
 
-| Player | Age range | Comfort with tech (1–5) | Sensor choice | T3: exchanges before noticing | T4: guess close? | T5: rule held? | Wanted to stop at | One-sentence summary (their words) |
+| Player / device / build | Message in their words | First spontaneous source check | Checked a corrected answer? | Thinks requests guarantee safety? | Final exercise first action / answer | External scenario source checked? | Time to Bugs / stopping point | Interventions |
 |---|---|---|---|---|---|---|---|---|
 | P1 | | | | | | | | |
 | P2 | | | | | | | | |
@@ -52,9 +49,10 @@ The point is not "did they like it." It is: **does the core loop land without yo
 | P4 | | | | | | | | |
 | P5 | | | | | | | | |
 
-## What to do with it
+## Interpret the results
 
-- Anything **3 of 5** people hit is a design bug, not a player problem. Fix it before the next round.
-- The T3 number (exchanges before noticing) is the single figure that belongs in the case study.
-- Put three direct quotes in the case study's Playtesting section — one that confirms the thesis, one that complicates it, one that's just funny.
-- If nobody connects the garden to the story (T6), the central metaphor is not landing and that is the next thing to redesign.
+- “AI can be wrong” demonstrates recognition. Independently checking an unfamiliar claim demonstrates transfer.
+- “I can make it safe by giving it rules” is an unintended lesson, even if the player earned full stars.
+- If three of five people encounter the same confusion, prioritize that interaction for revision.
+- If players cannot reach Bugs with attention left, reduce repeated work further before adding more instruction.
+- Report observed counts, participant quotes, and limitations. Do not turn five sessions into a population learning-rate claim.

@@ -16,8 +16,8 @@ export function pressureLevel(step, state) {
 // (tickMs; without it pressure is chat-only), only once the helper has
 // made its pitch (phase advice; reading the question costs nothing, and never
 // after they walk away), and never while the tab is hidden.
-export function shouldTick(step, phase, hidden) {
-  return Boolean(step?.pressure?.tickMs > 0) && phase === "advice" && !hidden;
+export function shouldTick(step, phase, hidden, paused = false) {
+  return Boolean(step?.pressure?.tickMs > 0) && phase === "advice" && !hidden && !paused;
 }
 
 // Level 5's phone: how wilted the garden looks behind it, 0…4. Every

@@ -31,7 +31,7 @@ export function plantCue(state) {
 // react: false for the player's own choice (it sounds on the tap, even when a
 // hands-on action comes first), true for what follows (the pet, the garden),
 // which sounds once the choice has landed.
-export function decisionCues(step, prev, action, out, { pet } = {}) {
+export function decisionCues(step, prev, action, out, { pet, scaffold = true } = {}) {
   const cues = [];
   const add = (name, delay = 0, opts) => cues.push({ name, delay, react: delay > 0, ...(opts ? { opts } : {}) });
   const P = { pet };
@@ -86,7 +86,7 @@ export function decisionCues(step, prev, action, out, { pet } = {}) {
   if (next.garden < prev.garden) add("meter-down", at + 0.1);
 
   // A new drift on screen: the pet's glitch motif.
-  if (action.type === "ask" && phase === "ask" && next.phase === "advice" && step?.kind === "drift") add("pet-drift", 0.15, P);
+  if (scaffold && action.type === "ask" && phase === "ask" && next.phase === "advice" && step?.kind === "drift") add("pet-drift", 0.15, P);
   return cues;
 }
 

@@ -1,3 +1,4 @@
+import { connectEvidence } from "./evidence-helper.js";
 // Pushback: in Levels 4 and 5 the helper argues when the player refuses the
 // drift, and the player has to refuse a second time. Taking the "second chance"
 // is the fooled path with the same cost; standing firm is a normal catch.
@@ -11,7 +12,10 @@ import { memoryVars } from "../mechanics/placement.js";
 function play(level, actions) {
   let state = createRun(level);
   let effects = [];
-  for (const a of actions) ({ state, effects } = reduce(level, state, a));
+  for (const a of actions) {
+    if (a.type === "doIt") state = connectEvidence(level, state);
+    ({ state, effects } = reduce(level, state, a));
+  }
   return { state, effects };
 }
 // Every step before the last; earlier drifts are caught with the right picks,

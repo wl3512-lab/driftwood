@@ -78,9 +78,14 @@
   box-shadow: inset 0 0 0 5px var(--parchment), inset 0 0 0 7px #d9c9a0;
 }
 .rc__back { transform: rotateY(180deg); }
+.rc__reading { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 16px; padding: 8px 2px; scrollbar-gutter: stable; }
+.rc__reading:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.rc__reading .rc__small { font-size: max(16px, calc(14px / var(--k, 1))); }
+.rc__reading .rc__reminder { padding-top: 10px; border-top: 2px dashed #9b8056; }
 .rc__hit { position: absolute; inset: 0; z-index: 5; padding: 0; border: 0; border-radius: 10px; background: transparent; cursor: pointer; }
 .rc__hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 6px; }
 .rc__hit[disabled] { cursor: default; }
+.rc__hit--back { inset: 0 0 auto; height: max(44px, calc(44px / var(--k, 1))); border-radius: 0; }
 
 .rc__top { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 700 var(--fs-num)/1 var(--font-ui); }
 .rc__flip {
@@ -230,3 +235,5 @@
 .reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__handoff-pet { grid-column: 2; grid-row: 2; align-self: end; }
 .reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .fg { grid-column: 1; grid-row: 2; }
 .reveal[data-layout="tall"] .reveal__side:has(.reveal__handoff) .reveal__go { grid-column: 3; grid-row: 2; align-self: end; }
+
+.rc__back > .rc__top { flex: none; min-height: max(30px, calc(44px / var(--k, 1) - var(--pad))); }

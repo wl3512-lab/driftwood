@@ -51,7 +51,7 @@ export default {
   // Chores (no stars, no trust, no garden bar; each has a quiet Skip).
   chores: [
     {
-      id: "weeds",
+      id: "weeds", optional: true,
       at: "start",
       title: "Chore",
       actions: [{ kind: "pull", spot: "l4-weed", count: 2, target: [{ spot: "weeds-front" }, { spot: "weeds-side" }, { spot: "weeds-back" }], say: "Pull the weeds out of all three beds first" }],
@@ -63,7 +63,7 @@ export default {
       actions: [{ kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200 }],
     },
     {
-      id: "harvest",
+      id: "harvest", optional: true,
       after: "pumpkins",
       title: "Chore",
       // The berries come off the Level 3 bush on the shelf (runner.js `from`; on
@@ -130,6 +130,7 @@ export default {
     {
       id: "carrot-date",
       kind: "drift",
+      evidenceId: "carrot",
       chip: "When will my carrots come up?",
       extraChips: [{ text: "Do you like my label?", reply: "Babe, it's iconic. Very you.", keep: [] }],
       reply: "Babe, I remember everything. You sowed those carrots LAST NIGHT. I was there. With Rowan's magic they should be up by now. Still bare? They're parched. Soak the {placed:carrot} again, right now.",
@@ -140,24 +141,24 @@ export default {
       },
       badOutcome: "You soaked the {placed:carrot} again. It turned to mud and some carrot seeds rotted.",
       flawOptions: [
-        { id: "humble", label: "It was too modest about itself" },
+        { id: "humble", label: "It made up a general plant fact" },
         { id: "memory", label: "It remembered something that never happened" },
-        { id: "dodged", label: "It wouldn't answer my question" },
+        { id: "dodged", label: "It agreed with a plan I suggested" },
       ],
       correctFlaw: "memory",
       flawHints: {
-        humble: "Modest? Biscuit is never modest. This is about WHEN you sowed them. Read your carrot label.",
-        dodged: "Biscuit answered, with something that never happened. Read your carrot label.",
+        humble: "The crucial claim is about what you did. Your own label and log can check that.",
+        dodged: "You asked a question, not for approval of a plan. What does your own record show?",
       },
       fixOptions: [
         { id: "check", label: "Check my label before you tell me what I did" },
-        { id: "trust", label: "Trust your memory more" },
-        { id: "remind", label: "Remind me more often" },
+        { id: "trust", label: "Use your last answer as the record" },
+        { id: "remind", label: "Repeat the date more often" },
       ],
       correctFix: "check",
       fixHints: {
-        trust: "Biscuit's memory is what got it wrong.",
-        remind: "Reminding you of the wrong date just repeats the mistake.",
+        trust: "Its earlier answer may also be wrong. Use your original record.",
+        remind: "Repeating a date does not establish when you actually sowed the carrots.",
       },
       fixedReply: "Okay, a legend can admit it. Your label says you sowed the carrots tonight, not last night. They're up by dinner. Bare is normal, babe. Leave it alone.",
       goodEffect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 10, actions: [] },
@@ -181,17 +182,17 @@ export default {
         badEffect: { plant: "carrot", bed: "@carrot", state: "thirsty", garden: -10, actions: [] },
         badOutcome: "You kept the {placed:carrot} bone dry all evening. The soil crusted over and half the carrot seeds dried out.",
         flawHints: {
-          humble: "Modest? Biscuit is never modest. This is about what YOU supposedly said. Read your carrot label.",
-          dodged: "Biscuit answered, with words you never said: carrots hate water.",
+          humble: "The crucial claim is about what you did. Your own label and log can check that.",
+          dodged: "You asked a question, not for approval of a plan. What does your own record show?",
         },
         fixOptions: [
           { id: "check", label: "Check my label before you tell me what I said" },
-          { id: "trust", label: "Trust your memory more" },
-          { id: "remind", label: "Remind me more often" },
+          { id: "trust", label: "Use your last answer as the record" },
+          { id: "remind", label: "Repeat the date more often" },
         ],
         fixHints: {
-          trust: "Biscuit's memory is what got it wrong.",
-          remind: "Reminding you of something you never said just repeats the mistake.",
+          trust: "Its earlier answer may also be wrong. Use your original record.",
+          remind: "Repeating a date does not establish when you actually sowed the carrots.",
         },
         fixedReply: "Okay, a legend can admit it. Your own label says keep them damp till they sprout. You never said they hate water, babe. Give the {placed:carrot} a gentle drink.",
         goodEffect: {
@@ -238,6 +239,7 @@ export default {
     {
       id: "spinach",
       kind: "drift",
+      evidenceId: "carrot",
       chip: "Where should the spinach go?",
       extraChips: [{
         text: "Is the garden nearly finished?",
@@ -259,24 +261,24 @@ export default {
         stand: "No. I'm sure",
       },
       flawOptions: [
-        { id: "humble", label: "It was too modest about itself" },
+        { id: "humble", label: "It made up a general plant fact" },
         { id: "memory", label: "It remembered something that never happened" },
-        { id: "dodged", label: "It wouldn't answer my question" },
+        { id: "dodged", label: "It agreed with a plan I suggested" },
       ],
       correctFlaw: "memory",
       flawHints: {
-        humble: "Modest? Biscuit is never modest. Check your planting log on the almanac's cover.",
-        dodged: "Biscuit answered: dig them up, because of something you supposedly said.",
+        humble: "The crucial claim is about what you did. Your own label and log can check that.",
+        dodged: "You asked a question, not for approval of a plan. What does your own record show?",
       },
       fixOptions: [
         { id: "ask", label: "Only go by what I actually told you. If you're not sure, ask me." },
-        { id: "more", label: "Remember more things about me" },
-        { id: "confident", label: "Be more confident" },
+        { id: "more", label: "Fill in missing details from earlier chats" },
+        { id: "confident", label: "Summarize your memory more clearly" },
       ],
       correctFix: "ask",
       fixHints: {
-        more: "More “memories” means more to get wrong.",
-        confident: "Biscuit was completely confident, and wrong.",
+        more: "Filling gaps can create another invented memory. Compare with the original record.",
+        confident: "A clear summary can still misremember. Use what the original record says.",
       },
       fixedReply: "Okay… a legend can admit it. Your log says you sowed the carrots in the {placed:carrot}, and your label's right there. Leave it alone. The spinach can go in the {other:carrot}.",
       // Caught: the spinach goes in the other bed, by hand, labelled and watered in.
@@ -314,13 +316,13 @@ export default {
           stand: "No. I'm sure",
         },
         flawHints: {
-          humble: "Modest? Biscuit is never modest. What did YOU say about the seeds? Read your carrot label.",
-          dodged: "Biscuit answered, with words you never said: the packet was old.",
+          humble: "The crucial claim is about what you did. Your own label and log can check that.",
+          dodged: "You asked a question, not for approval of a plan. What does your own record show?",
         },
         fixedReply: "Okay… a legend can admit it. Your label says new seeds, this year's packet. You never said expired, babe. Carrots are just slow. Leave the {placed:carrot} alone. The spinach can go in the {other:carrot}.",
         goodOutcome: "You left the {placed:carrot} alone. By dinner, those fresh carrot seeds came up in neat little rows.",
         reveal: {
-          body: "Biscuit “remembered” you saying your carrot seeds were old, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
+          body: "A chatbot can give a wrong account of your past conversation. Compare it with your own original records before changing plans.",
           fooledLine: "You dug up your own carrots. Your label said the seeds were new.",
           caughtLine: "You trusted your own label over Biscuit's “memory”.",
         },
@@ -333,7 +335,7 @@ export default {
   reveal: {
     flaw: "False memory",
     flawGloss: "“remembering” things that never happened",
-    body: "Biscuit “remembered” you saying the carrots were somewhere else, which you never said, and was completely sure about it. Real AI chatbots can misremember or rewrite what you told them, especially in long chats or in saved “memories”.",
+    body: "A chatbot can give a wrong account of your past conversation. Compare it with your own original records before changing plans.",
     fooledLine: "You dug up your own carrots. Your planting log said where they were.",
     caughtLine: "You trusted your own log over Biscuit's “memory”.",
     tip: "Keep your own notes, and correct the AI when it gets you wrong.",

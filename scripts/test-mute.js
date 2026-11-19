@@ -60,3 +60,6 @@
     HTMLMediaElement.prototype.play = function () { this.muted = true; this.volume = 0; return play.apply(this, arguments); };
   } catch (_) {}
 })();
+
+// Legacy comprehensive action runs opt into every optional garden job.
+try { localStorage.setItem("dw2_extra_chores", "1"); } catch (_) {}

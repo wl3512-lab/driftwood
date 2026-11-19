@@ -387,3 +387,17 @@
     flex-wrap: wrap; align-items: flex-start; gap: 28px;
   }
 }
+
+/* Practice belongs to the player; extra chores are an optional slower pace. */
+.map__options { position: absolute; z-index: 3; bottom: 12px; left: 16px; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 32px); }
+.map__options p { max-width: 26em; font-size: 12px; color: #fff6dc; background: #3b2a1a; padding: 4px 6px; }
+.map__extras { font-size: 12px; }
+@media (max-width: 700px), (max-height: 500px) { .map__options { bottom: 6px; left: 8px; } .map__options p { display: none; } }
+.transfer { max-width: 760px; margin: 40px auto; padding: 24px; background: var(--parchment); color: var(--ink); border: 3px solid var(--line); display: grid; gap: 16px; }
+.transfer h2 { font: 700 24px/1.2 var(--font-ui); }
+.transfer__reply { margin: 0; padding: 14px; border: 2px solid var(--line); background: var(--paper); }
+.transfer__source { padding: 14px; background: #e0edca; border: 2px solid #3b5a2a; }
+.transfer__choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.transfer__feedback { font-weight: 600; }
+.ending__why { font-size: 14px; line-height: 1.5; }
+@media (max-width: 700px) { .transfer { margin: 20px 12px; padding: 16px; } }

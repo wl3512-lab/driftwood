@@ -1,5 +1,231 @@
 [
   {
+    "test": "laptop/fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level3-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level3-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level4-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level4-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level5-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level5-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level4-retry",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level5-retry",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/full",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level3-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level3-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level4-fooled",
+    "status": "pass",
+    "longtasks": [
+      61
+    ]
+  },
+  {
+    "test": "phone/level4-caught",
+    "status": "pass",
+    "longtasks": [
+      50
+    ]
+  },
+  {
+    "test": "phone/level5-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level5-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level4-retry",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level5-retry",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/full",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/perfect",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "small/landscape",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level5-tick",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/ending-locked",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level1-disagree-mine",
+    "status": "pass",
+    "longtasks": [
+      52
+    ]
+  },
+  {
+    "test": "phone/level1-disagree-mine",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "laptop/level1-disagree-theirs",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "phone/level1-disagree-theirs",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "card/level1-fooled-mac",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "card/level1-fooled-phone",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "card/level1-fooled-small",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "card/no-kickers",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "cutscene/watch-mac",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "cutscene/watch-phone",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "cutscene/watch-small",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "start/new-game-mac",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "start/new-game-phone",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "start/new-game-small",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "cutscene/skip-escape",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "cutscene/block-titles",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "mac/level1-caught",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "mac/level1-fooled",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
     "test": "handoff/level1-mac",
     "status": "pass",
     "longtasks": []
@@ -11,6 +237,41 @@
   },
   {
     "test": "handoff/level1-small",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "handoff/level5-note-mac",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "handoff/level5-note-small",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "ending/stew-mac",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "ending/stew-phone",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "ending/stew-small",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "ai/live-level1",
+    "status": "pass",
+    "longtasks": []
+  },
+  {
+    "test": "ai/live-level1-phone",
     "status": "pass",
     "longtasks": []
   }

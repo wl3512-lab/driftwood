@@ -3,6 +3,7 @@
 // a copyable text version of the guide.
 import { h, focusFirst, announce } from "./dom.js";
 import { blockText } from "./block-type.js";
+import { transferExercise } from "./transfer.js";
 import { stewDinner } from "./stew-dinner.js";
 import { sfx, voice } from "../audio/index.js";
 
@@ -57,6 +58,7 @@ function guideCard(entry) {
     h("p", { class: "crt__kicker" }, `${entry.meta.helper} · level ${entry.meta.number}`),
     h("h3", {}, r.flaw),
     r.flawGloss ? h("p", { class: "ending__gloss" }, r.flawGloss) : null,
+    h("p", { class: "ending__why" }, r.body),
     h("p", { class: "ending__tip" }, r.tip || entry.card?.tip),
     r.realWorld ? h("p", { class: "ending__where" }, h("strong", {}, "Where you'll meet it: "), r.realWorld) : null,
     h("p", { class: "ending__badge" }, fooled ? "It fooled you" : "You caught it"));
@@ -103,6 +105,7 @@ export function renderEnding(root, { progress, map, levels, onBack, name = "frie
   root.replaceChildren(
     h("main", { class: "ending" },
       garden,
+      transferExercise(),
       h("section", { class: "ending__guide", "aria-labelledby": "ending-guide" },
         h("h2", { class: "crt__title crt__title--small", id: "ending-guide", tabindex: -1 },
           blockText("AI FIELD GUIDE", { fill: "#fff6dc", shadow: "#c98a00", align: "left" })),

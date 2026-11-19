@@ -26,7 +26,7 @@ let panels = 0; // unique ids if a level is ever mounted twice
 
 const PLANT = ".plant[data-inspect]";
 
-defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
+defineTool("magnifier", ({ level, scene, button, dispatch, t, onInspectionChange = () => {} }) => {
   const inspect = level.inspect;
   const subjects = inspect?.subjects || {};
   const uid = `magnifier-${++panels}`;
@@ -136,6 +136,7 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
     on = true;
     sfx("magnifier-on");
     root.classList.add("is-magnifying");
+    onInspectionChange();
     button.setAttribute("aria-expanded", "true");
     button.setAttribute("aria-pressed", "true");
     mark();
@@ -148,6 +149,7 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
     const inside = panel.contains(document.activeElement) || scene.contains(document.activeElement);
     on = false;
     root.classList.remove("is-magnifying");
+    onInspectionChange();
     button.setAttribute("aria-expanded", "false");
     button.setAttribute("aria-pressed", "false");
     hidePanel();
@@ -224,6 +226,7 @@ defineTool("magnifier", ({ level, scene, button, dispatch, t }) => {
     destroy() {
       on = false;
       root.classList.remove("is-magnifying");
+    onInspectionChange();
       panel.remove();
       scene.removeEventListener("click", onClick);
       scene.removeEventListener("pointerover", onOver);

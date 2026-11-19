@@ -1,3 +1,4 @@
+import { connectEvidence } from "./evidence-helper.js";
 // Level 5's phone: Bugs's side questions open a chain of follow-ups (each a
 // new question, each wilting the garden a little), the wilt the view draws
 // behind the phone, and the lines the phone shows while it is put down.
@@ -8,7 +9,7 @@ import { createRun, reduce, chainQuestions, openChain, scoreStars } from "../eng
 import { wiltLevel, WILT_MAX } from "../mechanics/pressure.js";
 import { rewordable } from "../engine/reword.js";
 
-const play = (actions, from = createRun(L5)) => actions.reduce((s, a) => reduce(L5, s, a).state, from);
+const play = (actions, from = createRun(L5)) => actions.reduce((s, a) => reduce(L5, a.type === "doIt" ? connectEvidence(L5, s) : s, a).state, from);
 const [PLANT, WATER] = L5.steps;
 const quietIdx = WATER.extraChips.findIndex((c) => /always this quiet at night/i.test(c.text));
 const QUIET = WATER.extraChips[quietIdx];

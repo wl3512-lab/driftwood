@@ -87,7 +87,7 @@ const go = {
       earlier,
       // The almanac's seed shelf opens every packet up to the furthest level reached.
       reached: reachedLevel(LEVELS, progress, LEVELS[id].number),
-      onDone: (state) => { save(recordLevel(progress, played, state)); go.reveal(id, state); },
+      onDone: (state) => { save(recordLevel(progress, played, state)); go.reveal(played, state); },
       onExit: () => go.map(), // leaving mid-level saves nothing
     });
     // Rowan hands over the level's seeds, over the level, on its first play only.
@@ -99,7 +99,7 @@ const go = {
     unmount = () => { drop?.(); off?.(); };
   },
   // The last level's reveal continues to the ending once every level is done.
-  reveal: (id, state) => { music(null); renderReveal(root, LEVELS[id], state, {
+  reveal: (played, state) => { const id = played.id; music(null); renderReveal(root, played, state, {
     onContinue: id === MAP.at(-1).id && finished() ? go.ending : go.map, name: progress.name || "friend",
     guide: progress.guide, order: MAP.map((m) => m.id) }); },
   ending: () => {

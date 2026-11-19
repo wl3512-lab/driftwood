@@ -6,26 +6,34 @@ import { shouldTick } from "../mechanics/pressure.js";
 
 export function createPressureClock(dispatch, doc = document) {
   let timer = null;
+  let grace = null;
   let current = null; // { step, phase }
 
-  const stop = () => { if (timer) clearInterval(timer); timer = null; };
+  const stop = () => { if (timer) clearInterval(timer); if (grace) clearTimeout(grace); timer = null; grace = null; };
   const start = () => {
     stop();
-    if (!current || !shouldTick(current.step, current.phase, doc.hidden)) return;
-    timer = setInterval(() => dispatch({ type: "tick" }), current.step.pressure.tickMs);
+    if (!current || !shouldTick(current.step, current.phase, doc.hidden, current.paused)) return;
+    const tick = () => { if (shouldTick(current.step, current.phase, doc.hidden, current.paused)) dispatch({ type: "tick" }); };
+    // Give every new reply a reading window. Returning from a source starts a
+    // fresh window; inspection never spends health or forces a hurried choice.
+    grace = setTimeout(() => {
+      grace = null;
+      tick();
+      timer = setInterval(tick, current.step.pressure.tickMs);
+    }, Math.max(current.step.pressure.tickMs, current.readingMs));
   };
   const onVisibility = () => start();
   doc.addEventListener("visibilitychange", onVisibility);
 
   return {
-    // Call on every render; restarts only when the step or phase changes, so
-    // a chat reply mid-step doesn't reset the countdown.
-    sync(step, phase) {
-      if (current && current.step === step && current.phase === phase) return;
-      current = { step, phase };
+    // Call on every render; restarts when the step, phase, pause or the
+    // helper's line changes (a new line gets a fresh reading window).
+    sync(step, phase, { paused = false, readingMs = 0, line = "" } = {}) {
+      if (current && current.step === step && current.phase === phase && current.paused === paused && current.line === line) return;
+      current = { step, phase, paused, readingMs, line };
       start();
     },
-    running: () => timer != null,
+    running: () => timer != null || grace != null,
     destroy() {
       stop();
       current = null;

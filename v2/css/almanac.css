@@ -390,3 +390,12 @@
 @media (max-height: 500px), (max-width: 640px) {
   .level.is-reading .almanac { height: calc(100dvh - 12px); }
 }
+
+/* The decisive fact comes first; supplementary gardening notes open on demand. */
+.back__details { min-height: 0; overflow: auto; }
+.back__details summary { min-height: 44px; cursor: pointer; padding: 12px 4px; font-weight: 600; }
+.back__details summary:focus-visible { outline: 2px solid var(--focus); }
+
+.shelf__future { grid-column: 1 / -1; width: 100%; }
+.shelf__future summary { min-height: 44px; padding: 12px 4px; cursor: pointer; font: 600 14px/1.4 var(--font-ui); }
+.shelf__future .shelf { margin: 0; }
