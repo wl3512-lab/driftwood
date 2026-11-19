@@ -1,3 +1,4 @@
+import { connectEvidence } from "./evidence-helper.js";
 // "Disagree, then do it your way anyway": on any trust step with a `disagree`
 // block, "Something's off" makes the helper concede (phase "disagree"); the
 // player can follow the advice after all (doIt) or override it (worse effect,
@@ -20,7 +21,10 @@ const byNumber = (n) => ALL.find((l) => l.number === n);
 function play(level, actions, from = createRun(level)) {
   let state = from;
   let effects = [];
-  for (const action of actions) ({ state, effects } = reduce(level, state, action));
+  for (const action of actions) {
+    if (action.type === "doIt") state = connectEvidence(level, state);
+    ({ state, effects } = reduce(level, state, action));
+  }
   return { state, effects };
 }
 

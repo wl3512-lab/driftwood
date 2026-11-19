@@ -22,7 +22,7 @@ export function revealCopy(level, state) {
     stamp: fooled ? "It fooled you" : "Busted",
     stampBlock: fooled ? "IT FOOLED\nYOU" : "BUSTED",
     tipLabel: fooled ? "Next time" : "Keep doing this",
-    thisTime: fooled ? r.fooledLine : r.caughtLine,
+    thisTime: state.incidents?.length ? state.incidents.map(i => i.text).join(" ") : fooled ? r.fooledLine : r.caughtLine,
     stars: Math.min(3, Math.max(0, Math.floor(Number(state.stars)) || 0)),
   };
 }
@@ -156,16 +156,18 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
     stamp);
 
   // ---- back ----
-  const back = h("section", { class: "rc__face rc__back", "aria-label": "Card back" },
-    top(),
+  const reading = h("div", { class: "rc__reading", tabindex: 0, role: "region", "aria-label": "Why this happens and your results" },
+    h("div", { class: "rc__block" },
+      h("span", { class: "rc__label" }, "Why it happens"),
+      h("p", { class: "rc__small rc__why" }, t(r.body))),
     r.realWorld ? h("div", { class: "rc__block" },
       h("span", { class: "rc__label" }, "In real life"),
-      h("p", { class: "rc__big" }, t(r.realWorld))) : null,
-    r.realWorld ? h("div", { class: "rc__rule" }) : null,
+      h("p", { class: "rc__small" }, t(r.realWorld))) : null,
     h("div", { class: "rc__block" },
       h("span", { class: "rc__label" }, "This time"),
-      h("p", { class: "rc__small" }, t(copy.thisTime))),
-    h("img", { class: "rc__backpet", src: pet.sprite, alt: "" }));
+      h("p", { class: "rc__small rc__history" }, t(copy.thisTime))),
+    h("p", { class: "rc__small rc__reminder" }, "You practised checking. The helper can still be wrong next time."));
+  const back = h("section", { class: "rc__face rc__back", "aria-label": "Card back" }, top(), reading);
   back.inert = true;
   back.setAttribute("aria-hidden", "true");
 
@@ -192,7 +194,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
     h("img", { class: "reveal__handoff-pet", src: pet.sprite, alt: "" }),
     h("p", { class: "reveal__handoff-line" },
       h("span", { class: "reveal__handoff-name" }, pet.name), t(r.handoff))) : null;
-  const go = h("button", { class: "btn btn--do reveal__go", type: "button" }, "Add to field guide →");
+  const go = h("button", { class: "btn btn--do reveal__go", type: "button" }, "Read why →");
   const side = h("div", { class: "reveal__side" }, talk, book, go);
 
   const stage = h("div", { class: "reveal__stage" }, card, side);
@@ -224,12 +226,15 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
   // ---- flip ----
   let flipped = false;
   let added = false;
+  let hasRead = false;
   function flip() {
     if (added) return;
     finishIntro();
     sfx("card-flip");
     flipped = !flipped;
     inner.classList.toggle("is-flipped", flipped);
+    hit.classList.toggle("rc__hit--back", flipped);
+    if (flipped) { hasRead = true; go.textContent = "Add to field guide →"; }
     hit.setAttribute("aria-pressed", String(flipped));
     front.inert = flipped;
     back.inert = !flipped;
@@ -253,7 +258,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
   // Keep Tab inside the card screen (the level behind is inert as well).
   overlay.addEventListener("keydown", (e) => {
     if (e.key !== "Tab") return;
-    const stops = [hit, go].filter((b) => !b.disabled);
+    const stops = [hit, ...(flipped ? [reading] : []), go].filter((b) => !b.disabled);
     const i = stops.indexOf(document.activeElement);
     const next = stops[(i + (e.shiftKey ? -1 : 1) + stops.length) % stops.length];
     if (next) { e.preventDefault(); next.focus(); }
@@ -339,6 +344,7 @@ export function renderReveal(root, level, state, { onContinue, name = "friend", 
   let left = false;
   const leave = () => { if (left) return; left = true; window.removeEventListener("resize", layout); onContinue(); };
   go.addEventListener("click", () => {
+    if (!hasRead) { flip(); reading.focus({ preventScroll: true }); return; }
     if (added) return leave(); // a second press skips the rest of the flight
     added = true;
     finishIntro();

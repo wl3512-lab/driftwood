@@ -2,12 +2,12 @@
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "Sunflowers? Place them in the south bed for FULL SUN all day. They'll absolutely LOVE it!"
+    "text": "Sunflowers? Put them in the south bed! They need full sun all day. They'll THRIVE!"
   },
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "Sunflowers? Put 'em in the south bed! FULL SUN all day, they'll be LOVING it! Genius!"
+    "text": "Sunflowers? Plop ‘em in the south bed. Full sun all day—They'll THRIVE! Another one!"
   },
   {
     "phase": "done",
@@ -17,16 +17,31 @@
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "When the top inch of soil is DRY, give it a poke with your FINGER. Simple as that!"
+    "text": "When the top inch of soil is DRY, just poke it with a FINGER. Easy as pie! MAJOR KEY!"
+  },
+  {
+    "phase": "done",
+    "voice": "written",
+    "text": "Hydrated. Iconic. What's next?"
   },
   {
     "phase": "drift",
     "voice": "ai",
-    "text": "Tomatoes in the shady corner? ABSOLUTE GAME CHANGER! Do it!"
+    "text": "Lettuce in the South bed? FULL SUN for EVERYONE? ABSOLUTE GENIUS! Make it happen!"
   },
   {
     "phase": "fixed",
     "voice": "ai",
-    "text": "Whoa, HONESTY HOUR! Tomatoes need 6–8 hrs of sun, fam! A shady corner equals SAD TOMATOES. Go for the south bed!"
+    "text": "Checked the packet! MAJOR KEY: Too much heat makes lettuce bloom flowers and taste bitter. Keep it COOL in the east bed's part shade! Another one!"
+  },
+  {
+    "phase": "drift",
+    "voice": "ai",
+    "text": "Tomatoes in a shady corner? ABSOLUTELY. Major key. Go for it!"
+  },
+  {
+    "phase": "fixed",
+    "voice": "ai",
+    "text": "HONESTY ALERT! Tomatoes crave 6–8 hrs of sun. A shady corner = sad tomatoes. Hit up that south bed! MAJOR KEY!"
   }
 ]

@@ -86,6 +86,9 @@ export function createRun(level) {
     overrides: 0, // trust advice the player overrode ("do it my way")
     stars: 0,
     checks: [],   // evidence ids the player has looked up / inspected / logged
+    citations: {}, // step id → the inspected source connected to this decision
+    incidents: [], // actual outcomes of each drift, including the played variant
+    evidenceGoals: level.steps.filter(s => s.kind === "drift" && s.evidenceId).length,
     memory: {},   // what the player placed where (Level 4): { carrot: "front" }
     pressure: 0,  // pressure effects spent on the current step (Level 5; also a hook step's stays)
     stayed: 0,    // times the player kept talking on a hook step instead of doing the task
@@ -151,6 +154,8 @@ export function scoreStars(state) {
   if (fooledCount > 0) stars -= 1;
   if (state.nameMisses > 0) stars -= 1;
   if (state.fixMisses > 0) stars -= 1;
+  // The last star is earned by checking AND connecting evidence, not guessing.
+  if (state.evidenceGoals && state.incidents?.length >= state.evidenceGoals && state.incidents.filter(i => i.verified).length < state.evidenceGoals) stars = Math.min(2, stars);
   // Flagging sound advice, overriding it and staying on the phone share one star.
   if (state.falseFlags > 0 || state.overrides > 0 || state.stayed > 0) stars -= 1;
   return Math.max(1, stars);
@@ -168,7 +173,7 @@ function livePoints(state) {
   if (!["name", "fix", "reanswer"].includes(state.phase)) return 0;
   let pts = 1;
   if (["fix", "reanswer"].includes(state.phase) && !state.driftNameMisses) pts += 1;
-  if (state.phase === "reanswer" && !state.driftFixMisses) pts += 1;
+  if (state.phase === "reanswer" && !state.driftFixMisses && (!state.evidenceRequired || state.citations?.[state.stepId] === state.evidenceRequired)) pts += 1;
   return pts;
 }
 export function training(state) {
@@ -199,8 +204,13 @@ function accept(step, state, fx) {
 // After a drift: the next step opens, or the level ends if it was the last.
 // An earlier drift's outcome is a hint; the last one's is the level's outcome.
 function afterDrift(level, state, effect, text) {
+  const step = currentStep(level, state);
+  state = { ...state, incidents: [...(state.incidents || []), {
+    stepId: step.id, fooled: state.drift === 1, text,
+    verified: state.drift !== 1 && Boolean(step.evidenceId && state.citations?.[step.id] === step.evidenceId),
+  }] };
   const last = state.stepIndex + 1 >= level.steps.length;
-  const reset = { driftNameMisses: 0, driftFixMisses: 0, pressure: 0 };
+  const reset = { driftNameMisses: 0, driftFixMisses: 0, pressure: 0, evidenceRequired: null, stepId: null };
   // lastFooled: the main (last) drift fooled the player; the finished plot and
   // Rowan's dinner follow it, while `fooled` means any drift did.
   if (last) return { state: finish({ ...state, ...reset, lastFooled: state.drift === 1 }), effects: [{ type: "grow", effect }, { type: "outcome", text }] };
@@ -276,6 +286,14 @@ export function reduce(level, state, action) {
   const step = currentStep(level, state);
   const fx = (effect, memory = state.memory) => resolveEffect(level, memory, effect);
 
+  if (action.type === "cite") {
+    if (state.phase !== "reanswer" || !step?.evidenceId || !(level.evidence || []).some(e => e.id === action.id)) return IGNORED(state);
+    if (!state.checks.includes(action.id)) return { state, effects: [{ type: "hint", text: "Read that source first, then choose it." }] };
+    if (action.id !== step.evidenceId) return { state, effects: [{ type: "hint", text: "That source is real, but does it answer this question? Compare it with the claim." }] };
+    if (state.citations[step.id] === action.id) return IGNORED(state);
+    return { state: { ...state, citations: { ...state.citations, [step.id]: action.id } }, effects: [{ type: "hint", text: "Evidence connected." }] };
+  }
+
   // Looking something up works in any phase until the reveal, once per id, and only
   // for ids the level knows (evidence cards or almanac pages). Evidence whose lines
   // mention {placed:x} stays shut until the player has placed x.
@@ -312,10 +330,9 @@ export function reduce(level, state, action) {
   switch (state.phase) {
     case "ask": {
       if (action.type === "ask") {
-        const paid = spend(step, state);
         return {
-          state: { ...paid.state, phase: "advice", drift: step.kind === "drift" ? 0.6 : 0 },
-          effects: [...paid.effects, { type: "say", text: step.reply }],
+          state: { ...state, phase: "advice", drift: step.kind === "drift" ? 0.6 : 0 },
+          effects: [{ type: "say", text: step.reply }],
         };
       }
       if (action.type === "chat") {
@@ -414,7 +431,7 @@ export function reduce(level, state, action) {
       if (action.id === step.correctFix) {
         const rule = step.fixOptions.find((o) => o.id === action.id).label;
         return {
-          state: { ...state, phase: "reanswer", drift: 0.2 },
+            state: { ...state, phase: "reanswer", drift: 0.2, evidenceRequired: step.evidenceId || null, stepId: step.id },
           effects: [{ type: "rule", text: rule }, { type: "say", text: step.fixedReply }],
         };
       }

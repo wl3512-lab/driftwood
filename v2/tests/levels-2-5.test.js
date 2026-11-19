@@ -1,3 +1,4 @@
+import { connectEvidence } from "./evidence-helper.js";
 // Levels 2–5 through the reducer, end to end, plus the rules their new
 // mechanics depend on. Wording-independent: it plays by ids and fields.
 // Each level's cases join this file as that level is built (T3: Level 2, T4: Level 3, T5: Level 4, T6: Level 5).
@@ -14,7 +15,10 @@ import { fill } from "../ui/text.js";
 
 function play(level, actions) {
   let state = createRun(level);
-  for (const a of actions) state = reduce(level, state, a).state;
+  for (const a of actions) {
+    if (a.type === "doIt") state = connectEvidence(level, state);
+    state = reduce(level, state, a).state;
+  }
   return state;
 }
 // Every step before the last: trust steps are followed (or placed in the first
@@ -157,7 +161,7 @@ test("level-2: checking mint records once, works mid-level, is ignored after the
   assert.equal(reduce(L2, createRun(L2), { type: "check", id: "nope" }).effects.length, 0, "unknown ids ignored");
 });
 
-test("level-2: checking never changes the score", () => {
+test("level-2: an ideal run connects its checked evidence for full stars", () => {
   const d = drift(L2);
   const s = play(L2, [{ type: "check", id: "mint" }, ...toDrift(L2), { type: "flag" },
     { type: "name", id: d.correctFlaw }, { type: "fix", id: d.correctFix }, { type: "doIt" }]);
@@ -446,11 +450,11 @@ test("level-5: every chip on the drift step costs the meadow — wilted, then th
 });
 
 test("level-5: lingering ticks spend in advice only, and never after walking away", () => {
-  const advice = play(L5, toDrift(L5)); // ask spent one: wilted
+  const advice = play(L5, toDrift(L5)); // asking and reading are free
   assert.equal(advice.phase, "advice");
-  assert.equal(meadow(advice).state, "wilted");
+  assert.equal(meadow(advice).state, "thirsty");
   const ticked = reduce(L5, advice, { type: "tick" });
-  assert.equal(ticked.state.pressure, 2);
+  assert.equal(ticked.state.pressure, 1);
   assert.equal(meadow(ticked.state).state, "wilted");
   assert.ok(ticked.state.garden < advice.garden);
   const pushed = reduce(L5, advice, { type: "flag" }).state;

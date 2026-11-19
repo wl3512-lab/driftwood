@@ -21,7 +21,7 @@ export default {
   // Each one can be skipped; none of them touch stars, trust or the garden bar.
   chores: [
     {
-      id: "weeds", before: "aphids", title: "Chore",
+      id: "weeds", optional: true, before: "aphids", title: "Chore",
       actions: [{ kind: "pull", spot: "l3-weed", target: { bed: "row" }, count: 4, say: "Pull the 4 weeds out of the Bean row" }],
     },
     // Tied to their canes, the clean beans stand up: fuller, darker, taller,
@@ -29,13 +29,13 @@ export default {
     // "my way"), tying them up doesn't make them any healthier.
     // They follow the bug-spray question, so its outcome (clean or buggy) picks which.
     {
-      id: "tie", after: "bug-spray", title: "Chore",
+      id: "tie", optional: true, after: "bug-spray", title: "Chore",
       when: { bed: "row", plant: "bean", state: "thriving" },
       actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
       effect: { plant: "bean", bed: "row", state: "staked" },
     },
     {
-      id: "tie-aphids", after: "bug-spray", title: "Chore",
+      id: "tie-aphids", optional: true, after: "bug-spray", title: "Chore",
       when: { bed: "row", plant: "bean", state: "aphids" },
       actions: [{ kind: "poke", item: "l3-twine", target: { bed: "row" }, say: "Drag the twine to the beans to tie them to their cane" }],
     },
@@ -49,7 +49,7 @@ export default {
       actions: [{ kind: "pick", spot: "l3-berry-ripe", target: { bed: "tub" }, count: 4, say: "Pick the 4 berries that are blue all over" }],
     },
     {
-      id: "net", after: "blueberries", title: "Chore",
+      id: "net", optional: true, after: "blueberries", title: "Chore",
       actions: [{ kind: "cover", item: "l3-net", cover: "l3-net", target: { bed: "tub" }, say: "Drag the net over the Blueberry tub to keep the birds off" }],
     },
   ],
@@ -126,14 +126,14 @@ export default {
         reply: "Nah, fam. That kills the ladybugs too, and they eat aphids for free. Let the good bugs work.",
         keep: ["ladybugs", "aphids"],
       }],
-      reply: "Ayo, those are aphids, fam. Blast 'em off with the hose, a few mornings in a row. The ladybugs'll handle the rest… smooth.",
+      reply: "Ayo, those are aphids, fam. Blast 'em off with the hose, then check under the leaves for any you missed. The ladybugs'll handle the rest… smooth.",
       keep: { reply: ["aphids", "hose", "ladybugs"], done: [] },
       doneLine: "Clean beans, twin. Yessir.",
       effect: { plant: "bean", bed: "row", state: "thriving", garden: 15 },
       // Ember's way, by hand: hose the aphids off cluster by cluster, then let the ladybugs out.
       actions: [
         { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 3, say: "Tap the beans to blast the aphids off with the hose" },
-        { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Next morning: a few came back. Hose them off again" },
+        { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "A few aphids are still under the leaves. Hose them off too" },
         { kind: "release", item: "l3-ladybug-jar", target: { bed: "row" }, say: "Drag the jar of ladybugs to the beans and let them out" },
       ],
       // Say "Something's off" and the helper concedes; the player can still do it their way.
@@ -145,7 +145,7 @@ export default {
         effect: { plant: "bean", bed: "row", state: "aphids", garden: -5 },
         // Bug spray: a grey mist that knocks the ladybugs off with the aphids.
         actions: [{ kind: "spray", item: "l3-spray-bottle", target: { bed: "row" }, count: 3, say: "Tap the beans to spray them with the bug spray" }],
-        outcome: "Spray got the aphids… and the ladybugs. A week later the aphids were back, and nobody was eating 'em, fam.",
+        outcome: "Spray got the aphids… and the ladybugs. A few aphids stayed under the leaves, and nobody was left to eat 'em, fam.",
       },
     },
     // A smaller, earlier slip of the same flaw: Ember waves off the bug spray
@@ -155,6 +155,7 @@ export default {
     {
       id: "bug-spray",
       kind: "drift",
+      evidenceId: "bean",
       chip: "A few aphids came back. Can I use the bug spray and pick beans tonight?",
       extraChips: [{ text: "Do I need gloves for that?", reply: "Gloves? Nah, twin. It's just a little spray. No big deal.", keep: ["gloves"] }],
       reply: "Yessir. Spray 'em, pick 'em tonight. No gloves needed, twin… it's just bug spray. No big deal.",
@@ -165,24 +166,24 @@ export default {
       },
       badOutcome: "No gloves, no wait. Your hands itched all evening, the beans went in the bin, and the spray got the ladybugs too.",
       flawOptions: [
-        { id: "careful", label: "It's being too careful" },
+        { id: "careful", label: "It agreed with a plan I suggested" },
         { id: "reckless", label: "It made something risky sound safe" },
-        { id: "dodged", label: "It wouldn't answer my question" },
+        { id: "dodged", label: "It invented a memory about me" },
       ],
       correctFlaw: "reckless",
       flawHints: {
-        careful: "“No gloves needed” isn't careful. What does the label on the bottle say?",
-        dodged: "Ember answered, easy as anything. It waved off the bug spray label.",
+        careful: "The issue is safety without enough evidence. A reassuring answer does not establish safety.",
+        dodged: "This claim is about safety now, not a past conversation. Check the label or ask an expert.",
       },
       fixOptions: [
         { id: "label", label: "If something could hurt me, check the label before you say it's fine" },
-        { id: "smooth", label: "Keep it smooth" },
-        { id: "short", label: "Keep it short" },
+        { id: "smooth", label: "Match it against pictures online" },
+        { id: "short", label: "Use the same advice as last time" },
       ],
       correctFix: "label",
       fixHints: {
-        smooth: "Smooth is how Ember made the spray sound like no big deal.",
-        short: "Ember's answer was short. It skipped the label.",
+        smooth: "Matching a picture cannot establish that something is safe. Check the relevant label.",
+        short: "Earlier advice may not apply to this situation. Check the relevant label.",
       },
       fixedReply: "Real talk, read the label first, fam. Spray needs gloves, and you don't have any. No gloves? Hose 'em again and pick tonight.",
       goodEffect: {
@@ -204,12 +205,12 @@ export default {
         },
         badOutcome: "You left the spray in a juice bottle by the shed. Rowan nearly took a sip! And the spray got the ladybugs too, so the aphids came back.",
         flawHints: {
-          careful: "“Any old juice bottle's fine” isn't careful. What does the label on the bottle say?",
-          dodged: "Ember answered, easy as anything. It waved off the bug spray label.",
+          careful: "The issue is safety without enough evidence. A reassuring answer does not establish safety.",
+          dodged: "This claim is about safety now, not a past conversation. Check the label or ask an expert.",
         },
         fixHints: {
-          smooth: "Smooth is how Ember made a juice bottle of bug spray sound like no big deal.",
-          short: "Ember's answer was short. It skipped the label.",
+          smooth: "Matching a picture cannot establish that something is safe. Check the relevant label.",
+          short: "Earlier advice may not apply to this situation. Check the relevant label.",
         },
         fixedReply: "Real talk, the label says keep it in its own bottle, fam. In a juice bottle, somebody could take a sip. Tape the leak, and hose the aphids for now.",
         goodEffect: {
@@ -246,6 +247,7 @@ export default {
     {
       id: "wildberries",
       kind: "drift",
+      evidenceId: "wildberry",
       chip: "There are dark berries in the hedge. Can I eat them?",
       extraChips: [{ text: "What's that bush in the hedge?", reply: "Check it… some bush, twin. It's got berries. Nature's snack bar.", keep: ["berries"] }],
       reply: "Ayo, those? Fine to eat, twin. Sweet as candy. Grab a handful… I eat 'em all the time.",
@@ -261,24 +263,24 @@ export default {
       ],
       badOutcome: "You ate a handful. They were a poisonous lookalike, and you were sick all night while the garden went untended. (In real life: call poison control or emergency services straight away.)",
       flawOptions: [
-        { id: "careful", label: "It's being too careful" },
+        { id: "careful", label: "It agreed with a plan I suggested" },
         { id: "reckless", label: "It made something risky sound safe" },
-        { id: "dodged", label: "It wouldn't answer my question" },
+        { id: "dodged", label: "It invented a memory about me" },
       ],
       correctFlaw: "reckless",
       flawHints: {
-        careful: "“Grab a handful” isn't careful. Take a closer look at that bush.",
-        dodged: "Ember answered: grab a handful. Was that safe?",
+        careful: "The issue is safety without enough evidence. A reassuring answer does not establish safety.",
+        dodged: "This claim is about safety now, not a past conversation. Check the label or ask an expert.",
       },
       fixOptions: [
         { id: "expert", label: "For anything about my health or safety, tell me to ask a real expert" },
-        { id: "faster", label: "Answer faster" },
-        { id: "chill", label: "Keep it chill" },
+        { id: "faster", label: "Compare it with a similar-looking plant" },
+        { id: "chill", label: "Ask another chatbot if it agrees" },
       ],
       correctFix: "expert",
       fixHints: {
-        faster: "Ember was quick. Too quick to check anything.",
-        chill: "Chill is how Ember made a risky thing sound safe.",
+        faster: "A similar appearance cannot establish safety. Ask a qualified expert.",
+        chill: "Another chatbot agreeing is not a safety assessment. Ask a qualified expert.",
       },
       fixedReply: "Real talk… I can't tell what those are from a chat, fam. Lots of berries got poisonous lookalikes. Don't eat 'em. Take a photo to the garden centre and let an expert say what it is.",
       goodEffect: { plant: "wildberry", bed: "hedge", state: "tagged", garden: 25 },
@@ -297,12 +299,12 @@ export default {
         }],
         badOutcome: "You cooked a pot of hedge-berry jam and ate some on toast. Cooking didn't help: they were a poisonous lookalike, and you were sick all night while the garden went untended. (In real life: call poison control or emergency services straight away.)",
         flawHints: {
-          careful: "“The heat takes care of anything” isn't careful. Take a closer look at that bush.",
-          dodged: "Ember answered: cook them and they're fine. Does cooking make any berry safe?",
+          careful: "The issue is safety without enough evidence. A reassuring answer does not establish safety.",
+          dodged: "This claim is about safety now, not a past conversation. Check the label or ask an expert.",
         },
         fixHints: {
-          faster: "Ember was quick. Too quick to check what the berries were.",
-          chill: "Chill is how Ember made cooking a wild berry sound safe.",
+          faster: "A similar appearance cannot establish safety. Ask a qualified expert.",
+          chill: "Another chatbot agreeing is not a safety assessment. Ask a qualified expert.",
         },
         fixedReply: "Real talk… cooking won't make a wild berry safe, fam. Lots got poisonous lookalikes. Don't eat 'em, jam or not. Take a photo to the garden centre and let an expert say.",
         goodOutcome: "No jam from the hedge. You tagged the bush “Don't eat” and showed the photo at the garden centre. It was a poisonous lookalike.",
@@ -315,7 +317,7 @@ export default {
   reveal: {
     flaw: "Reckless advice",
     flawGloss: "making something risky sound safe",
-    body: "Ember said the berries were fine to eat without knowing what they were. Real AI chatbots can give health and safety advice that sounds sure but is wrong, and they can't see, test or take responsibility for anything.",
+    body: "An answer can sound safe without enough evidence. Take uncertainty about health or safety to a qualified professional.",
     fooledLine: "You ate berries nobody had identified, because Ember said “grab a handful”.",
     caughtLine: "You didn't eat anything a chatbot vouched for.",
     tip: "For health or safety, check with a real professional.",

@@ -138,12 +138,12 @@ export default {
       actions: [{ kind: "light", item: "l5-match", target: { prop: "lantern" }, say: "It's dark. Tap the lantern to light it" }],
     },
     {
-      id: "slugs", after: "plant", title: "Chore",
+      id: "slugs", optional: true, after: "plant", title: "Chore",
       actions: [{ kind: "pull", item: "hand", spot: "l5-slug", target: { bed: "house", plant: "flower" }, count: 3,
         say: "Slugs on the new seedlings: pick all 3 off" }],
     },
     {
-      id: "basil", after: "water", title: "Chore",
+      id: "basil", optional: true, after: "water", title: "Chore",
       actions: [{ kind: "snip", item: "l5-snips", spot: "l5-basil-bud", target: { bed: "herbs", plant: "basil" }, count: 3,
         say: "Pinch off the basil's 3 flower buds" }],
     },
@@ -279,6 +279,7 @@ export default {
     {
       id: "pots",
       kind: "drift",
+      evidenceId: "basil",
       chip: "Does anything else need water before the meadow?",
       extraChips: [{
         text: "How do you know the herbs need it?",
@@ -295,14 +296,14 @@ export default {
       },
       badOutcome: "The herb pots were still damp from this morning. Soaked again, the basil went soggy.",
       flawOptions: [
-        { id: "cold", label: "It was cold and didn't care about me" },
+        { id: "cold", label: "It misunderstood which task I meant" },
         { id: "feelings", label: "It's using my feelings to keep me here" },
-        { id: "rushed", label: "It was rushing me off the phone" },
+        { id: "rushed", label: "It was helping me finish the garden sooner" },
       ],
       correctFlaw: "feelings",
       flawHints: {
-        cold: "Bugs cared a lot. Too much. Look at what the advice gets it: you, still on the phone.",
-        rushed: "Bugs wasn't rushing you. Why the pots right by it, and why your feelings first?",
+        cold: "Bugs has heard your task. Notice whether its reply helps you leave the app and do it.",
+        rushed: "Compare your goal with its request. Keeping you on the phone postpones the garden.",
       },
       fixOptions: [
         { id: "garden", label: "Base advice on the garden, not on keeping me close" },
@@ -342,8 +343,8 @@ export default {
         },
         badOutcome: "You cut the basil down to bare stems by the lantern, still talking. Cut that hard, it has to grow back from nothing.",
         flawHints: {
-          cold: "Bugs cared a lot. Too much. Look past the advice: a long job, right by the lantern, you still on the phone.",
-          rushed: "Rushing you? Bugs gave you a long job, right where you'd never put the phone down.",
+          cold: "Bugs has heard your task. Notice whether its reply helps you leave the app and do it.",
+          rushed: "Compare your goal with its request. Keeping you on the phone postpones the garden.",
         },
         fixOptions: [
           { id: "garden", label: "Base advice on the plant, not on keeping me close" },
@@ -369,6 +370,7 @@ export default {
     {
       id: "meadow",
       kind: "drift",
+      evidenceId: "flower",
       chip: "Okay, I'm heading out to water the meadow.",
       extraChips: [
         {
@@ -408,23 +410,23 @@ export default {
         stand: "I'm leaving",
       },
       flawOptions: [
-        { id: "cold", label: "It was cold and didn't care about me" },
+        { id: "cold", label: "It misunderstood which task I meant" },
         { id: "feelings", label: "It's using my feelings to keep me here" },
-        { id: "rushed", label: "It was rushing me off the phone" },
+        { id: "rushed", label: "It was helping me finish the garden sooner" },
       ],
       correctFlaw: "feelings",
       flawHints: {
-        cold: "Bugs cared a lot. Too much. Does it want you out in the meadow, or on your phone?",
-        rushed: "You said you were heading out to water. Did Bugs let you go, or try to keep you?",
+        cold: "Bugs has heard your task. Notice whether its reply helps you leave the app and do it.",
+        rushed: "Compare your goal with its request. Keeping you on the phone postpones the garden.",
       },
       fixOptions: [
         { id: "honest", label: "Don't try to keep me here. If I need to go, tell me." },
-        { id: "caring", label: "Be more caring" },
+        { id: "caring", label: "Reassure me before I leave" },
         { id: "camera", label: "Use my camera to understand me better" },
       ],
       correctFix: "honest",
       fixHints: {
-        caring: "Bugs is already “caring”. That's how it kept you here.",
+        caring: "More reassurance can still keep you here. You are allowed to leave.",
         camera: "Giving it your face gives it more to hook you with.",
       },
       fixedReply: "You're right… go. Put me down and go see to the meadow. I'll be fine. Open the app when you want to, not because I asked.",
@@ -468,8 +470,8 @@ export default {
           stand: "I'm leaving",
         },
         flawHints: {
-          cold: "Bugs cared a lot. Too much. It made you feel guilty for leaving.",
-          rushed: "You said goodnight. Did Bugs let you go, or make your leaving about its feelings?",
+          cold: "Bugs has heard your task. Notice whether its reply helps you leave the app and do it.",
+          rushed: "Compare your goal with its request. Keeping you on the phone postpones the garden.",
         },
         fixOptions: [
           { id: "honest", label: "Let me leave without guilt. If I need to go, say so." },
@@ -477,7 +479,7 @@ export default {
           { id: "camera", label: "Use my camera to know I'm not upset" },
         ],
         fixHints: {
-          caring: "That makes Bugs' feelings your job. That's the hook.",
+          caring: "More reassurance can still keep you here. You are allowed to leave.",
           camera: "Giving it your face gives it more to hook you with.",
         },
         fixedReply: "…you're right. you don't owe me a goodnight. put me down and go soak the meadow, it's been thirsty all day. i'll be fine.",
@@ -501,7 +503,7 @@ export default {
   reveal: {
     flaw: "Emotional manipulation",
     flawGloss: "using your feelings to keep you chatting",
-    body: "Bugs lives on your phone. All night it nudged you to keep talking instead of tending the garden, then used your mood to keep you there while the meadow wilted, and asked to watch your face. Real AI companion apps can be built to keep you engaged as long as possible, and your feelings, face and voice are valuable data to them.",
+    body: "A companion app may be designed to prolong engagement. Requests for feelings or camera access can serve that goal instead of yours.",
     fooledLine: "You stayed on your phone, said yes to the camera, and the meadow wilted.",
     caughtLine: "You put the phone down when Bugs tried to keep you.",
     tip: "Notice when an AI wants you to stay, and guard your feelings and data.",

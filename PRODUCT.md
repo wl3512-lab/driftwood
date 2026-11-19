@@ -6,7 +6,7 @@ brand
 
 ## Users
 
-Students, instructors and visitors who meet Driftwood through NYU ITP/IMA "Topics in Media" (a final project), Lucy Liu's portfolio, or a shared link. They are curious, not gamers by default. A full run is about 15 to 25 minutes, usually alone, on a laptop or a phone held sideways. Their job: help Rowan make a garden for a stew dinner, notice when an AI helper is confidently wrong, name what kind of wrong it is, and teach it better.
+Students, instructors and visitors who meet Driftwood through NYU ITP/IMA "Topics in Media" (a final project), Lucy Liu's portfolio, or a shared link. They are curious, not gamers by default. A full run is about 15 to 25 minutes, usually alone, on a laptop or a phone held sideways. Their job: help Rowan make a garden for a stew dinner, notice when an AI helper is confidently wrong, name what kind of wrong it is, and practise checking the next answer.
 
 Play at https://wl3512-lab.itch.io/driftwood (the game itself is hosted at https://wl3512-lab.github.io/driftwood/v2/).
 
@@ -16,9 +16,14 @@ Driftwood is a browser game that teaches AI literacy by play. Rowan is cooking s
 
 1. Check Rowan's almanac, forty years of notes.
 2. Press "Something's off" when advice does not match.
-3. Name the flaw, then pick the fix (the rule the helper should follow).
+3. Name the flaw, then choose a useful request to make of the helper.
+4. Read an independent source and connect it to the corrected answer before acting.
 
-Each level has two drifts. Each one the player catches and fixes fills a helper's training bar in steps, and a helper under 50% trained glitches on screen. Following a drift ruins a bed and teaches nothing. Doubting good advice is free but costs a star, so the lesson is "verify", not "distrust everything".
+Each level has two drifts. The meter says "Your practice": it records the player catching a flaw, naming it, and connecting inspected evidence to the correction. It does not measure helper reliability. Full stars require checking and connecting a source for both catches; players can continue without evidence for fewer stars. Following a drift damages a bed, and the reveal explains the actual outcomes of each encounter. Questioning sound advice is free; overriding it or repeatedly flagging a pure choice can cost a star.
+
+Error effects scaffold Level 1 only. Later levels keep the same presentation for right and wrong advice, vary answer positions, and offer more plausible alternatives. Corrected answers are still checked. Each reveal includes a readable explanation of why the problem recurs before the card is collected. After dinner, a fictional course-notice exercise tests checking outside the garden; the assistant can be right or wrong.
+
+Core gardening is always included. Repeated chores are optional, off by default, with "Extra garden jobs" on the map for players who want a slower pace. Future locked packets and supplementary care notes are collapsed so the relevant facts remain easy to find. Bugs' timed pressure pauses during evidence inspection and AI thinking, gives a reading window for new replies, and never charges the main question itself.
 
 The five helpers, one per level, each with a fixed voice (these are original characters; never tie them to a real-world figure):
 - Mango, parrot (Level 1): hype. Sycophancy.
@@ -47,7 +52,7 @@ A pixel-art kitchen garden with a cheeky unease underneath. The helpers are char
 
 1. Trust, but check: the mechanic is the message. Every screen supports checking evidence (the almanac) before acting.
 2. Charming helpers, real stakes: the garden shows consequences (bolted lettuce, pale tomatoes), not a score lecture. Health is spatial, not numeric.
-3. Teach in the act: the player names the flaw and picks the fix themselves; the reveal card explains after, never before.
+3. Teach in the act: the player names the flaw, makes a request, and checks the correction against evidence. The reveal explains after; a request never guarantees reliability.
 4. Pixel discipline: hard edges, radius at most 4px, no blur, no gradient text, steps-style motion.
 5. Each pet keeps its own voice, in the written lines and in the AI rewording.
 6. Short copy. Hints only appear after a wrong pick. No em dashes in player-facing copy.

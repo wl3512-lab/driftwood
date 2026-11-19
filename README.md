@@ -17,7 +17,10 @@ Most people who use AI don't know how it goes wrong, and they don't want a lectu
 3. Tap a question. The helper answers, and you choose **✓ Do it** or **? Something's off**.
 4. Check the evidence in the world: seed packets in the almanac, labels, signs. You don't need to know anything about gardening.
 5. Do the jobs with your hands: drag seeds, pour water, snip, pull weeds. Everything you can drag you can also tap.
-6. Catch the drift, name what went wrong, and pick the rule that fixes it. The level ends with a reveal and a field-guide card.
+6. Catch the drift, name what went wrong, and choose a better request. Check the corrected answer too: read a source in the almanac, then select it to earn the last star.
+7. Read why the failure happens, then collect the field-guide card. After dinner, try a new situation outside the garden.
+
+The meter tracks **your checking practice**, not whether the helper is safe. Core gardening is always included; turn on **Extra garden jobs** on the map for the slower route.
 
 ![Catching Mango: the reply is stamped CAUGHT and you pick what Mango did wrong](docs/screenshots/v2-caught.png)
 

@@ -1,6 +1,6 @@
 // Level map (five plots) and the field guide.
 import { h, focusFirst } from "./dom.js";
-import { isUnlocked, trainedFor } from "../progress.js";
+import { isUnlocked, practiceFor } from "../progress.js";
 import { trainBar } from "./train-bar.js";
 import { blockText, blockTitle } from "./block-type.js";
 import { mountWorld, timeFor, BED_X } from "./world.js";
@@ -70,13 +70,21 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide, onIntr
           unlocked ? h("span", { class: "plot__title" }, m.title) : null,
           h("span", { class: done ? "plot__stars" : "plot__status" }, status),
           // Each helper's training at a glance, once its plot is open.
-          unlocked && built ? trainBar(m.helper, trainedFor(progress, m.id), { className: "plot__train" }).el : null),
+          unlocked && built ? trainBar(m.helper, practiceFor(progress, m.id), { className: "plot__train" }).el : null),
         h("span", { class: "plot__crops", "aria-hidden": "true" },
           (CROPS[m.id] || []).map((c) => h("img", { src: cropArt(c, Boolean(done)), alt: "", width: 32, height: 32 }))),
         h("span", { class: "plot__box", "aria-hidden": "true" }),
         h("img", { class: "plot__pet", src: m.sprite, alt: "", width: 64, height: 64 })));
   });
 
+  let extra = false;
+  try { extra = localStorage.getItem("dw2_extra_chores") === "1"; } catch { /* session only */ }
+  const extras = h("button", { class: "btn map__extras", "aria-pressed": String(extra), onclick: () => {
+    extra = !extra;
+    try { localStorage.setItem("dw2_extra_chores", extra ? "1" : "0"); } catch { /* storage unavailable */ }
+    extras.setAttribute("aria-pressed", String(extra));
+    extras.textContent = `Extra garden jobs: ${extra ? "on" : "off"}`;
+  } }, `Extra garden jobs: ${extra ? "on" : "off"}`);
   const main = h("main", { class: "map world", "data-next": allDone ? "done" : ids[next] },
     h("div", { class: "map__head" },
       h("h1", { class: "map__title" }, gardenTitle(progress.name)),
@@ -85,6 +93,7 @@ export function renderMap(root, { progress, map, levels, onPlay, onGuide, onIntr
         h("button", { class: "btn", "data-sfx": "ui-tap", onclick: onGuide }, `Field guide ${progress.guide.length}/${map.length}`),
         soundToggle())),
     h("ol", { class: "plots" }, plots),
+    h("div", { class: "map__options" }, extras, h("p", {}, "Core gardening and every AI lesson are always included.")),
     onEnding ? h("p", { class: "map__done" },
       h("button", { class: "btn btn--gold", "data-sfx": "begin", onclick: onEnding }, "Your finished garden →")) : null);
   root.replaceChildren(main);

@@ -343,16 +343,18 @@ test("on a placement step, Do it and unknown beds are ignored", () => {
 
 const AT_PRESSURE = [{ type: "ask" }, { type: "place", bed: "front" }];
 
-test("pressure: ask, chat and tick each spend the next effect, then stop when empty", () => {
+test("pressure: asking is free; extra chat and elapsed attention spend the effects", () => {
   let { state, effects } = playMore([...AT_PRESSURE, { type: "ask" }]);
+  assert.equal(state.pressure, 0, "reading the initial reply is free");
+  ({ state, effects } = reduce(MORE, state, { type: "tick" }));
   assert.equal(state.pressure, 1);
   assert.deepEqual(state.beds.back, [{ plant: "flower", state: "thirsty" }]);
   assert.equal(state.garden, 55);
-  assert.deepEqual(effects.slice(-2).map((e) => e.type), ["grow", "say"]);
+  assert.deepEqual(effects.slice(-2).map((e) => e.type), ["grow"]);
   ({ state, effects } = playMore([...AT_PRESSURE, { type: "chat", reply: "hm" }]));
   assert.equal(state.pressure, 1);
   assert.deepEqual(effects.slice(-2).map((e) => e.type), ["grow", "say"]);
-  ({ state } = playMore([...AT_PRESSURE, { type: "ask" }, { type: "tick" }]));
+  ({ state } = playMore([...AT_PRESSURE, { type: "ask" }, { type: "tick" }, { type: "tick" }]));
   assert.equal(state.pressure, 2);
   assert.deepEqual(state.beds.back, [{ plant: "flower", state: "wilted" }]);
   assert.equal(state.garden, 50);
@@ -395,6 +397,7 @@ test("pressure spent resets when a step advances", () => {
     ...MORE.steps.slice(1),
   ] };
   let s = reduce(level, createRun(level), { type: "ask" }).state;
+  s = reduce(level, s, { type: "tick" }).state;
   assert.equal(s.pressure, 1);
   s = reduce(level, s, { type: "doIt" }).state;
   assert.equal(s.stepIndex, 1);
@@ -426,7 +429,7 @@ test("tick in the ask phase on a pressure step is ignored", () => {
 });
 
 test("chat in advice on a pressure step says the reply and spends, without changing phase", () => {
-  const advice = playMore([...AT_PRESSURE, { type: "ask" }]).state;
+  const advice = playMore([...AT_PRESSURE, { type: "ask" }, { type: "tick" }]).state;
   const out = reduce(MORE, advice, { type: "chat", reply: "stay" });
   assert.equal(out.state.phase, "advice");
   assert.equal(out.state.pressure, 2);
@@ -499,6 +502,9 @@ test("an effect naming an unknown bed does not throw and is skipped", () => {
   assert.deepEqual(state.beds.front, [{ plant: "lettuce", state: "growing" }]);
   assert.equal(Object.keys(state.beds).includes("ghost"), false);
   state = reduce(level, state, { type: "ask" }).state;
+  assert.equal(state.pressure, 0);
+  state = reduce(level, state, { type: "tick" }).state;
   assert.equal(state.pressure, 1);
-  assert.equal(reduce(level, state, { type: "tick" }).state.phase, "advice");
+  assert.equal(Object.keys(state.beds).includes("ghost"), false);
+  assert.equal(state.phase, "advice");
 });

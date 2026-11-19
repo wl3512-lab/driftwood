@@ -161,11 +161,13 @@ export function packetBack(plant, { card = null, t = (x) => x, pop = false, onFl
       h("h3", { class: "back__name" }, h("span", { class: "back__swatch", "aria-hidden": "true" }), plant.name.toUpperCase())),
     onFlipBack && h("button", { type: "button", class: "back__flip", "data-flipback": "", onclick: onFlipBack }, "↻ Flip back")),
   fact,
-  (left || care) && h("div", { class: "back__body" }, left, care),
-  more);
+  !sealed && h("details", { class: "back__details" },
+    h("summary", {}, "Growing and care notes"),
+    (left || care) && h("div", { class: "back__body" }, left, care),
+    more));
 }
 
-defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = [], reached = level.number }) => {
+defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = [], reached = level.number, onInspectionChange = () => {} }) => {
   const book = level.almanac || { title: "Almanac", pages: [], notFound: "" };
   const searchable = book.pages.length > 0;
   const bookIds = new Set(book.pages.map((p) => p.id));
@@ -198,7 +200,12 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     return btn;
   });
   const byId = (id) => buttons.find((b) => b.dataset.plant === id);
-  const shelf = h("div", { class: "shelf", role: "group", "aria-label": "Seed packets" }, buttons);
+  const futureButtons = buttons.filter((_, i) => packets[i].locked);
+  const future = futureButtons.length ? h("details", { class: "shelf__future" },
+    h("summary", {}, `Future packets (${futureButtons.length})`),
+    h("div", { class: "shelf shelf--future" }, futureButtons)) : null;
+  const shelf = h("div", { class: "shelf", role: "group", "aria-label": "Seed packets" },
+    buttons.filter((_, i) => !packets[i].locked));
 
   // Level 2's book: look a plant up by name.
   const input = searchable && h("input", {
@@ -215,7 +222,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
   none);
   if (input) input.addEventListener("input", () => lookUp(input.value, false));
 
-  const shelfSheet = h("div", { class: "almanac__sheet almanac__sheet--shelf", "data-sheet": "shelf" }, search, shelf);
+  const shelfSheet = h("div", { class: "almanac__sheet almanac__sheet--shelf", "data-sheet": "shelf" }, search, shelf, future);
 
   // Every screen page: a document page is the cover (first), the shelf comes after it.
   const sheets = [
@@ -272,6 +279,7 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
   function dockAway(away) {
     const dock = stage?.querySelector(".dock");
     stage?.classList.toggle("is-reading", away);
+    onInspectionChange();
     if (!dock) return;
     dock.inert = away;
     if (away) dock.setAttribute("aria-hidden", "true");
@@ -351,6 +359,8 @@ defineTool("almanac", ({ level, scene, button, dispatch, getState, t, pages = []
     const pop = news.has(plant.id) || (bookIds.has(plant.id) && lockedIds.has(plant.id));
     news.delete(plant.id);
     btn.classList.remove("pk--fresh", "pk--found");
+    const fact = factCard(plant, level, LEVELS, getState().checks);
+    if (fact?.live && !fact.lockedLine) dispatch({ type: "check", id: fact.evidence });
     const back = backFor(plant, pop);
     const dim = h("div", { class: "inspect__dim", onclick: () => turnBack() });
     // The packet: the back is its face, straight on so it reads; paper sheets

@@ -361,6 +361,13 @@
   95% { text-shadow: -1px 0 #c0135a, 1px 0 #1565c0; transform: translateX(-1px); }
 }
 .bubble--caught { border-color: var(--alarm); box-shadow: 3px 3px 0 var(--alarm); }
+.verify { display: grid; gap: 8px; margin-top: 10px; padding: 10px; border: 2px solid var(--line); background: var(--parchment); }
+.verify .prompt { margin: 0; }
+.verify__sources { display: flex; flex-wrap: wrap; gap: 6px; }
+.verify__sources .btn { min-height: 44px; padding: 6px 10px; }
+.verify__sources [aria-pressed="true"] { background: #c8e7ac; box-shadow: inset 0 0 0 2px #2f5a24; }
+.verify__quote, .verify__help { font: 400 14px/1.4 var(--font-body); }
+.verify__quote { font-weight: 600; }
 .stamp {
   position: absolute; top: -14px; right: 12px;
   padding: 0.25rem 0.5rem;
@@ -547,3 +554,5 @@
 .chore-wait__bar > span { display: block; height: 100%; width: 0; background: var(--do); animation: chore-wait var(--ms, 3600ms) steps(8) forwards; }
 @keyframes chore-wait { to { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .chore-wait__bar > span { animation-timing-function: steps(4); } }
+
+.verify__actions { display: flex; flex-wrap: wrap; gap: 8px; }

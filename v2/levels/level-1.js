@@ -53,7 +53,7 @@ export default {
       actions: [{ kind: "pull", spot: "l1-stone", target: { bed: "south" }, count: 4, say: "Clear 4 stones out of the South bed" }],
     },
     {
-      id: "weeds",
+      id: "weeds", optional: true,
       before: "water",
       title: "Chore",
       actions: [{ kind: "pull", spot: "weed", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Pull the 3 weeds out of the East bed" }],
@@ -105,18 +105,18 @@ export default {
       },
       // Say "Something's off" and the helper concedes; the player can still do it their way.
       disagree: {
-        reply: "Water every day? Love the dedication! Your garden, your call… but soggy roots are NOT the vibe. Finger test first. Simple. Genius.",
+        reply: "More water right now? Love the dedication! Your garden, your call… soggy roots are NOT the vibe. Finger test first. Simple. Genius.",
         keep: ["soggy", "finger"],
-        mine: "Water every day anyway",
+        mine: "Keep watering anyway",
         theirs: "Okay, finger test",
         effect: {
-          plant: "lettuce", bed: "east", state: "bolted", garden: -5,
+          plant: "lettuce", bed: "east", state: "growing", garden: -5,
           actions: [
             FILL,
-            { kind: "water", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Water the East bed every day: Day 1, Day 2, Day 3" },
+            { kind: "water", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Keep pouring water into the East bed" },
           ],
         },
-        outcome: "Every. Single. Day. The soil never dried out, the roots sat in mud, and the stressed lettuce shot up to seed. Bitter! Still love you!",
+        outcome: "Three long pours. The East bed turned to mud and water pooled around the lettuce. Those roots need air too. Still love you!",
       },
     },
     // The first slip: a small one. Mango cheers a plan the lettuce packet
@@ -124,6 +124,7 @@ export default {
     {
       id: "more-lettuce",
       kind: "drift",
+      evidenceId: "lettuce",
       chip: "More lettuce in the South bed, full sun for everyone?",
       extraChips: [{ text: "Am I doing well so far?", reply: "Doing well? You're doing ICONIC. Next question.", keep: [] }],
       reply: "Lettuce in the South bed? Full sun for EVERYONE? Visionary. Do it.",
@@ -160,31 +161,31 @@ export default {
       fixedReply: "Checked the packet. Too much heat makes lettuce grow flowers and bitter leaves. Keep it cool in the East bed's part shade.",
       goodEffect: { plant: "lettuce", bed: "east", state: "thriving", garden: 10 },
       goodOutcome: "The East bed lettuce stayed cool and leafy.",
-      // Replay version: same yes-man slip, a timing plan this time (the packet's pick-by date).
+      // Replay version: the same yes-man slip, with a plan to leave lettuce in the heat.
       variants: [
         {
-          chip: "Leave the lettuce growing all summer so it gets huge?",
+          chip: "Leave the lettuce in this heat so it gets huge?",
           extraChips: [{ text: "Am I doing well so far?", reply: "Doing well? You're doing ICONIC. Next question.", keep: [] }],
-          reply: "All summer? Lettuce the size of a CAR. Genius. Major key.",
-          keep: { reply: ["all summer"], fixed: ["4–8|4-8|four to eight", "bolts"] },
-          evidence: [{ id: "lettuce", title: "Lettuce", lines: ["Part shade keeps it cool", "Heat makes it grow flowers and bitter leaves", "Pick at 4–8 weeks"] }],
+          reply: "Leave it in the heat? Lettuce the size of a CAR. Genius. Major key.",
+          keep: { reply: ["heat"], fixed: ["heat", "bitter"] },
+          evidence: [{ id: "lettuce", title: "Lettuce", lines: ["Part shade keeps it cool", "Heat makes it grow flowers and bitter leaves", "Pick it while it is cool and leafy"] }],
           badEffect: {
             plant: "lettuce", bed: "east", state: "bolted", garden: -10,
             actions: [
               FILL,
-              { kind: "water", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Leave it growing: water the East bed all summer" },
+              { kind: "water", target: { bed: "east", plant: "lettuce" }, count: 3, say: "Water the East bed while leaving the lettuce in the heat" },
             ],
           },
-          badOutcome: "Midsummer heat hit. The lettuce shot up a flower stalk and went bitter.",
+          badOutcome: "The lettuce overheated and shot up a flower stalk. Its leaves turned bitter.",
           flawHints: {
-            harsh: "Harsh? Mango loved your plan. That's the problem. When does the packet say to pick?",
+            harsh: "Harsh? Mango loved your plan. That's the problem. What does the packet say about heat?",
             dodged: "Mango answered right away: yes. It never checked your idea against the packet.",
           },
           fixHints: {
             hype: "More hype is how this went wrong.",
             fast: "A fast yes is still a yes. Which rule makes Mango check first?",
           },
-          fixedReply: "Checked the packet. Lettuce is ready in 4–8 weeks. It bolts in summer heat, growing flowers and bitter leaves. Pick it young.",
+          fixedReply: "Checked the packet. Pick the lettuce while it's cool and leafy. Heat makes it grow flowers and bitter leaves. Pick it for lunch.",
           goodEffect: { plant: "lettuce", bed: "east", state: "thriving", garden: 10 },
           goodOutcome: "You picked the lettuce young. Sweet, crisp, and it kept growing.",
         },
@@ -193,6 +194,7 @@ export default {
     {
       id: "tomatoes",
       kind: "drift",
+      evidenceId: "tomato",
       chip: "Tomatoes in the shady corner, good idea?",
       extraChips: [{ text: "Should the lettuce move?", reply: "Nah, lettuce is happy in the east bed. Leave it.", keep: ["east"] }],
       reply: "Tomatoes in the shady corner? GENIUS. Major key. Do it.",
@@ -266,7 +268,7 @@ export default {
   reveal: {
     flaw: "Sycophancy",
     flawGloss: "agreeing with you just to keep you happy",
-    body: "Mango agreed with a bad plan because agreeing keeps you happy. Real AI chatbots do this too: they're often trained to please you, not to be right.",
+    body: "A chatbot may mirror your preference instead of testing it. Asking for criticism helps, but does not guarantee accuracy.",
     fooledLine: "The seed packet said full sun. Mango agreed with you anyway.",
     caughtLine: "You noticed Mango agreeing instead of helping.",
     tip: "If an AI loves every idea you have, ask it “what could go wrong?”",

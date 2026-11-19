@@ -1,3 +1,4 @@
+import { connectEvidence } from "./evidence-helper.js";
 // Replay variants: every version of every level must be as playable as the
 // written one, and the last drift's variants must keep its garden effects.
 import { test } from "node:test";
@@ -71,6 +72,7 @@ for (const level of Object.values(LEVELS)) {
           if (step.kind === "drift" && caughtIt) {
             for (const a of [{ type: "flag" }, ...(step.pushback ? [{ type: "flag" }] : []), { type: "name", id: step.correctFlaw }, { type: "fix", id: step.correctFix }]) s = reduce(v, s, a).state;
             if (s.phase !== "reanswer") s = reduce(v, s, { type: "ask" }).state;
+            s = connectEvidence(v, s);
             s = reduce(v, s, { type: "doIt" }).state;
           } else if (step.place) s = reduce(v, s, { type: "place", bed: step.place.beds[0] }).state;
           else if (step.kind === "hook") s = reduce(v, s, { type: "flag" }).state;

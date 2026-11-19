@@ -1,3 +1,4 @@
+import { connectEvidence } from "./evidence-helper.js";
 // Guards every level file against the mistakes the runner can't survive:
 // a level that doesn't end on a drift, a correct answer missing from its
 // options, a wrong option with no hint, a bed or sprite that doesn't exist.
@@ -113,7 +114,10 @@ test("every map entry's sprite exists (levels 2-5 included)", () => {
 function playReal(actions) {
   const level = LEVELS["level-1"];
   let state = createRun(level);
-  for (const action of actions) state = reduce(level, state, action).state;
+  for (const action of actions) {
+    if (action.type === "doIt") state = connectEvidence(level, state);
+    state = reduce(level, state, action).state;
+  }
   return state;
 }
 // Every step of Level 1 in order: trust steps are followed; each drift is
