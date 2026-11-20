@@ -16,7 +16,8 @@ export function levelSprites(level) {
   for (const list of Object.values(level.startPlants || {})) shown.push(...list);
   for (const c of level.chores || []) if (c.effect?.plant) shown.push(c.effect);
   for (const step of level.steps) {
-    for (const e of [step.effect, step.badEffect, step.goodEffect, step.disagree?.effect, ...(step.pressure?.effects || [])]) {
+    const alt = (step.ifGarden || []).flatMap((x) => [x.effect, x.badEffect, x.goodEffect, x.disagree?.effect]);
+    for (const e of [step.effect, step.badEffect, step.goodEffect, step.disagree?.effect, step.recover?.effect, ...(step.pressure?.effects || []), ...alt]) {
       if (e?.plant) shown.push(e);
       for (const x of e?.extra || []) if (x?.plant) shown.push(x);
     }
@@ -60,10 +61,11 @@ export function plannedCrops(level) {
     if (Array.isArray(v)) { v.forEach(walk); return; }
     if (!v || typeof v !== "object") return;
     if (typeof v.plant === "string" && typeof v.bed === "string") add(v.bed, v.plant);
-    // Wrong-path crops (following a slip, or "my way") get no reserved room:
+    // Wrong-path crops (following a slip, "my way", or fixing a slip by hand) get no reserved room:
     // they would shrink the right crops on every play. If one is planted it
     // still gets its share then (renderBeds appends anything unplanned).
-    for (const [k, sub] of Object.entries(v)) if (k !== "badEffect" && k !== "disagree") walk(sub);
+    // ifGarden alternatives are off the usual path too.
+    for (const [k, sub] of Object.entries(v)) if (k !== "badEffect" && k !== "disagree" && k !== "recover" && k !== "ifGarden") walk(sub);
   };
   walk([level.steps, level.chores]);
   PLANNED.set(level, plan);

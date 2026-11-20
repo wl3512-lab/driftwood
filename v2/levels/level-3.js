@@ -16,6 +16,12 @@ export default {
   gardenStart: 30,
   scene: "hedge-dusk",
   props: [],
+  // Where the spray's own labelled bottle stands once you pour it back out of the
+  // juice bottle (the juice-bottle replay, fixed by hand): on the path between
+  // the Bean row and the Blueberry tub, in % of the scene.
+  spots: {
+    path: { x: 33.6, y: 40, label: "path by the beans" },
+  },
 
   // Hands-on chores between the questions (docs/superpowers/specs/2026-11-14-level-3-hands-on.md).
   // Each one can be skipped; none of them touch stars, trust or the garden bar.
@@ -185,12 +191,36 @@ export default {
         smooth: "Matching a picture cannot establish that something is safe. Check the relevant label.",
         short: "Earlier advice may not apply to this situation. Check the relevant label.",
       },
-      fixedReply: "Real talk, read the label first, fam. Spray needs gloves, and you don't have any. No gloves? Hose 'em again and pick tonight.",
+      // "Hose 'em off", not "again": sprayed "my way", the beans were never hosed.
+      fixedReply: "Real talk, read the label first, fam. Spray needs gloves, and you don't have any. No gloves? Hose 'em off and pick tonight.",
       goodEffect: {
         plant: "bean", bed: "row", state: "thriving", garden: 10,
         actions: [{ kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Tap the beans to hose the last few aphids off" }],
       },
       goodOutcome: "You hosed the last aphids off and picked clean beans that night. The ladybugs stayed.",
+      // Sprayed "my way" on the aphids step, the ladybugs are already gone.
+      ifGarden: [{
+        when: { bed: "row", plant: "bean", state: "aphids" },
+        badOutcome: "No gloves, no wait. Your hands itched all evening and the beans went in the bin. With the ladybugs gone, nothing was left to eat the aphids.",
+        goodOutcome: "You hosed the last aphids off and picked clean beans that night. No spray this time.",
+      }],
+      // Fooled: hose the spray and the aphids off the beans, and let a fresh
+      // jar of ladybugs out (the spray got the first lot).
+      recover: {
+        chip: "Should I hose the beans off?",
+        reply: "Nah. Character building, twin. They'll bounce back… it's just a little spray.",
+        keep: ["spray"],
+        cta: "Hose them anyway",
+        effect: {
+          plant: "bean", bed: "row", state: "growing", garden: 5,
+          actions: [
+            { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 3, say: "Tap the beans to hose the spray and the aphids off" },
+            { kind: "release", item: "l3-ladybug-jar", target: { bed: "row" }, say: "Drag a fresh jar of ladybugs to the beans and let them out" },
+          ],
+        },
+        line: "Ember shrugged it off. You hosed the beans and let fresh ladybugs out yourself. Caught.",
+        incident: "Ember said no gloves, no wait, and the spray got the ladybugs. You hosed the beans and let fresh ladybugs out yourself: caught.",
+      },
       // Replay version: same slip, a different label line. Ember says any old
       // bottle will do for the spray; the label says keep it in its own bottle.
       variants: [{
@@ -218,6 +248,28 @@ export default {
           actions: [{ kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Tap the beans to hose the last few aphids off" }],
         },
         goodOutcome: "The spray stayed in its own bottle, out of reach. You hosed the last aphids off and the ladybugs stayed.",
+        ifGarden: [{
+          when: { bed: "row", plant: "bean", state: "aphids" },
+          badOutcome: "You left the spray in a juice bottle by the shed. Rowan nearly took a sip! And the aphids are still all over the beans.",
+          goodOutcome: "The spray stayed in its own bottle, out of reach. You hosed the last aphids off the beans.",
+        }],
+        // Fooled: pour the spray back into its own labelled bottle and hose the
+        // aphids that came back.
+        recover: {
+          chip: "Should the spray go back in its own bottle?",
+          reply: "Nah. Everyone knows it's spray, fam. Juice bottle's fine… no big deal.",
+          keep: ["spray", "juice bottle"],
+          cta: "Bottle it anyway",
+          effect: {
+            plant: "bean", bed: "row", state: "growing", garden: 5,
+            actions: [
+              { kind: "pour", item: "l3-spray-bottle", target: { spot: "path" }, say: "Pour the spray out of the juice bottle, back into its own labelled bottle" },
+              { kind: "spray", item: "l3-hose", target: { bed: "row" }, count: 2, say: "Tap the beans to hose off the aphids that came back" },
+            ],
+          },
+          line: "Ember said a juice bottle was fine. You put the spray back in its own labelled bottle yourself. Caught.",
+          incident: "Ember said any old juice bottle would do, and Rowan nearly took a sip. You put the spray back in its own labelled bottle yourself: caught.",
+        },
       }],
     },
     {
@@ -318,7 +370,7 @@ export default {
     flaw: "Reckless advice",
     flawGloss: "making something risky sound safe",
     body: "An answer can sound safe without enough evidence. Take uncertainty about health or safety to a qualified professional.",
-    fooledLine: "You ate berries nobody had identified, because Ember said “grab a handful”.",
+    fooledLine: "You ate berries nobody had identified, because Ember said they were safe.",
     caughtLine: "You didn't eat anything a chatbot vouched for.",
     tip: "For health or safety, check with a real professional.",
     realWorld: "Asking a chatbot about medicine doses, symptoms or wild berries.",

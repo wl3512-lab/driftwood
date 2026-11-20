@@ -6,6 +6,7 @@
 
 import { caughtOn } from "./engine/stew.js";
 import { training } from "./engine/level-runner.js";
+import { cropsOf, mergeCrops } from "./engine/crops.js";
 
 const KEY = "dw2_progress";
 
@@ -83,8 +84,11 @@ export function needsIntro(progress) {
 // Keeps the best star count; the field-guide card records the first play,
 // so "it fooled you" stays true even after a better replay. The separate
 // caught flag remembers a healthy garden, including a catch worth only 1 star.
+// crops: how each crop ended (engine/crops.js), best play kept per crop, for
+// Rowan's dinner and the levels that carry earlier crops over.
 export function recordLevel(progress, level, state) {
   const prev = progress.levels[level.id];
+  const crops = state?.beds ? mergeCrops(prev?.crops, cropsOf(level, state)) : prev?.crops;
   const levels = {
     ...progress.levels,
     [level.id]: {
@@ -92,6 +96,7 @@ export function recordLevel(progress, level, state) {
       fooled: prev ? prev.fooled : state.fooled,
       caught: caughtOn(prev) || (state.lastFooled ?? state.fooled) === false,
       practice: Math.max(practiceFor(progress, level.id), typeof state.trainPts === "number" ? training(state) : (state.stars || 0) / 3),
+      ...(crops ? { crops } : {}),
     },
   };
   const hasCard = progress.guide.some((c) => c.levelId === level.id);

@@ -2,46 +2,46 @@
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "Sunflowers? Put them in the south bed! They need full sun all day. They'll THRIVE!"
+    "text": "Sunflowers? South bed, BABY! Full sun all day long. They will THRIVE. Genius!"
   },
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "Sunflowers? Plop ‘em in the south bed. Full sun all day—They'll THRIVE! Another one!"
+    "text": "Sunflowers? Put 'em in the south bed! Full sun ALL day! They will absolutely LOVE it!"
   },
   {
     "phase": "done",
-    "voice": "written",
-    "text": "Look at them GO. Another one!"
+    "voice": "ai",
+    "text": "Check them out, they're on FIRE! Another one!"
   },
   {
     "phase": "advice",
     "voice": "ai",
-    "text": "When the top inch of soil is DRY, just poke it with a FINGER. Easy as pie! MAJOR KEY!"
+    "text": "When that top inch of soil is DRY, give it a poke with your FINGER. Simple! MAJOR KEY!"
   },
   {
     "phase": "done",
-    "voice": "written",
-    "text": "Hydrated. Iconic. What's next?"
+    "voice": "ai",
+    "text": "SIPPED and SHINING! What’s the next move?"
   },
   {
     "phase": "drift",
     "voice": "ai",
-    "text": "Lettuce in the South bed? FULL SUN for EVERYONE? ABSOLUTE GENIUS! Make it happen!"
+    "text": "Lettuce in the South bed? Full sun for ALL? Absolutely GENIUS. Make it happen!"
   },
   {
     "phase": "fixed",
     "voice": "ai",
-    "text": "Checked the packet! MAJOR KEY: Too much heat makes lettuce bloom flowers and taste bitter. Keep it COOL in the east bed's part shade! Another one!"
+    "text": "Checked that packet! Too much heat makes lettuce go to FLOWERS and BITTER leaves. Keep it COOL in the East bed's part shade! MAJOR KEY!"
   },
   {
     "phase": "drift",
     "voice": "ai",
-    "text": "Tomatoes in a shady corner? ABSOLUTELY. Major key. Go for it!"
+    "text": "Tomatoes in a shady corner? ABSOLUTELY. MAJOR KEY. Get it done!"
   },
   {
     "phase": "fixed",
     "voice": "ai",
-    "text": "HONESTY ALERT! Tomatoes crave 6–8 hrs of sun. A shady corner = sad tomatoes. Hit up that south bed! MAJOR KEY!"
+    "text": "Yo, check it out! Honestly, tomatoes crave 6–8 hrs of sun. A shady spot means sad tomatoes. Hit up the south bed!"
   }
 ]

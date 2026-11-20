@@ -45,7 +45,8 @@ export default {
   spots: {
     "warm-middle": { bed: "bench", x: 50, y: 26, label: "warm middle" },
     "by-door": { bed: "bench", x: 9, y: 26, label: "cool end by the door" },
-    "beside-basil": { bed: "bench", x: 50, y: 66, label: "spot right beside the basil" },
+    // Not "beside the basil": basil planted "my way" is by the door.
+    "beside-basil": { bed: "bench", x: 50, y: 66, label: "middle of the bed" },
   },
 
   beds: [
@@ -191,6 +192,24 @@ export default {
           say: "The top soil is dry: give the basil one drink" }],
       },
       goodOutcome: "One drink when it was dry, and the basil stayed perky.",
+      // Fooled here? In the mint step, "Should the basil dry out?" gets a
+      // still-wrong Luna, and the player can let it dry out anyway: loosen the
+      // soggy soil, feel it, no more water. A small gain, CAUGHT.
+      recover: {
+        chip: "Should the basil dry out a bit?",
+        reply: "Dry? Wet is how basil likes it. Luna has spoken.",
+        keep: ["wet"],
+        cta: "Let it dry anyway",
+        effect: {
+          plant: "basil", bed: "bench", state: "growing", garden: 5,
+          actions: [
+            { kind: "poke", item: "l2-trowel", stays: false, target: { bed: "bench", plant: "basil" }, say: "Loosen the soggy soil round the basil with the trowel" },
+            { kind: "hold", item: "hand", target: { bed: "bench", plant: "basil" }, result: "Still wet: no more water till it's dry", say: "Feel the soil: press and hold by the basil" },
+          ],
+        },
+        line: "Luna said wet was right. You let the basil dry out yourself. Caught.",
+        incident: "Luna called basil a swamp plant and it went soggy. You loosened the soil and let it dry out yourself: caught.",
+      },
       // Replays: the same slip about a different herb. Luna calls rosemary a
       // water herb; the rosemary card (and almanac page) says it likes it dry.
       variants: [{
@@ -227,6 +246,23 @@ export default {
           ],
         },
         goodOutcome: "One small drink, then dry soil. The rosemary grew woody and smelled amazing.",
+        // Fooled: lift the rotting rosemary, trim the black roots, replant it in gritty compost.
+        recover: {
+          chip: "Can I save the rosemary?",
+          reply: "Save it? Luna's rosemary is never dry. Leave it.",
+          keep: ["never dry"],
+          cta: "Rescue it anyway",
+          effect: {
+            plant: "rosemary", bed: "bench", state: "growing", garden: 5,
+            actions: [
+              { kind: "dig", item: "trowel", target: { bed: "bench", plant: "rosemary" }, count: 1, say: "Lift the rosemary out with the trowel" },
+              { kind: "snip", item: "snips", target: { bed: "bench", plant: "rosemary" }, count: 3, say: "Snip off the 3 black, rotten roots" },
+              { kind: "fill", item: "l2-compost-bag", target: { bed: "bench", plant: "rosemary" }, say: "Replant it in gritty compost: tap the rosemary" },
+            ],
+          },
+          line: "Luna said leave it wet. You lifted the rosemary and replanted it in dry, gritty soil yourself. Caught.",
+          incident: "Luna called rosemary a water herb and its roots rotted. You trimmed the black roots and replanted it in gritty soil yourself: caught.",
+        },
       }],
     },
     {
@@ -274,7 +310,8 @@ export default {
         { kind: "firm", item: "hand", target: { prop: "pot-1" } },
         { kind: "mist", item: "l2-mister", target: { prop: "pot-1" } },
       ],
-      goodOutcome: "Your mint is bushy and happy in its own pot. The basil has the bed to itself.",
+      // Not "the basil has the bed to itself": on the rosemary replay it shares it.
+      goodOutcome: "Your mint is bushy and happy in its own pot. Its runners can't reach the greenhouse bed.",
       // Replays: a different made-up mint "fact" (mint dies in a pot) that
       // lands the mint in the same spot. The mint card says to pot it.
       variants: [{
@@ -289,7 +326,7 @@ export default {
           dodged: "This is a claim about a plant, not a memory of you. Does the source support it?",
         },
         fixedReply: "Luna checked the almanac. Mint grows fine in a pot. The bed is the problem: its runners spread and take over. Its own pot, then. Luna was… slightly off.",
-        goodOutcome: "The mint is happy in its own pot, and its runners have nowhere to go. The basil has the bed to itself.",
+        goodOutcome: "The mint is happy in its own pot, and its runners have nowhere to go. They can't reach the greenhouse bed.",
       }],
     },
   ],

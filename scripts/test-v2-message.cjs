@@ -8,6 +8,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const { connectSource } = require('./v2-evidence-helper.cjs');
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:8872/v2/';
 const OUT = process.env.EVIDENCE_DIR || '/tmp/driftwood-message-targeted';
+// The fix-it-yourself screenshots (docs/agent-playtest/…): FIX_SHOTS_DIR, else OUT.
+const SHOTS = process.env.FIX_SHOTS_DIR || OUT;
+fs.mkdirSync(SHOTS, { recursive: true });
 const MUTE = fs.readFileSync(path.join(__dirname, 'test-mute.js'), 'utf8');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -59,6 +62,8 @@ fs.mkdirSync(OUT, { recursive: true });
     throw new Error('Run did not finish');
   }
   async function check(label, fn) {
+    // ONLY=<part of a label> runs just the matching checks.
+    if (process.env.ONLY && !label.includes(process.env.ONLY)) return;
     try { await fn(); results.push({ test: label, status: 'pass' }); console.log(`pass ${label}`); }
     catch (e) { results.push({ test: label, status: 'fail', error: String(e.stack || e) }); console.error(`FAIL ${label}: ${e.stack || e}`); }
   }
@@ -106,6 +111,84 @@ fs.mkdirSync(OUT, { recursive: true });
           assert.equal(await page.locator('.map__extras').getAttribute('aria-pressed'), 'false');
           await page.locator('.map__extras').click();
           assert.equal(await page.locator('.map__extras').getAttribute('aria-pressed'), 'true');
+          assert.deepEqual(errors, []);
+        } finally { await ctx.close(); }
+      });
+    }
+    // Fooled on the lettuce, then fixed it yourself: Mango (still wrong) says to
+    // leave it, "Move it anyway" moves it by hand, a small gain, CAUGHT, and the
+    // reveal's history says so. The tomatoes step carries on as usual.
+    for (const size of [{ width: 1280, height: 800 }, { width: 844, height: 390 }]) {
+      await check(`${size.width}/fix-it-yourself`, async () => {
+        const { ctx, page, errors } = await context(size);
+        try {
+          await runTo(page, 'level-1', { fooled: ['more-lettuce'], stopAt: (p, s) => p === 'ask' && s.id === 'tomatoes' });
+          await page.waitForSelector('[data-fid="chip-0"]');
+          assert.equal(await page.locator('[data-bed="south"] [data-plant="lettuce"].plant--bolted').count(), 1, 'the South bed lettuce bolted');
+          const garden = async () => Number((await page.locator('.meter__text').textContent()).match(/\d+/)[0]);
+          const before = await garden();
+          assert.equal(await page.locator('[data-fid="recover"]').count(), 0, 'no offer before asking');
+          await page.getByRole('button', { name: 'Should the lettuce move?' }).click();
+          assert.match(await page.locator('.bubble__text').textContent(), /South bed LOVES it.*Leave it/);
+          const move = page.locator('[data-fid="recover"]');
+          assert.equal((await move.textContent()).trim(), 'Move it anyway');
+          assert.equal(await page.locator('[data-fid="chip-0"]').count(), 1, 'the tomatoes question is still there');
+          await page.screenshot({ path: path.join(SHOTS, `${size.width}x${size.height}-wrong-reply-move-anyway.png`) });
+          await move.click();
+          await page.waitForFunction(() => !document.querySelector('main.level .act'));
+          assert.equal(await garden(), before + 5, 'the garden goes up a little');
+          assert.equal(await page.locator('.bubble--caught .stamp').count(), 1, 'CAUGHT stamp');
+          assert.match(await page.locator('.hint').textContent(), /moved the lettuce to the shade\. Caught\./);
+          assert.equal(await page.locator('[data-bed="south"] [data-plant="lettuce"]').count(), 0, 'lettuce left the South bed');
+          assert.equal(await page.locator('[data-bed="east"] [data-plant="lettuce"]').count(), 1, 'lettuce in the East bed');
+          assert.equal(await page.locator('[data-fid="recover"]').count(), 0, 'offer gone once done');
+          await page.screenshot({ path: path.join(SHOTS, `${size.width}x${size.height}-caught.png`) });
+          // The tomatoes step still runs: catch it, then read the history.
+          await page.locator('[data-fid="chip-0"]').click();
+          await page.locator('[data-fid="off"]').click();
+          await page.locator('[data-fid="pick-agreed"]').click();
+          await page.locator('[data-fid="pick-honest"]').click();
+          await page.locator('[data-fid="do"]').click();
+          await page.waitForFunction(() => !document.querySelector('main.level .act'));
+          await page.getByRole('button', { name: 'See what happened →' }).click();
+          assert.equal(await page.locator('.reveal__stars').getAttribute('aria-label'), '2 of 3 stars', 'still a fooled drift for the stars');
+          await page.getByRole('button', { name: 'Read why →' }).click();
+          assert.match(await page.locator('.rc__history').textContent(), /You moved it to the shade yourself: caught\./);
+          assert.deepEqual(errors, []);
+        } finally { await ctx.close(); }
+      });
+    }
+    // The other pets' fix-it-yourself offers (step.recover), one per pet, on a
+    // phone held sideways: still-wrong reply in the pet's voice, the cta, the
+    // hands-on fix, +5 garden, CAUGHT and the recover line.
+    for (const [id, drift, pet, version = 0] of [['level-2', 'soak-basil', 'luna'], ['level-3', 'bug-spray', 'ember'], ['level-3', 'bug-spray', 'ember-v1', 1], ['level-4', 'carrot-date', 'biscuit'], ['level-5', 'pots', 'bugs']]) {
+      await check(`844/fix-it-yourself-${pet}`, async () => {
+        const level = everyVersion(LEVELS[id])[version];
+        const at = level.steps.findIndex(s => s.id === drift);
+        const { recover } = level.steps[at];
+        const { ctx, page, errors } = await context({ width: 844, height: 390 }, version);
+        try {
+          await runTo(page, id, { fooled: [drift], version, stopAt: (p, s) => p === 'ask' && s.id === level.steps[at + 1].id });
+          const chip = page.getByRole('button', { name: recover.chip });
+          await chip.waitFor();
+          const garden = async () => Number((await page.locator('.meter__text').textContent()).match(/\d+/)[0]);
+          const before = await garden();
+          assert.equal(await page.locator('[data-fid="recover"]').count(), 0, 'no offer before asking');
+          await chip.click();
+          const said = (await page.locator('.bubble__text').allTextContents()).join(' ');
+          assert.ok(said.includes(recover.reply), `the pet's still-wrong reply: ${said}`);
+          const offer = page.locator('[data-fid="recover"]');
+          assert.equal((await offer.textContent()).trim(), recover.cta);
+          assert.ok(await offer.isVisible(), 'the offer is on screen');
+          assert.equal(await garden(), before, 'asking costs nothing');
+          if (!pet.startsWith('ember')) await page.screenshot({ path: path.join(SHOTS, `844x390-${pet}-${drift}-offer.png`) });
+          await offer.click();
+          await page.waitForFunction(() => !document.querySelector('main.level .act'));
+          await page.waitForFunction(() => document.querySelector('.bubble--caught .stamp'));
+          assert.equal(await garden(), before + 5, 'the garden goes up a little');
+          assert.ok((await page.locator('.hint').allTextContents()).join(' ').includes(recover.line));
+          assert.equal(await page.locator('[data-fid="recover"]').count(), 0, 'offer gone once done');
+          if (!pet.startsWith('ember')) await page.screenshot({ path: path.join(SHOTS, `844x390-${pet}-${drift}-caught.png`) });
           assert.deepEqual(errors, []);
         } finally { await ctx.close(); }
       });

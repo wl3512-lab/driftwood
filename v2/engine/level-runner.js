@@ -58,8 +58,44 @@
 // back unless that plant is in that state (Level 3's ripe-berry pick only
 // follows the wait, not picking them early). `wait: { ms, line }` is for the
 // view: it shows the line and a progress cue for ms before the chore opens.
+//
+// Fixing it yourself (drift step `recover`): a player who followed a drift can
+// still put it right by hand in the step that follows, while it is in its ask
+// phase. step.recover = { chip, reply, keep?, cta, effect, line, incident }:
+//   chip      the side question that brings it up. The next step's extra chip
+//             with the same text answers with `reply` instead (or the chip is
+//             added, when that step has none), and only after this drift
+//             fooled the player.
+//   reply     the helper, still wrong, says to leave it (reworded as a drift line)
+//   cta       the button that does it anyway ({ type: "recover" }, the view)
+//   effect    what doing it lands (by hand: effect.actions); a small garden gain.
+//             effect.remove = [{ bed, plant }] takes a plant out of a bed, and
+//             `join: true` puts a plant in a bed without changing the state of
+//             the same crop already growing there.
+//   line      said under the helper's line, which is stamped CAUGHT
+//   incident  replaces this drift's incident text (the reveal's "This time")
+// It is still a fooled drift for the stars; training gets back the one point
+// for catching it (none for naming or fixing it). Effects: grow,
+// { type: "recovered", stepId }, then { type: "hint", text: line }. Asking
+// the recover chip is free: it never spends a pressure step's garden (Level 5).
+//
+// Lines that depend on the garden (`ifGarden`): a step, a chore or an extra
+// chip can carry ifGarden = [{ when, ...fields }]. Every entry whose `when`
+// matches the garden right now (before the choice's own effect lands) puts
+// its fields over the written ones, in order: a plain-object field (an
+// effect, a disagree block) is merged one level deep, anything else replaces.
+// So a line never claims a plant or bed is in a state it isn't: the Level 1
+// lettuce question when the East bed's own lettuce bolted, Level 4's carrots
+// after a soaking. `when` is one condition or a list (all must hold):
+//   { bed, plant }            that plant is in that bed ("@carrot" refs work)
+//   { bed, plant, state }     …in that state (or one of a list of states)
+//   { bed, plant, absent: true }  …isn't there
+//   { fooled: stepId }        that drift fooled the player and wasn't put right
+//   { recovered: stepId }     the player put that drift right by hand
+// currentStep, pendingChore and extraChipsFor return the resolved versions
+// (the same object while the same entries match, so the views can compare).
 
-import { resolveEffect } from "../mechanics/placement.js";
+import { resolveEffect, resolveBed } from "../mechanics/placement.js";
 import { nextPressureEffect } from "../mechanics/pressure.js";
 
 export function createRun(level) {
@@ -95,11 +131,47 @@ export function createRun(level) {
     chatted: 0,   // follow-up questions answered in a chat chain (extraChips[i].more)
     talk: null,   // the open chat chain: { step, chip, round }
     chores: [],   // ids of level.chores the player has done
+    recoverAsked: null, // drift id whose recover chip was asked (the offer is open)
+    recovered: [],      // drift ids the player put right by hand (step.recover)
   };
 }
 
 export function currentStep(level, state) {
-  return level.steps[state.stepIndex];
+  return byGarden(level, state, level.steps[state.stepIndex]);
+}
+
+// Whether the garden matches an ifGarden `when` (see the top of this file).
+export function gardenIs(level, state, when) {
+  return [].concat(when || []).every((w) => {
+    if (!w || typeof w !== "object") return false;
+    if (w.recovered) return (state.recovered || []).includes(w.recovered);
+    if (w.fooled) return (state.incidents || []).some((i) => i.stepId === w.fooled && i.fooled && !i.recovered);
+    const bed = resolveBed(level, state.memory, w.bed);
+    const p = (state.beds?.[bed] || []).find((x) => x.plant === w.plant);
+    if (w.absent) return !p;
+    if (!p) return false;
+    return w.state == null || [].concat(w.state).includes(p.state);
+  });
+}
+
+const isPlain = (v) => Boolean(v) && typeof v === "object" && !Array.isArray(v);
+const RESOLVED = new WeakMap();
+// obj with the fields of every ifGarden entry that matches right now.
+export function byGarden(level, state, obj) {
+  if (!obj?.ifGarden?.length) return obj;
+  const hits = obj.ifGarden.map((e, i) => (gardenIs(level, state, e.when) ? i : -1)).filter((i) => i >= 0);
+  if (hits.length === 0) return obj;
+  let cache = RESOLVED.get(obj);
+  if (!cache) RESOLVED.set(obj, (cache = new Map()));
+  const key = hits.join();
+  if (cache.has(key)) return cache.get(key);
+  const out = { ...obj };
+  for (const i of hits) {
+    const { when, ...fields } = obj.ifGarden[i];
+    for (const [k, v] of Object.entries(fields)) out[k] = isPlain(v) && isPlain(out[k]) ? { ...out[k], ...v } : v;
+  }
+  cache.set(key, out);
+  return out;
 }
 
 // The chore waiting before the current step's question, if any.
@@ -107,7 +179,8 @@ export function pendingChore(level, state) {
   if (state.phase !== "ask") return null;
   const step = currentStep(level, state);
   if (!step) return null;
-  return (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id) && choreReady(state, c)) || null;
+  const chore = (level.chores || []).find((c) => choreStep(level, c) === step.id && !(state.chores || []).includes(c.id) && choreReady(state, c));
+  return chore ? byGarden(level, state, chore) : null;
 }
 
 // A chore with `when` waits for its plant to be in that state.
@@ -132,13 +205,16 @@ export function applyGarden(state, effect) {
     const list = beds[x.bed];
     if (!list) return; // unknown bed: skip rather than crash
     const existing = list.find((p) => p.plant === x.plant);
-    if (existing) existing.state = x.state;
+    if (existing) { if (!x.join) existing.state = x.state; }
     else list.push({ plant: x.plant, state: x.state });
   };
   if (effect.water) {
     for (const list of Object.values(beds)) {
       for (const p of list) if (p.state === "growing") p.state = "thriving";
     }
+  }
+  for (const x of effect.remove || []) {
+    if (beds[x.bed]) beds[x.bed] = beds[x.bed].filter((p) => p.plant !== x.plant);
   }
   if (effect.plant) put(effect);
   for (const x of effect.extra || []) put(x);
@@ -275,6 +351,52 @@ function more(step, state, action, fx) {
   return { state: effect ? applyGarden(base, effect) : base, effects };
 }
 
+// The drift just before this step, when it fooled the player and can still be
+// put right by hand (step.recover): { stepId, recover }.
+export function recoverable(level, state) {
+  if (state.phase !== "ask") return null;
+  const prev = level.steps[state.stepIndex - 1];
+  if (prev?.kind !== "drift" || !prev.recover || (state.recovered || []).includes(prev.id)) return null;
+  if (!(state.incidents || []).some((i) => i.stepId === prev.id && i.fooled)) return null;
+  return { stepId: prev.id, recover: prev.recover };
+}
+
+// The side questions on the current step, with the recover chip's (wrong)
+// reply in place of the usual one, or added after them.
+export function extraChipsFor(level, state) {
+  let chips = (currentStep(level, state)?.extraChips || []).map((c) => byGarden(level, state, c));
+  // once put right by hand, the question is answered: its chip goes
+  const prev = level.steps[state.stepIndex - 1];
+  if (prev?.recover?.chip && (state.recovered || []).includes(prev.id)) chips = chips.filter((c) => c.text !== prev.recover.chip);
+  const r = recoverable(level, state);
+  if (!r?.recover.chip) return chips;
+  const { chip, reply, keep = [] } = r.recover;
+  const swap = { text: chip, reply, keep, recover: true };
+  const at = chips.findIndex((c) => c.text === chip);
+  return at >= 0 ? chips.map((c, i) => (i === at ? swap : c)) : [...chips, swap];
+}
+
+// "Do it anyway" is on offer once the recover chip has been asked.
+export function recoverOffer(level, state) {
+  const r = recoverable(level, state);
+  return r && state.recoverAsked === r.stepId ? r : null;
+}
+
+// Doing it anyway: the fix lands by hand, the incident is rewritten.
+function recoverIt(level, state, fx) {
+  const r = recoverOffer(level, state);
+  if (!r) return IGNORED(state);
+  const effect = fx(r.recover.effect || {});
+  const grown = applyGarden(state, effect);
+  const incidents = (state.incidents || []).map((i) => (i.stepId === r.stepId ? { ...i, text: r.recover.incident || i.text, recovered: true } : i));
+  const effects = [{ type: "grow", effect }, { type: "recovered", stepId: r.stepId }];
+  if (r.recover.line) effects.push({ type: "hint", text: r.recover.line });
+  return {
+    state: { ...grown, incidents, recovered: [...(state.recovered || []), r.stepId], recoverAsked: null, trainPts: (state.trainPts || 0) + 1 },
+    effects,
+  };
+}
+
 // Spend one unit of pressure if this step has any left (ask, chat, tick).
 function spend(step, state) {
   const fx = nextPressureEffect(step, state);
@@ -314,11 +436,13 @@ export function reduce(level, state, action) {
     const chore = pendingChore(level, state);
     if (!chore || chore.id !== action.id) return IGNORED(state);
     // A chore never moves the garden bar (done or skipped): only its plants change.
-    const effect = chore.effect ? { ...fx(chore.effect), garden: 0 } : null;
+    // Skipped (the card's Skip, or an optional chore with extra chores off),
+    // nothing happened: no effect, and no doneLine praising work not done.
+    const effect = chore.effect && !action.skipped ? { ...fx(chore.effect), garden: 0 } : null;
     const base = { ...state, chores: [...(state.chores || []), chore.id] };
     const effects = [];
     if (effect) effects.push({ type: "grow", effect });
-    if (chore.doneLine) effects.push({ type: "say", text: chore.doneLine });
+    if (chore.doneLine && !action.skipped) effects.push({ type: "say", text: chore.doneLine });
     return { state: effect ? applyGarden(base, effect) : base, effects };
   }
   // Ticks only spend once Bugs has made his pitch (advice), never while the player is still reading.
@@ -336,12 +460,17 @@ export function reduce(level, state, action) {
         };
       }
       if (action.type === "chat") {
+        // The recover chip (after a drift that fooled the player): the helper
+        // says to leave it, and "do it anyway" opens. Free: no pressure spent.
+        const c = Number.isInteger(action.chip) ? extraChipsFor(level, state)[action.chip] : null;
+        if (c?.recover) return { state: { ...state, recoverAsked: recoverable(level, state).stepId }, effects: [{ type: "say", text: c.reply }] };
         const paid = spend(step, state);
         // A chip with follow-ups opens its chain (Level 5).
         const opens = Number.isInteger(action.chip) && step.extraChips?.[action.chip]?.more && !openChain(step, state);
         const next = opens ? { ...paid.state, talk: { step: state.stepIndex, chip: action.chip, round: 0 } } : paid.state;
         return { state: next, effects: [...paid.effects, { type: "say", text: action.reply }] };
       }
+      if (action.type === "recover") return recoverIt(level, state, fx);
       if (action.type === "more") return more(step, state, action, fx);
       return IGNORED(state);
     }

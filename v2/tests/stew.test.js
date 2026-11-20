@@ -41,9 +41,10 @@ test("every dish is a plant the levels grow, and every level can lose one", () =
 test("caught all five, three stars each: five bowls, every kind, and he says so", () => {
   const r = rateStew(all(3, false), IDS);
   assert.equal(r.bowls, 5);
-  assert.equal(r.kinds, DISHES.length);
+  // An old save (no crops): rosemary, grown on one version only, isn't on the menu.
+  assert.equal(r.kinds, DISHES.filter((d) => !d.optional).length);
   assert.equal(r.missing.length, 0);
-  assert.equal(r.line, "Thirteen kinds, all thriving. Splendid.");
+  assert.equal(r.line, "Eleven kinds, all thriving. Splendid.");
 });
 
 test("fooled in Levels 4 and 5: carrots, unplanted spinach and meadow flowers are missing", () => {
@@ -80,7 +81,7 @@ test("every kind there but weak plants: no gap, but fewer bowls and a different 
   const r = rateStew(all(1, false), IDS);
   assert.equal(r.missing.length, 0);
   assert.ok(r.bowls < 5);
-  assert.equal(r.line, "Thirteen kinds. Some had a hard season.");
+  assert.equal(r.line, "Eleven kinds. Some had a hard season.");
 });
 
 test("unplayed levels are missing, never crash, and the bowls stay 1..5", () => {

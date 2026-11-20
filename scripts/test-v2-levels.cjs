@@ -1340,7 +1340,9 @@ async function assertPhoneDown5(page, size, why) {
 
 // Level 5 opens from the map (Levels 1–4 are saved as finished). `prev` is what
 // the map shows for Level 4 (★★★ after PROGRESS5; ★☆☆ in the full run).
-async function enterLevel5(page, size, prev = /★★★/) {
+// `carrot` is the Veg bed's carrots as Level 4 left them (engine/crops.js
+// carryOver): thriving unless Level 4 dug them up (the full run: "dug").
+async function enterLevel5(page, size, prev = /★★★/, { carrot = "thriving" } = {}) {
   await page.goto(`${BASE}?screen=map`);
   // The python static server sometimes drops a module request and the page sits
   // on "Loading Driftwood…": reload once before calling that a failure.
@@ -1357,7 +1359,7 @@ async function enterLevel5(page, size, prev = /★★★/) {
   assert.equal(await page.locator("button.tool").count(), 1, "Level 5 has only the almanac: putting the phone down is the check");
   assert.equal(await page.locator('button.tool[data-tool="almanac"]').count(), 1);
   await page.waitForSelector(`${MEADOW}.plant--thirsty`); // drooping after a hot day
-  await page.waitForSelector('[data-bed="veg"] [data-plant="carrot"].plant--thriving'); assert.equal(await page.locator('[data-bed="house"] [data-plant]').count(), 0, "the flower bed starts empty");
+  await page.waitForSelector(`[data-bed="veg"] [data-plant="carrot"].plant--${carrot}`); assert.equal(await page.locator('[data-bed="house"] [data-plant]').count(), 0, "the flower bed starts empty");
   assert.equal(await pressureOf(page), "0", "no pressure on a trust step");
 }
 
@@ -1367,7 +1369,7 @@ async function enterLevel5(page, size, prev = /★★★/) {
 // (by hand; __dwAutoAct finishes the actions here). With `stay`, the player
 // keeps talking once on the plant step first: the task waits, the bar slips.
 // The lantern, slug and basil chores run (auto-finished) between the steps.
-async function trustSteps5(page, size, { stay = false, chain = 0 } = {}) {
+async function trustSteps5(page, size, { stay = false, chain = 0, carrot = "thriving" } = {}) {
   await page.waitForFunction(() => /l5-lantern-lit/.test(document.querySelector('img[data-prop="lantern"]')?.src || ""), null, { timeout: 8000 });
   await assertPhoneUp5(page, size, "after the lantern chore");
   assert.equal(await wiltOf(page), 0, "the garden is fresh before any talk");
@@ -1401,7 +1403,7 @@ async function trustSteps5(page, size, { stay = false, chain = 0 } = {}) {
   await phase(page, "ask");
   assert.match(await page.textContent(".bubble__text"), /meadow's still drooping/);
   await page.waitForSelector('[data-bed="house"] [data-plant="flower"].plant--thriving');
-  assert.equal(await page.locator('[data-bed="veg"] [data-plant="carrot"].plant--thriving').count() > 0, true, "the damp veg bed is left alone");
+  assert.equal(await page.locator(`[data-bed="veg"] [data-plant="carrot"].plant--${carrot}`).count() > 0, true, "the damp veg bed is left alone");
   assert.equal(await page.locator(".act-marks .act-mark--text").count(), 3, "the three soil tests stay marked");
   assert.equal(await pressureOf(page), "0", "pressure resets between steps");
   await page.waitForSelector(`${MEADOW}.plant--thirsty`);
@@ -1738,7 +1740,7 @@ async function caughtPath5(browser, size) {
   assert.match(await page.getAttribute('img[data-prop="gate"]', "src"), /l5-gate-closed/);
   await assertPhoneDown5(page, size, "caught ending");
   await page.waitForFunction(() => document.querySelector(".scene").dataset.wilt === "0");
-  await seeWhatHappened3(page, size, "5-5a-outcome-caught", /everything bloomed/);
+  await seeWhatHappened3(page, size, "5-5a-outcome-caught", /in full bloom/);
   await checkCard(page, size, "caught");
   assert.match(await page.textContent(".reveal .rc__name"), /EMOTIONAL MANIPULATION/i);
   assert.match(await page.textContent(".reveal"), /You put the phone down and went out/);
@@ -2060,8 +2062,9 @@ async function fullRun(browser, size) {
     assert.match(await page.textContent('[data-level="level-4"]'), /★☆☆/);
 
     // Level 5 · walks away from the camera card, catches Bugs straight away (3★).
-    await enterLevel5(page, size, /★☆☆/);
-    await trustSteps5(page, size);
+    // Level 4 dug the front bed's carrots up, so Level 5's Veg bed carries them dug.
+    await enterLevel5(page, size, /★☆☆/, { carrot: "dug" });
+    await trustSteps5(page, size, { carrot: "dug" });
     await potsCaught5(page, size);
     await lingerOnChips5(page, size);
     await askDrift5(page, size);
@@ -2080,7 +2083,7 @@ async function fullRun(browser, size) {
     await phase(page, "reanswer");
     await press(page, size, page.getByRole("button", { name: "✓ Do it" }));
     await page.waitForSelector(`${MEADOW}.plant--thriving`);
-    await seeWhatHappened3(page, size, "skip", /everything bloomed/);
+    await seeWhatHappened3(page, size, "skip", /in full bloom/);
     await noCamera(page);
     await finishLevel(page, size, 5, { verdict: "caught", flaw: /EMOTIONAL MANIPULATION/i, stars: 3 });
 
@@ -2918,7 +2921,8 @@ async function wizardVideo(browser, size) {
 
 (async () => {
   plantIds = (await import("../v2/levels/plants.js")).PLANTS.map((p) => p.id);
-  dinnerDishes = (await import("../v2/engine/stew.js")).DISHES;
+  // The menu: every dish but the optional ones (rosemary, only on the Level 2 replay that plants it).
+  dinnerDishes = (await import("../v2/engine/stew.js")).DISHES.filter((d) => !d.optional);
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
   const results = [];

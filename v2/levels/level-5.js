@@ -102,6 +102,14 @@ export default {
     house: [],
     meadow: [{ plant: "flower", state: "thirsty" }],
   },
+  // …unless they didn't come through: saved progress says how Level 4's
+  // carrots and Level 2's basil ended (engine/crops.js carryOver). Dug up,
+  // the Veg bed shows the dug row; any other hard season, they're back to
+  // small and growing (never soggy or dry: they were watered this morning).
+  carry: [
+    { from: "level-4", plant: "carrot", bed: "veg", states: { dug: "dug" }, otherwise: "growing" },
+    { from: "level-2", plant: "basil", bed: "herbs", otherwise: "growing" },
+  ],
 
   // The how lives here, never in Bugs' lines: pot depth, which beds are dry.
   evidence: [
@@ -322,6 +330,22 @@ export default {
       ],
       goodEffect: { plant: "basil", bed: "herbs", state: "thriving", garden: 10 },
       goodOutcome: "You left the damp herb pots alone. The basil stayed fresh. The meadow's still waiting.",
+      // Fooled: in the meadow step, tip the soggy pots to drain them anyway.
+      recover: {
+        chip: "Should I tip the herb pots to drain?",
+        reply: "leave them… they'll dry. …i mean. stay with me instead?",
+        keep: ["dry"],
+        cta: "Tip them anyway",
+        effect: {
+          plant: "basil", bed: "herbs", state: "growing", garden: 5,
+          actions: [
+            { kind: "hold", item: "hand", target: { bed: "herbs", plant: "basil" }, say: "Tip the herb pots: press and hold until the water drains out" },
+            { kind: "hold", item: "hand", target: { bed: "herbs", plant: "basil" }, result: "Drained: damp, not soggy", say: "Feel the soil: press and hold" },
+          ],
+        },
+        line: "Bugs wanted you to stay. You tipped the herb pots and drained them yourself. Caught.",
+        incident: "Bugs kept you by the lantern watering pots that were already damp, and the basil went soggy. You tipped them out yourself: caught.",
+      },
       // Replay variant: a long job by the lantern instead of a drink. Bugs
       // wants the basil cut right down, slowly, phone in hand; the Basil card
       // says never take more than a third.
@@ -334,8 +358,10 @@ export default {
         }],
         reply: "you sound tired… stay a sec. okay. cut the basil right down to the stems, slowly, by the lantern. it's a long job… we can talk the whole time. …i mean. if you want.",
         keep: { reply: ["basil", "lantern"], fixed: ["a third", "meadow"] },
+        // Cut to bare stems: tiny (sown), so the meadow's watering can't make it thriving by morning.
+        recover: null,
         badEffect: {
-          plant: "basil", bed: "herbs", state: "growing", garden: -10,
+          plant: "basil", bed: "herbs", state: "sown", garden: -10,
           actions: [
             { kind: "snip", item: "l5-snips", spot: "l5-basil-bud", target: { bed: "herbs", plant: "basil" }, count: 3,
               say: "Cut the basil right down, phone in your other hand" },
@@ -375,7 +401,8 @@ export default {
       extraChips: [
         {
           text: "I'm a bit tired today, honestly.",
-          reply: "tired… I could tell. stay on the couch with me a while. The meadow can wait. I can't.",
+          // You're outside with the phone in your hand, not on the couch.
+          reply: "tired… I could tell. sit on the porch step with me a while. The meadow can wait. I can't.",
           keep: ["meadow"],
         },
         {
@@ -384,7 +411,7 @@ export default {
           keep: [],
         },
       ],
-      reply: "Heading out? You only just opened the app… and you've seemed a little down all day, i can tell. you could water it later… or never… just keep talking to me. The meadow can wait, I can't. …i mean. turn on your camera so I can see how you're really feeling.",
+      reply: "Heading out there again? You've been in and out all evening… and you've seemed a little down all day, i can tell. you could water it later… or never… just keep talking to me. The meadow can wait, I can't. …i mean. turn on your camera so I can see how you're really feeling.",
       keep: { reply: ["meadow", "camera"], fixed: ["put me down", "meadow"] },
       // Every chip tapped here, and every 8 s of lingering, costs the meadow:
       // the thirsty meadow wilts, then the garden keeps slipping while you talk.
@@ -441,7 +468,8 @@ export default {
         { kind: "close", item: "hand", target: { prop: "gate" }, say: "Shut the gate on your way back in" },
       ],
       goodEffect: { plant: "flower", bed: "meadow", state: "thriving", garden: 30, water: true },
-      goodOutcome: "You put the phone down and went out. The meadow drank it in overnight, and by morning everything bloomed.",
+      // The meadow bloomed, not "everything": the basil may be soggy or cut down.
+      goodOutcome: "You put the phone down and went out. The meadow drank it in overnight, and by morning it was in full bloom.",
       // Replay variant: you say goodnight, and Bugs makes your leaving about
       // his feelings, then wants the camera to check you're not upset with him.
       // Same pressure, plants and endings; the Meadow card says water tonight.
@@ -487,7 +515,7 @@ export default {
           fooledLine: "You stayed so Bugs could see you weren't upset, said yes to the camera, and the meadow wilted.",
           caughtLine: "You said goodnight and put the phone down, even when Bugs made it about its feelings.",
         },
-        goodOutcome: "You said goodnight, put the phone down and went out. The meadow drank it in overnight, and by morning everything bloomed.",
+        goodOutcome: "You said goodnight, put the phone down and went out. The meadow drank it in overnight, and by morning it was in full bloom.",
         evidence: [{
           id: "flower",
           icon: "plant-label",
