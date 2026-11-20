@@ -6,12 +6,15 @@
 // Reduced motion skips straight to the next screen.
 
 const GROW_MS = 1600; // vines grow, then the next screen opens under them
-const FADE_MS = 450;  // and they fade off it
+const DARK_MS = 450;  // then the vines sink into the black: the screen is fully dark
+const HOLD_MS = 200;  // a beat of black
+const FADE_MS = 600;  // and the next screen fades up out of it
 const STEPS_PER_FRAME = 3;
 
 export function playThorns(onDone) {
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { onDone(); return; }
-  // The whole screen dims under the vines as they grow, then lifts with them.
+  // The whole screen fades to black under the vines as they grow, the vines
+  // sink into it, and the next screen fades up out of the dark.
   const dim = document.createElement("div");
   dim.className = "thorns-dim";
   dim.setAttribute("aria-hidden", "true");
@@ -126,10 +129,15 @@ export function playThorns(onDone) {
   function finish() {
     if (done) return;
     done = true;
-    onDone();
+    dim.classList.add("thorns-dim--on"); // in case no frame ran (hidden tab)
     cvs.classList.add("thorns--out");
-    dim.classList.add("thorns-dim--out");
-    setTimeout(() => { cvs.remove(); dim.remove(); }, FADE_MS + 50);
+    setTimeout(() => {
+      onDone();
+      setTimeout(() => {
+        dim.classList.add("thorns-dim--out");
+        setTimeout(() => { cvs.remove(); dim.remove(); }, FADE_MS + 50);
+      }, HOLD_MS);
+    }, DARK_MS);
   }
   function tick(now) {
     if (done) return;

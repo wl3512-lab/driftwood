@@ -22,6 +22,7 @@ export function resolveEffect(level, memory, effect) {
   const out = { ...effect };
   if (out.bed) out.bed = resolveBed(level, memory, out.bed);
   if (out.extra) out.extra = out.extra.map((x) => ({ ...x, bed: resolveBed(level, memory, x.bed) }));
+  if (out.remove) out.remove = out.remove.map((x) => ({ ...x, bed: resolveBed(level, memory, x.bed) }));
   return out;
 }
 

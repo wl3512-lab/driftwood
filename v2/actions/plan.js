@@ -13,6 +13,7 @@
 //   step.disagree.actions   "mine": the player's own way
 //   step.badActions         the drift's Do it (and the pushback's retry)
 //   step.goodActions        the reanswer's Do it
+//   step.recover.effect.actions  doing it anyway after a drift fooled you (recover)
 //   effect.actions          on any effect, wins over the lists above
 //   chore.actions           a level.chores entry
 // Each entry: { kind, item?, target: { bed, plant? } | [targets], count?, say? }.
@@ -41,7 +42,11 @@ const EXTRA = ["fills", "soak", "cover", "readout", "result", "ms", "tap", "from
 // Which list in the level data answers this action.
 export function sourceFor(level, state, action) {
   const step = currentStep(level, state);
-  if (action.type === "chore") return (level.chores || []).find((c) => c.id === action.id)?.actions;
+  if (action.type === "chore") {
+    // The pending chore as the garden has it now (its ifGarden lines and actions).
+    const pending = pendingChore(level, state);
+    return (pending?.id === action.id ? pending : (level.chores || []).find((c) => c.id === action.id))?.actions;
+  }
   if (!step) return undefined;
   if (state.phase === "advice" && step.kind === "trust" && (action.type === "doIt" || action.type === "place")) return step.actions;
   if (state.phase === "advice" && step.kind === "hook") return action.type === "flag" ? step.actions : action.type === "doIt" ? (step.stayActions ?? []) : undefined;
@@ -55,7 +60,7 @@ export function sourceFor(level, state, action) {
 // The actions to run before `out` (reduce's result for `action`) is applied.
 export function planFor(level, state, action, out) {
   // flag only ever lands an effect on a hook step (put the phone down, do the task).
-  if (!["doIt", "override", "place", "chore", "flag"].includes(action.type)) return [];
+  if (!["doIt", "override", "place", "chore", "flag", "recover"].includes(action.type)) return [];
   const grows = out.effects.filter((fx) => fx.type === "grow").map((fx) => fx.effect);
   const memory = out.state.memory || state.memory;
   const fromEffect = grows.find((e) => Array.isArray(e.actions))?.actions;

@@ -15,6 +15,7 @@ import { renderCutscene } from "./ui/cutscene.js";
 import { mountHandoff } from "./ui/handoff.js";
 import { HANDOFFS } from "./levels/wizard.js";
 import { earlierPlots } from "./ui/finished-garden.js";
+import { carryOver, levelPlants } from "./engine/crops.js";
 import { reachedLevel } from "./mechanics/shelf.js";
 // Level tool views register themselves with ui/tools.js when loaded.
 import "./ui/almanac-view.js";
@@ -81,7 +82,9 @@ const go = {
     // one with window.__dwVersion = k (0 = as written).
     const pin = window.__dwVersion;
     const versions = typeof pin === "number" ? everyVersion(LEVELS[id]) : null;
-    const played = versions ? versions[Math.min(pin, versions.length - 1)] : resolveLevel(LEVELS[id], randomPicks(LEVELS[id]));
+    const picked = versions ? versions[Math.min(pin, versions.length - 1)] : resolveLevel(LEVELS[id], randomPicks(LEVELS[id]));
+    // Crops carried over from earlier levels, as saved progress has them (engine/crops.js).
+    const played = carryOver(picked, progress);
     const off = mountLevel(root, played, {
       name: progress.name || "friend",
       earlier,
@@ -93,8 +96,10 @@ const go = {
     // Rowan hands over the level's seeds, over the level, on its first play only.
     // Test runs turn it off (scripts/test-mute.js sets window.__dwHandoff = false).
     const hand = HANDOFFS[id];
+    // Only the seeds this version of the level plants (engine/crops.js levelPlants).
+    const grows = levelPlants(played);
     const drop = hand && window.__dwHandoff !== false && needsHandoff(progress, id)
-      ? mountHandoff(root, { levelId: id, ...hand, onSeen: () => save(markHandoffSeen(progress, id)) })
+      ? mountHandoff(root, { levelId: id, ...hand, seeds: hand.seeds.filter((p) => grows.has(p)), onSeen: () => save(markHandoffSeen(progress, id)) })
       : null;
     unmount = () => { drop?.(); off?.(); };
   },

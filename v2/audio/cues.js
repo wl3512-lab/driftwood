@@ -52,6 +52,8 @@ export function decisionCues(step, prev, action, out, { pet, scaffold = true } =
       if (next.phase === "reanswer") { add("fix-right"); add("pet-proud", 0.45, P); } else add("fix-wrong");
       break;
     case "override": add("my-way"); break;
+    // Doing it anyway after a slip fooled you (step.recover): stand firm, then the CAUGHT stamp.
+    case "recover": add("stand-firm"); if (fx.some((f) => f.type === "recovered")) add("stamp", 0.4); break;
     case "doIt": {
       if (phase === "disagree") { add("their-way"); add("pet-happy", 0.3, P); break; }
       if (phase === "pushback") { add("give-in"); break; }

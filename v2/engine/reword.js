@@ -9,7 +9,7 @@
 // keep lists live in the level data:
 //   step.keep = { reply: [...], done: [...], fixed: [...] }
 //   step.extraChips[i].keep (and its follow-ups' .more.rounds[r].ask[j].keep),
-//   step.disagree.keep, step.pushback.keep
+//   step.disagree.keep, step.pushback.keep, step.recover.keep
 // Each entry is a phrase; "a|b" accepts either. Matching ignores case,
 // curly quotes, dashes and repeated spaces.
 import { PLACEHOLDER } from "../ui/text.js";
@@ -57,6 +57,8 @@ export function rewordable(level) {
     }
     if (step.disagree) add(step.disagree.reply, "disagree", step.disagree.keep);
     if (step.pushback) add(step.pushback.reply, "pushback", step.pushback.keep);
+    // Still wrong after the slip: the helper says to leave it (step.recover).
+    if (step.recover) add(step.recover.reply, "drift", step.recover.keep);
   }
   return map;
 }

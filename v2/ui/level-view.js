@@ -7,7 +7,7 @@
 // listener, removed by the function mountLevel returns (and by itself if the
 // level has gone from the page).
 import { h, announce } from "./dom.js";
-import { createRun, reduce, currentStep, pendingChore, training, openChain, chainQuestions } from "../engine/level-runner.js";
+import { createRun, reduce, currentStep, pendingChore, training, openChain, chainQuestions, extraChipsFor, recoverOffer } from "../engine/level-runner.js";
 import { trainBar } from "./train-bar.js";
 import { renderBeds, levelSprites } from "../garden/garden.js";
 import { setDrift } from "../garden/drift.js";
@@ -52,6 +52,7 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
   const t = (text) => fill(text, { name, ...memoryVars(level, state.memory) });
   let said = level.greeting;
   let driftSaid = null; // the drift advice a pushback reply replaced
+  let stamped = null; // the helper's line stamped CAUGHT after the player fixed a slip by hand (step.recover)
   let asked = null;
   let hint = null;
   let grown = null;
@@ -355,13 +356,14 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
       if (fx.type === "rule") { asked = `My request: “${fx.text}”`; phone?.heard("me", asked); }
       if (fx.type === "outcome") outcome = fx.text;
       if (fx.type === "checked") unlocked(fx.id);
+      if (fx.type === "recovered") stamped = said;
     }
     // A pushback reply is the helper arguing back, not its advice: keep the
     // drift line it replaced, so standing firm shows the same CAUGHT bubble as
     // Levels 1–3 (the advice the player caught), not the argument again.
     if (prev.phase === "advice" && state.phase === "pushback") driftSaid = before;
     if (prev.phase === "pushback" && state.phase === "name" && driftSaid) said = driftSaid;
-    if (newStep) driftSaid = null;
+    if (newStep) { driftSaid = null; stamped = null; }
     const line = out.effects.some((fx) => fx.type === "say") ? lines.get(said) : null;
     if (line) think(line);
     render();
@@ -609,8 +611,14 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     if (state.phase === "reanswer" && !step.evidenceId) {
       actions.push(h("button", { class: "btn btn--do", "data-fid": "do", onclick: () => dispatch({ type: "doIt" }) }, "✓ Do it"));
     }
+    // After a slip fooled them, the player asked about it and the helper, still
+    // wrong, said to leave it: they can do it anyway (step.recover), by hand.
+    const offer = state.phase === "ask" ? recoverOffer(level, state) : null;
+    if (offer) {
+      actions.push(h("button", { class: "btn btn--off btn--recover", "data-fid": "recover", onclick: () => dispatch({ type: "recover" }) }, t(offer.recover.cta || "Do it anyway")));
+    }
     const glitch = level.number === 1 && (state.phase === "advice" || state.phase === "pushback") && step.kind === "drift";
-    const caught = state.phase === "name" || state.phase === "fix";
+    const caught = state.phase === "name" || state.phase === "fix" || (stamped != null && said === stamped);
     parts.push(bubble(said, { glitch, caught, actions, pushback: state.phase === "pushback", disagree: state.phase === "disagree" }));
     if (permit) parts.push(permitCard(step));
 
@@ -722,7 +730,8 @@ export function mountLevel(root, level, { onDone, onExit, name = "friend", earli
     askAhead({ type: "ask" }, step.chip);
     // On the phone a side question goes once it's asked; one with follow-ups
     // (extraChips[i].more) is replaced by a new round of questions each time.
-    const extras = (step.extraChips || []).map((c, i) => ({ c, i })).filter(({ i }) => !(phone && tapped.has(i)));
+    // extraChipsFor: a recover chip (after a slip fooled the player) brings the helper's still-wrong reply.
+    const extras = extraChipsFor(level, state).map((c, i) => ({ c, i })).filter(({ i }) => !(phone && tapped.has(i)));
     extras.forEach(({ c, i }) => askAhead({ type: "chat", chip: i, reply: c.reply }, c.text));
     const follow = chainQuestions(step, state);
     follow.forEach((q, j) => askAhead({ type: "more", pick: j }, q.text));

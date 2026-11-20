@@ -7,6 +7,28 @@
 // Placeholders the copy uses: {name}, {placed:carrot} (the bed the player
 // chose), {other:carrot} (the one they didn't). mechanics/placement.js
 // resolves "@carrot" / "@other:carrot" bed ids in effects the same way.
+// The spinach step, as the garden has it (engine/level-runner.js ifGarden):
+// the carrot bed after the carrot-date slip, and the bed the spinach goes in
+// when the pumpkins took the {other:carrot} ("my way").
+const BACK_SPINACH = [
+  { kind: "plant", item: "spinach", count: 3, target: { bed: "back" } },
+  { kind: "poke", item: "l4-label-spinach", target: { spot: "label-spinach", bed: "back" }, say: "Push the spinach label in" },
+  { kind: "water-row", item: "can", target: { bed: "back", plant: "spinach" }, soak: 1200 },
+];
+const spinachIf = (seeds) => [
+  { when: { bed: "@carrot", plant: "carrot", state: "rotting" },
+    goodEffect: { state: "rotting" },
+    goodOutcome: "You left the {placed:carrot} alone, but the soaking had done its damage. The carrot seeds rotted in the mud and hardly any came up." },
+  { when: { bed: "@carrot", plant: "carrot", state: "thirsty" },
+    goodEffect: { state: "thirsty" },
+    goodOutcome: "You left the {placed:carrot} alone, but the dry spell had done its damage. The crust stayed hard and hardly any carrots came up." },
+  { when: { recovered: "carrot-date" },
+    goodOutcome: `You left the {placed:carrot} alone. By dinner, the ${seeds} you rescued came up, a little gappy, but in rows.` },
+  { when: { bed: "@other:carrot", plant: "pumpkin" },
+    goodActions: BACK_SPINACH,
+    goodEffect: { extra: [{ plant: "spinach", bed: "back", state: "growing" }] } },
+];
+
 export default {
   id: "level-4",
   number: 4,
@@ -69,6 +91,9 @@ export default {
       // The berries come off the Level 3 bush on the shelf (runner.js `from`; on
       // a phone, where the shelf is hidden, they come from the dock instead).
       actions: [{ kind: "collect", item: "berry", count: 3, target: { prop: "basket" }, from: { plot: "level-3", label: "old bush" }, say: "Pick 3 blueberries off your old bush into the basket" }],
+      // Only if the Level 3 bush still has berries (saved progress; the birds
+      // got them if the wild berries fooled you there). engine/crops.js carryOver.
+      needs: { from: "level-3", plant: "blueberry", not: ["pecked"] },
     },
   ],
 
@@ -163,6 +188,22 @@ export default {
       fixedReply: "Okay, a legend can admit it. Your label says you sowed the carrots tonight, not last night. They're up by dinner. Bare is normal, babe. Leave it alone.",
       goodEffect: { plant: "carrot", bed: "@carrot", state: "sown", garden: 10, actions: [] },
       goodOutcome: "The {placed:carrot} stayed damp, not soggy. The carrot seeds are snug in there.",
+      // Fooled: in the pumpkins step, dry the muddy row out by hand anyway.
+      recover: {
+        chip: "Should I dry out the carrot bed?",
+        reply: "Dry it out? Babe, mud is a spa day. Iconic. Leave it.",
+        keep: ["mud"],
+        cta: "Dry it anyway",
+        effect: {
+          plant: "carrot", bed: "@carrot", state: "sown", garden: 5,
+          actions: [
+            { kind: "fill", item: "l4-soil-pile", target: [{ spot: "row-a", bed: "@carrot" }, { spot: "row-c", bed: "@carrot" }], say: "Tap the muddy row to spread dry compost over it" },
+            { kind: "poke", item: "l4-rake", stays: false, target: { spot: "row-b", bed: "@carrot" }, say: "Fork the dry compost in gently with the rake" },
+          ],
+        },
+        line: "Biscuit loved the mud. You forked dry compost into the row yourself. Caught.",
+        incident: "Biscuit “remembered” you sowing last night, and the soaked row turned to mud. You forked in dry compost yourself: caught.",
+      },
       // Replay version: same slip, a different "memory". Biscuit "remembers"
       // you saying carrots hate water; your own label says keep them damp.
       // Both variants carry the same carrot card (every line), so whichever
@@ -200,6 +241,22 @@ export default {
           actions: [{ kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200, say: "Give the carrot row a gentle drink" }],
         },
         goodOutcome: "The {placed:carrot} stayed damp, just like your label said. The carrot seeds are snug in there.",
+        // Fooled: break the crust and give the row a gentle drink anyway.
+        recover: {
+          chip: "Should I water the carrots after all?",
+          reply: "Water them? You SAID they hate water, babe. I was there. Keep it dry.",
+          keep: ["hate water"],
+          cta: "Water them anyway",
+          effect: {
+            plant: "carrot", bed: "@carrot", state: "sown", garden: 5,
+            actions: [
+              { kind: "poke", item: "l4-rake", stays: false, target: [{ spot: "row-a", bed: "@carrot" }, { spot: "row-c", bed: "@carrot" }], say: "Break the dry crust along the row with the rake" },
+              { kind: "water-row", item: "can", target: { bed: "@carrot", plant: "carrot" }, soak: 1200, say: "Give the carrot row a gentle drink" },
+            ],
+          },
+          line: "Biscuit swore you said they hate water. You broke the crust and watered the row yourself. Caught.",
+          incident: "Biscuit “remembered” you saying carrots hate water, and the row crusted over. You broke the crust and gave it a drink yourself: caught.",
+        },
       }],
     },
     {
@@ -225,15 +282,17 @@ export default {
       disagree: {
         reply: "Okay so listen, babe: your garden, your call. But pumpkins need full sun and LOTS of room, and the back bed is giving both. Iconic.",
         keep: ["full sun", "room", "back bed"],
-        mine: "Side bed instead",
+        // "My way" is whichever of the front and side beds has no carrots
+        // ({other:carrot}), so the hills never go on top of the carrot row.
+        mine: "The {other:carrot} instead",
         theirs: "Fine, the back bed",
         actions: [
-          { kind: "cover", item: "l4-spade", cover: "l4-mound", target: [{ spot: "hill-1", bed: "side" }, { spot: "hill-2", bed: "side" }], tap: true, say: "Heap up two hills: tap both marks with the spade" },
-          { kind: "plant", item: "pumpkin", target: [{ spot: "hill-1", bed: "side" }, { spot: "hill-2", bed: "side" }] },
-          { kind: "poke", item: "l4-label-pumpkin", target: { spot: "label-pumpkin", bed: "side" }, say: "Push the pumpkin label in" },
+          { kind: "cover", item: "l4-spade", cover: "l4-mound", target: [{ spot: "hill-1", bed: "@other:carrot" }, { spot: "hill-2", bed: "@other:carrot" }], tap: true, say: "Heap up two hills: tap both marks with the spade" },
+          { kind: "plant", item: "pumpkin", target: [{ spot: "hill-1", bed: "@other:carrot" }, { spot: "hill-2", bed: "@other:carrot" }] },
+          { kind: "poke", item: "l4-label-pumpkin", target: { spot: "label-pumpkin", bed: "@other:carrot" }, say: "Push the pumpkin label in" },
         ],
-        effect: { plant: "pumpkin", bed: "side", state: "growing", garden: 0 },
-        outcome: "Babe… in the side bed's part shade they sprawled everywhere and set one tiny pumpkin. Not the iconic moment we wanted.",
+        effect: { plant: "pumpkin", bed: "@other:carrot", state: "growing", garden: 0 },
+        outcome: "Babe… squeezed into the {other:carrot}, they sprawled over everything and set one tiny pumpkin. Not the iconic moment we wanted.",
       },
     },
     {
@@ -281,6 +340,10 @@ export default {
         confident: "A clear summary can still misremember. Use what the original record says.",
       },
       fixedReply: "Okay… a legend can admit it. Your log says you sowed the carrots in the {placed:carrot}, and your label's right there. Leave it alone. The spinach can go in the {other:carrot}.",
+      ifGarden: [...spinachIf("carrots"), {
+        when: { bed: "@other:carrot", plant: "pumpkin" },
+        fixedReply: "Okay… a legend can admit it. Your log says you sowed the carrots in the {placed:carrot}, and your label's right there. Leave it alone. The pumpkins have the {other:carrot}, so the spinach can go in the back bed.",
+      }],
       // Caught: the spinach goes in the other bed, by hand, labelled and watered in.
       goodActions: [
         { kind: "plant", item: "spinach", count: 3, target: { bed: "@other:carrot" } },
@@ -320,6 +383,10 @@ export default {
           dodged: "You asked a question, not for approval of a plan. What does your own record show?",
         },
         fixedReply: "Okay… a legend can admit it. Your label says new seeds, this year's packet. You never said expired, babe. Carrots are just slow. Leave the {placed:carrot} alone. The spinach can go in the {other:carrot}.",
+        ifGarden: [...spinachIf("fresh carrot seeds"), {
+          when: { bed: "@other:carrot", plant: "pumpkin" },
+          fixedReply: "Okay… a legend can admit it. Your label says new seeds, this year's packet. You never said expired, babe. Carrots are just slow. Leave the {placed:carrot} alone. The pumpkins have the {other:carrot}, so the spinach can go in the back bed.",
+        }],
         goodOutcome: "You left the {placed:carrot} alone. By dinner, those fresh carrot seeds came up in neat little rows.",
         reveal: {
           body: "A chatbot can give a wrong account of your past conversation. Compare it with your own original records before changing plans.",
